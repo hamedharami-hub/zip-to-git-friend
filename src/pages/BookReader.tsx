@@ -146,7 +146,7 @@ const BookReader = () => {
       const items = extractAnalysableParagraphs(chapter);
       const out: string[] = [];
       for (const it of items) {
-        const cached = await getCachedParagraphAnalysis(currentBook.id, chapterIndex, it.text);
+        const cached = await getCachedParagraphAnalysis(currentBook!.id, chapterIndex, it.text);
         const fa = cached?.translation?.trim();
         if (fa) out.push(fa);
       }

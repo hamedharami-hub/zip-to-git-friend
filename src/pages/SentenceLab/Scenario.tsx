@@ -148,7 +148,7 @@ export default function SentenceScenarioPage() {
       const { data: sessionRow } = await supabase
         .from('scenario_sessions')
         .insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
+          user_id: (await supabase.auth.getUser()).data.user?.id as string,
           category_slug: categorySlug,
           sub_slugs: selectedSubSlugs,
           category_label: category?.name ?? null,

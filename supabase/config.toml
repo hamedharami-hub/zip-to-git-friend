@@ -1,0 +1,46 @@
+project_id = "sedudsjdxmvezkduzyfd"
+
+[functions.analyze-paragraph]
+verify_jwt = false
+
+[functions.rewrite-chapter]
+verify_jwt = false
+
+[functions.news-fetch-rss]
+verify_jwt = false
+
+[functions.news-search]
+verify_jwt = false
+
+[functions.news-scrape-article]
+verify_jwt = false
+
+[functions.news-digest]
+verify_jwt = false
+
+[functions.generate-language-chapter]
+verify_jwt = false
+
+[functions.news-import-url]
+verify_jwt = false
+
+[functions.news-youtube-channel]
+verify_jwt = false
+
+[functions.leitner-generate-image]
+verify_jwt = false
+
+[functions.leitner-generate-example]
+verify_jwt = false
+
+[functions.news-trending]
+verify_jwt = false
+
+[functions.sentence-roleplay]
+verify_jwt = false
+
+[functions.leitner-enrich-folder]
+verify_jwt = false
+
+[functions.elevenlabs-tts]
+verify_jwt = false

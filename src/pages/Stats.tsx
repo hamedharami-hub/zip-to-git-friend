@@ -154,24 +154,40 @@ const Stats = () => {
   }, [cards]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-5xl mx-auto px-6 py-3 flex items-center justify-between gap-2">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Home
+            <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Home
             </Button>
           </Link>
-          <h1 className="text-base font-medium flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            Your Progress
+          <h1 className="text-[15px] font-semibold flex items-center gap-2">
+            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))] flex items-center justify-center">
+              <TrendingUp className="h-4 w-4" />
+            </span>
+            Progress
           </h1>
           <div className="w-16" />
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-6 py-8 space-y-8">
-        {/* Top KPI cards */}
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--tertiary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8">
+          <div aria-hidden className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl" />
+          <div className="relative">
+            <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
+              Your Journey
+            </p>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-tertiary-container))] leading-tight">
+              پیشرفت شما
+            </h2>
+            <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
+              {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : 'امروز شروع کن'}
+            </p>
+          </div>
+        </section>
+
         <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <KpiCard
             icon={<Flame className="h-5 w-5" />}
@@ -391,22 +407,22 @@ function KpiCard({
 }) {
   return (
     <div
-      className={`rounded-2xl border p-4 space-y-1 ${
+      className={`rounded-[20px] p-5 space-y-1 transition-colors ${
         highlight
-          ? 'border-primary/40 bg-primary/5'
-          : 'border-border bg-card'
+          ? 'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] m3-elevation-1'
+          : 'bg-[hsl(var(--surface-container-low))] border border-outline-variant'
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground uppercase tracking-wider">
+        <span className="text-[10px] uppercase tracking-[0.12em] font-medium opacity-70">
           {label}
         </span>
-        <span className={highlight ? 'text-primary' : 'text-muted-foreground'}>
+        <span className={highlight ? '' : 'text-muted-foreground'}>
           {icon}
         </span>
       </div>
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
-      {sub && <p className="text-[10px] text-muted-foreground">{sub}</p>}
+      <p className="text-3xl font-semibold tabular-nums">{value}</p>
+      {sub && <p className="text-[10px] opacity-70">{sub}</p>}
     </div>
   );
 }

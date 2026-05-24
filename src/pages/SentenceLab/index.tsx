@@ -82,25 +82,30 @@ export default function SentenceLabPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} aria-label="Back">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="container mx-auto flex items-center justify-between gap-3 px-4 h-16">
+          <div className="flex items-center gap-2 min-w-0">
+            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/')} aria-label="Back">
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <h1 className="text-base font-semibold leading-none">Sentence Lab</h1>
-              <p className="mt-0.5 text-xs text-muted-foreground">یک حوزه را انتخاب کن</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))] flex items-center justify-center shrink-0">
+                <MessageCircle className="h-4 w-4" />
+              </span>
+              <div className="min-w-0">
+                <h1 className="text-[15px] font-semibold leading-tight truncate">Sentence Lab</h1>
+                <p className="text-[11px] text-muted-foreground truncate" dir="rtl">یک حوزه را انتخاب کن</p>
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <GamificationHUD />
-            <Button size="sm" variant="ghost" onClick={() => navigate('/sentence-lab/leitner')}>
+            <Button size="sm" variant="ghost" className="rounded-full" onClick={() => navigate('/sentence-lab/leitner')}>
               <Flag className="h-4 w-4" />
               <span className="hidden sm:inline">پرچم‌ها</span>
             </Button>
-            <Button size="sm" variant="secondary" onClick={() => navigate('/sentence-lab/planner')}>
+            <Button size="sm" className="rounded-full bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]" onClick={() => navigate('/sentence-lab/planner')}>
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">AI Planner</span>
             </Button>

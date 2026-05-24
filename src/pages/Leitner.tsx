@@ -62,16 +62,18 @@ const Leitner = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Library
+            <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Home
             </Button>
           </Link>
-          <h1 className="text-base font-medium flex items-center gap-2">
-            <Brain className="h-4 w-4 text-primary" />
+          <h1 className="text-[15px] font-semibold flex items-center gap-2">
+            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] flex items-center justify-center">
+              <Brain className="h-4 w-4" />
+            </span>
             Leitner
           </h1>
           <AccountButton />
@@ -79,26 +81,35 @@ const Leitner = () => {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <div className="flex items-end justify-between gap-4 flex-wrap">
-          <div>
-            <h2 className="text-2xl font-semibold">Spaced repetition</h2>
-            <p className="text-sm text-muted-foreground inline-flex items-center gap-2 flex-wrap">
-              <span>
-                {stats.total} cards · <span className="text-primary font-medium">{stats.due} due now</span>
-              </span>
-              <SyncBadge />
-            </p>
+        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--primary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--tertiary-container))] p-6 sm:p-8">
+          <div aria-hidden className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--primary)/0.18)] blur-3xl" />
+          <div className="relative flex items-end justify-between gap-4 flex-wrap">
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
+                Spaced repetition
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-primary-container))] leading-tight">
+                مرور هوشمند
+              </h2>
+              <p className="text-sm text-[hsl(var(--on-surface-variant))] inline-flex items-center gap-2 flex-wrap">
+                <span>
+                  {stats.total} کارت · <span className="text-[hsl(var(--primary))] font-semibold">{stats.due} آماده الان</span>
+                </span>
+                <SyncBadge />
+              </p>
+            </div>
+            <Button
+              onClick={() => setTab('review')}
+              disabled={stats.due === 0}
+              size="lg"
+              className="rounded-full h-12 px-6 gap-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 m3-elevation-2"
+            >
+              <Layers className="h-4 w-4" />
+              مرور {stats.due} کارت
+            </Button>
           </div>
-          <Button
-            onClick={() => setTab('review')}
-            disabled={stats.due === 0}
-            size="lg"
-            className="shadow-sm"
-          >
-            <Layers className="h-4 w-4 mr-2" />
-            Review {stats.due} due
-          </Button>
-        </div>
+        </section>
+
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
           <TabsList className="grid grid-cols-3 w-full max-w-md">
@@ -173,18 +184,24 @@ const Leitner = () => {
 
           <TabsContent value="stats" className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {BOX_META.map((m) => (
-                <div
-                  key={m.box}
-                  className="rounded-lg border border-border bg-card p-4 text-center"
-                >
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                    {m.label}
-                  </p>
-                  <p className="text-3xl font-semibold mt-1 tabular-nums">{stats[m.box]}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{m.interval}</p>
-                </div>
-              ))}
+              {BOX_META.map((m, i) => {
+                const tones = [
+                  'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]',
+                  'bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]',
+                  'bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))]',
+                  'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]',
+                  'bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]',
+                ];
+                return (
+                  <div key={m.box} className={`rounded-[20px] p-5 text-center ${tones[i]} m3-elevation-1`}>
+                    <p className="text-[10px] uppercase tracking-[0.12em] opacity-70 font-medium">
+                      {m.label}
+                    </p>
+                    <p className="text-4xl font-semibold mt-1.5 tabular-nums">{stats[m.box]}</p>
+                    <p className="text-[11px] opacity-70 mt-1">{m.interval}</p>
+                  </div>
+                );
+              })}
             </div>
             {stats.total === 0 && (
               <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">

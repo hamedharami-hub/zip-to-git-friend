@@ -42,23 +42,25 @@ const Books = () => {
   }, [books]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground pb-32">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
-            <Button variant="ghost" size="icon" aria-label="Back to home">
+            <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-base sm:text-lg font-semibold flex items-center gap-2 min-w-0">
-            <BookOpen className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-            <span className="truncate">Your Library</span>
+          <h1 className="text-[15px] font-semibold flex items-center gap-2 min-w-0">
+            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))] flex items-center justify-center shrink-0">
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+            </span>
+            <span className="truncate">Library</span>
           </h1>
           <BookImportMenu variant="button" />
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {books.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
@@ -68,14 +70,20 @@ const Books = () => {
           />
         ) : (
           <>
-            <div className="mb-6 flex items-baseline justify-between">
-              <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-                {sorted.length} {sorted.length === 1 ? 'book' : 'books'}
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Tap a cover to start reading
-              </p>
-            </div>
+            <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--secondary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8 mb-8">
+              <div aria-hidden className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--secondary)/0.18)] blur-3xl" />
+              <div className="relative">
+                <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
+                  Your Library
+                </p>
+                <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-secondary-container))] leading-tight">
+                  {sorted.length} {sorted.length === 1 ? 'کتاب' : 'کتاب'}
+                </h2>
+                <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
+                  روی جلد ضربه بزن تا شروع به خواندن کنی
+                </p>
+              </div>
+            </section>
 
             <ul className="grid gap-x-5 gap-y-8 sm:gap-x-7 sm:gap-y-10 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {sorted.map((b) => {

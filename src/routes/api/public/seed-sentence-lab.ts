@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { SENTENCE_BACKUP } from '@/data/sentenceLabSeed';
 
-export const Route = createFileRoute('/api/seed-sentence-lab')({
+export const Route = createFileRoute('/api/public/seed-sentence-lab')({
   server: {
     handlers: {
       POST: async () => {

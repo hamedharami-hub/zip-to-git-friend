@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { pingGemini, GeminiError } from '@/lib/gemini';
 import { pingGroq, GroqError } from '@/lib/groq';
 import { InstallButton } from '@/components/pwa/InstallButton';
+import { ServiceWorkerStatusCard } from '@/components/pwa/ServiceWorkerStatusCard';
 import {
   chatModelOptions,
   choiceToValue,
@@ -255,6 +256,11 @@ const Settings = () => {
               {isDark ? 'Light' : 'Dark'}
             </Button>
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">برنامه و آفلاین</h2>
+          <ServiceWorkerStatusCard />
         </section>
 
         <section className="space-y-3">

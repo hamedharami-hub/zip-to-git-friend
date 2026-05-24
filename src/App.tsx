@@ -45,7 +45,15 @@ const NewsArticle = lazy(() => import('./pages/NewsArticle'));
 const NewsDigest = lazy(() => import('./pages/NewsDigest'));
 const NotFound = lazy(() => import('./pages/NotFound.tsx'));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const NativeGestures = () => {
   useNativeBackButton();
@@ -53,11 +61,25 @@ const NativeGestures = () => {
   return null;
 };
 
+// Schedule a callback during idle time; falls back to setTimeout.
+const onIdle = (cb: () => void, timeout = 2000) => {
+  if (typeof window === 'undefined') return;
+  const w = window as Window & {
+    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+  };
+  if (w.requestIdleCallback) w.requestIdleCallback(cb, { timeout });
+  else setTimeout(cb, 200);
+};
+
 const SyncBridge = () => {
   const { user } = useAuth();
   useEffect(() => {
     if (user) {
-      startSync(user.id).catch((e) => console.error('startSync failed', e));
+      // Defer the (potentially heavy) sync setup until the browser is idle so it
+      // never competes with first paint or route hydration.
+      onIdle(() => {
+        startSync(user.id).catch((e) => console.error('startSync failed', e));
+      });
     } else {
       stopSync().catch(() => {});
     }
@@ -67,22 +89,26 @@ const SyncBridge = () => {
 
 const SettingsBootstrap = ({ children }: { children: React.ReactNode }) => {
   const load = useSettingsStore((s) => s.load);
-  const loaded = useSettingsStore((s) => s.loaded);
   const loadLeitner = useLeitnerStore((s) => s.load);
   const loadFolders = useLeitnerFolderStore((s) => s.load);
   useOnline();
   useEffect(() => {
+    // Apply persisted theme synchronously to avoid a flash, then hydrate the
+    // rest in the background — do NOT block first paint on IndexedDB reads.
+    try {
+      const t = localStorage.getItem('llvp-theme');
+      if (t === 'dark') document.documentElement.classList.add('dark');
+      else if (t === 'light') document.documentElement.classList.remove('dark');
+    } catch {
+      /* ignore */
+    }
     load();
-    loadLeitner();
-    loadFolders();
+    // Leitner stores are heavy (whole card set + folder sync). Defer them.
+    onIdle(() => {
+      loadLeitner();
+      loadFolders();
+    });
   }, [load, loadLeitner, loadFolders]);
-  if (!loaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
   return <>{children}</>;
 };
 

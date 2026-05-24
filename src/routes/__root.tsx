@@ -48,6 +48,7 @@ function RootComponent() {
     import("../App").then((m) => {
       if (mounted) setApp(() => m.default);
     });
+    import("../lib/pwa").then((m) => m.registerPWA()).catch(() => {});
     return () => {
       mounted = false;
     };

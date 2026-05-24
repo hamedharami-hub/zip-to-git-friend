@@ -81,39 +81,9 @@ function mapQuest(row: any): DailyQuest {
 }
 
 export async function getOrCreateState(): Promise<GamificationState | null> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) return null;
-  const { data } = await supabase
-    .from('user_gamification')
-    .select('*')
-    .eq('user_id', userId)
-    .maybeSingle();
-  if (data) return refillHeartsIfNeeded(mapState(data));
-  const { data: created } = await supabase
-    .from('user_gamification')
-    .insert({ user_id: userId })
-    .select()
-    .single();
-  return created ? mapState(created) : null;
-}
-
-/** Refill 1 heart every 30 minutes up to MAX_HEARTS. */
-async function refillHeartsIfNeeded(s: GamificationState): Promise<GamificationState> {
-  if (s.hearts >= MAX_HEARTS) return s;
-  const last = new Date(s.heartsRefilledAt).getTime();
-  const elapsedMin = (Date.now() - last) / 60000;
-  const refills = Math.floor(elapsedMin / 30);
-  if (refills <= 0) return s;
-  const newHearts = Math.min(MAX_HEARTS, s.hearts + refills);
-  if (newHearts === s.hearts) return s;
-  const { data } = await supabase
-    .from('user_gamification')
-    .update({ hearts: newHearts, hearts_refilled_at: new Date().toISOString() })
-    .eq('user_id', s.userId)
-    .select()
-    .single();
-  return data ? mapState(data) : s;
+  const { data, error } = await supabase.rpc('gamif_ensure_state');
+  if (error || !data) return null;
+  return mapState(data);
 }
 
 /** XP rewards per FSRS grade. */
@@ -124,57 +94,25 @@ export const XP_BY_GRADE: Record<string, number> = {
   easy: 12,
 };
 
-/** Apply a grade outcome: XP, streak, heart loss, combo. Returns updated state + delta info. */
+/** Apply a grade outcome via server-side RPC. */
 export async function recordGrade(opts: {
   grade: 'again' | 'hard' | 'good' | 'easy';
   combo: number;
 }): Promise<{ state: GamificationState | null; xpEarned: number; leveledUp: boolean; lostHeart: boolean }> {
-  const state = await getOrCreateState();
-  if (!state) return { state: null, xpEarned: 0, leveledUp: false, lostHeart: false };
-
-  const baseXp = XP_BY_GRADE[opts.grade] ?? 0;
-  const multiplier = opts.combo >= 10 ? 3 : opts.combo >= 5 ? 2 : 1;
-  const xpEarned = baseXp * multiplier;
-  const lostHeart = opts.grade === 'again' && state.hearts > 0;
-
-  const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  let nextStreak = state.currentStreak;
-  if (state.lastActiveDate !== today) {
-    nextStreak = state.lastActiveDate === yesterday ? state.currentStreak + 1 : 1;
+  const prev = await getOrCreateState();
+  const { data, error } = await supabase.rpc('gamif_record_grade', {
+    _grade: opts.grade,
+    _combo: opts.combo,
+  });
+  if (error || !data) {
+    return { state: prev, xpEarned: 0, leveledUp: false, lostHeart: false };
   }
-  const newXp = state.xp + xpEarned;
-  const oldLevel = levelFromXp(state.xp);
-  const newLevel = levelFromXp(newXp);
+  const next = mapState(data);
+  const xpEarned = prev ? next.xp - prev.xp : 0;
+  const leveledUp = prev ? next.level > prev.level : false;
+  const lostHeart = prev ? next.hearts < prev.hearts : false;
 
-  const update: {
-    xp: number;
-    level: number;
-    current_streak: number;
-    longest_streak: number;
-    last_active_date: string;
-    total_reviews: number;
-    combo_best: number;
-    hearts?: number;
-  } = {
-    xp: newXp,
-    level: newLevel,
-    current_streak: nextStreak,
-    longest_streak: Math.max(state.longestStreak, nextStreak),
-    last_active_date: today,
-    total_reviews: state.totalReviews + 1,
-    combo_best: Math.max(state.comboBest, opts.combo),
-  };
-  if (lostHeart) update.hearts = Math.max(0, state.hearts - 1);
-
-  const { data } = await supabase
-    .from('user_gamification')
-    .update(update)
-    .eq('user_id', state.userId)
-    .select()
-    .single();
-
-  // Quest progress: review_n
+  // Quest progress: review_n (still writable by the user on daily_quests)
   void incrementQuestProgress('review_count', 1);
   if (opts.grade === 'good' || opts.grade === 'easy') {
     void incrementQuestProgress('correct_count', 1);
@@ -183,12 +121,7 @@ export async function recordGrade(opts: {
     void incrementQuestProgress('combo_10', 1);
   }
 
-  return {
-    state: data ? mapState(data) : state,
-    xpEarned,
-    leveledUp: newLevel > oldLevel,
-    lostHeart,
-  };
+  return { state: next, xpEarned, leveledUp, lostHeart };
 }
 
 /* ─────────────── Daily quests ─────────────── */

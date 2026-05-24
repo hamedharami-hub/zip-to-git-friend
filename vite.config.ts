@@ -5,11 +5,59 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
 
-// Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
 export default defineConfig({
   tanstackStart: {
     server: { entry: "server" },
+  },
+  vite: {
+    plugins: [
+      VitePWA({
+        registerType: "prompt",
+        injectRegister: null, // we register manually in src/lib/pwa.ts
+        devOptions: { enabled: false },
+        manifest: {
+          name: "Sync Learn Player",
+          short_name: "SyncLearn",
+          description: "Language learning with sentences, books, audio and video.",
+          theme_color: "#0F172A",
+          background_color: "#0F172A",
+          display: "standalone",
+          start_url: "/",
+          scope: "/",
+          icons: [
+            { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
+            { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+            { src: "/icon-maskable.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          ],
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+          navigateFallback: "/",
+          navigateFallbackDenylist: [/^\/api\//, /^\/~oauth/, /^\/auth/],
+          runtimeCaching: [
+            {
+              urlPattern: ({ request }) => request.mode === "navigate",
+              handler: "NetworkFirst",
+              options: { cacheName: "html", networkTimeoutSeconds: 3 },
+            },
+            {
+              urlPattern: ({ request }) => ["style", "script", "worker"].includes(request.destination),
+              handler: "StaleWhileRevalidate",
+              options: { cacheName: "assets" },
+            },
+            {
+              urlPattern: ({ request }) => request.destination === "image",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "images",
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+          ],
+        },
+      }),
+    ],
   },
 });

@@ -184,24 +184,7 @@ export async function incrementQuestProgress(questKey: string, by = 1): Promise<
 }
 
 export async function claimQuest(questId: string): Promise<GamificationState | null> {
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth.user?.id;
-  if (!userId) return null;
-  const { data: q } = await supabase
-    .from('daily_quests')
-    .select('*')
-    .eq('id', questId)
-    .single();
-  if (!q || !q.completed || q.claimed) return getOrCreateState();
-  await supabase.from('daily_quests').update({ claimed: true }).eq('id', questId);
-  const state = await getOrCreateState();
-  if (!state) return null;
-  const newXp = state.xp + q.reward_xp;
-  const { data } = await supabase
-    .from('user_gamification')
-    .update({ xp: newXp, level: levelFromXp(newXp) })
-    .eq('user_id', state.userId)
-    .select()
-    .single();
-  return data ? mapState(data) : state;
+  const { data, error } = await supabase.rpc('gamif_claim_quest', { _quest_id: questId });
+  if (error || !data) return getOrCreateState();
+  return mapState(data);
 }

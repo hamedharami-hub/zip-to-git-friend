@@ -227,29 +227,37 @@ const Settings = () => {
   const isDark = settings.theme === 'dark';
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Library
+            <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Home
             </Button>
           </Link>
-          <h1 className="text-base font-medium">Settings</h1>
+          <h1 className="text-[15px] font-semibold">Settings</h1>
           <InstallButton />
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+        <div className="space-y-1">
+          <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
+            Preferences
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">تنظیمات</h2>
+        </div>
+
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Appearance</h2>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+          <h2 className="text-xs font-semibold text-[hsl(var(--on-surface-variant))] uppercase tracking-wider">Appearance</h2>
+          <div className="flex items-center justify-between rounded-[20px] border border-outline-variant bg-[hsl(var(--surface-container-low))] p-5">
             <div>
               <p className="font-medium">Theme</p>
               <p className="text-sm text-muted-foreground">Switch between dark and light.</p>
             </div>
             <Button
               variant="outline"
+              className="rounded-full"
               onClick={() => update({ theme: isDark ? 'light' : 'dark' })}
             >
               {isDark ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
@@ -259,7 +267,7 @@ const Settings = () => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">برنامه و آفلاین</h2>
+          <h2 className="text-xs font-semibold text-[hsl(var(--on-surface-variant))] uppercase tracking-wider">برنامه و آفلاین</h2>
           <ServiceWorkerStatusCard />
         </section>
 

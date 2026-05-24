@@ -8,9 +8,18 @@ import {
   Wifi,
   HardDrive,
   Loader2,
+  FlaskConical,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   subscribePWA,
   checkForUpdate,
@@ -34,6 +43,91 @@ function formatTime(ts: number | null): string {
   if (diff < 3_600_000) return `${Math.round(diff / 60_000)} دقیقه پیش`;
   if (diff < 86_400_000) return `${Math.round(diff / 3_600_000)} ساعت پیش`;
   return new Date(ts).toLocaleString();
+}
+
+const OFFLINE_ROUTES: Array<{ path: string; label: string }> = [
+  { path: "/", label: "خانه" },
+  { path: "/leitner", label: "Leitner" },
+  { path: "/sentence-lab", label: "Sentence Lab" },
+  { path: "/books", label: "کتاب‌ها" },
+  { path: "/news", label: "اخبار" },
+  { path: "/stats", label: "آمار" },
+  { path: "/settings", label: "تنظیمات" },
+];
+
+function OfflineTestDialog() {
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <FlaskConical className="h-4 w-4 mr-2" />
+          راهنمای تست آفلاین
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-md" dir="rtl">
+        <DialogHeader>
+          <DialogTitle>تست حالت آفلاین</DialogTitle>
+          <DialogDescription>
+            بررسی کن که صفحه‌ها از کش Service Worker درست لود می‌شوند.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ol className="space-y-3 text-sm leading-relaxed">
+          <li className="flex gap-2">
+            <span className="font-semibold text-primary">۱.</span>
+            <span>
+              مطمئن شو وضعیت بالا <Badge variant="secondary" className="mx-1">فعال</Badge> است
+              (روی دامنهٔ منتشرشده، نه پیش‌نمایش).
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-semibold text-primary">۲.</span>
+            <span>
+              در کروم/اج، <kbd className="px-1.5 py-0.5 rounded bg-muted text-xs font-mono">F12</kbd> →
+              تب <b>Network</b> → چک‌باکس <b>Offline</b> را فعال کن.
+              <br />
+              در موبایل: حالت پرواز (Airplane Mode) را روشن کن.
+            </span>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-semibold text-primary">۳.</span>
+            <div className="space-y-2 flex-1">
+              <span>یکی‌یکی این مسیرها را باز کن و ببین لود می‌شوند یا نه:</span>
+              <ul className="grid grid-cols-2 gap-1.5">
+                {OFFLINE_ROUTES.map((r) => (
+                  <li key={r.path}>
+                    <a
+                      href={r.path}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block rounded-md border border-border bg-muted/50 px-2 py-1.5 text-xs hover:bg-muted transition-colors"
+                    >
+                      <span className="font-medium">{r.label}</span>
+                      <span className="block text-[10px] text-muted-foreground font-mono truncate">
+                        {r.path}
+                      </span>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </li>
+          <li className="flex gap-2">
+            <span className="font-semibold text-primary">۴.</span>
+            <span>
+              بعد از تست، Offline را خاموش کن. اگر صفحه‌ای لود نشد، یک‌بار آنلاین
+              بازش کن تا کش شود، سپس دوباره تست کن.
+            </span>
+          </li>
+        </ol>
+
+        <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
+          <b>نکته:</b> داده‌های API (لیست لایتنر، اخبار جدید) آنلاین لازم دارند.
+          آفلاین فقط ساختار صفحه و داده‌های کش‌شدهٔ قبلی نمایش داده می‌شود.
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function ServiceWorkerStatusCard() {
@@ -93,7 +187,7 @@ export function ServiceWorkerStatusCard() {
   );
 
   return (
-    <div className="space-y-4 rounded-lg border border-border p-4">
+    <div className="space-y-4 rounded-[20px] border border-outline-variant bg-surface-container-low p-5 m3-elevation-1">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium">Service Worker</p>
@@ -105,7 +199,7 @@ export function ServiceWorkerStatusCard() {
       </div>
 
       <dl className="grid grid-cols-2 gap-3 text-sm">
-        <div className="rounded-md border border-border/60 p-3">
+        <div className="rounded-md border border-outline-variant/60 bg-surface p-3">
           <dt className="text-xs text-muted-foreground flex items-center gap-1.5">
             {s.active ? (
               <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
@@ -119,7 +213,7 @@ export function ServiceWorkerStatusCard() {
           </dd>
         </div>
 
-        <div className="rounded-md border border-border/60 p-3">
+        <div className="rounded-md border border-outline-variant/60 bg-surface p-3">
           <dt className="text-xs text-muted-foreground flex items-center gap-1.5">
             {s.online ? (
               <Wifi className="h-3.5 w-3.5 text-emerald-500" />
@@ -131,7 +225,7 @@ export function ServiceWorkerStatusCard() {
           <dd className="font-medium mt-1">{s.online ? "آنلاین" : "آفلاین"}</dd>
         </div>
 
-        <div className="rounded-md border border-border/60 p-3">
+        <div className="rounded-md border border-outline-variant/60 bg-surface p-3">
           <dt className="text-xs text-muted-foreground flex items-center gap-1.5">
             <RefreshCw className="h-3.5 w-3.5" />
             آخرین بررسی
@@ -139,7 +233,7 @@ export function ServiceWorkerStatusCard() {
           <dd className="font-medium mt-1">{formatTime(s.lastChecked)}</dd>
         </div>
 
-        <div className="rounded-md border border-border/60 p-3">
+        <div className="rounded-md border border-outline-variant/60 bg-surface p-3">
           <dt className="text-xs text-muted-foreground flex items-center gap-1.5">
             <HardDrive className="h-3.5 w-3.5" />
             حجم کش
@@ -179,6 +273,8 @@ export function ServiceWorkerStatusCard() {
             نصب و راه‌اندازی مجدد
           </Button>
         )}
+
+        <OfflineTestDialog />
       </div>
 
       {!s.enabled && s.disabledReason && (

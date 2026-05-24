@@ -523,17 +523,19 @@ const News = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
-      <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex items-center gap-2">
+    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground overflow-x-hidden">
+      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
+        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center gap-2">
           <Link to="/">
-            <Button variant="ghost" size="icon" aria-label="Back to home">
+            <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
             </Button>
           </Link>
-          <h1 className="text-lg font-semibold flex items-center gap-2 min-w-0">
-            <Newspaper className="h-5 w-5 text-primary shrink-0" />
-            <span className="truncate">News reader</span>
+          <h1 className="text-[15px] font-semibold flex items-center gap-2 min-w-0">
+            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] flex items-center justify-center shrink-0">
+              <Newspaper className="h-4 w-4" />
+            </span>
+            <span className="truncate">News</span>
           </h1>
           <div className="ms-auto flex items-center gap-2">
             <ImportUrlDialog

@@ -267,6 +267,35 @@
     box-shadow: 0 4px 8px 3px hsl(220 10% 10% / 0.06), 0 1px 3px 0 hsl(220 10% 10% / 0.08);
   }
 
+  /* M3 expressive shape system */
+  .m3-shape-sm { border-radius: 12px; }
+  .m3-shape-md { border-radius: 16px; }
+  .m3-shape-lg { border-radius: 20px; }
+  .m3-shape-xl { border-radius: 28px; }
+
+  /* M3 tonal card */
+  .m3-card-tonal {
+    background-color: hsl(var(--surface-container));
+    color: hsl(var(--foreground));
+    border-radius: 28px;
+    transition: background-color 200ms ease, box-shadow 200ms ease, transform 200ms ease;
+  }
+  .m3-card-tonal:hover {
+    background-color: hsl(var(--surface-container-high));
+  }
+
+  /* M3 top app bar */
+  .m3-top-app-bar {
+    background-color: hsl(var(--surface) / 0.85);
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    transition: background-color 200ms ease, box-shadow 200ms ease;
+  }
+  .m3-top-app-bar.scrolled {
+    background-color: hsl(var(--surface-container));
+    box-shadow: 0 1px 2px 0 hsl(220 10% 10% / 0.06);
+  }
+
   .m3-state-layer {
     position: relative;
     overflow: hidden;

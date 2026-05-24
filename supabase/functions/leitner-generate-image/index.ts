@@ -91,9 +91,13 @@ Deno.serve(async (req) => {
       .from('leitner-images')
       .upload(path, bytes, { contentType: mime, upsert: true });
     if (upErr) throw upErr;
-    const { data: pub } = admin.storage.from('leitner-images').getPublicUrl(path);
+    // Bucket is private; return a long-lived signed URL (1 year).
+    const { data: signed, error: signErr } = await admin.storage
+      .from('leitner-images')
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    if (signErr) throw signErr;
 
-    return new Response(JSON.stringify({ imageUrl: pub.publicUrl }), {
+    return new Response(JSON.stringify({ imageUrl: signed.signedUrl }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (e) {

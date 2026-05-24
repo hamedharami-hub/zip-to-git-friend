@@ -1023,7 +1023,94 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gamif_claim_quest: {
+        Args: { _quest_id: string }
+        Returns: {
+          combo_best: number
+          created_at: string
+          current_streak: number
+          gems: number
+          hearts: number
+          hearts_refilled_at: string
+          last_active_date: string | null
+          level: number
+          longest_streak: number
+          total_reviews: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_gamification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      gamif_ensure_state: {
+        Args: never
+        Returns: {
+          combo_best: number
+          created_at: string
+          current_streak: number
+          gems: number
+          hearts: number
+          hearts_refilled_at: string
+          last_active_date: string | null
+          level: number
+          longest_streak: number
+          total_reviews: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_gamification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      gamif_level_from_xp: { Args: { _xp: number }; Returns: number }
+      gamif_record_grade: {
+        Args: { _combo: number; _grade: string }
+        Returns: {
+          combo_best: number
+          created_at: string
+          current_streak: number
+          gems: number
+          hearts: number
+          hearts_refilled_at: string
+          last_active_date: string | null
+          level: number
+          longest_streak: number
+          total_reviews: number
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_gamification"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      grant_achievement: {
+        Args: { _key: string }
+        Returns: {
+          achievement_key: string
+          id: string
+          unlocked_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "user_achievements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never

@@ -464,7 +464,12 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           }`}
         >
           <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-md pt-6">
-            <PlayerControls videoRef={videoRef} variant="overlay" />
+            <PlayerControls
+              videoRef={videoRef}
+              variant="overlay"
+              onToggleFullscreen={toggleFullscreen}
+              isFullscreen={isFullscreen}
+            />
           </div>
         </div>
       </div>

@@ -134,7 +134,19 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
           {formatTime(time)} / {formatTime(duration)}
         </span>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          {onToggleFullscreen && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={iconBtn}
+              onClick={onToggleFullscreen}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button

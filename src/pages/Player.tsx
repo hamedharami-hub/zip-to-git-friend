@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Brain, Settings as SettingsIcon, Upload, Trash2, Package, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -106,9 +107,15 @@ const Player = () => {
     };
   }, [videoId]);
 
-  // Auto-enter immersive on mobile landscape; auto-exit on portrait.
+  // Auto-enter immersive on mobile landscape — ONLY when explicitly enabled
+  // in settings (default OFF). Many users find auto-rotate-to-fullscreen
+  // disruptive on Android, so this is now opt-in.
+  const autoImmersiveOnLandscape = useSettingsStore(
+    (s) => s.settings.autoImmersiveOnLandscape ?? false,
+  );
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!autoImmersiveOnLandscape) return;
     const compute = () => {
       const isLandscape = window.matchMedia('(orientation: landscape)').matches;
       const isMobileSize = window.matchMedia('(max-width: 900px)').matches;
@@ -124,7 +131,7 @@ const Player = () => {
       mql.removeEventListener?.('change', handler);
       window.removeEventListener('resize', handler);
     };
-  }, []);
+  }, [autoImmersiveOnLandscape]);
 
   // When immersive turns on: request fullscreen + try to lock to landscape.
   // When it turns off: exit fullscreen + unlock orientation.

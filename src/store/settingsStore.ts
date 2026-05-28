@@ -16,6 +16,7 @@ const DEFAULTS: AppSettings = {
   autoShowAnalysis: false,
   blindListen: false,
   autoPauseAtCueEnd: false,
+  autoImmersiveOnLandscape: false,
   showInlineTranslation: true,
   geminiApiKey: '',
   groqApiKey: '',

@@ -189,6 +189,10 @@ export interface AppSettings {
   /** When true, the player auto-pauses at the end of each subtitle cue
    *  so the learner can think/repeat before pressing play. */
   autoPauseAtCueEnd: boolean;
+  /** When true, the player auto-enters fullscreen immersive mode when the
+   *  device is rotated to landscape on mobile. Default OFF — many users
+   *  find this disruptive on Android. */
+  autoImmersiveOnLandscape?: boolean;
   /** When true, shows the cached AI translation under the source subtitle
    *  (only when no secondary subtitle track is loaded). */
   showInlineTranslation: boolean;

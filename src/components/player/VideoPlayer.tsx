@@ -25,6 +25,7 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const current = useVideoStore((s) => s.current);
   const setCurrentTime = useVideoStore((s) => s.setCurrentTime);
   const setIsPlaying = useVideoStore((s) => s.setIsPlaying);
@@ -45,6 +46,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
 
   const [controlsVisible, setControlsVisible] = useState(false);
   const [feedback, setFeedback] = useState<'play' | 'pause' | 'prev' | 'next' | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);
@@ -188,6 +190,65 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     },
   });
 
+  // Sync fullscreen state with browser events (handles ESC, system gesture, swipe-down on Android).
+  useEffect(() => {
+    const onChange = () => {
+      const fsEl =
+        document.fullscreenElement ||
+        (document as Document & { webkitFullscreenElement?: Element }).webkitFullscreenElement;
+      setIsFullscreen(!!fsEl);
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    document.addEventListener('webkitfullscreenchange', onChange as EventListener);
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange);
+      document.removeEventListener('webkitfullscreenchange', onChange as EventListener);
+    };
+  }, []);
+
+  // Toggle fullscreen — MUST be called synchronously from a user gesture
+  // (onClick). Android Chrome / Windows: fullscreen the container so the
+  // controls stay visible. iOS Safari fallback: fullscreen the video element.
+  const toggleFullscreen = () => {
+    const el = containerRef.current;
+    const v = videoRef.current;
+    const docAny = document as Document & {
+      webkitExitFullscreen?: () => Promise<void>;
+      webkitFullscreenElement?: Element | null;
+    };
+    const fsEl = document.fullscreenElement || docAny.webkitFullscreenElement;
+    if (fsEl) {
+      const exit = document.exitFullscreen?.bind(document) || docAny.webkitExitFullscreen?.bind(docAny);
+      try { Promise.resolve(exit?.()).catch(() => {}); } catch {}
+      // Unlock orientation on exit (Android).
+      const orientation = (screen as Screen & {
+        orientation?: ScreenOrientation & { unlock?: () => void };
+      }).orientation;
+      try { orientation?.unlock?.(); } catch {}
+      return;
+    }
+    if (el) {
+      const req =
+        (el as HTMLElement & { requestFullscreen?: () => Promise<void> }).requestFullscreen?.bind(el) ||
+        (el as HTMLElement & { webkitRequestFullscreen?: () => Promise<void> }).webkitRequestFullscreen?.bind(el);
+      if (req) {
+        try {
+          Promise.resolve(req()).then(() => {
+            // Try to lock to landscape on Android once fullscreen is established.
+            const orientation = (screen as Screen & {
+              orientation?: ScreenOrientation & { lock?: (o: string) => Promise<void> };
+            }).orientation;
+            try { orientation?.lock?.('landscape').catch(() => {}); } catch {}
+          }).catch(() => {});
+          return;
+        } catch {}
+      }
+    }
+    // iOS Safari fallback — only the <video> can go fullscreen.
+    const vAny = v as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    try { vAny?.webkitEnterFullscreen?.(); } catch {}
+  };
+
   if (!current) return null;
 
   const onLoaded = () => {
@@ -219,7 +280,6 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     if (direction === 'next') {
       target = cues.find((c) => c.startMs > tMs + 50);
     } else {
-      // previous: last cue starting before current time minus a small grace
       for (let i = cues.length - 1; i >= 0; i--) {
         if (cues[i].startMs < tMs - 600) {
           target = cues[i];
@@ -247,8 +307,10 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     }
   };
 
-  // Single click → reveal controls + (after delay) toggle play.
-  // Double click in zones → mid: toggle play, right: next cue, left: prev cue.
+  // Tap behavior:
+  //  - middle zone: single tap toggles play IMMEDIATELY (no 280ms wait).
+  //  - left/right zones: single tap only reveals controls; double tap jumps cue.
+  // This removes the laggy play/pause feel on Android.
   const handleVideoTap = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -260,34 +322,39 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     const last = lastTapRef.current;
     showControlsTemporarily();
 
-    if (last && now - last.time < 300 && last.zone === zone) {
-      // Double tap detected
-      if (tapTimerRef.current) {
-        window.clearTimeout(tapTimerRef.current);
+    // Edge zones: keep double-tap detection for cue jump.
+    if (zone !== 'mid') {
+      if (last && now - last.time < 300 && last.zone === zone) {
+        if (tapTimerRef.current) {
+          window.clearTimeout(tapTimerRef.current);
+          tapTimerRef.current = null;
+        }
+        lastTapRef.current = null;
+        if (zone === 'right') {
+          jumpToCue('next');
+          flashFeedback('next');
+        } else {
+          jumpToCue('prev');
+          flashFeedback('prev');
+        }
+        return;
+      }
+      lastTapRef.current = { time: now, zone };
+      if (tapTimerRef.current) window.clearTimeout(tapTimerRef.current);
+      tapTimerRef.current = window.setTimeout(() => {
+        lastTapRef.current = null;
         tapTimerRef.current = null;
-      }
-      lastTapRef.current = null;
-      if (zone === 'mid') {
-        togglePlayPause();
-      } else if (zone === 'right') {
-        jumpToCue('next');
-        flashFeedback('next');
-      } else {
-        jumpToCue('prev');
-        flashFeedback('prev');
-      }
+      }, 280);
       return;
     }
 
-    // First tap — wait briefly to see if a second one arrives.
-    lastTapRef.current = { time: now, zone };
-    if (tapTimerRef.current) window.clearTimeout(tapTimerRef.current);
-    tapTimerRef.current = window.setTimeout(() => {
-      // Single tap action: toggle play/pause only in middle zone, otherwise just show controls.
-      if (zone === 'mid') togglePlayPause();
-      lastTapRef.current = null;
+    // Middle zone: instant play/pause toggle.
+    lastTapRef.current = null;
+    if (tapTimerRef.current) {
+      window.clearTimeout(tapTimerRef.current);
       tapTimerRef.current = null;
-    }, 280);
+    }
+    togglePlayPause();
   };
 
   const isAudio = current.mediaType === 'audio';
@@ -295,7 +362,8 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   return (
     <div className="flex flex-col gap-1.5">
       <div
-        className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? 'aspect-[5/2] sm:aspect-[7/2]' : 'aspect-video'}`}
+        ref={containerRef}
+        className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? 'aspect-[5/2] sm:aspect-[7/2]' : 'aspect-video'} ${isFullscreen ? '!aspect-auto w-screen h-screen sm:rounded-none' : ''}`}
         onMouseMove={showControlsTemporarily}
         onMouseLeave={() => setControlsVisible(false)}
       >
@@ -330,18 +398,17 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           aria-label="Video gesture area"
         />
 
-        {/* Subtitle overlay (above tap layer so word-clicks still work in inside/hybrid mode). */}
+        {/* Subtitle overlay — non-interactive (overlay variant has no clickable words),
+            so it must not block the underlying tap layer. */}
         {(displayMode === 'inside' || displayMode === 'hybrid') && (
           <div className="absolute inset-x-0 bottom-16 px-4 pointer-events-none z-20">
-            <div className="pointer-events-auto">
-              <SubtitleRenderer
-                primaryCue={visiblePrimary}
-                secondaryCue={displayMode === 'hybrid' ? null : visibleSecondary}
-                variant="overlay"
-                videoId={videoId}
-                hideText={hideSubtitleText}
-              />
-            </div>
+            <SubtitleRenderer
+              primaryCue={visiblePrimary}
+              secondaryCue={displayMode === 'hybrid' ? null : visibleSecondary}
+              variant="overlay"
+              videoId={videoId}
+              hideText={hideSubtitleText}
+            />
           </div>
         )}
 
@@ -397,7 +464,12 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           }`}
         >
           <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-md pt-6">
-            <PlayerControls videoRef={videoRef} variant="overlay" />
+            <PlayerControls
+              videoRef={videoRef}
+              variant="overlay"
+              onToggleFullscreen={toggleFullscreen}
+              isFullscreen={isFullscreen}
+            />
           </div>
         </div>
       </div>

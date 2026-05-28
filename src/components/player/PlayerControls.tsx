@@ -8,6 +8,8 @@ import {
   VolumeX,
   MoreVertical,
   Gauge,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,10 @@ interface Props {
   videoRef: RefObject<HTMLVideoElement>;
   /** 'panel' (default) renders inside a card; 'overlay' is transparent for use over video. */
   variant?: 'panel' | 'overlay';
+  /** Optional fullscreen toggle handler (must call requestFullscreen synchronously from the click). */
+  onToggleFullscreen?: () => void;
+  /** Whether the player is currently in fullscreen — controls the icon. */
+  isFullscreen?: boolean;
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -32,13 +38,16 @@ function formatTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-export function PlayerControls({ videoRef, variant = 'panel' }: Props) {
+export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen, isFullscreen }: Props) {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [speed, setSpeed] = useState(1);
+  // While the user drags the scrub bar we hold a local value and only seek on commit
+  // — seeking on every micro-move causes janky playback on Android Chrome.
+  const [scrub, setScrub] = useState<number | null>(null);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -74,13 +83,16 @@ export function PlayerControls({ videoRef, variant = 'panel' }: Props) {
       onClick={(e) => e.stopPropagation()}
     >
       <Slider
-        value={[time]}
+        value={[scrub ?? time]}
         max={duration || 0}
         step={0.1}
-        onValueChange={([val]) => {
+        onValueChange={([val]) => setScrub(val)}
+        onValueCommit={([val]) => {
           if (v) v.currentTime = val;
+          setScrub(null);
         }}
       />
+
       {/* Single compact row: play / prev / next / time | more */}
       <div className="flex items-center gap-1">
         <Button
@@ -122,7 +134,19 @@ export function PlayerControls({ videoRef, variant = 'panel' }: Props) {
           {formatTime(time)} / {formatTime(duration)}
         </span>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-1">
+          {onToggleFullscreen && (
+            <Button
+              size="icon"
+              variant="ghost"
+              className={iconBtn}
+              onClick={onToggleFullscreen}
+              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
+              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </Button>
+          )}
           <Popover>
             <PopoverTrigger asChild>
               <Button

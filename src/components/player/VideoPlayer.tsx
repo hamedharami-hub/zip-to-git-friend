@@ -398,18 +398,17 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           aria-label="Video gesture area"
         />
 
-        {/* Subtitle overlay (above tap layer so word-clicks still work in inside/hybrid mode). */}
+        {/* Subtitle overlay — non-interactive (overlay variant has no clickable words),
+            so it must not block the underlying tap layer. */}
         {(displayMode === 'inside' || displayMode === 'hybrid') && (
           <div className="absolute inset-x-0 bottom-16 px-4 pointer-events-none z-20">
-            <div className="pointer-events-auto">
-              <SubtitleRenderer
-                primaryCue={visiblePrimary}
-                secondaryCue={displayMode === 'hybrid' ? null : visibleSecondary}
-                variant="overlay"
-                videoId={videoId}
-                hideText={hideSubtitleText}
-              />
-            </div>
+            <SubtitleRenderer
+              primaryCue={visiblePrimary}
+              secondaryCue={displayMode === 'hybrid' ? null : visibleSecondary}
+              variant="overlay"
+              videoId={videoId}
+              hideText={hideSubtitleText}
+            />
           </div>
         )}
 

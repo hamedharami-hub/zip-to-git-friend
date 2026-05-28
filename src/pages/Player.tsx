@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useSettingsStore } from '@/store/settingsStore';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Brain, Settings as SettingsIcon, Upload, Trash2, Package, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

@@ -313,6 +313,20 @@ const Settings = () => {
           </div>
           <div className="flex items-center justify-between rounded-lg border border-border p-4">
             <div>
+              <p className="font-medium">Auto-fullscreen on landscape</p>
+              <p className="text-sm text-muted-foreground">
+                وقتی گوشی را افقی می‌چرخانی، پخش‌کننده خودش وارد حالت تمام‌صفحه شود.
+                به‌صورت پیش‌فرض خاموش است؛ اگر روشن کنی، چرخاندن گوشی به landscape
+                باعث ورود خودکار به immersive می‌شود.
+              </p>
+            </div>
+            <Switch
+              checked={settings.autoImmersiveOnLandscape ?? false}
+              onCheckedChange={(v) => update({ autoImmersiveOnLandscape: !!v })}
+            />
+          </div>
+          <div className="flex items-center justify-between rounded-lg border border-border p-4">
+            <div>
               <p className="font-medium">Show inline translation (dual subtitles)</p>
               <p className="text-sm text-muted-foreground">
                 When no second subtitle track is loaded, show the cached AI translation

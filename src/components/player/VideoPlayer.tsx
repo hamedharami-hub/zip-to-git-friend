@@ -362,7 +362,8 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   return (
     <div className="flex flex-col gap-1.5">
       <div
-        className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? 'aspect-[5/2] sm:aspect-[7/2]' : 'aspect-video'}`}
+        ref={containerRef}
+        className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? 'aspect-[5/2] sm:aspect-[7/2]' : 'aspect-video'} ${isFullscreen ? '!aspect-auto w-screen h-screen sm:rounded-none' : ''}`}
         onMouseMove={showControlsTemporarily}
         onMouseLeave={() => setControlsVisible(false)}
       >

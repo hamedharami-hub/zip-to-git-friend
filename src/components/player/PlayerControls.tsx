@@ -38,13 +38,16 @@ function formatTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
-export function PlayerControls({ videoRef, variant = 'panel' }: Props) {
+export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen, isFullscreen }: Props) {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
   const [volume, setVolume] = useState(1);
   const [muted, setMuted] = useState(false);
   const [speed, setSpeed] = useState(1);
+  // While the user drags the scrub bar we hold a local value and only seek on commit
+  // — seeking on every micro-move causes janky playback on Android Chrome.
+  const [scrub, setScrub] = useState<number | null>(null);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -80,13 +83,16 @@ export function PlayerControls({ videoRef, variant = 'panel' }: Props) {
       onClick={(e) => e.stopPropagation()}
     >
       <Slider
-        value={[time]}
+        value={[scrub ?? time]}
         max={duration || 0}
         step={0.1}
-        onValueChange={([val]) => {
+        onValueChange={([val]) => setScrub(val)}
+        onValueCommit={([val]) => {
           if (v) v.currentTime = val;
+          setScrub(null);
         }}
       />
+
       {/* Single compact row: play / prev / next / time | more */}
       <div className="flex items-center gap-1">
         <Button

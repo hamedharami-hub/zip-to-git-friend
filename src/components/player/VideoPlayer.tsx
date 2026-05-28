@@ -25,6 +25,7 @@ interface VideoPlayerProps {
 
 export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const current = useVideoStore((s) => s.current);
   const setCurrentTime = useVideoStore((s) => s.setCurrentTime);
   const setIsPlaying = useVideoStore((s) => s.setIsPlaying);
@@ -45,6 +46,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
 
   const [controlsVisible, setControlsVisible] = useState(false);
   const [feedback, setFeedback] = useState<'play' | 'pause' | 'prev' | 'next' | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);

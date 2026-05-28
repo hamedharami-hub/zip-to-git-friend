@@ -143,10 +143,12 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     !!current,
   );
 
-  // Periodic save (every 5s)
+  // Periodic save (every 5s) + immediate flush on pause / tab-hide / unload
+  // so the last position is never more than a few seconds stale even if the
+  // user kills the tab or backgrounds the app.
   useEffect(() => {
     if (!current) return;
-    const id = window.setInterval(() => {
+    const flush = () => {
       const v = videoRef.current;
       if (!v) return;
       updateCurrent({
@@ -154,8 +156,24 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         volume: v.volume,
         playbackSpeed: v.playbackRate,
       });
-    }, 5000);
-    return () => clearInterval(id);
+    };
+    const id = window.setInterval(flush, 5000);
+    const v = videoRef.current;
+    const onVisibility = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    v?.addEventListener('pause', flush);
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('beforeunload', flush);
+    window.addEventListener('pagehide', flush);
+    return () => {
+      clearInterval(id);
+      v?.removeEventListener('pause', flush);
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('beforeunload', flush);
+      window.removeEventListener('pagehide', flush);
+      flush();
+    };
   }, [current?.id, updateCurrent]);
 
   // Respond to external seek requests (e.g. clicking a cue in the list).

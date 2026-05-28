@@ -8,6 +8,8 @@ import {
   VolumeX,
   MoreVertical,
   Gauge,
+  Maximize,
+  Minimize,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
@@ -21,6 +23,10 @@ interface Props {
   videoRef: RefObject<HTMLVideoElement>;
   /** 'panel' (default) renders inside a card; 'overlay' is transparent for use over video. */
   variant?: 'panel' | 'overlay';
+  /** Optional fullscreen toggle handler (must call requestFullscreen synchronously from the click). */
+  onToggleFullscreen?: () => void;
+  /** Whether the player is currently in fullscreen — controls the icon. */
+  isFullscreen?: boolean;
 }
 
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];

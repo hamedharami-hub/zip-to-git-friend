@@ -9,6 +9,7 @@ import { FoldersSidebar } from '@/components/leitner/FoldersSidebar';
 import { CardList } from '@/components/leitner/CardList';
 import { CardEditor } from '@/components/leitner/CardEditor';
 import { StatsExtras } from '@/components/leitner/StatsExtras';
+import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
 import type { LeitnerCard } from '@/types';
 
 const PROFILES: Array<{ key: ReviewProfile; label: string; icon: typeof Zap; hint: string }> = [

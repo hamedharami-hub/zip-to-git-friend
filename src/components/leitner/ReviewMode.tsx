@@ -376,12 +376,37 @@ export function ReviewMode({
         );
       })()}
 
-      {/* PROMPT AREA — varies by mode */}
-      <div className={compact
-        ? 'min-h-[3rem] flex items-center justify-center text-center'
-        : 'min-h-[8rem] flex flex-col items-center justify-center text-center gap-3'
-      }>
-        <div className="space-y-2 w-full">
+      {/* PROMPT AREA — varies by mode. Swipe-to-grade on mobile. */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: revealed && (swipeDx || swipeDy)
+            ? `translate(${swipeDx * 0.4}px, ${swipeDy * 0.4}px) rotate(${swipeDx * 0.04}deg)`
+            : undefined,
+          transition: swipeDx || swipeDy ? 'none' : 'transform 200ms ease-out',
+          touchAction: 'pan-y',
+        }}
+        className={compact
+          ? 'min-h-[3rem] flex items-center justify-center text-center select-none'
+          : 'min-h-[8rem] flex flex-col items-center justify-center text-center gap-3 select-none relative'
+        }
+      >
+        {/* Swipe hint chips (visible only while dragging) */}
+        {!compact && revealed && (swipeDx !== 0 || swipeDy !== 0) && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-2 text-[11px] font-semibold">
+            <span className={`px-2 py-1 rounded-full bg-destructive/15 text-destructive transition-opacity ${swipeDx < -30 ? 'opacity-100' : 'opacity-30'}`}>← Again</span>
+            <span className={`px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-600 transition-opacity ${swipeDx > 30 ? 'opacity-100' : 'opacity-30'}`}>Good →</span>
+          </div>
+        )}
+        <div
+          className="space-y-2 w-full"
+          style={{
+            transition: 'opacity 180ms, transform 180ms',
+            opacity: revealed ? 1 : 0.95,
+          }}
+        >
           {effectiveMode === 'cloze' && cloze ? (
             <p className={compact ? 'text-base' : 'text-lg'}>{cloze.masked}</p>
           ) : (
@@ -416,7 +441,13 @@ export function ReviewMode({
             )}
           </div>
         )}
+        {!compact && revealed && (
+          <p className="text-[10px] text-muted-foreground/60 mt-1">
+            ⌨︎ Enter = Good · ⇆ Swipe to grade
+          </p>
+        )}
       </div>
+
 
       {/* INTERACTION AREA */}
       {effectiveMode === 'classic' && (

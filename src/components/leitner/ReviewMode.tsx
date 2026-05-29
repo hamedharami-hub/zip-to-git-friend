@@ -201,7 +201,11 @@ export function ReviewMode({
     const correct = answersMatch(typed, cloze.answer);
     setTypedResult(correct ? 'correct' : 'wrong');
     setRevealed(true);
+    setTimeout(() => submitAuto(correct), 700);
+  };
+
   // Keyboard shortcuts (classic-only for grading; Enter submits in type/cloze)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!current) return;

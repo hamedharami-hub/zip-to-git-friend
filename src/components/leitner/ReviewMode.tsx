@@ -68,6 +68,10 @@ export function ReviewMode({
   const [mcqPicked, setMcqPicked] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [looping, setLooping] = useState(false);
+  // Swipe-to-grade state
+  const [swipeDx, setSwipeDx] = useState(0);
+  const [swipeDy, setSwipeDy] = useState(0);
+  const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const isCram = profile === 'cram';
 

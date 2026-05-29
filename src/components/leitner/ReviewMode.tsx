@@ -256,10 +256,7 @@ export function ReviewMode({
     }
   };
 
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, revealed, effectiveMode]);
+
 
   if (!current) {
     const isListening = profile === 'listening';

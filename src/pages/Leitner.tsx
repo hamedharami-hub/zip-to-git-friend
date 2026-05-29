@@ -8,7 +8,7 @@ import { ReviewMode, type ReviewProfile } from '@/components/leitner/ReviewMode'
 import { FoldersSidebar } from '@/components/leitner/FoldersSidebar';
 import { CardList } from '@/components/leitner/CardList';
 import { CardEditor } from '@/components/leitner/CardEditor';
-import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
+import { StatsExtras } from '@/components/leitner/StatsExtras';
 import type { LeitnerCard } from '@/types';
 
 const PROFILES: Array<{ key: ReviewProfile; label: string; icon: typeof Zap; hint: string }> = [

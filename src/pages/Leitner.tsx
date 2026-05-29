@@ -8,6 +8,7 @@ import { ReviewMode, type ReviewProfile } from '@/components/leitner/ReviewMode'
 import { FoldersSidebar } from '@/components/leitner/FoldersSidebar';
 import { CardList } from '@/components/leitner/CardList';
 import { CardEditor } from '@/components/leitner/CardEditor';
+import { StatsExtras } from '@/components/leitner/StatsExtras';
 import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
 import type { LeitnerCard } from '@/types';
 
@@ -203,6 +204,7 @@ const Leitner = () => {
                 );
               })}
             </div>
+            {stats.total > 0 && <StatsExtras cards={cards} folderId={folderId} />}
             {stats.total === 0 && (
               <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
                 No cards yet. Add words from subtitle analyses, books, or news.

@@ -68,6 +68,10 @@ export function ReviewMode({
   const [mcqPicked, setMcqPicked] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [looping, setLooping] = useState(false);
+  // Swipe-to-grade state
+  const [swipeDx, setSwipeDx] = useState(0);
+  const [swipeDy, setSwipeDy] = useState(0);
+  const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
 
   const isCram = profile === 'cram';
 
@@ -201,6 +205,7 @@ export function ReviewMode({
   };
 
   // Keyboard shortcuts (classic-only for grading; Enter submits in type/cloze)
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!current) return;
@@ -214,6 +219,8 @@ export function ReviewMode({
           e.preventDefault(); setRevealed(true); return;
         }
         if (revealed) {
+          // Enter = Good (fastest path through a deck)
+          if (e.key === 'Enter') { e.preventDefault(); void handleRate('good'); return; }
           const r = RATINGS.find((x) => x.hotkey === e.key);
           if (r) { e.preventDefault(); void handleRate(r.key); }
         }
@@ -223,6 +230,37 @@ export function ReviewMode({
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, revealed, effectiveMode]);
+
+  // ── Swipe-to-grade (mobile) ──
+  // Right = Good, Left = Again, Up = Easy, Down = Hard. Only active after reveal in classic mode.
+  const SWIPE_THRESHOLD = 70;
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (effectiveMode !== 'classic' || !revealed) return;
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const t = e.touches[0];
+    setSwipeDx(t.clientX - touchStart.current.x);
+    setSwipeDy(t.clientY - touchStart.current.y);
+  };
+  const onTouchEnd = () => {
+    const s = touchStart.current;
+    touchStart.current = null;
+    const dx = swipeDx, dy = swipeDy;
+    setSwipeDx(0); setSwipeDy(0);
+    if (!s) return;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (Math.max(absX, absY) < SWIPE_THRESHOLD) return;
+    if (absX > absY) {
+      void handleRate(dx > 0 ? 'good' : 'again');
+    } else {
+      void handleRate(dy < 0 ? 'easy' : 'hard');
+    }
+  };
+
+
 
   if (!current) {
     const isListening = profile === 'listening';
@@ -342,12 +380,37 @@ export function ReviewMode({
         );
       })()}
 
-      {/* PROMPT AREA — varies by mode */}
-      <div className={compact
-        ? 'min-h-[3rem] flex items-center justify-center text-center'
-        : 'min-h-[8rem] flex flex-col items-center justify-center text-center gap-3'
-      }>
-        <div className="space-y-2 w-full">
+      {/* PROMPT AREA — varies by mode. Swipe-to-grade on mobile. */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{
+          transform: revealed && (swipeDx || swipeDy)
+            ? `translate(${swipeDx * 0.4}px, ${swipeDy * 0.4}px) rotate(${swipeDx * 0.04}deg)`
+            : undefined,
+          transition: swipeDx || swipeDy ? 'none' : 'transform 200ms ease-out',
+          touchAction: 'pan-y',
+        }}
+        className={compact
+          ? 'min-h-[3rem] flex items-center justify-center text-center select-none'
+          : 'min-h-[8rem] flex flex-col items-center justify-center text-center gap-3 select-none relative'
+        }
+      >
+        {/* Swipe hint chips (visible only while dragging) */}
+        {!compact && revealed && (swipeDx !== 0 || swipeDy !== 0) && (
+          <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-2 text-[11px] font-semibold">
+            <span className={`px-2 py-1 rounded-full bg-destructive/15 text-destructive transition-opacity ${swipeDx < -30 ? 'opacity-100' : 'opacity-30'}`}>← Again</span>
+            <span className={`px-2 py-1 rounded-full bg-emerald-500/15 text-emerald-600 transition-opacity ${swipeDx > 30 ? 'opacity-100' : 'opacity-30'}`}>Good →</span>
+          </div>
+        )}
+        <div
+          className="space-y-2 w-full"
+          style={{
+            transition: 'opacity 180ms, transform 180ms',
+            opacity: revealed ? 1 : 0.95,
+          }}
+        >
           {effectiveMode === 'cloze' && cloze ? (
             <p className={compact ? 'text-base' : 'text-lg'}>{cloze.masked}</p>
           ) : (
@@ -382,7 +445,13 @@ export function ReviewMode({
             )}
           </div>
         )}
+        {!compact && revealed && (
+          <p className="text-[10px] text-muted-foreground/60 mt-1">
+            ⌨︎ Enter = Good · ⇆ Swipe to grade
+          </p>
+        )}
       </div>
+
 
       {/* INTERACTION AREA */}
       {effectiveMode === 'classic' && (

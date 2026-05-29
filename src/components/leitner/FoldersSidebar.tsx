@@ -1,6 +1,14 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Folder, FolderOpen, Layers, Pencil, Plus, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useLeitnerFolderStore } from '@/store/leitnerFolderStore';
 import { useLeitnerStore } from '@/store/leitnerStore';
@@ -8,10 +16,8 @@ import type { LeitnerFolder } from '@/types';
 import { toast } from 'sonner';
 
 interface Props {
-  /** Currently selected folder id, or `null` for "All cards". */
   selectedId: string | null;
   onSelect: (id: string | null) => void;
-  /** Optional: jump straight to Review tab for a folder. */
   onReview?: (id: string | null) => void;
 }
 
@@ -32,6 +38,10 @@ export function FoldersSidebar({ selectedId, onSelect, onReview }: Props) {
   const renameFolder = useLeitnerFolderStore((s) => s.renameFolder);
   const deleteFolder = useLeitnerFolderStore((s) => s.deleteFolder);
 
+  const [editing, setEditing] = useState<null | { mode: 'create' } | { mode: 'rename'; folder: LeitnerFolder }>(null);
+  const [name, setName] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<LeitnerFolder | null>(null);
+
   const grouped = useMemo(() => {
     const map = new Map<string, LeitnerFolder[]>();
     for (const f of folders) {
@@ -39,42 +49,39 @@ export function FoldersSidebar({ selectedId, onSelect, onReview }: Props) {
       if (!map.has(k)) map.set(k, []);
       map.get(k)!.push(f);
     }
-    for (const arr of map.values()) {
-      arr.sort((a, b) => a.name.localeCompare(b.name));
-    }
+    for (const arr of map.values()) arr.sort((a, b) => a.name.localeCompare(b.name));
     return map;
   }, [folders]);
 
   const cardCount = (folderId?: string) =>
-    folderId
-      ? cards.filter((c) => c.folderId === folderId).length
-      : cards.length;
-
+    folderId ? cards.filter((c) => c.folderId === folderId).length : cards.length;
   const dueCount = (folderId?: string) => {
     const now = Date.now();
-    return cards.filter(
-      (c) => (folderId ? c.folderId === folderId : true) && c.nextReview <= now,
-    ).length;
+    return cards.filter((c) => (folderId ? c.folderId === folderId : true) && c.nextReview <= now).length;
   };
 
-  const handleAdd = async () => {
-    const name = window.prompt('New folder name');
-    if (!name?.trim()) return;
-    await addFolder({ name: name.trim(), kind: 'custom' });
-    toast.success('Folder created');
+  const openCreate = () => { setName(''); setEditing({ mode: 'create' }); };
+  const openRename = (f: LeitnerFolder) => { setName(f.name); setEditing({ mode: 'rename', folder: f }); };
+
+  const submitEdit = async () => {
+    const trimmed = name.trim();
+    if (!trimmed || !editing) return;
+    if (editing.mode === 'create') {
+      await addFolder({ name: trimmed, kind: 'custom' });
+      toast.success('Folder created');
+    } else if (trimmed !== editing.folder.name) {
+      await renameFolder(editing.folder.id, trimmed);
+      toast.success('Folder renamed');
+    }
+    setEditing(null);
   };
 
-  const handleRename = async (f: LeitnerFolder) => {
-    const next = window.prompt('Rename folder', f.name);
-    if (!next?.trim() || next === f.name) return;
-    await renameFolder(f.id, next.trim());
-  };
-
-  const handleDelete = async (f: LeitnerFolder) => {
-    if (!window.confirm(`Delete folder "${f.name}"? Cards inside will be moved to "All cards".`)) return;
-    await deleteFolder(f.id);
-    if (selectedId === f.id) onSelect(null);
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    await deleteFolder(pendingDelete.id);
+    if (selectedId === pendingDelete.id) onSelect(null);
     toast.success('Folder deleted');
+    setPendingDelete(null);
   };
 
   return (
@@ -83,7 +90,7 @@ export function FoldersSidebar({ selectedId, onSelect, onReview }: Props) {
         <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
           Folders
         </h3>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={handleAdd} aria-label="New folder">
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={openCreate} aria-label="New folder">
           <Plus className="h-4 w-4" />
         </Button>
       </div>
@@ -129,45 +136,32 @@ export function FoldersSidebar({ selectedId, onSelect, onReview }: Props) {
                   )}
                 >
                   <span className="inline-flex items-center gap-2 min-w-0">
-                    {active ? (
-                      <FolderOpen className="h-4 w-4 shrink-0" />
-                    ) : (
-                      <Folder className="h-4 w-4 shrink-0" />
-                    )}
+                    {active ? <FolderOpen className="h-4 w-4 shrink-0" /> : <Folder className="h-4 w-4 shrink-0" />}
                     <span className="truncate">{f.name}</span>
                   </span>
                   <span className="text-xs text-muted-foreground tabular-nums shrink-0">
                     {dueCount(f.id)}/{cardCount(f.id)}
                   </span>
                 </button>
-                <div className="opacity-0 group-hover:opacity-100 focus-within:opacity-100 flex items-center pr-1 shrink-0 transition-opacity">
+                <div className="lg:opacity-0 lg:group-hover:opacity-100 focus-within:opacity-100 flex items-center pr-1 shrink-0 transition-opacity">
                   {onReview && (
                     <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-primary"
+                      variant="ghost" size="icon" className="h-7 w-7 text-primary"
                       onClick={() => onReview(f.id)}
-                      aria-label={`Review folder ${f.name}`}
-                      title="Review this folder"
+                      aria-label={`Review folder ${f.name}`} title="Review this folder"
                     >
                       <Play className="h-3.5 w-3.5" />
                     </Button>
                   )}
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => handleRename(f)}
-                    aria-label="Rename folder"
+                    variant="ghost" size="icon" className="h-7 w-7"
+                    onClick={() => openRename(f)} aria-label="Rename folder"
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-destructive"
-                    onClick={() => handleDelete(f)}
-                    aria-label="Delete folder"
+                    variant="ghost" size="icon" className="h-7 w-7 text-destructive"
+                    onClick={() => setPendingDelete(f)} aria-label="Delete folder"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -177,6 +171,52 @@ export function FoldersSidebar({ selectedId, onSelect, onReview }: Props) {
           })}
         </div>
       ))}
+
+      {/* Create / rename dialog */}
+      <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{editing?.mode === 'create' ? 'پوشه جدید' : 'تغییر نام پوشه'}</DialogTitle>
+            <DialogDescription>
+              {editing?.mode === 'create' ? 'یک نام برای پوشه‌ی جدید انتخاب کن.' : 'نام جدید پوشه را وارد کن.'}
+            </DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); void submitEdit(); } }}
+            placeholder="مثلاً: لغات پزشکی"
+          />
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="ghost" onClick={() => setEditing(null)}>انصراف</Button>
+            <Button onClick={() => void submitEdit()} disabled={!name.trim()}>
+              {editing?.mode === 'create' ? 'ساختن' : 'ذخیره'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirm */}
+      <AlertDialog open={!!pendingDelete} onOpenChange={(o) => !o && setPendingDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>حذف پوشه «{pendingDelete?.name}»؟</AlertDialogTitle>
+            <AlertDialogDescription>
+              کارت‌های داخل این پوشه پاک نمی‌شوند و به «All cards» منتقل می‌شوند.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>انصراف</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => void confirmDelete()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              حذف
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </aside>
   );
 }

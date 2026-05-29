@@ -204,6 +204,7 @@ const Leitner = () => {
                 );
               })}
             </div>
+            {stats.total > 0 && <StatsExtras cards={cards} folderId={folderId} />}
             {stats.total === 0 && (
               <div className="rounded-lg border border-dashed border-border p-12 text-center text-muted-foreground">
                 No cards yet. Add words from subtitle analyses, books, or news.

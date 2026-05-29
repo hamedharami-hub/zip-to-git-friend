@@ -201,9 +201,6 @@ export function ReviewMode({
     const correct = answersMatch(typed, cloze.answer);
     setTypedResult(correct ? 'correct' : 'wrong');
     setRevealed(true);
-    setTimeout(() => submitAuto(correct), 700);
-  };
-
   // Keyboard shortcuts (classic-only for grading; Enter submits in type/cloze)
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -218,11 +215,47 @@ export function ReviewMode({
           e.preventDefault(); setRevealed(true); return;
         }
         if (revealed) {
+          // Enter = Good (fastest path through a deck)
+          if (e.key === 'Enter') { e.preventDefault(); void handleRate('good'); return; }
           const r = RATINGS.find((x) => x.hotkey === e.key);
           if (r) { e.preventDefault(); void handleRate(r.key); }
         }
       }
     };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, revealed, effectiveMode]);
+
+  // ── Swipe-to-grade (mobile) ──
+  // Right = Good, Left = Again, Up = Easy, Down = Hard. Only active after reveal in classic mode.
+  const SWIPE_THRESHOLD = 70;
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (effectiveMode !== 'classic' || !revealed) return;
+    const t = e.touches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY, t: Date.now() };
+  };
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!touchStart.current) return;
+    const t = e.touches[0];
+    setSwipeDx(t.clientX - touchStart.current.x);
+    setSwipeDy(t.clientY - touchStart.current.y);
+  };
+  const onTouchEnd = () => {
+    const s = touchStart.current;
+    touchStart.current = null;
+    const dx = swipeDx, dy = swipeDy;
+    setSwipeDx(0); setSwipeDy(0);
+    if (!s) return;
+    const absX = Math.abs(dx), absY = Math.abs(dy);
+    if (Math.max(absX, absY) < SWIPE_THRESHOLD) return;
+    if (absX > absY) {
+      void handleRate(dx > 0 ? 'good' : 'again');
+    } else {
+      void handleRate(dy < 0 ? 'easy' : 'hard');
+    }
+  };
+
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps

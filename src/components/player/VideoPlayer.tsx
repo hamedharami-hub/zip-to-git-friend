@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { useVideoStore } from '@/store/videoStore';
 import { useSubtitleStore } from '@/store/subtitleStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -15,7 +16,7 @@ import { useBlindListen } from '@/hooks/useBlindListen';
 import { SubtitleRenderer } from '@/components/subtitles/SubtitleRenderer';
 import { AnalysisPanel } from '@/components/ai/AnalysisPanel';
 import { ShadowingPanel } from '@/components/player/ShadowingPanel';
-import { Repeat, ChevronLeft, ChevronRight, Play, Pause, Maximize2, PauseCircle } from 'lucide-react';
+import { Repeat, ChevronLeft, ChevronRight, Play, Pause, Maximize2, PauseCircle, Loader2 } from 'lucide-react';
 import { useMediaSession } from '@/hooks/useMediaSession';
 
 interface VideoPlayerProps {

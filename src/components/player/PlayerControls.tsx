@@ -89,12 +89,28 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
         value={[scrub ?? time]}
         max={duration || 0}
         step={0.1}
-        onValueChange={([val]) => setScrub(val)}
+        onValueChange={([val]) => {
+          if (scrub === null && v) {
+            // First movement of the drag — remember playback state and pause.
+            wasPlayingBeforeScrubRef.current = !v.paused;
+            if (!v.paused) {
+              try { v.pause(); } catch {}
+            }
+          }
+          setScrub(val);
+        }}
         onValueCommit={([val]) => {
-          if (v) v.currentTime = val;
+          if (v) {
+            v.currentTime = val;
+            if (wasPlayingBeforeScrubRef.current) {
+              v.play().catch(() => {});
+            }
+          }
+          wasPlayingBeforeScrubRef.current = false;
           setScrub(null);
         }}
       />
+
 
       {/* Single compact row: play / prev / next / time | more */}
       <div className="flex items-center gap-1">

@@ -662,3 +662,20 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     </div>
   );
 }
+
+/** Play with friendly error messages for autoplay-block / decode failures. */
+function safePlay(v: HTMLVideoElement) {
+  const p = v.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch((err: unknown) => {
+      const name = (err as { name?: string } | null)?.name;
+      if (name === 'NotAllowedError') {
+        toast.error('برای پخش، یک‌بار روی صفحه ضربه بزنید (autoplay مسدود است).');
+      } else if (name === 'AbortError') {
+        // Benign — happens when we pause/seek right after play.
+      } else {
+        toast.error('پخش ویدیو با خطا متوقف شد.');
+      }
+    });
+  }
+}

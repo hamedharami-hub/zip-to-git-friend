@@ -133,29 +133,20 @@ const Player = () => {
     };
   }, [autoImmersiveOnLandscape]);
 
-  // When immersive turns on: request fullscreen + try to lock to landscape.
+  // When immersive turns on: try to lock to landscape (fullscreen itself is
+  // requested synchronously in the click handler below to preserve the user
+  // activation needed by Android/iOS Safari).
   // When it turns off: exit fullscreen + unlock orientation.
   useEffect(() => {
     if (typeof document === 'undefined') return;
-    const docEl = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void>;
-    };
     const docAny = document as Document & {
       webkitExitFullscreen?: () => Promise<void>;
       webkitFullscreenElement?: Element | null;
     };
     if (immersive) {
-      const isFs = !!(document.fullscreenElement || docAny.webkitFullscreenElement);
-      if (!isFs) {
-        const req =
-          docEl.requestFullscreen?.bind(docEl) ||
-          docEl.webkitRequestFullscreen?.bind(docEl);
-        Promise.resolve(req?.()).catch(() => {});
-      }
       const orientation = (screen as Screen & {
         orientation?: ScreenOrientation & { lock?: (o: string) => Promise<void> };
       }).orientation;
-      // small delay so fullscreen is established before locking on some browsers
       window.setTimeout(() => {
         orientation?.lock?.('landscape').catch(() => {});
       }, 150);
@@ -172,6 +163,26 @@ const Player = () => {
       }
     }
   }, [immersive]);
+
+  /** Enter immersive mode AND request fullscreen in the same user-gesture tick. */
+  const enterImmersive = () => {
+    if (typeof document !== 'undefined') {
+      const docEl = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      const docAny = document as Document & { webkitFullscreenElement?: Element | null };
+      const isFs = !!(document.fullscreenElement || docAny.webkitFullscreenElement);
+      if (!isFs) {
+        const req =
+          docEl.requestFullscreen?.bind(docEl) ||
+          docEl.webkitRequestFullscreen?.bind(docEl);
+        try {
+          Promise.resolve(req?.()).catch(() => {});
+        } catch {}
+      }
+    }
+    setImmersive(true);
+  };
 
   // Sync state when user exits fullscreen via system gesture.
   useEffect(() => {

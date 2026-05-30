@@ -190,8 +190,19 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 shrink-0"
-                  onClick={() => v && (v.muted = !v.muted)}
-                  aria-label="Mute"
+                  onClick={() => {
+                    if (!v) return;
+                    // If the audible volume is 0 (either muted or slider at 0),
+                    // un-muting alone is silent — also restore a sensible volume.
+                    const audible = !v.muted && v.volume > 0;
+                    if (audible) {
+                      v.muted = true;
+                    } else {
+                      v.muted = false;
+                      if (v.volume === 0) v.volume = 0.7;
+                    }
+                  }}
+                  aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'}
                 >
                   {muted || volume === 0 ? (
                     <VolumeX className="h-4 w-4" />

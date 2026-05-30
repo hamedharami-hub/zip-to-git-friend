@@ -308,7 +308,7 @@ const Player = () => {
         ) : (
           <div className={showReview ? 'grid gap-6 lg:grid-cols-[1fr_320px]' : ''}>
             <div className="space-y-3 sm:space-y-6 min-w-0">
-              <VideoPlayer videoId={videoId} onEnterImmersive={() => setImmersive(true)} />
+              <VideoPlayer videoId={videoId} onEnterImmersive={enterImmersive} />
               {videoId && (
                 <section className="space-y-4 px-3 sm:px-0 pb-6 sm:pb-0">
                   <div className="flex flex-wrap items-center gap-2">

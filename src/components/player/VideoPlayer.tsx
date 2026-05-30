@@ -87,6 +87,60 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     }
   }, [current?.id]);
 
+  // Initial controls hint — show for 2.5s on mount so first-time users see them.
+  useEffect(() => {
+    setControlsVisible(true);
+    const t = window.setTimeout(() => setControlsVisible(false), 2500);
+    return () => window.clearTimeout(t);
+  }, [current?.id]);
+
+  // Buffering / error listeners — surface a spinner and toast bad files.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => {
+      setIsBuffering(false);
+      // Apply any seek the user requested before metadata was ready.
+      const pending = pendingSeekRef.current;
+      if (pending) {
+        try { v.currentTime = pending.time; } catch {}
+        if (pending.play) v.play().catch(() => {});
+        pendingSeekRef.current = null;
+      }
+    };
+    const onSeeking = () => setIsBuffering(true);
+    const onSeeked = () => setIsBuffering(false);
+    const onStalled = () => setIsBuffering(true);
+    const onError = () => {
+      setIsBuffering(false);
+      const err = v.error;
+      const code = err?.code;
+      let msg = 'فایل ویدیو قابل پخش نیست.';
+      if (code === 2) msg = 'خطای شبکه هنگام بارگذاری ویدیو.';
+      else if (code === 3) msg = 'فایل ویدیو خراب یا قابل decode نیست.';
+      else if (code === 4) msg = 'فرمت ویدیو پشتیبانی نمی‌شود.';
+      toast.error(msg);
+    };
+    v.addEventListener('waiting', onWaiting);
+    v.addEventListener('playing', onPlaying);
+    v.addEventListener('canplay', onCanPlay);
+    v.addEventListener('seeking', onSeeking);
+    v.addEventListener('seeked', onSeeked);
+    v.addEventListener('stalled', onStalled);
+    v.addEventListener('error', onError);
+    return () => {
+      v.removeEventListener('waiting', onWaiting);
+      v.removeEventListener('playing', onPlaying);
+      v.removeEventListener('canplay', onCanPlay);
+      v.removeEventListener('seeking', onSeeking);
+      v.removeEventListener('seeked', onSeeked);
+      v.removeEventListener('stalled', onStalled);
+      v.removeEventListener('error', onError);
+    };
+  }, [current?.id]);
+
   // Register the active media element so popovers can pause/resume it globally.
   useEffect(() => {
     registerMedia(videoRef.current);

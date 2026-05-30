@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from 'react';
 import {
   Play,
   Pause,
@@ -48,6 +48,9 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
   // While the user drags the scrub bar we hold a local value and only seek on commit
   // — seeking on every micro-move causes janky playback on Android Chrome.
   const [scrub, setScrub] = useState<number | null>(null);
+  // Remember whether we were playing before the user grabbed the scrub thumb,
+  // so we can pause-while-drag and auto-resume on release.
+  const wasPlayingBeforeScrubRef = useRef(false);
 
   useEffect(() => {
     const v = videoRef.current;
@@ -86,12 +89,28 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
         value={[scrub ?? time]}
         max={duration || 0}
         step={0.1}
-        onValueChange={([val]) => setScrub(val)}
+        onValueChange={([val]) => {
+          if (scrub === null && v) {
+            // First movement of the drag — remember playback state and pause.
+            wasPlayingBeforeScrubRef.current = !v.paused;
+            if (!v.paused) {
+              try { v.pause(); } catch {}
+            }
+          }
+          setScrub(val);
+        }}
         onValueCommit={([val]) => {
-          if (v) v.currentTime = val;
+          if (v) {
+            v.currentTime = val;
+            if (wasPlayingBeforeScrubRef.current) {
+              v.play().catch(() => {});
+            }
+          }
+          wasPlayingBeforeScrubRef.current = false;
           setScrub(null);
         }}
       />
+
 
       {/* Single compact row: play / prev / next / time | more */}
       <div className="flex items-center gap-1">
@@ -171,8 +190,19 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8 shrink-0"
-                  onClick={() => v && (v.muted = !v.muted)}
-                  aria-label="Mute"
+                  onClick={() => {
+                    if (!v) return;
+                    // If the audible volume is 0 (either muted or slider at 0),
+                    // un-muting alone is silent — also restore a sensible volume.
+                    const audible = !v.muted && v.volume > 0;
+                    if (audible) {
+                      v.muted = true;
+                    } else {
+                      v.muted = false;
+                      if (v.volume === 0) v.volume = 0.7;
+                    }
+                  }}
+                  aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'}
                 >
                   {muted || volume === 0 ? (
                     <VolumeX className="h-4 w-4" />

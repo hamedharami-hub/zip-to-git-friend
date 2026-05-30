@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import { useVideoStore } from '@/store/videoStore';
 import { useSubtitleStore } from '@/store/subtitleStore';
 import { useSettingsStore } from '@/store/settingsStore';
@@ -15,7 +16,7 @@ import { useBlindListen } from '@/hooks/useBlindListen';
 import { SubtitleRenderer } from '@/components/subtitles/SubtitleRenderer';
 import { AnalysisPanel } from '@/components/ai/AnalysisPanel';
 import { ShadowingPanel } from '@/components/player/ShadowingPanel';
-import { Repeat, ChevronLeft, ChevronRight, Play, Pause, Maximize2, PauseCircle } from 'lucide-react';
+import { Repeat, ChevronLeft, ChevronRight, Play, Pause, Maximize2, PauseCircle, Loader2 } from 'lucide-react';
 import { useMediaSession } from '@/hooks/useMediaSession';
 
 interface VideoPlayerProps {
@@ -44,13 +45,17 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   const loopMax = useLoopStore((s) => s.config.maxIterations);
   const stopLoop = useLoopStore((s) => s.stopLoop);
 
-  const [controlsVisible, setControlsVisible] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
   const [feedback, setFeedback] = useState<'play' | 'pause' | 'prev' | 'next' | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);
   const lastTapRef = useRef<{ time: number; zone: 'left' | 'mid' | 'right' } | null>(null);
+  const lastTimeEmitRef = useRef(0);
+  /** Pending external seek (seconds) — applied once metadata is loaded. */
+  const pendingSeekRef = useRef<{ time: number; play: boolean } | null>(null);
 
   const { activePrimary, activeSecondary } = useActiveCues(videoRef.current, primary, secondary);
   useLoop(videoRef);
@@ -80,6 +85,60 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         v.currentTime = current.lastPosition;
       } catch {}
     }
+  }, [current?.id]);
+
+  // Initial controls hint — show for 2.5s on mount so first-time users see them.
+  useEffect(() => {
+    setControlsVisible(true);
+    const t = window.setTimeout(() => setControlsVisible(false), 2500);
+    return () => window.clearTimeout(t);
+  }, [current?.id]);
+
+  // Buffering / error listeners — surface a spinner and toast bad files.
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => {
+      setIsBuffering(false);
+      // Apply any seek the user requested before metadata was ready.
+      const pending = pendingSeekRef.current;
+      if (pending) {
+        try { v.currentTime = pending.time; } catch {}
+        if (pending.play) v.play().catch(() => {});
+        pendingSeekRef.current = null;
+      }
+    };
+    const onSeeking = () => setIsBuffering(true);
+    const onSeeked = () => setIsBuffering(false);
+    const onStalled = () => setIsBuffering(true);
+    const onError = () => {
+      setIsBuffering(false);
+      const err = v.error;
+      const code = err?.code;
+      let msg = 'فایل ویدیو قابل پخش نیست.';
+      if (code === 2) msg = 'خطای شبکه هنگام بارگذاری ویدیو.';
+      else if (code === 3) msg = 'فایل ویدیو خراب یا قابل decode نیست.';
+      else if (code === 4) msg = 'فرمت ویدیو پشتیبانی نمی‌شود.';
+      toast.error(msg);
+    };
+    v.addEventListener('waiting', onWaiting);
+    v.addEventListener('playing', onPlaying);
+    v.addEventListener('canplay', onCanPlay);
+    v.addEventListener('seeking', onSeeking);
+    v.addEventListener('seeked', onSeeked);
+    v.addEventListener('stalled', onStalled);
+    v.addEventListener('error', onError);
+    return () => {
+      v.removeEventListener('waiting', onWaiting);
+      v.removeEventListener('playing', onPlaying);
+      v.removeEventListener('canplay', onCanPlay);
+      v.removeEventListener('seeking', onSeeking);
+      v.removeEventListener('seeked', onSeeked);
+      v.removeEventListener('stalled', onStalled);
+      v.removeEventListener('error', onError);
+    };
   }, [current?.id]);
 
   // Register the active media element so popovers can pause/resume it globally.
@@ -177,14 +236,19 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   }, [current?.id, updateCurrent]);
 
   // Respond to external seek requests (e.g. clicking a cue in the list).
+  // If metadata isn't ready yet, defer until `canplay` fires.
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !seekRequest) return;
+    if (v.readyState < 1) {
+      pendingSeekRef.current = { time: Math.max(0, seekRequest.time), play: !!seekRequest.play };
+      return;
+    }
     try {
       v.currentTime = Math.max(0, seekRequest.time);
     } catch {}
     if (seekRequest.play) {
-      v.play().catch(() => {});
+      safePlay(v);
     }
   }, [seekRequest?.token]);
 
@@ -193,7 +257,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     togglePlay: () => {
       const v = videoRef.current;
       if (!v) return;
-      if (v.paused) v.play();
+      if (v.paused) safePlay(v);
       else v.pause();
     },
     seekBy: (delta) => {
@@ -317,7 +381,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().catch(() => {});
+      safePlay(v);
       flashFeedback('play');
     } else {
       v.pause();
@@ -404,17 +468,34 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           src={current.blobUrl}
           className={`w-full h-full ${isAudio ? 'opacity-0 pointer-events-none' : ''}`}
           onLoadedMetadata={onLoaded}
-          onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
+          onTimeUpdate={(e) => {
+            // Throttle global store updates to ~4Hz to avoid re-rendering
+            // every subscriber on each native timeupdate tick (~15Hz).
+            const now = performance.now();
+            if (now - lastTimeEmitRef.current < 250) return;
+            lastTimeEmitRef.current = now;
+            setCurrentTime((e.target as HTMLVideoElement).currentTime);
+          }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
+          preload="metadata"
         />
 
         {/* Tap layer for gesture handling. Sits above the video but below controls/subtitles. */}
         <div
-          className="absolute inset-0 z-10"
+          className="absolute inset-0 z-10 touch-manipulation select-none"
           onClick={handleVideoTap}
           aria-label="Video gesture area"
         />
+
+        {/* Buffering / loading spinner */}
+        {isBuffering && !isAudio && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <div className="rounded-full bg-black/55 p-3">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+          </div>
+        )}
 
         {/* Subtitle overlay — non-interactive (overlay variant has no clickable words),
             so it must not block the underlying tap layer. */}
@@ -580,4 +661,21 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       )}
     </div>
   );
+}
+
+/** Play with friendly error messages for autoplay-block / decode failures. */
+function safePlay(v: HTMLVideoElement) {
+  const p = v.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch((err: unknown) => {
+      const name = (err as { name?: string } | null)?.name;
+      if (name === 'NotAllowedError') {
+        toast.error('برای پخش، یک‌بار روی صفحه ضربه بزنید (autoplay مسدود است).');
+      } else if (name === 'AbortError') {
+        // Benign — happens when we pause/seek right after play.
+      } else {
+        toast.error('پخش ویدیو با خطا متوقف شد.');
+      }
+    });
+  }
 }

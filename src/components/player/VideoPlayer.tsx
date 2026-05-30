@@ -236,14 +236,19 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   }, [current?.id, updateCurrent]);
 
   // Respond to external seek requests (e.g. clicking a cue in the list).
+  // If metadata isn't ready yet, defer until `canplay` fires.
   useEffect(() => {
     const v = videoRef.current;
     if (!v || !seekRequest) return;
+    if (v.readyState < 1) {
+      pendingSeekRef.current = { time: Math.max(0, seekRequest.time), play: !!seekRequest.play };
+      return;
+    }
     try {
       v.currentTime = Math.max(0, seekRequest.time);
     } catch {}
     if (seekRequest.play) {
-      v.play().catch(() => {});
+      safePlay(v);
     }
   }, [seekRequest?.token]);
 
@@ -252,7 +257,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     togglePlay: () => {
       const v = videoRef.current;
       if (!v) return;
-      if (v.paused) v.play();
+      if (v.paused) safePlay(v);
       else v.pause();
     },
     seekBy: (delta) => {

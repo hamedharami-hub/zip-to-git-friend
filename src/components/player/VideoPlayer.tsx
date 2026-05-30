@@ -468,17 +468,34 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           src={current.blobUrl}
           className={`w-full h-full ${isAudio ? 'opacity-0 pointer-events-none' : ''}`}
           onLoadedMetadata={onLoaded}
-          onTimeUpdate={(e) => setCurrentTime((e.target as HTMLVideoElement).currentTime)}
+          onTimeUpdate={(e) => {
+            // Throttle global store updates to ~4Hz to avoid re-rendering
+            // every subscriber on each native timeupdate tick (~15Hz).
+            const now = performance.now();
+            if (now - lastTimeEmitRef.current < 250) return;
+            lastTimeEmitRef.current = now;
+            setCurrentTime((e.target as HTMLVideoElement).currentTime);
+          }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
+          preload="metadata"
         />
 
         {/* Tap layer for gesture handling. Sits above the video but below controls/subtitles. */}
         <div
-          className="absolute inset-0 z-10"
+          className="absolute inset-0 z-10 touch-manipulation select-none"
           onClick={handleVideoTap}
           aria-label="Video gesture area"
         />
+
+        {/* Buffering / loading spinner */}
+        {isBuffering && !isAudio && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
+            <div className="rounded-full bg-black/55 p-3">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+          </div>
+        )}
 
         {/* Subtitle overlay — non-interactive (overlay variant has no clickable words),
             so it must not block the underlying tap layer. */}

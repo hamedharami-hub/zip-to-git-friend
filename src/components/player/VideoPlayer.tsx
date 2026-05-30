@@ -45,13 +45,17 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   const loopMax = useLoopStore((s) => s.config.maxIterations);
   const stopLoop = useLoopStore((s) => s.stopLoop);
 
-  const [controlsVisible, setControlsVisible] = useState(false);
+  const [controlsVisible, setControlsVisible] = useState(true);
   const [feedback, setFeedback] = useState<'play' | 'pause' | 'prev' | 'next' | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);
   const lastTapRef = useRef<{ time: number; zone: 'left' | 'mid' | 'right' } | null>(null);
+  const lastTimeEmitRef = useRef(0);
+  /** Pending external seek (seconds) — applied once metadata is loaded. */
+  const pendingSeekRef = useRef<{ time: number; play: boolean } | null>(null);
 
   const { activePrimary, activeSecondary } = useActiveCues(videoRef.current, primary, secondary);
   useLoop(videoRef);

@@ -48,6 +48,9 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
   // While the user drags the scrub bar we hold a local value and only seek on commit
   // — seeking on every micro-move causes janky playback on Android Chrome.
   const [scrub, setScrub] = useState<number | null>(null);
+  // Remember whether we were playing before the user grabbed the scrub thumb,
+  // so we can pause-while-drag and auto-resume on release.
+  const wasPlayingBeforeScrubRef = useRef(false);
 
   useEffect(() => {
     const v = videoRef.current;

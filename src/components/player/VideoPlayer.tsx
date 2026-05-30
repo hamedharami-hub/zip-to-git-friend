@@ -381,7 +381,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().catch(() => {});
+      safePlay(v);
       flashFeedback('play');
     } else {
       v.pause();

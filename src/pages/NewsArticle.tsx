@@ -608,7 +608,10 @@ const NewsArticleReader = () => {
                   })}
                 </Tabs>
               </section>
+
+              <RelatedNews article={article} />
             </>
+
           ) : (
             <EmptyState
               icon={<Newspaper className="h-7 w-7" />}

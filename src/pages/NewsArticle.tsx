@@ -36,6 +36,7 @@ import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAna
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
 import { toast } from 'sonner';
+import { RelatedNews } from '@/components/news/RelatedNews';
 
 function isYoutubeUrl(url: string): boolean {
   try {

@@ -216,6 +216,11 @@ const Player = () => {
     if (file.name !== meta.fileName) {
       toast.warning(`Expected "${meta.fileName}". Loading anyway.`);
     }
+    // Revoke the previous blob URL (if any) before creating a new one to
+    // avoid leaking memory across re-attachments.
+    if (meta.blobUrl && meta.blobUrl.startsWith('blob:')) {
+      try { URL.revokeObjectURL(meta.blobUrl); } catch {}
+    }
     const blobUrl = URL.createObjectURL(file);
     const next: Video = { ...meta, blobUrl, fileName: file.name };
     await saveVideo(next);
@@ -229,6 +234,7 @@ const Player = () => {
     setCurrent(next);
     setNeedReattach(false);
   };
+
 
   return (
     <div className="min-h-screen bg-background text-foreground">

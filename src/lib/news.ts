@@ -605,6 +605,30 @@ export async function youtubeChannelFeed(opts: {
   return data;
 }
 
+// ─────────── Related-news comparison ───────────
+
+export interface CompareResult {
+  title: string;
+  contentMd: string;
+  contentHtml: string;
+  wordCount: number;
+  model: string;
+}
+
+export async function compareRelatedArticles(opts: {
+  main: { title: string; siteName?: string | null; contentMd?: string | null; excerpt?: string | null };
+  related: Array<{ title: string; url: string; siteName?: string | null; excerpt?: string | null; contentMd?: string | null }>;
+  model?: string;
+}): Promise<CompareResult> {
+  const { data, error } = await supabase.functions.invoke<CompareResult>('news-compare', {
+    body: opts,
+  });
+  if (error) throw new Error(extractErr(error, 'AI compare failed.'));
+  if (!data) throw new Error('Compare returned empty.');
+  return data;
+}
+
+
 // ─────────── Helpers ───────────
 
 function extractErr(error: any, fallback: string): string {

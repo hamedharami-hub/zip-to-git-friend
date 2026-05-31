@@ -36,6 +36,7 @@ import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAna
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
 import { toast } from 'sonner';
+import { RelatedNews } from '@/components/news/RelatedNews';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -607,7 +608,10 @@ const NewsArticleReader = () => {
                   })}
                 </Tabs>
               </section>
+
+              <RelatedNews article={article} />
             </>
+
           ) : (
             <EmptyState
               icon={<Newspaper className="h-7 w-7" />}

@@ -445,6 +445,18 @@ const NewsArticleReader = () => {
               hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
             />
           )}
+          {(view === 'rewrite' ? rwChapter : origChapter) && (
+            <NewsShareMenu
+              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
+              chapterIndex={0}
+              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
+              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
+              url={article.url}
+              siteName={article.siteName}
+              aiModel={newsModelRef.model}
+            />
+          )}
           <Button variant="ghost" size="icon" onClick={() => runScrape(article)} disabled={scraping} aria-label="Re-scrape">
             {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           </Button>

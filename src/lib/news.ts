@@ -628,6 +628,34 @@ export async function compareRelatedArticles(opts: {
   return data;
 }
 
+// ─────────── Telegram-ready Persian post ───────────
+
+export interface TelegramFormatResult {
+  title: string;
+  markdown: string;
+  html: string;
+  plain: string;
+  model: string;
+}
+
+export async function formatForTelegram(opts: {
+  title: string;
+  contentMd?: string | null;
+  contentFa?: string | null;
+  url?: string;
+  siteName?: string | null;
+  model?: string;
+}): Promise<TelegramFormatResult> {
+  const { data, error } = await supabase.functions.invoke<TelegramFormatResult>(
+    'news-telegram-format',
+    { body: opts },
+  );
+  if (error) throw new Error(extractErr(error, 'AI format failed.'));
+  if (!data) throw new Error('Format returned empty.');
+  return data;
+}
+
+
 
 // ─────────── Helpers ───────────
 

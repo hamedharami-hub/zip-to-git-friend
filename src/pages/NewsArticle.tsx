@@ -37,6 +37,7 @@ import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
 import { toast } from 'sonner';
 import { RelatedNews } from '@/components/news/RelatedNews';
+import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 
 function isYoutubeUrl(url: string): boolean {
   try {

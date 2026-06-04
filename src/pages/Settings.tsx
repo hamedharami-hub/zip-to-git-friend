@@ -554,6 +554,38 @@ const Settings = () => {
             />
           </div>
         </section>
+
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">حرکات لمسی روی پاراگراف‌ها</h2>
+          <p className="text-sm text-muted-foreground">
+            با فعال‌سازی، روی هر پاراگراف می‌توانی swipe، double-tap و long-press کنی.
+            Swipe راست → ترجمه فارسی. Swipe چپ → ترجمه + پردازش. دوبار زدن روی متن
+            انگلیسی/فارسی → خواندن. نگه داشتن → کپی + ستاره‌دار.
+          </p>
+          <div className="space-y-4 rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between">
+              <Label>فعال‌سازی حرکات لمسی</Label>
+              <Switch
+                checked={!!settings.paragraphGestures}
+                onCheckedChange={(v) => update({ paragraphGestures: v })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>چینش متن</Label>
+              <Select
+                value={settings.paragraphTextAlign ?? 'start'}
+                onValueChange={(v) => update({ paragraphTextAlign: v as 'start' | 'justify' | 'center' })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="start">از ابتدا (پیش‌فرض)</SelectItem>
+                  <SelectItem value="justify">هم‌تراز دوطرفه (Justify)</SelectItem>
+                  <SelectItem value="center">وسط‌چین</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   );

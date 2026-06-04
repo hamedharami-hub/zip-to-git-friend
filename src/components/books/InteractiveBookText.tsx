@@ -10,8 +10,9 @@
  * cached on mount), idiom/phrase spans inside the paragraph are highlighted.
  */
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles, Languages, Loader2 } from 'lucide-react';
+import { Sparkles, Languages, Loader2, Copy, Star } from 'lucide-react';
 import { InteractiveSubtitle } from '@/components/ai/InteractiveSubtitle';
+import { useParagraphGestures, speakText } from '@/hooks/useParagraphGestures';
 import { Button } from '@/components/ui/button';
 import { ParagraphAnalysisCard } from '@/components/books/ParagraphAnalysisCard';
 import { ParagraphTTSButton } from '@/components/books/ParagraphTTSButton';
@@ -281,9 +282,11 @@ export function InteractiveBookText({
 
   const refFor = (i: number) => `book:${bookId}:${chapterIndex}:p${i}`;
 
+  const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
+  const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';
   return (
     <article
-      className={cn('mx-auto w-full space-y-8 leading-loose', fontSizeClass, fontFamilyClass)}
+      className={cn('mx-auto w-full space-y-8 leading-loose', fontSizeClass, fontFamilyClass, alignClass)}
     >
       {blocks.map((b, i) => {
         switch (b.kind) {

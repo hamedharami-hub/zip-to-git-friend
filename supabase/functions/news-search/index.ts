@@ -195,6 +195,7 @@ async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
 async function summarizeWithGemini(opts: {
   apiKey: string;
   items: SearchItem[];
+  model?: string;
 }): Promise<Record<string, string>> {
   if (opts.items.length === 0) return {};
   const list = opts.items.map((it, i) => ({
@@ -217,7 +218,7 @@ async function summarizeWithGemini(opts: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: opts.model || "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         {

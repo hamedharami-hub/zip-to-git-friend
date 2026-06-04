@@ -227,6 +227,7 @@ const News = () => {
         } catch { return false; }
       };
       let items: FeedItem[] = [];
+      const searchModel = settings.newsSearchModelRef?.model;
       if (activeSource.kind === 'rss' && activeSource.url) {
         const r = await fetchRss(activeSource.url, 30);
         items = r.items.filter((it) => !isBlockedUrl(it.url));
@@ -237,7 +238,20 @@ const News = () => {
           limit: 15,
           language: activeSource.language ?? undefined,
           blockedDomains: blockedList,
+          model: searchModel,
         });
+        // Fallback: if no fresh items in the requested window, widen to last 30 days
+        // and return the 10 most recent — better than showing "nothing found".
+        if (items.length === 0) {
+          items = await searchNews({
+            query: activeSource.topic ?? activeSource.name,
+            hours: 720,
+            limit: 10,
+            language: activeSource.language ?? undefined,
+            blockedDomains: blockedList,
+            model: searchModel,
+          });
+        }
       } else if (activeSource.kind === 'site' && activeSource.url) {
         items = await searchNews({
           query: activeSource.topic ?? '',
@@ -245,7 +259,18 @@ const News = () => {
           hours: Number(windowHours),
           limit: 15,
           blockedDomains: blockedList,
+          model: searchModel,
         });
+        if (items.length === 0) {
+          items = await searchNews({
+            query: activeSource.topic ?? '',
+            site: activeSource.url,
+            hours: 720,
+            limit: 10,
+            blockedDomains: blockedList,
+            model: searchModel,
+          });
+        }
       }
       // Merge fresh items into the persistent cache so old titles never disappear.
       const merged = mergeIntoCache(activeSource.id, items).filter((it) => !isBlockedUrl(it.url));

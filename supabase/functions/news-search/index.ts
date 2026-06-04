@@ -434,6 +434,7 @@ serve(async (req) => {
         language,
         region,
         lovableKey,
+        model,
       });
       usedSource = "google-news-rss";
     }

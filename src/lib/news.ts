@@ -239,6 +239,8 @@ export async function searchNews(opts: {
   limit?: number;
   language?: string;
   blockedDomains?: string[];
+  /** Optional AI model id used by the edge function for headline summaries. */
+  model?: string;
 }): Promise<FeedItem[]> {
   const { data, error } = await supabase.functions.invoke<{ items: FeedItem[] }>(
     'news-search',

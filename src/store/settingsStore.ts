@@ -38,6 +38,8 @@ const DEFAULTS: AppSettings = {
   bookSingleAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   bookBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
   bookRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
+  paragraphGestures: false,
+  paragraphTextAlign: 'start',
 };
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({

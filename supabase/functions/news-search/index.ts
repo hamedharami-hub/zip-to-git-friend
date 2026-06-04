@@ -195,6 +195,7 @@ async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
 async function summarizeWithGemini(opts: {
   apiKey: string;
   items: SearchItem[];
+  model?: string;
 }): Promise<Record<string, string>> {
   if (opts.items.length === 0) return {};
   const list = opts.items.map((it, i) => ({
@@ -217,7 +218,7 @@ async function summarizeWithGemini(opts: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-3-flash-preview",
+      model: opts.model || "google/gemini-3-flash-preview",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -279,6 +280,7 @@ async function searchWithRss(opts: {
   language?: string;
   region?: string;
   lovableKey?: string;
+  model?: string;
 }): Promise<SearchItem[]> {
   const url = buildRssSearchUrl(opts);
   const xml = await fetchRssXml(url);
@@ -300,7 +302,7 @@ async function searchWithRss(opts: {
   let summaries: Record<string, string> = {};
   if (opts.lovableKey) {
     try {
-      summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved });
+      summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved, model: opts.model });
     } catch (e) {
       console.warn("summarize error:", e);
     }
@@ -372,6 +374,7 @@ serve(async (req) => {
       language,
       region,
       blockedDomains = [],
+      model,
     } = body ?? {};
     const blockedSet = new Set<string>(
       (Array.isArray(blockedDomains) ? blockedDomains : [])
@@ -431,6 +434,7 @@ serve(async (req) => {
         language,
         region,
         lovableKey,
+        model,
       });
       usedSource = "google-news-rss";
     }

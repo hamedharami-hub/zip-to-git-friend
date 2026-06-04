@@ -647,11 +647,49 @@ function Paragraph({
     setLocalMode('analysis');
   };
 
+  const gesturesEnabled = !!settings.paragraphGestures;
+  const [starred, setStarred] = useState<boolean>(() => {
+    try { return localStorage.getItem(`para-star:${hash}`) === '1'; } catch { return false; }
+  });
+  const toggleStar = () => {
+    setStarred((v) => {
+      const n = !v;
+      try { n ? localStorage.setItem(`para-star:${hash}`, '1') : localStorage.removeItem(`para-star:${hash}`); } catch { /* ignore */ }
+      toast.success(n ? 'ستاره‌دار شد' : 'ستاره برداشته شد');
+      return n;
+    });
+  };
+  const copyText = async () => {
+    try {
+      const out = showFa && fa ? `${text}\n\n${fa}` : text;
+      await navigator.clipboard.writeText(out);
+      toast.success('متن کپی شد');
+    } catch { toast.error('کپی نشد'); }
+  };
+
+  const handleDoubleTap = (target: HTMLElement) => {
+    // Decide language by the nearest dir attribute / lang class.
+    const isFaTarget = target.closest('[lang="fa"], [dir="rtl"]');
+    if (isFaTarget && fa) { speakText(fa, 'fa'); return; }
+    speakText(text, 'en');
+  };
+
+  const gestureHandlers = useParagraphGestures({
+    enabled: gesturesEnabled,
+    onSwipeRight: () => { void handleFaOnly(); },
+    onSwipeLeft: () => { void handleAnalysis(); },
+    onDoubleTap: handleDoubleTap,
+    onLongPress: () => { void copyText(); toggleStar(); },
+  });
+
   return (
     <div
       ref={activeRef}
+      {...gestureHandlers}
       className={cn(
         'group relative rounded-lg transition-colors',
+        gesturesEnabled && 'touch-pan-y select-none cursor-pointer',
+        starred && 'ring-1 ring-amber-400/50 bg-amber-400/[0.04]',
         isActiveSpeech && 'ring-2 ring-primary/60 bg-primary/5 px-2 py-1.5 -mx-2',
       )}
     >

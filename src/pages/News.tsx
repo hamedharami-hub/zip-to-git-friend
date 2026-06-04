@@ -356,6 +356,7 @@ const News = () => {
       await Promise.all(sourcesInFolder.map(async (src) => {
         try {
           let items: FeedItem[] = [];
+          const searchModel = settings.newsSearchModelRef?.model;
           if (src.kind === 'rss' && src.url) {
             const r = await fetchRss(src.url, 30);
             items = r.items.filter((it) => !isBlockedUrl(it.url));
@@ -366,7 +367,18 @@ const News = () => {
               limit: 15,
               language: src.language ?? undefined,
               blockedDomains: blockedList,
+              model: searchModel,
             });
+            if (items.length === 0) {
+              items = await searchNews({
+                query: src.topic ?? src.name,
+                hours: 720,
+                limit: 10,
+                language: src.language ?? undefined,
+                blockedDomains: blockedList,
+                model: searchModel,
+              });
+            }
           } else if (src.kind === 'site' && src.url) {
             items = await searchNews({
               query: src.topic ?? '',
@@ -374,7 +386,18 @@ const News = () => {
               hours: Number(windowHours),
               limit: 15,
               blockedDomains: blockedList,
+              model: searchModel,
             });
+            if (items.length === 0) {
+              items = await searchNews({
+                query: src.topic ?? '',
+                site: src.url,
+                hours: 720,
+                limit: 10,
+                blockedDomains: blockedList,
+                model: searchModel,
+              });
+            }
           }
           totalFetched += items.length;
           mergeIntoCache(src.id, items);

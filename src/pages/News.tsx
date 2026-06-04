@@ -421,7 +421,7 @@ const News = () => {
     } finally {
       setFolderLoading(false);
     }
-  }, [activeFolderId, sources, blocked, windowHours, loadFolderFromCache]);
+  }, [activeFolderId, sources, blocked, windowHours, loadFolderFromCache, settings.newsSearchModelRef]);
 
 
   useEffect(() => {

@@ -285,7 +285,7 @@ const News = () => {
     } finally {
       setFeedLoading(false);
     }
-  }, [activeSource, windowHours, blocked]);
+  }, [activeSource, windowHours, blocked, settings.newsSearchModelRef]);
 
   // On source change: show cache only, do NOT auto-fetch.
   useEffect(() => {

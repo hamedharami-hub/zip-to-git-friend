@@ -240,6 +240,10 @@ export interface AppSettings {
   newsSummaryModelRef?: BookAIModelRef;
   /** AI model used by the news search / topic engine when summarising headlines. */
   newsSearchModelRef?: BookAIModelRef;
+  /** When true, paragraphs respond to swipe / double-tap / long-press gestures. */
+  paragraphGestures?: boolean;
+  /** Text alignment used by the reader and exported HTML. */
+  paragraphTextAlign?: 'start' | 'justify' | 'center';
   /** AI model used inside Sentence Lab (planner / roleplay / examples). */
   sentenceLabModelRef?: BookAIModelRef;
   /** AI model used by the podcast / audio features. */

@@ -280,6 +280,7 @@ async function searchWithRss(opts: {
   language?: string;
   region?: string;
   lovableKey?: string;
+  model?: string;
 }): Promise<SearchItem[]> {
   const url = buildRssSearchUrl(opts);
   const xml = await fetchRssXml(url);
@@ -301,7 +302,7 @@ async function searchWithRss(opts: {
   let summaries: Record<string, string> = {};
   if (opts.lovableKey) {
     try {
-      summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved });
+      summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved, model: opts.model });
     } catch (e) {
       console.warn("summarize error:", e);
     }

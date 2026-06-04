@@ -374,6 +374,7 @@ serve(async (req) => {
       language,
       region,
       blockedDomains = [],
+      model,
     } = body ?? {};
     const blockedSet = new Set<string>(
       (Array.isArray(blockedDomains) ? blockedDomains : [])

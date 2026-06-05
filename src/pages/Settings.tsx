@@ -558,9 +558,8 @@ const Settings = () => {
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">حرکات لمسی روی پاراگراف‌ها</h2>
           <p className="text-sm text-muted-foreground">
-            با فعال‌سازی، روی هر پاراگراف می‌توانی swipe، double-tap و long-press کنی.
-            Swipe راست → ترجمه فارسی. Swipe چپ → ترجمه + پردازش. دوبار زدن روی متن
-            انگلیسی/فارسی → خواندن. نگه داشتن → کپی + ستاره‌دار.
+            با فعال‌سازی این حالت، دکمه‌های زیر هر پاراگراف (ترجمه، پردازش، بلندگوها) حذف می‌شوند
+            تا متن مثل یک کتاب عادی فشرده و خوانا شود. در عوض، با حرکات لمسی روی هر پاراگراف کار می‌کنی.
           </p>
           <div className="space-y-4 rounded-lg border border-border p-4">
             <div className="flex items-center justify-between">
@@ -570,6 +569,34 @@ const Settings = () => {
                 onCheckedChange={(v) => update({ paragraphGestures: v })}
               />
             </div>
+
+            {settings.paragraphGestures && (
+              <div className="rounded-md border border-primary/30 bg-primary/[0.04] p-3 space-y-2 text-sm">
+                <div className="font-medium text-foreground">راهنمای حرکات</div>
+                <ul className="space-y-1.5 text-muted-foreground leading-6">
+                  <li>
+                    <span className="font-semibold text-foreground">Swipe به راست ←</span> نمایش / مخفی کردن
+                    ترجمه فارسی.
+                  </li>
+                  <li>
+                    <span className="font-semibold text-foreground">Swipe به چپ →</span> نمایش ترجمه + پردازش
+                    کامل (لغت‌ها، اصطلاحات، گرامر).
+                  </li>
+                  <li>
+                    <span className="font-semibold text-foreground">دوبار زدن (Double-tap):</span> اگر روی
+                    متن انگلیسی بزنی، انگلیسی را با صدا می‌خواند؛ روی فارسی بزنی، فارسی را می‌خواند.
+                  </li>
+                  <li>
+                    <span className="font-semibold text-foreground">نگه داشتن (Long-press):</span> متن
+                    پاراگراف را کپی می‌کند و آن را ستاره‌دار می‌کند (دوباره نگه داری، ستاره برداشته می‌شود).
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground pt-1">
+                  نکته: پاراگراف‌های ستاره‌دار با حاشیه طلایی نمایش داده می‌شوند.
+                </p>
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label>چینش متن</Label>
               <Select

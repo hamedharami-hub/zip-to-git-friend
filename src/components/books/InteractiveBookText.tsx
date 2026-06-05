@@ -284,9 +284,14 @@ export function InteractiveBookText({
 
   const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
   const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';
+  const gesturesOn = useSettingsStore((s) => !!s.settings.paragraphGestures);
+  // When gesture mode is on, the per-paragraph toolbar is hidden, so we tighten
+  // the spacing between blocks to feel like a real book.
+  const spacingClass = gesturesOn ? 'space-y-3' : 'space-y-8';
+  const leadingClass = gesturesOn ? 'leading-[1.9]' : 'leading-loose';
   return (
     <article
-      className={cn('mx-auto w-full space-y-8 leading-loose', fontSizeClass, fontFamilyClass, alignClass)}
+      className={cn('mx-auto w-full', spacingClass, leadingClass, fontSizeClass, fontFamilyClass, alignClass)}
     >
       {blocks.map((b, i) => {
         switch (b.kind) {

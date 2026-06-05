@@ -120,9 +120,9 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
         const lvl = Math.max(2, Math.min(6, p.level ?? 2));
         return `<h${lvl} class="heading">${esc(p.en)}</h${lvl}>`;
       }
-      const en = `<p class="en" dir="ltr"><span class="lang-tag">EN</span>${esc(p.en)}</p>`;
+      const en = `<p class="en" dir="ltr">${esc(p.en)}</p>`;
       const fa = p.fa
-        ? `<p class="fa" dir="rtl"><span class="lang-tag">FA</span>${esc(p.fa)}</p>`
+        ? `<p class="fa" dir="rtl">${esc(p.fa)}</p>`
         : '';
       return `<div class="para">${en}${fa}</div>`;
     })
@@ -137,28 +137,23 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
 <style>
   :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
     max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
-    line-height: 1.65; color: #1a1a1a; background: #fafaf9; }
+    line-height: 1.85; color: #1a1a1a; background: #fafaf9; }
   @media (prefers-color-scheme: dark) {
     body { background: #0f0f10; color: #ececec; }
     .toolbar { background: #1a1a1c; border-color: #2a2a2c; }
-    .para { border-color: #2a2a2c; }
-    .lang-tag { background: #2a2a2c; color: #aaa; }
     .meta { color: #888; }
     button { background: #2a2a2c; color: #ececec; border-color: #3a3a3c; }
     button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
   }
   h1 { font-size: 1.75rem; margin: 0 0 .25rem; }
-  .meta { color: #666; font-size: .85rem; margin-bottom: 1rem; }
-  .heading { margin: 2rem 0 .75rem; font-weight: 700; }
-  .para { margin: 1rem 0; padding: .75rem .9rem; border: 1px solid #e5e5e3;
-    border-radius: 10px; background: rgba(255,255,255,.5); }
-  .en, .fa { margin: .15rem 0; }
-  .fa { font-size: 1.02rem; }
-  .lang-tag { display: inline-block; font-size: .65rem; font-weight: 600;
-    background: #ececea; color: #555; padding: 1px 6px; border-radius: 999px;
-    margin-inline-end: .4rem; vertical-align: middle; }
+  .meta { color: #666; font-size: .85rem; margin-bottom: 1.25rem; }
+  .heading { margin: 1.5rem 0 .5rem; font-weight: 700; }
+  .para { margin: .5rem 0; }
+  .en, .fa { margin: .25rem 0; }
+  .fa { font-size: 1.02rem; line-height: 2;
+    font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
   .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .4rem;
     padding: .55rem .65rem; background: #fafaf9; border-bottom: 1px solid #e5e5e3;
     margin: -1rem -1.25rem 1rem; flex-wrap: wrap; align-items: center; }
@@ -169,21 +164,16 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
   body[data-mode="en"] .fa { display: none; }
   body[data-mode="fa"] .en { display: none; }
-  /* per-paragraph toggle */
-  .para[data-hide="en"] .en { display: none; }
-  .para[data-hide="fa"] .fa { display: none; }
-  .para .row { display: flex; gap: .3rem; margin-bottom: .25rem; opacity: .7; }
-  .para .row button { font-size: .65rem; padding: .15rem .45rem; border-radius: 6px; }
   .src { margin-top: 3rem; font-size: .8rem; color: #888; border-top: 1px solid #e5e5e3; padding-top: 1rem; }
   a { color: #2563eb; }
 </style>
 </head>
 <body data-mode="both">
 <nav class="toolbar" dir="rtl">
-  <strong>نمایش زبان:</strong>
+  <strong>نمایش:</strong>
   <button data-mode="both" class="active" type="button">دو زبانه</button>
-  <button data-mode="en" type="button">English</button>
   <button data-mode="fa" type="button">فارسی</button>
+  <button data-mode="en" type="button">English</button>
 </nav>
 <h1>${esc(title)}</h1>
 <p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>
@@ -194,7 +184,6 @@ ${body}
 
 <script>
 (function(){
-  // Global mode toggle.
   document.querySelectorAll('.toolbar button').forEach(function(btn){
     btn.addEventListener('click', function(){
       var m = btn.getAttribute('data-mode');
@@ -202,31 +191,7 @@ ${body}
       document.querySelectorAll('.toolbar button').forEach(function(b){
         b.classList.toggle('active', b === btn);
       });
-      // clear per-paragraph overrides
-      document.querySelectorAll('.para').forEach(function(p){ p.removeAttribute('data-hide'); });
     });
-  });
-  // Per-paragraph toggle (click anywhere on the .lang-tag to hide that side).
-  document.querySelectorAll('.para').forEach(function(p){
-    var row = document.createElement('div');
-    row.className = 'row';
-    row.dir = 'rtl';
-    ['EN','FA'].forEach(function(L){
-      var b = document.createElement('button');
-      b.type = 'button';
-      b.textContent = (L === 'EN' ? 'فقط انگلیسی' : 'فقط فارسی');
-      b.addEventListener('click', function(){
-        var hide = (L === 'EN') ? 'fa' : 'en';
-        p.setAttribute('data-hide', p.getAttribute('data-hide') === hide ? '' : hide);
-      });
-      row.appendChild(b);
-    });
-    var reset = document.createElement('button');
-    reset.type = 'button';
-    reset.textContent = 'هر دو';
-    reset.addEventListener('click', function(){ p.removeAttribute('data-hide'); });
-    row.appendChild(reset);
-    p.insertBefore(row, p.firstChild);
   });
 })();
 </script>

@@ -710,8 +710,9 @@ function Paragraph({
           dir="rtl"
           lang="fa"
           className={cn(
-            'mt-2.5 leading-[2] text-[1.02em] text-foreground rounded-md',
+            'leading-[2] text-[1.02em] text-foreground rounded-md',
             'border-r-2 border-primary/40 pr-3 bg-primary/[0.04] py-2',
+            gesturesEnabled ? 'mt-1.5' : 'mt-2.5',
           )}
           style={{ fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif', fontWeight: 500 }}
         >
@@ -719,59 +720,61 @@ function Paragraph({
         </p>
       )}
 
-      {/* Per-paragraph toolbar: 4 buttons. */}
-      <div className="mt-2 flex flex-wrap items-center gap-1 not-prose">
-        <ParagraphTTSButton text={text} lang="en" />
-        <ParagraphTTSButton text={fa || text} lang="fa" />
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={handleFaOnly}
-          disabled={localLoading}
-          className={cn(
-            'h-7 px-2 gap-1.5 text-[11px]',
-            localMode === 'fa'
-              ? 'text-primary bg-primary/10'
-              : 'text-muted-foreground hover:text-primary',
-          )}
-          title="فقط ترجمه فارسی"
-          aria-label="فقط ترجمه فارسی"
-          aria-pressed={localMode === 'fa'}
-        >
-          {localLoading && localMode !== 'analysis' ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Languages className="h-3.5 w-3.5" />
-          )}
-          <span>ترجمه</span>
-        </Button>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          onClick={handleAnalysis}
-          disabled={localLoading}
-          className={cn(
-            'h-7 px-2 gap-1.5 text-[11px]',
-            localMode === 'analysis'
-              ? 'text-primary bg-primary/10'
-              : analysis
-                ? 'text-primary'
+      {/* Per-paragraph toolbar — hidden in gesture mode (use swipes/taps instead). */}
+      {!gesturesEnabled && (
+        <div className="mt-2 flex flex-wrap items-center gap-1 not-prose">
+          <ParagraphTTSButton text={text} lang="en" />
+          <ParagraphTTSButton text={fa || text} lang="fa" />
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleFaOnly}
+            disabled={localLoading}
+            className={cn(
+              'h-7 px-2 gap-1.5 text-[11px]',
+              localMode === 'fa'
+                ? 'text-primary bg-primary/10'
                 : 'text-muted-foreground hover:text-primary',
-          )}
-          title="ترجمه + پردازش لغت‌ها و عبارت‌ها"
-          aria-label="ترجمه و پردازش"
-          aria-pressed={localMode === 'analysis'}
-        >
-          {localLoading && localMode !== 'fa' ? (
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-          ) : (
-            <Sparkles className="h-3.5 w-3.5" />
-          )}
-          <span>ترجمه + پردازش</span>
-        </Button>
-      </div>
+            )}
+            title="فقط ترجمه فارسی"
+            aria-label="فقط ترجمه فارسی"
+            aria-pressed={localMode === 'fa'}
+          >
+            {localLoading && localMode !== 'analysis' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Languages className="h-3.5 w-3.5" />
+            )}
+            <span>ترجمه</span>
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={handleAnalysis}
+            disabled={localLoading}
+            className={cn(
+              'h-7 px-2 gap-1.5 text-[11px]',
+              localMode === 'analysis'
+                ? 'text-primary bg-primary/10'
+                : analysis
+                  ? 'text-primary'
+                  : 'text-muted-foreground hover:text-primary',
+            )}
+            title="ترجمه + پردازش لغت‌ها و عبارت‌ها"
+            aria-label="ترجمه و پردازش"
+            aria-pressed={localMode === 'analysis'}
+          >
+            {localLoading && localMode !== 'fa' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
+            <span>ترجمه + پردازش</span>
+          </Button>
+        </div>
+      )}
 
       {showAnalysisCard && (
         <ParagraphAnalysisCard

@@ -475,6 +475,9 @@ export function ChapterTTSPlayer({
       rate,
       onChunkStart: (idx, total) => {
         setBrowserChunk({ done: idx, total });
+        // Remember where we are so a Stop → Listen can resume from this chunk
+        // instead of restarting from the very beginning.
+        resumeIndexRef.current = idx - 1;
         // Emit the active chunk's text so InteractiveBookText can highlight + scroll.
         try {
           const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[idx - 1];
@@ -484,6 +487,7 @@ export function ChapterTTSPlayer({
       onEnd: () => {
         setBrowserPlaying(false);
         setBrowserChunk(null);
+        resumeIndexRef.current = 0;
         emitParagraphSpeech(bookId, effectiveChapterIndex, null);
       },
       onError: () => {
@@ -493,7 +497,7 @@ export function ChapterTTSPlayer({
       },
     });
     browserCtrlRef.current = ctl;
-    ctl.start();
+    ctl.start(resumeIndexRef.current);
     setBrowserPlaying(true);
   };
 
@@ -514,11 +518,25 @@ export function ChapterTTSPlayer({
     }
   };
 
+  /** Stop playback but REMEMBER the current chunk — next "Listen" resumes from it. */
   const stopBrowser = () => {
+    const c = browserCtrlRef.current;
+    if (c) resumeIndexRef.current = c.index;
     browserCtrlRef.current?.stop();
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
     setBrowserChunk(null);
+    emitParagraphSpeech(bookId, effectiveChapterIndex, null);
+  };
+
+  /** Hard reset — start narration from the first sentence. */
+  const restartBrowser = () => {
+    browserCtrlRef.current?.stop();
+    browserCtrlRef.current = null;
+    resumeIndexRef.current = 0;
+    setBrowserPlaying(false);
+    setBrowserChunk(null);
+    startBrowser();
   };
 
   // ───────── Media Session — wires OS lock-screen to whichever engine is active ─────────

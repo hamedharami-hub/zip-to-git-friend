@@ -57,6 +57,7 @@ import {
 } from '@/lib/browserTts';
 import { deleteTTSAudio, getTTSAudio } from '@/lib/bookDb';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
 import {
   ELEVENLABS_MODELS,

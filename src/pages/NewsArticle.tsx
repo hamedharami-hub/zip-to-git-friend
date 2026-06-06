@@ -74,6 +74,14 @@ const NewsArticleReader = () => {
   const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>('both');
   const [rwTranslationCount, setRwTranslationCount] = useState(0);
   const [faTtsText, setFaTtsText] = useState<string>('');
+  // Reader typography (font size + family) — persisted via NewsTypographyMenu.
+  const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(
+    { sizeClass: 'text-base', familyClass: 'font-sans' },
+  );
+  const handleTypoChange = useCallback(
+    (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) => setTypo(v),
+    [],
+  );
 
   const settings = useSettingsStore((s) => s.settings);
   // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph

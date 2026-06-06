@@ -200,6 +200,11 @@ export function ChapterTTSPlayer({
   const [browserChunk, setBrowserChunk] = useState<{ done: number; total: number } | null>(null);
   const [browserPlaying, setBrowserPlaying] = useState(false);
   const browserCtrlRef = useRef<BrowserTtsController | null>(null);
+  /** Chunk index we should resume from on next "Listen" (after Stop). */
+  const resumeIndexRef = useRef(0);
+
+  // Keep the screen on while audio is playing (Wake Lock API; ignored on iOS Safari).
+  useWakeLock(open && (playing || browserPlaying));
 
   // ───────── ElevenLabs state ─────────
   const elevenKey = settings.elevenLabsApiKey?.trim() ?? '';

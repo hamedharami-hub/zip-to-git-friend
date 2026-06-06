@@ -805,9 +805,14 @@ export function ChapterTTSPlayer({
                         </>
                       )}
                     </Button>
-                    {browserCtrlRef.current && (
-                      <Button variant="ghost" size="sm" onClick={stopBrowser}>
+                    {(browserCtrlRef.current || resumeIndexRef.current > 0) && (
+                      <Button variant="ghost" size="sm" onClick={stopBrowser} title="توقف — با Listen از همین پاراگراف ادامه می‌دهد">
                         Stop
+                      </Button>
+                    )}
+                    {resumeIndexRef.current > 0 && (
+                      <Button variant="ghost" size="sm" onClick={restartBrowser} title="شروع از ابتدای متن">
+                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restart
                       </Button>
                     )}
                   </div>

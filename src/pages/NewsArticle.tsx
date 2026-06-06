@@ -541,8 +541,8 @@ const NewsArticleReader = () => {
                   html={article.contentHtml}
                   bookId={`news-${article.id}`}
                   chapterIndex={0}
-                  fontSizeClass=""
-                  fontFamilyClass=""
+                  fontSizeClass={typo.sizeClass}
+                  fontFamilyClass={typo.familyClass}
                   displayLang={origDisplayLang}
                   onTranslationCountChange={setOrigTranslationCount}
                   sourceKind="news"

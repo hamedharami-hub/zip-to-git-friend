@@ -57,6 +57,7 @@ import {
 } from '@/lib/browserTts';
 import { deleteTTSAudio, getTTSAudio } from '@/lib/bookDb';
 import { useMediaSession } from '@/hooks/useMediaSession';
+import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
 import {
   ELEVENLABS_MODELS,
@@ -199,6 +200,11 @@ export function ChapterTTSPlayer({
   const [browserChunk, setBrowserChunk] = useState<{ done: number; total: number } | null>(null);
   const [browserPlaying, setBrowserPlaying] = useState(false);
   const browserCtrlRef = useRef<BrowserTtsController | null>(null);
+  /** Chunk index we should resume from on next "Listen" (after Stop). */
+  const resumeIndexRef = useRef(0);
+
+  // Keep the screen on while audio is playing (Wake Lock API; ignored on iOS Safari).
+  useWakeLock(open && (playing || browserPlaying));
 
   // ───────── ElevenLabs state ─────────
   const elevenKey = settings.elevenLabsApiKey?.trim() ?? '';
@@ -276,6 +282,7 @@ export function ChapterTTSPlayer({
     browserCtrlRef.current?.stop();
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
+    resumeIndexRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, effectiveChapterIndex, voice, engine]);
 
@@ -468,6 +475,9 @@ export function ChapterTTSPlayer({
       rate,
       onChunkStart: (idx, total) => {
         setBrowserChunk({ done: idx, total });
+        // Remember where we are so a Stop → Listen can resume from this chunk
+        // instead of restarting from the very beginning.
+        resumeIndexRef.current = idx - 1;
         // Emit the active chunk's text so InteractiveBookText can highlight + scroll.
         try {
           const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[idx - 1];
@@ -477,6 +487,7 @@ export function ChapterTTSPlayer({
       onEnd: () => {
         setBrowserPlaying(false);
         setBrowserChunk(null);
+        resumeIndexRef.current = 0;
         emitParagraphSpeech(bookId, effectiveChapterIndex, null);
       },
       onError: () => {
@@ -486,7 +497,7 @@ export function ChapterTTSPlayer({
       },
     });
     browserCtrlRef.current = ctl;
-    ctl.start();
+    ctl.start(resumeIndexRef.current);
     setBrowserPlaying(true);
   };
 
@@ -507,11 +518,25 @@ export function ChapterTTSPlayer({
     }
   };
 
+  /** Stop playback but REMEMBER the current chunk — next "Listen" resumes from it. */
   const stopBrowser = () => {
+    const c = browserCtrlRef.current;
+    if (c) resumeIndexRef.current = c.index;
     browserCtrlRef.current?.stop();
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
     setBrowserChunk(null);
+    emitParagraphSpeech(bookId, effectiveChapterIndex, null);
+  };
+
+  /** Hard reset — start narration from the first sentence. */
+  const restartBrowser = () => {
+    browserCtrlRef.current?.stop();
+    browserCtrlRef.current = null;
+    resumeIndexRef.current = 0;
+    setBrowserPlaying(false);
+    setBrowserChunk(null);
+    startBrowser();
   };
 
   // ───────── Media Session — wires OS lock-screen to whichever engine is active ─────────
@@ -780,9 +805,14 @@ export function ChapterTTSPlayer({
                         </>
                       )}
                     </Button>
-                    {browserCtrlRef.current && (
-                      <Button variant="ghost" size="sm" onClick={stopBrowser}>
+                    {(browserCtrlRef.current || resumeIndexRef.current > 0) && (
+                      <Button variant="ghost" size="sm" onClick={stopBrowser} title="توقف — با Listen از همین پاراگراف ادامه می‌دهد">
                         Stop
+                      </Button>
+                    )}
+                    {resumeIndexRef.current > 0 && (
+                      <Button variant="ghost" size="sm" onClick={restartBrowser} title="شروع از ابتدای متن">
+                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restart
                       </Button>
                     )}
                   </div>

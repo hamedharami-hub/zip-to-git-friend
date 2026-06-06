@@ -711,8 +711,11 @@ function Paragraph({
           lang="fa"
           className={cn(
             'leading-[2] text-[1.02em] text-foreground rounded-md',
-            'border-r-2 border-primary/40 pr-3 bg-primary/[0.04] py-2',
-            gesturesEnabled ? 'mt-1.5' : 'mt-2.5',
+            // Only show the accent rail + tint when both languages are visible.
+            // In "Persian only" mode the page should look like a plain Persian
+            // article — same vibe as "English only".
+            showEn && 'border-r-2 border-primary/40 pr-3 bg-primary/[0.04] py-2',
+            showEn ? (gesturesEnabled ? 'mt-1.5' : 'mt-2.5') : 'mt-0',
           )}
           style={{ fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif', fontWeight: 500 }}
         >

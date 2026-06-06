@@ -122,6 +122,11 @@ export class BrowserTtsController {
     return this.chunks.length;
   }
 
+  /** 0-indexed position of the currently-speaking chunk (or last one spoken). */
+  get index(): number {
+    return this.currentIndex;
+  }
+
   get isPaused(): boolean {
     return isBrowserTtsSupported() && window.speechSynthesis.paused;
   }
@@ -130,20 +135,24 @@ export class BrowserTtsController {
     return isBrowserTtsSupported() && window.speechSynthesis.speaking;
   }
 
-  /** Start (or restart) speaking from chunk 0. */
-  start(): void {
+  /** Start (or restart) speaking from chunk `from` (defaults to 0). */
+  start(from = 0): void {
     if (!isBrowserTtsSupported() || this.chunks.length === 0) {
       this.opts.onEnd?.();
       return;
     }
     this.stop();
     this.finished = false;
-    this.currentIndex = 0;
+    const startIdx = Math.max(0, Math.min(this.chunks.length - 1, from));
+    this.currentIndex = startIdx;
 
     const voice = lookupVoice(this.opts.voiceId ?? null);
     const total = this.chunks.length;
 
-    this.utterances = this.chunks.map((c, i) => {
+    // Build utterances only for chunks from startIdx onward — but report
+    // index in the full-chapter coordinate system so the UI is consistent.
+    this.utterances = this.chunks.slice(startIdx).map((c, j) => {
+      const i = startIdx + j;
       const u = new SpeechSynthesisUtterance(c);
       u.lang = this.opts.lang ?? 'en-US';
       if (voice) {

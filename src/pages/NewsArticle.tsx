@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -38,6 +38,7 @@ import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
 import { toast } from 'sonner';
 import { RelatedNews } from '@/components/news/RelatedNews';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
+import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -73,6 +74,14 @@ const NewsArticleReader = () => {
   const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>('both');
   const [rwTranslationCount, setRwTranslationCount] = useState(0);
   const [faTtsText, setFaTtsText] = useState<string>('');
+  // Reader typography (font size + family) — persisted via NewsTypographyMenu.
+  const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(
+    { sizeClass: 'text-base', familyClass: 'font-sans' },
+  );
+  const handleTypoChange = useCallback(
+    (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) => setTypo(v),
+    [],
+  );
 
   const settings = useSettingsStore((s) => s.settings);
   // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph
@@ -436,6 +445,7 @@ const NewsArticleReader = () => {
             {article.isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
           </Button>
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
+          <NewsTypographyMenu onChange={handleTypoChange} />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <TranslateChapterButton
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
@@ -479,7 +489,7 @@ const NewsArticleReader = () => {
 
 
       <div className="flex-1 overflow-y-auto overscroll-contain">
-        <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ fontSize: '1rem', lineHeight: 1.6 }}>
+        <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -531,8 +541,8 @@ const NewsArticleReader = () => {
                   html={article.contentHtml}
                   bookId={`news-${article.id}`}
                   chapterIndex={0}
-                  fontSizeClass=""
-                  fontFamilyClass=""
+                  fontSizeClass={typo.sizeClass}
+                  fontFamilyClass={typo.familyClass}
                   displayLang={origDisplayLang}
                   onTranslationCountChange={setOrigTranslationCount}
                   sourceKind="news"
@@ -604,8 +614,8 @@ const NewsArticleReader = () => {
                                 html={r.contentHtml}
                                 bookId={`news-rw-${article.id}-${len}`}
                                 chapterIndex={0}
-                                fontSizeClass=""
-                                fontFamilyClass=""
+                                fontSizeClass={typo.sizeClass}
+                                fontFamilyClass={typo.familyClass}
                                 displayLang={len === activeRewrite ? rwDisplayLang : 'en'}
                                 onTranslationCountChange={
                                   len === activeRewrite ? setRwTranslationCount : undefined

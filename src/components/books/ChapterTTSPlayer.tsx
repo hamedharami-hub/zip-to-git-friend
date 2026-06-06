@@ -282,6 +282,7 @@ export function ChapterTTSPlayer({
     browserCtrlRef.current?.stop();
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
+    resumeIndexRef.current = 0;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, effectiveChapterIndex, voice, engine]);
 

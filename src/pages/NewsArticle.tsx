@@ -445,6 +445,7 @@ const NewsArticleReader = () => {
             {article.isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
           </Button>
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
+          <NewsTypographyMenu onChange={handleTypoChange} />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <TranslateChapterButton
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}

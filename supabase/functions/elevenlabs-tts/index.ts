@@ -84,9 +84,12 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const isFa = language === 'fa';
     const voice = (voiceId as string) || "EXAVITQu4vr4xnSDxMaL"; // Sarah
-    const model = (modelId as string) || "eleven_multilingual_v2";
-    void language; // multilingual handles both EN & FA
+    // For Persian, force Turbo v2.5 so we can pass language_code='fa' (the only
+    // way to stop ElevenLabs from reading فارسی with an English accent).
+    const model = isFa ? "eleven_turbo_v2_5" : ((modelId as string) || "eleven_multilingual_v2");
+    const langCode = isFa ? "fa" : undefined;
 
     const chunks = chunkText(text);
     if (chunks.length === 0) {
@@ -99,7 +102,7 @@ serve(async (req) => {
     for (let i = 0; i < chunks.length; i++) {
       const prev = i > 0 ? chunks[i - 1] : undefined;
       const next = i < chunks.length - 1 ? chunks[i + 1] : undefined;
-      const bytes = await ttsChunk(apiKey, voice, model, chunks[i], prev, next);
+      const bytes = await ttsChunk(apiKey, voice, model, chunks[i], prev, next, langCode);
       parts.push(bytes);
     }
     const total = parts.reduce((n, p) => n + p.length, 0);

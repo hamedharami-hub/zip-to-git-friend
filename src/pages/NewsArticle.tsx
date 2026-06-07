@@ -447,6 +447,7 @@ const NewsArticleReader = () => {
           </Button>
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTypographyMenu onChange={handleTypoChange} />
+          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <TranslateChapterButton
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}

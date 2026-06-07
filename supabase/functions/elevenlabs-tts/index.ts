@@ -44,11 +44,16 @@ async function ttsChunk(
   text: string,
   previousText?: string,
   nextText?: string,
+  languageCode?: string,
 ): Promise<Uint8Array> {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`;
   const body: Record<string, unknown> = { text, model_id: modelId };
   if (previousText) body.previous_text = previousText.slice(-500);
   if (nextText) body.next_text = nextText.slice(0, 500);
+  // language_code is supported by turbo_v2_5 / flash_v2_5 and dramatically
+  // improves Persian pronunciation (otherwise ElevenLabs reads فارسی with
+  // an English/transliterated accent).
+  if (languageCode) body.language_code = languageCode;
   const res = await fetch(url, {
     method: "POST",
     headers: {

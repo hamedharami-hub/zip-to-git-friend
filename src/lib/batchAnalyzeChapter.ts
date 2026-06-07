@@ -67,13 +67,16 @@ export function extractAnalysableParagraphs(chapter: BookChapter): Item[] {
   // Walk top-level p / blockquote / li that look like prose, then split each
   // one with the SAME chunker the renderer uses, so every visible paragraph
   // maps 1:1 to its cached analysis.
-  root.querySelectorAll('p, blockquote, li').forEach((el) => {
+  root.querySelectorAll('h1, h2, h3, h4, h5, h6, p, blockquote, li').forEach((el) => {
     const raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
     if (!raw) return;
-    const chunks = splitIntoShortChunks(raw);
+    const isHeading = /^h[1-6]$/i.test(el.tagName);
+    // Headings: translate as a single unit (don't chunk) and skip the
+    // MIN_WORDS gate — short section titles should still be translated.
+    const chunks = isHeading ? [raw] : splitIntoShortChunks(raw);
     for (const text of chunks) {
       const wordCount = text.split(/\s+/).length;
-      if (wordCount < MIN_WORDS) continue;
+      if (!isHeading && wordCount < MIN_WORDS) continue;
       const hash = hashParagraph(text);
       if (seen.has(hash)) continue;
       seen.add(hash);

@@ -23,7 +23,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useOnline } from '@/hooks/useOnline';
 import { toast } from 'sonner';
 import { subscribeChapterAnalyses } from '@/lib/chapterAnalysisBus';
-import { subscribeParagraphSpeech, speechKeyFor } from '@/lib/paragraphSpeechBus';
+import { subscribeParagraphSpeech } from '@/lib/paragraphSpeechBus';
 import { splitIntoShortChunks } from '@/lib/paragraphSplit';
 import type { BookParagraphAnalysis, BookHighlight } from '@/types';
 import { cn } from '@/lib/utils';

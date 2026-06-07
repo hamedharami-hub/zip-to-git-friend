@@ -397,8 +397,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />
@@ -432,8 +432,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />
@@ -480,8 +480,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />

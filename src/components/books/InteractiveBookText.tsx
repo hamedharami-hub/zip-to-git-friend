@@ -298,6 +298,19 @@ export function InteractiveBookText({
 
   const refFor = (i: number) => `book:${bookId}:${chapterIndex}:p${i}`;
 
+  /** Match a paragraph against the currently-spoken chunk in EITHER language.
+   *  The TTS player emits the first ~80 chars of the spoken chunk; for Persian
+   *  narration we need to compare against the paragraph's cached translation. */
+  const matchActive = (enText: string): boolean => {
+    if (!activeSpeechKey) return false;
+    const enNorm = enText.replace(/\s+/g, ' ').trim().toLowerCase();
+    if (enNorm.startsWith(activeSpeechKey) || enNorm.includes(activeSpeechKey)) return true;
+    const fa = analyses[hashParagraph(enText.trim())]?.translation?.trim();
+    if (!fa) return false;
+    const faNorm = fa.replace(/\s+/g, ' ').trim().toLowerCase();
+    return faNorm.startsWith(activeSpeechKey) || faNorm.includes(activeSpeechKey);
+  };
+
   const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
   const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';
   const gesturesOn = useSettingsStore((s) => !!s.settings.paragraphGestures);

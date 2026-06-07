@@ -481,19 +481,19 @@ export function ChapterTTSPlayer({
         // Emit the active chunk's text so InteractiveBookText can highlight + scroll.
         try {
           const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[idx - 1];
-          if (chunk) emitParagraphSpeech(bookId, effectiveChapterIndex, chunk);
+          if (chunk) emitParagraphSpeech(bookId, chapterIndexProp, chunk);
         } catch { /* ignore */ }
       },
       onEnd: () => {
         setBrowserPlaying(false);
         setBrowserChunk(null);
         resumeIndexRef.current = 0;
-        emitParagraphSpeech(bookId, effectiveChapterIndex, null);
+        emitParagraphSpeech(bookId, chapterIndexProp, null);
       },
       onError: () => {
         setBrowserPlaying(false);
         toast.error('Browser TTS error.');
-        emitParagraphSpeech(bookId, effectiveChapterIndex, null);
+        emitParagraphSpeech(bookId, chapterIndexProp, null);
       },
     });
     browserCtrlRef.current = ctl;
@@ -526,7 +526,7 @@ export function ChapterTTSPlayer({
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
     setBrowserChunk(null);
-    emitParagraphSpeech(bookId, effectiveChapterIndex, null);
+    emitParagraphSpeech(bookId, chapterIndexProp, null);
   };
 
   /** Hard reset — start narration from the first sentence. */

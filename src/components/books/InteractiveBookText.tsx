@@ -234,7 +234,8 @@ export function InteractiveBookText({
     (async () => {
       const next: Record<string, BookParagraphAnalysis> = {};
       for (const b of blocks) {
-        if (!b.text || (b.kind !== 'p' && b.kind !== 'blockquote' && b.kind !== 'li')) continue;
+        if (!b.text) continue;
+        if (!['p', 'blockquote', 'li', 'h1', 'h2', 'h3'].includes(b.kind)) continue;
         const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, b.text);
         if (cached) next[hashParagraph(b.text.trim())] = cached;
       }

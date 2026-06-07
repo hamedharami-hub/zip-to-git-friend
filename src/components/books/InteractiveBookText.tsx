@@ -297,38 +297,50 @@ export function InteractiveBookText({
       {blocks.map((b, i) => {
         switch (b.kind) {
           case 'h1':
-            return (
-              <h1 key={b.key} className="text-3xl font-bold mt-8 mb-2 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h1>
-            );
           case 'h2':
+          case 'h3': {
+            const headText = b.text!;
+            const hHash = hashParagraph(headText.trim());
+            const hFa = analyses[hHash]?.translation?.trim() ?? '';
+            const showHeadFa = !!hFa && (displayLang === 'fa' || displayLang === 'both');
+            const showHeadEn = displayLang !== 'fa' || !showHeadFa;
+            const slug = headingSlug(headText);
+            const sizeCls =
+              b.kind === 'h1'
+                ? 'text-3xl font-bold mt-8 mb-2 tracking-tight'
+                : b.kind === 'h2'
+                  ? 'text-2xl font-semibold mt-6 mb-1 tracking-tight'
+                  : 'text-xl font-semibold mt-4 mb-1 tracking-tight';
+            const Tag = b.kind as 'h1' | 'h2' | 'h3';
             return (
-              <h2 key={b.key} className="text-2xl font-semibold mt-6 mb-1 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h2>
+              <div key={b.key} id={slug} className="scroll-mt-24">
+                {showHeadEn && (
+                  <Tag className={sizeCls}>
+                    <InteractiveSubtitle
+                      text={headText}
+                      context={headText}
+                      videoId={bookId}
+                      cueId={refFor(i)}
+                    />
+                  </Tag>
+                )}
+                {showHeadFa && (
+                  <p
+                    dir="rtl"
+                    lang="fa"
+                    className={cn(
+                      sizeCls,
+                      'text-foreground',
+                      showHeadEn && 'mt-1',
+                    )}
+                    style={{ fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif' }}
+                  >
+                    {hFa}
+                  </p>
+                )}
+              </div>
             );
-          case 'h3':
-            return (
-              <h3 key={b.key} className="text-xl font-semibold mt-4 mb-1 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h3>
-            );
+          }
           case 'blockquote': {
             const hash = hashParagraph(b.text!.trim());
             const analysis = analyses[hash] ?? null;

@@ -193,6 +193,21 @@ function htmlToBlocks(html: string): Block[] {
 // splitIntoShortChunks now lives in @/lib/paragraphSplit (shared with the
 // batch analyzer so cached translations match every rendered chunk).
 
+/** Stable DOM id for a heading — used by the news TOC to scroll into view. */
+export function headingSlug(text: string): string {
+  const base = text
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\p{N}-]+/gu, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  // Cheap hash so duplicate headings still get unique ids.
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+  return `h-${base || 'heading'}-${(h >>> 0).toString(36).slice(0, 6)}`;
+}
+
 export function InteractiveBookText({
   html,
   bookId,

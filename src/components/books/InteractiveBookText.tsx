@@ -23,7 +23,7 @@ import { useSettingsStore } from '@/store/settingsStore';
 import { useOnline } from '@/hooks/useOnline';
 import { toast } from 'sonner';
 import { subscribeChapterAnalyses } from '@/lib/chapterAnalysisBus';
-import { subscribeParagraphSpeech, speechKeyFor } from '@/lib/paragraphSpeechBus';
+import { subscribeParagraphSpeech } from '@/lib/paragraphSpeechBus';
 import { splitIntoShortChunks } from '@/lib/paragraphSplit';
 import type { BookParagraphAnalysis, BookHighlight } from '@/types';
 import { cn } from '@/lib/utils';
@@ -193,6 +193,21 @@ function htmlToBlocks(html: string): Block[] {
 // splitIntoShortChunks now lives in @/lib/paragraphSplit (shared with the
 // batch analyzer so cached translations match every rendered chunk).
 
+/** Stable DOM id for a heading — used by the news TOC to scroll into view. */
+export function headingSlug(text: string): string {
+  const base = text
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^\p{L}\p{N}-]+/gu, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 80);
+  // Cheap hash so duplicate headings still get unique ids.
+  let h = 0;
+  for (let i = 0; i < text.length; i++) h = ((h << 5) - h + text.charCodeAt(i)) | 0;
+  return `h-${base || 'heading'}-${(h >>> 0).toString(36).slice(0, 6)}`;
+}
+
 export function InteractiveBookText({
   html,
   bookId,
@@ -234,7 +249,8 @@ export function InteractiveBookText({
     (async () => {
       const next: Record<string, BookParagraphAnalysis> = {};
       for (const b of blocks) {
-        if (!b.text || (b.kind !== 'p' && b.kind !== 'blockquote' && b.kind !== 'li')) continue;
+        if (!b.text) continue;
+        if (!['p', 'blockquote', 'li', 'h1', 'h2', 'h3'].includes(b.kind)) continue;
         const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, b.text);
         if (cached) next[hashParagraph(b.text.trim())] = cached;
       }
@@ -282,6 +298,19 @@ export function InteractiveBookText({
 
   const refFor = (i: number) => `book:${bookId}:${chapterIndex}:p${i}`;
 
+  /** Match a paragraph against the currently-spoken chunk in EITHER language.
+   *  The TTS player emits the first ~80 chars of the spoken chunk; for Persian
+   *  narration we need to compare against the paragraph's cached translation. */
+  const matchActive = (enText: string): boolean => {
+    if (!activeSpeechKey) return false;
+    const enNorm = enText.replace(/\s+/g, ' ').trim().toLowerCase();
+    if (enNorm.startsWith(activeSpeechKey) || enNorm.includes(activeSpeechKey)) return true;
+    const fa = analyses[hashParagraph(enText.trim())]?.translation?.trim();
+    if (!fa) return false;
+    const faNorm = fa.replace(/\s+/g, ' ').trim().toLowerCase();
+    return faNorm.startsWith(activeSpeechKey) || faNorm.includes(activeSpeechKey);
+  };
+
   const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
   const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';
   const gesturesOn = useSettingsStore((s) => !!s.settings.paragraphGestures);
@@ -296,38 +325,50 @@ export function InteractiveBookText({
       {blocks.map((b, i) => {
         switch (b.kind) {
           case 'h1':
-            return (
-              <h1 key={b.key} className="text-3xl font-bold mt-8 mb-2 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h1>
-            );
           case 'h2':
+          case 'h3': {
+            const headText = b.text!;
+            const hHash = hashParagraph(headText.trim());
+            const hFa = analyses[hHash]?.translation?.trim() ?? '';
+            const showHeadFa = !!hFa && (displayLang === 'fa' || displayLang === 'both');
+            const showHeadEn = displayLang !== 'fa' || !showHeadFa;
+            const slug = headingSlug(headText);
+            const sizeCls =
+              b.kind === 'h1'
+                ? 'text-3xl font-bold mt-8 mb-2 tracking-tight'
+                : b.kind === 'h2'
+                  ? 'text-2xl font-semibold mt-6 mb-1 tracking-tight'
+                  : 'text-xl font-semibold mt-4 mb-1 tracking-tight';
+            const Tag = b.kind as 'h1' | 'h2' | 'h3';
             return (
-              <h2 key={b.key} className="text-2xl font-semibold mt-6 mb-1 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h2>
+              <div key={b.key} id={slug} className="scroll-mt-24">
+                {showHeadEn && (
+                  <Tag className={sizeCls}>
+                    <InteractiveSubtitle
+                      text={headText}
+                      context={headText}
+                      videoId={bookId}
+                      cueId={refFor(i)}
+                    />
+                  </Tag>
+                )}
+                {showHeadFa && (
+                  <p
+                    dir="rtl"
+                    lang="fa"
+                    className={cn(
+                      sizeCls,
+                      'text-foreground',
+                      showHeadEn && 'mt-1',
+                    )}
+                    style={{ fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif' }}
+                  >
+                    {hFa}
+                  </p>
+                )}
+              </div>
             );
-          case 'h3':
-            return (
-              <h3 key={b.key} className="text-xl font-semibold mt-4 mb-1 tracking-tight">
-                <InteractiveSubtitle
-                  text={b.text!}
-                  context={b.text}
-                  videoId={bookId}
-                  cueId={refFor(i)}
-                />
-              </h3>
-            );
+          }
           case 'blockquote': {
             const hash = hashParagraph(b.text!.trim());
             const analysis = analyses[hash] ?? null;
@@ -356,8 +397,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />
@@ -391,8 +432,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />
@@ -439,8 +480,8 @@ export function InteractiveBookText({
                 highlights={matched}
                 targets={matchedTargets}
                 displayLang={displayLang}
-                isActiveSpeech={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey}
-                activeRef={activeSpeechKey != null && speechKeyFor(b.text!) === activeSpeechKey ? activeRef : undefined}
+                isActiveSpeech={matchActive(b.text!)}
+                activeRef={matchActive(b.text!) ? activeRef : undefined}
                 sourceKind={sourceKind}
                 sourceTitle={sourceTitle}
               />

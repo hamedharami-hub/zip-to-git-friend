@@ -39,6 +39,7 @@ import { toast } from 'sonner';
 import { RelatedNews } from '@/components/news/RelatedNews';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
+import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -446,6 +447,7 @@ const NewsArticleReader = () => {
           </Button>
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTypographyMenu onChange={handleTypoChange} />
+          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <TranslateChapterButton
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}

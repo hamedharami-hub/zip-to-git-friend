@@ -44,11 +44,16 @@ async function ttsChunk(
   text: string,
   previousText?: string,
   nextText?: string,
+  languageCode?: string,
 ): Promise<Uint8Array> {
   const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`;
   const body: Record<string, unknown> = { text, model_id: modelId };
   if (previousText) body.previous_text = previousText.slice(-500);
   if (nextText) body.next_text = nextText.slice(0, 500);
+  // language_code is supported by turbo_v2_5 / flash_v2_5 and dramatically
+  // improves Persian pronunciation (otherwise ElevenLabs reads فارسی with
+  // an English/transliterated accent).
+  if (languageCode) body.language_code = languageCode;
   const res = await fetch(url, {
     method: "POST",
     headers: {
@@ -79,9 +84,12 @@ serve(async (req) => {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const isFa = language === 'fa';
     const voice = (voiceId as string) || "EXAVITQu4vr4xnSDxMaL"; // Sarah
-    const model = (modelId as string) || "eleven_multilingual_v2";
-    void language; // multilingual handles both EN & FA
+    // For Persian, force Turbo v2.5 so we can pass language_code='fa' (the only
+    // way to stop ElevenLabs from reading فارسی with an English accent).
+    const model = isFa ? "eleven_turbo_v2_5" : ((modelId as string) || "eleven_multilingual_v2");
+    const langCode = isFa ? "fa" : undefined;
 
     const chunks = chunkText(text);
     if (chunks.length === 0) {
@@ -94,7 +102,7 @@ serve(async (req) => {
     for (let i = 0; i < chunks.length; i++) {
       const prev = i > 0 ? chunks[i - 1] : undefined;
       const next = i < chunks.length - 1 ? chunks[i + 1] : undefined;
-      const bytes = await ttsChunk(apiKey, voice, model, chunks[i], prev, next);
+      const bytes = await ttsChunk(apiKey, voice, model, chunks[i], prev, next, langCode);
       parts.push(bytes);
     }
     const total = parts.reduce((n, p) => n + p.length, 0);

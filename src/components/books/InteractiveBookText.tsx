@@ -303,13 +303,15 @@ export function InteractiveBookText({
    *  narration we need to compare against the paragraph's cached translation. */
   const matchActive = (enText: string): boolean => {
     if (!activeSpeechKey) return false;
+    const key = activeSpeechKey.replace(/\s+/g, ' ').trim().toLowerCase();
     const enNorm = enText.replace(/\s+/g, ' ').trim().toLowerCase();
-    if (enNorm.startsWith(activeSpeechKey) || enNorm.includes(activeSpeechKey)) return true;
+    if (enNorm && (enNorm.startsWith(key) || enNorm.includes(key) || key.includes(enNorm))) return true;
     const fa = analyses[hashParagraph(enText.trim())]?.translation?.trim();
     if (!fa) return false;
     const faNorm = fa.replace(/\s+/g, ' ').trim().toLowerCase();
-    return faNorm.startsWith(activeSpeechKey) || faNorm.includes(activeSpeechKey);
+    return faNorm.startsWith(key) || faNorm.includes(key) || key.includes(faNorm);
   };
+
 
   const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
   const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';

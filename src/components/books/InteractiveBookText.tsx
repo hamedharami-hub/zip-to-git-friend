@@ -340,8 +340,17 @@ export function InteractiveBookText({
                   ? 'text-2xl font-semibold mt-6 mb-1 tracking-tight'
                   : 'text-xl font-semibold mt-4 mb-1 tracking-tight';
             const Tag = b.kind as 'h1' | 'h2' | 'h3';
+            const isActive = matchActive(headText) || (hFa && matchActive(hFa));
             return (
-              <div key={b.key} id={slug} className="scroll-mt-24">
+              <div
+                key={b.key}
+                id={slug}
+                ref={isActive ? activeRef : undefined}
+                className={cn(
+                  'scroll-mt-24 transition-colors rounded-md',
+                  isActive && 'bg-primary/10 ring-1 ring-primary/30 px-2 -mx-2',
+                )}
+              >
                 {showHeadEn && (
                   <Tag className={sizeCls}>
                     <InteractiveSubtitle
@@ -369,6 +378,7 @@ export function InteractiveBookText({
               </div>
             );
           }
+
           case 'blockquote': {
             const hash = hashParagraph(b.text!.trim());
             const analysis = analyses[hash] ?? null;

@@ -135,45 +135,76 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(title)}</title>
 <style>
-  :root { color-scheme: light dark; }
+  :root { color-scheme: light dark; --bg:#fafaf9; --fg:#1a1a1a; --muted:#666; --border:#e5e5e3; --btn:#fff; --btnFg:#1a1a1a; --btnBorder:#d4d4d2; --accent:#3b82f6; --toolbarBg:#fafaf9; }
+  body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; }
+  body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; }
   * { box-sizing: border-box; }
+  html, body { margin:0; padding:0; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
     max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
-    line-height: 1.85; color: #1a1a1a; background: #fafaf9; }
-  @media (prefers-color-scheme: dark) {
-    body { background: #0f0f10; color: #ececec; }
-    .toolbar { background: #1a1a1c; border-color: #2a2a2c; }
-    .meta { color: #888; }
-    button { background: #2a2a2c; color: #ececec; border-color: #3a3a3c; }
-    button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-  }
+    line-height: 1.85; color: var(--fg); background: var(--bg);
+    font-size: var(--fs, 17px); transition: background .15s, color .15s; }
+  body[data-font="serif"] { font-family: 'Iowan Old Style','Palatino Linotype','Georgia',serif; }
+  body[data-font="mono"]  { font-family: ui-monospace,'SF Mono',Menlo,Consolas,monospace; }
+  body[data-font="vazir"] { font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
+  body[data-align="justify"] .en, body[data-align="justify"] .fa, body[data-align="justify"] .heading { text-align: justify; text-justify: inter-word; }
+  body[data-align="center"]  .en, body[data-align="center"]  .fa, body[data-align="center"]  .heading { text-align: center; }
+  body[data-align="start"]   .en { text-align: left; }
+  body[data-align="start"]   .fa { text-align: right; }
   h1 { font-size: 1.75rem; margin: 0 0 .25rem; }
-  .meta { color: #666; font-size: .85rem; margin-bottom: 1.25rem; }
+  .meta { color: var(--muted); font-size: .85rem; margin-bottom: 1.25rem; }
   .heading { margin: 1.5rem 0 .5rem; font-weight: 700; }
   .para { margin: .5rem 0; }
   .en, .fa { margin: .25rem 0; }
   .fa { font-size: 1.02rem; line-height: 2;
     font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
-  .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .4rem;
-    padding: .55rem .65rem; background: #fafaf9; border-bottom: 1px solid #e5e5e3;
+  .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .35rem;
+    padding: .5rem .6rem; background: var(--toolbarBg); border-bottom: 1px solid var(--border);
     margin: -1rem -1.25rem 1rem; flex-wrap: wrap; align-items: center; }
-  .toolbar strong { font-size: .8rem; margin-inline-end: .35rem; opacity: .7; }
-  button { font: inherit; font-size: .8rem; padding: .35rem .7rem;
-    border: 1px solid #d4d4d2; border-radius: 8px; background: #fff;
-    cursor: pointer; }
-  button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .toolbar .grp { display: inline-flex; gap: 2px; align-items: center; }
+  .toolbar .sep { width:1px; height: 22px; background: var(--border); margin: 0 .25rem; }
+  .toolbar strong { font-size: .72rem; opacity: .65; margin-inline-end: .15rem; font-weight: 600; }
+  button { font: inherit; font-size: .78rem; padding: .3rem .55rem;
+    border: 1px solid var(--btnBorder); border-radius: 7px; background: var(--btn); color: var(--btnFg);
+    cursor: pointer; line-height: 1; }
+  button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
   body[data-mode="en"] .fa { display: none; }
   body[data-mode="fa"] .en { display: none; }
-  .src { margin-top: 3rem; font-size: .8rem; color: #888; border-top: 1px solid #e5e5e3; padding-top: 1rem; }
-  a { color: #2563eb; }
+  .src { margin-top: 3rem; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
+  a { color: var(--accent); }
 </style>
 </head>
-<body data-mode="both">
+<body data-mode="both" data-theme="light" data-font="sans" data-align="start" style="--fs:17px">
 <nav class="toolbar" dir="rtl">
-  <strong>نمایش:</strong>
-  <button data-mode="both" class="active" type="button">دو زبانه</button>
-  <button data-mode="fa" type="button">فارسی</button>
-  <button data-mode="en" type="button">English</button>
+  <div class="grp"><strong>زبان</strong>
+    <button data-mode="both" class="active" type="button">دو</button>
+    <button data-mode="fa" type="button">فا</button>
+    <button data-mode="en" type="button">EN</button>
+  </div>
+  <span class="sep"></span>
+  <div class="grp"><strong>تم</strong>
+    <button data-theme="light" class="active" type="button">روز</button>
+    <button data-theme="sepia" type="button">کاغذ</button>
+    <button data-theme="dark" type="button">شب</button>
+  </div>
+  <span class="sep"></span>
+  <div class="grp"><strong>فونت</strong>
+    <button data-font="sans" class="active" type="button">Sans</button>
+    <button data-font="serif" type="button">Serif</button>
+    <button data-font="vazir" type="button">Vazir</button>
+  </div>
+  <span class="sep"></span>
+  <div class="grp"><strong>اندازه</strong>
+    <button data-fs="dec" type="button">A−</button>
+    <button data-fs="reset" type="button">A</button>
+    <button data-fs="inc" type="button">A+</button>
+  </div>
+  <span class="sep"></span>
+  <div class="grp"><strong>چینش</strong>
+    <button data-align="start" class="active" type="button">طبیعی</button>
+    <button data-align="justify" type="button">هم‌تراز</button>
+    <button data-align="center" type="button">وسط</button>
+  </div>
 </nav>
 <h1>${esc(title)}</h1>
 <p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>
@@ -184,20 +215,47 @@ ${body}
 
 <script>
 (function(){
-  document.querySelectorAll('.toolbar button').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var m = btn.getAttribute('data-mode');
-      document.body.setAttribute('data-mode', m);
-      document.querySelectorAll('.toolbar button').forEach(function(b){
-        b.classList.toggle('active', b === btn);
+  var K='llvp-html-prefs';
+  var prefs={}; try{ prefs=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
+  var fs = prefs.fs || 17;
+  function apply(){
+    document.body.style.setProperty('--fs', fs+'px');
+    ['mode','theme','font','align'].forEach(function(g){
+      var v = prefs[g]; if(!v) return;
+      document.body.setAttribute('data-'+g, v);
+      document.querySelectorAll('.toolbar button[data-'+g+']').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-'+g) === v);
       });
     });
+  }
+  function save(){ try{ localStorage.setItem(K, JSON.stringify(prefs)); }catch(e){} }
+  document.querySelectorAll('.toolbar button').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      ['mode','theme','font','align'].forEach(function(g){
+        var v = btn.getAttribute('data-'+g);
+        if (v){
+          prefs[g]=v;
+          document.body.setAttribute('data-'+g, v);
+          document.querySelectorAll('.toolbar button[data-'+g+']').forEach(function(b){
+            b.classList.toggle('active', b===btn);
+          });
+        }
+      });
+      var fsCmd = btn.getAttribute('data-fs');
+      if (fsCmd === 'inc') fs = Math.min(28, fs+1);
+      else if (fsCmd === 'dec') fs = Math.max(12, fs-1);
+      else if (fsCmd === 'reset') fs = 17;
+      if (fsCmd){ prefs.fs = fs; document.body.style.setProperty('--fs', fs+'px'); }
+      save();
+    });
   });
+  apply();
 })();
 </script>
 </body>
 </html>`;
 }
+
 
 async function copyRich(html: string, plain: string): Promise<void> {
   // Prefer the modern Clipboard API with multiple MIME types so Telegram

@@ -607,11 +607,12 @@ export function ChapterTTSPlayer({
   return (
     <>
       <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[85dvh] overflow-y-auto overscroll-contain"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[55dvh] overflow-y-auto overscroll-contain"
         role="region"
         aria-label="Chapter narration player"
       >
-        <div className="max-w-4xl mx-auto px-4 py-3 space-y-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+        <div className="max-w-4xl mx-auto px-3 py-2 space-y-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+
           {/* Header */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 min-w-0">

@@ -303,13 +303,15 @@ export function InteractiveBookText({
    *  narration we need to compare against the paragraph's cached translation. */
   const matchActive = (enText: string): boolean => {
     if (!activeSpeechKey) return false;
+    const key = activeSpeechKey.replace(/\s+/g, ' ').trim().toLowerCase();
     const enNorm = enText.replace(/\s+/g, ' ').trim().toLowerCase();
-    if (enNorm.startsWith(activeSpeechKey) || enNorm.includes(activeSpeechKey)) return true;
+    if (enNorm && (enNorm.startsWith(key) || enNorm.includes(key) || key.includes(enNorm))) return true;
     const fa = analyses[hashParagraph(enText.trim())]?.translation?.trim();
     if (!fa) return false;
     const faNorm = fa.replace(/\s+/g, ' ').trim().toLowerCase();
-    return faNorm.startsWith(activeSpeechKey) || faNorm.includes(activeSpeechKey);
+    return faNorm.startsWith(key) || faNorm.includes(key) || key.includes(faNorm);
   };
+
 
   const textAlign = useSettingsStore((s) => s.settings.paragraphTextAlign) ?? 'start';
   const alignClass = textAlign === 'justify' ? 'text-justify' : textAlign === 'center' ? 'text-center' : 'text-start';
@@ -340,8 +342,17 @@ export function InteractiveBookText({
                   ? 'text-2xl font-semibold mt-6 mb-1 tracking-tight'
                   : 'text-xl font-semibold mt-4 mb-1 tracking-tight';
             const Tag = b.kind as 'h1' | 'h2' | 'h3';
+            const isActive = matchActive(headText) || (hFa && matchActive(hFa));
             return (
-              <div key={b.key} id={slug} className="scroll-mt-24">
+              <div
+                key={b.key}
+                id={slug}
+                ref={isActive ? activeRef : undefined}
+                className={cn(
+                  'scroll-mt-24 transition-colors rounded-md',
+                  isActive && 'bg-primary/10 ring-1 ring-primary/30 px-2 -mx-2',
+                )}
+              >
                 {showHeadEn && (
                   <Tag className={sizeCls}>
                     <InteractiveSubtitle
@@ -369,6 +380,7 @@ export function InteractiveBookText({
               </div>
             );
           }
+
           case 'blockquote': {
             const hash = hashParagraph(b.text!.trim());
             const analysis = analyses[hash] ?? null;

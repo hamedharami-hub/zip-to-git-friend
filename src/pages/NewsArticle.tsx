@@ -415,19 +415,26 @@ const NewsArticleReader = () => {
     : undefined;
 
   // Plain text for TTS — prefer current view (rewrite if user is on it).
+  // IMPORTANT: keep blank-line separators between blocks so the TTS chunker
+  // splits headings into their own utterance instead of merging them with
+  // the next paragraph.
   const ttsText = (() => {
     const md = view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd;
     if (!md || md === '__SCRAPE_FAILED__') return article.excerpt ?? '';
-    // Strip markdown / html for cleaner narration.
     return md
       .replace(/```[\s\S]*?```/g, ' ')
       .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
       .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
       .replace(/<[^>]+>/g, ' ')
-      .replace(/[#>*_`~-]+/g, ' ')
-      .replace(/\s+/g, ' ')
+      // Strip leading markdown markers but keep the line content + line breaks.
+      .replace(/^[ \t]*[#>*_`~-]+[ \t]*/gm, '')
+      .replace(/[`*_~]+/g, '')
+      // Collapse spaces/tabs only — preserve newlines for block boundaries.
+      .replace(/[ \t]+/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
   })();
+
 
 
   return (

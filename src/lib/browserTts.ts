@@ -67,27 +67,40 @@ function lookupVoice(id: string | null): SpeechSynthesisVoice | null {
   return list.find((v) => `${v.name}__${v.lang}` === id) ?? null;
 }
 
-/** Split text into utterance-sized chunks (~250 chars) at sentence boundaries. */
+/** Split text into utterance-sized chunks (~250 chars).
+ *  Respects double-newline block boundaries FIRST so headings (which often
+ *  don't end in a period) get spoken as their own chunk instead of being
+ *  merged with the next paragraph. Inside each block we then split at
+ *  sentence boundaries. */
 function chunkText(text: string, maxLen = 250): string[] {
-  const cleaned = (text ?? '').replace(/\s+/g, ' ').trim();
+  const cleaned = (text ?? '').replace(/\r\n?/g, '\n').trim();
   if (!cleaned) return [];
-  // Split at sentence boundaries first.
-  const sentences = cleaned.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [cleaned];
+  const blocks = cleaned.split(/\n{2,}/g).map((b) => b.replace(/\s+/g, ' ').trim()).filter(Boolean);
   const out: string[] = [];
-  let buf = '';
-  for (const s of sentences) {
-    const trimmed = s.trim();
-    if (!trimmed) continue;
-    if ((buf + ' ' + trimmed).trim().length > maxLen && buf) {
-      out.push(buf.trim());
-      buf = trimmed;
-    } else {
-      buf = buf ? `${buf} ${trimmed}` : trimmed;
+  for (const block of blocks) {
+    // Short blocks (typically headings) stay as a single chunk so they're
+    // spoken in isolation and the UI can scroll/highlight them on their own.
+    if (block.length <= maxLen) {
+      out.push(block);
+      continue;
     }
+    const sentences = block.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [block];
+    let buf = '';
+    for (const s of sentences) {
+      const trimmed = s.trim();
+      if (!trimmed) continue;
+      if ((buf + ' ' + trimmed).trim().length > maxLen && buf) {
+        out.push(buf.trim());
+        buf = trimmed;
+      } else {
+        buf = buf ? `${buf} ${trimmed}` : trimmed;
+      }
+    }
+    if (buf) out.push(buf.trim());
   }
-  if (buf) out.push(buf.trim());
   return out;
 }
+
 
 export interface BrowserTtsOptions {
   voiceId?: string | null;

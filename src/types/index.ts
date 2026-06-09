@@ -203,6 +203,17 @@ export interface AppSettings {
   geminiTtsApiKey: string;
   /** Optional ElevenLabs API key for premium TTS narration. */
   elevenLabsApiKey?: string;
+  /** Microsoft Azure Speech (Cognitive Services) — best fa-IR pronunciation. */
+  azureTtsApiKey?: string;
+  /** Azure region, e.g. "westeurope", "eastus". */
+  azureTtsRegion?: string;
+  /** Hugging Face Inference API token (used for MMS-TTS models). */
+  huggingFaceApiKey?: string;
+  /** Play.ht user id + secret pair for online TTS. */
+  playHtUserId?: string;
+  playHtApiKey?: string;
+  /** Base URL of a self-hosted OpenTTS server, e.g. http://localhost:5500. */
+  openTtsUrl?: string;
   /** Default Gemini model (fallback / legacy). */
   geminiModel: GeminiModel;
   /** Per-task model choices. */

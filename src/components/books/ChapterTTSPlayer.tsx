@@ -225,6 +225,117 @@ export function ChapterTTSPlayer({
   useEffect(() => { try { localStorage.setItem(ELEVEN_MODEL_KEY, elevenModel); } catch { /* */ } }, [elevenModel]);
   const [elevenLoading, setElevenLoading] = useState(false);
 
+  // ───────── Azure / HF / Play.ht / OpenTTS state ─────────
+  const azureKey = settings.azureTtsApiKey?.trim() ?? '';
+  const azureRegion = settings.azureTtsRegion?.trim() || 'westeurope';
+  const hfKey = settings.huggingFaceApiKey?.trim() ?? '';
+  const playHtUser = settings.playHtUserId?.trim() ?? '';
+  const playHtKey = settings.playHtApiKey?.trim() ?? '';
+  const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
+  const azureVoiceOpts = AZURE_VOICES.filter((v) => v.lang === ttsLang);
+  const hfVoiceOpts = HUGGINGFACE_VOICES.filter((v) => v.lang === ttsLang);
+  const playHtVoiceOpts = PLAYHT_VOICES;
+  const [azureVoice, setAzureVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-azure-voice') || ''; } catch { return ''; }
+  });
+  const [hfVoice, setHfVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-hf-voice') || ''; } catch { return ''; }
+  });
+  const [playHtVoice, setPlayHtVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-playht-voice') || PLAYHT_VOICES[0].id; } catch { return PLAYHT_VOICES[0].id; }
+  });
+  const [openTtsVoice, setOpenTtsVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-opentts-voice') || (ttsLang === 'fa' ? 'coqui-tts:fa_custom' : 'larynx:en-us/ek-glow_tts'); }
+    catch { return 'larynx:en-us/ek-glow_tts'; }
+  });
+  useEffect(() => { const v = azureVoiceOpts[0]?.id; if (!azureVoice && v) setAzureVoice(v); }, [azureVoiceOpts, azureVoice]);
+  useEffect(() => { const v = hfVoiceOpts[0]?.id; if (!hfVoice && v) setHfVoice(v); }, [hfVoiceOpts, hfVoice]);
+  useEffect(() => { try { if (azureVoice) localStorage.setItem('llvp-tts-azure-voice', azureVoice); } catch {/* */} }, [azureVoice]);
+  useEffect(() => { try { if (hfVoice) localStorage.setItem('llvp-tts-hf-voice', hfVoice); } catch {/* */} }, [hfVoice]);
+  useEffect(() => { try { localStorage.setItem('llvp-tts-playht-voice', playHtVoice); } catch {/* */} }, [playHtVoice]);
+  useEffect(() => { try { localStorage.setItem('llvp-tts-opentts-voice', openTtsVoice); } catch {/* */} }, [openTtsVoice]);
+  const [otherLoading, setOtherLoading] = useState(false);
+
+  /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
+  const loadOther = async () => {
+    if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
+    setOtherLoading(true);
+    try {
+      let blob: Blob;
+      if (engine === 'azure') {
+        blob = await synthesizeWithAzure({ apiKey: azureKey, region: azureRegion, text, voice: azureVoice, rate });
+      } else if (engine === 'huggingface') {
+        blob = await synthesizeWithHuggingFace({ apiKey: hfKey, text, model: hfVoice });
+      } else if (engine === 'playht') {
+        blob = await synthesizeWithPlayHt({ userId: playHtUser, apiKey: playHtKey, text, voice: playHtVoice, lang: ttsLang });
+      } else {
+        blob = await synthesizeWithOpenTts({ baseUrl: openTtsUrl, text, voice: openTtsVoice });
+      }
+      revokeUrl();
+      const url = URL.createObjectURL(blob);
+      lastUrlRef.current = url;
+      setAudioUrl(url);
+      toast.success('روایت آماده شد.');
+    } catch (e) {
+      const msg = e instanceof AzureTtsError || e instanceof HuggingFaceTtsError ||
+                  e instanceof PlayHtTtsError || e instanceof OpenTtsError
+                  ? e.message : (e instanceof Error ? e.message : 'TTS ناموفق');
+      toast.error(msg);
+    } finally { setOtherLoading(false); }
+  };
+
+  // ───────── Paragraph-speech-request bus (long-press menu) ─────────
+  useEffect(() => {
+    return subscribeParagraphSpeechRequest(bookId, chapterIndexProp, (req) => {
+      if (req.action === 'stop') {
+        try { window.speechSynthesis.cancel(); } catch { /* */ }
+        browserCtrlRef.current?.stop();
+        browserCtrlRef.current = null;
+        setBrowserPlaying(false);
+        setBrowserChunk(null);
+        return;
+      }
+      if (req.action === 'play-from') {
+        if (req.lang === 'fa') setTtsLang('fa');
+        else if (req.lang === 'en') setTtsLang('en');
+        setEngine('browser');
+        setOpen(true);
+        // Find matching chunk index by scanning chunks for the paragraph head.
+        setTimeout(() => {
+          if (!isBrowserTtsSupported()) return;
+          const fullText = req.lang === 'fa' && textFa ? textFa : textProp;
+          const head = req.text.replace(/\s+/g, ' ').trim().slice(0, 40).toLowerCase();
+          const idx = Math.max(0, fullText.toLowerCase().indexOf(head));
+          // Estimate chunk index by char offset / ~250 chars per chunk.
+          const chunkIdx = Math.floor(idx / 250);
+          resumeIndexRef.current = chunkIdx;
+          const ctl = new BrowserTtsController(fullText, {
+            voiceId: browserVoiceId,
+            lang: req.lang === 'fa' ? 'fa-IR' : 'en-US',
+            rate,
+            onChunkStart: (i, total) => {
+              setBrowserChunk({ done: i, total });
+              resumeIndexRef.current = i - 1;
+              try {
+                const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[i - 1];
+                if (chunk) emitParagraphSpeech(bookId, chapterIndexProp, chunk);
+              } catch {/* */}
+            },
+            onEnd: () => { setBrowserPlaying(false); setBrowserChunk(null); resumeIndexRef.current = 0; emitParagraphSpeech(bookId, chapterIndexProp, null); },
+            onError: () => { setBrowserPlaying(false); emitParagraphSpeech(bookId, chapterIndexProp, null); },
+          });
+          browserCtrlRef.current?.stop();
+          browserCtrlRef.current = ctl;
+          ctl.start(chunkIdx);
+          setBrowserPlaying(true);
+        }, 60);
+      }
+      // 'play-one' is handled by the menu's instant speechSynthesis call.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, chapterIndexProp, textProp, textFa, browserVoiceId, rate]);
+
+
   // Lazy-load voices the first time the panel opens.
   useEffect(() => {
     if (!open || browserVoices.length > 0) return;

@@ -124,7 +124,11 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     .map((p) => {
       if (p.kind === 'h') {
         const lvl = Math.max(2, Math.min(6, p.level ?? 2));
-        return `<h${lvl} class="heading">${esc(p.en)}</h${lvl}>`;
+        const enH = `<h${lvl} class="heading en" dir="ltr">${esc(p.en)}</h${lvl}>`;
+        const faH = p.fa
+          ? `<h${lvl} class="heading fa" dir="rtl">${esc(p.fa)}</h${lvl}>`
+          : '';
+        return `<div class="para">${enH}${faH}</div>`;
       }
       const en = `<p class="en" dir="ltr">${esc(p.en)}</p>`;
       const fa = p.fa

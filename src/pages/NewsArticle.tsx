@@ -84,6 +84,8 @@ const NewsArticleReader = () => {
     (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) => setTypo(v),
     [],
   );
+  const pinchScrollRef = useRef<HTMLDivElement | null>(null);
+  usePinchFontStep(pinchScrollRef);
 
   const settings = useSettingsStore((s) => s.settings);
   // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph

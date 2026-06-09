@@ -791,7 +791,6 @@ export function ChapterTTSPlayer({
               );
             })}
           </div>
-          </div>
 
           {/* Language picker — visible whenever a Persian script is available. */}
           {textFa && (

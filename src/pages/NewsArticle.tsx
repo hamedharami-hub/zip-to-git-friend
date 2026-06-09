@@ -60,6 +60,15 @@ function isYoutubeUrl(url: string): boolean {
 
 type RewriteLength = 'long' | 'max' | 'auto-max';
 
+const DISPLAY_LANG_KEY = 'news.displayLang.v1';
+function loadDisplayLang(): DisplayLang {
+  try {
+    const v = localStorage.getItem(DISPLAY_LANG_KEY);
+    if (v === 'en' || v === 'fa' || v === 'both') return v;
+  } catch { /* ignore */ }
+  return 'both';
+}
+
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();

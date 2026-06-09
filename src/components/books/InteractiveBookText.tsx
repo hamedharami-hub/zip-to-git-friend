@@ -863,6 +863,18 @@ function Paragraph({
           hideTranslation
         />
       )}
+
+      <ParagraphActionsMenu
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        text={text}
+        faText={fa || undefined}
+        bookId={bookId}
+        chapterIndex={chapterIndex}
+        starred={starred}
+        onToggleStar={toggleStar}
+        onTranslate={() => { void handleAnalysis(); }}
+      />
     </div>
   );
 }

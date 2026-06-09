@@ -17,7 +17,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
 import { ChapterTTSPlayer } from '@/components/books/ChapterTTSPlayer';
 import { ReaderTTSQuickSettings } from '@/components/books/ReaderTTSQuickSettings';
-import { TranslateChapterButton } from '@/components/books/TranslateChapterButton';
+import type { DisplayLang as _DL } from '@/components/books/TranslateChapterButton';
 import type { BookChapter } from '@/types';
 import {
   generateDigest,

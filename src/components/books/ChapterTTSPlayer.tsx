@@ -757,57 +757,40 @@ export function ChapterTTSPlayer({
           <div
             role="tablist"
             aria-label="TTS engine"
-            className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
+            className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5 gap-0.5"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'browser'}
-              disabled={!browserSupported}
-              onClick={() => setEngine('browser')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'browser'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="Built-in browser voice — free, offline"
-            >
-              <Mic className="h-3 w-3" />
-              Browser
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'gemini'}
-              onClick={() => setEngine('gemini')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'gemini'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="Gemini TTS — natural voices, needs API key"
-            >
-              <Sparkles className="h-3 w-3" />
-              Gemini
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'elevenlabs'}
-              onClick={() => setEngine('elevenlabs')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'elevenlabs'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="ElevenLabs — صدای حرفه‌ای، نیاز به API key"
-            >
-              <Sparkles className="h-3 w-3" />
-              ElevenLabs
-            </button>
+            {([
+              { id: 'browser', label: 'Browser', icon: Mic, title: 'Built-in browser voice — free, offline', disabled: !browserSupported },
+              { id: 'gemini', label: 'Gemini', icon: Sparkles, title: 'Gemini TTS — needs Gemini key' },
+              { id: 'elevenlabs', label: 'ElevenLabs', icon: Sparkles, title: 'ElevenLabs — premium' },
+              { id: 'azure', label: 'Azure', icon: Sparkles, title: 'Azure Speech — بهترین صدای فارسی' },
+              { id: 'huggingface', label: 'HF', icon: Sparkles, title: 'Hugging Face Inference' },
+              { id: 'playht', label: 'Play.ht', icon: Sparkles, title: 'Play.ht v2 streaming' },
+              { id: 'opentts', label: 'OpenTTS', icon: Sparkles, title: 'Self-hosted OpenTTS server' },
+            ] as const).map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={engine === t.id}
+                  disabled={(t as { disabled?: boolean }).disabled}
+                  onClick={() => setEngine(t.id as Engine)}
+                  className={
+                    'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
+                    (engine === t.id
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground disabled:opacity-50')
+                  }
+                  title={t.title}
+                >
+                  <Icon className="h-3 w-3" />
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
           </div>
 
           {/* Language picker — visible whenever a Persian script is available. */}

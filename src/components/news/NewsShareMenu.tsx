@@ -474,12 +474,18 @@ export function NewsShareMenu({
         toast.error('متنی برای خروجی پیدا نشد.');
         return;
       }
+      // Try cached Persian translation of the title for the filename.
+      let faTitle: string | undefined;
+      try {
+        const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, title);
+        faTitle = cached?.translation?.trim() || undefined;
+      } catch { /* ignore */ }
       const html = buildBilingualHtml(title, siteName ?? undefined, url, pairs);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const href = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = href;
-      a.download = `${safeFilename(title)}.html`;
+      a.download = `${safeFilename(faTitle || title)}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();

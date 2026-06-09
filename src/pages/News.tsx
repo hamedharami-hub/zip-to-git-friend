@@ -92,7 +92,7 @@ const News = () => {
   const [sources, setSources] = useState<NewsSource[]>([]);
   const [folders, setFolders] = useState<NewsFolder[]>([]);
   const [blocked, setBlocked] = useState<BlockedDomain[]>([]);
-  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [manageOpen, setManageOpen] = useState(false);
   const [digests, setDigests] = useState<NewsDigest[]>([]);
   const [savedArticles, setSavedArticles] = useState<NewsArticle[]>([]);

@@ -30,10 +30,9 @@ export function LangCycleButton({
       variant="ghost"
       size="sm"
       onClick={next}
-      disabled={!hasAnyTranslation}
       className={cn(
         'h-7 px-2 gap-1 text-[10px] font-semibold rounded-md',
-        hasAnyTranslation ? 'text-foreground' : 'text-muted-foreground',
+        hasAnyTranslation ? 'text-foreground' : 'text-muted-foreground/80',
       )}
       title="تغییر زبان نمایش"
       aria-label={`زبان نمایش: ${LABEL[value]}`}

@@ -60,6 +60,15 @@ function isYoutubeUrl(url: string): boolean {
 
 type RewriteLength = 'long' | 'max' | 'auto-max';
 
+const DISPLAY_LANG_KEY = 'news.displayLang.v1';
+function loadDisplayLang(): DisplayLang {
+  try {
+    const v = localStorage.getItem(DISPLAY_LANG_KEY);
+    if (v === 'en' || v === 'fa' || v === 'both') return v;
+  } catch { /* ignore */ }
+  return 'both';
+}
+
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
@@ -81,10 +90,13 @@ const NewsArticleReader = () => {
   const [activeRewrite, setActiveRewrite] = useState<RewriteLength>('auto-max');
   const [rewriteBusy, setRewriteBusy] = useState<RewriteLength | null>(null);
   const [view, setView] = useState<'original' | 'rewrite'>('original');
-  const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>('both');
+  const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
   const [origTranslationCount, setOrigTranslationCount] = useState(0);
-  const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>('both');
+  const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
   const [rwTranslationCount, setRwTranslationCount] = useState(0);
+  // Persist language choice globally so re-opens / back navigation keep it.
+  useEffect(() => { try { localStorage.setItem('news.displayLang.v1', origDisplayLang); } catch { /* */ } }, [origDisplayLang]);
+  useEffect(() => { try { localStorage.setItem('news.displayLang.v1', rwDisplayLang); } catch { /* */ } }, [rwDisplayLang]);
   const [faTtsText, setFaTtsText] = useState<string>('');
   // Reader typography (font size + family) — persisted via NewsTypographyMenu.
   const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(

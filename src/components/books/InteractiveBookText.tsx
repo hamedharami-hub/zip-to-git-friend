@@ -16,6 +16,7 @@ import { useParagraphGestures, speakText } from '@/hooks/useParagraphGestures';
 import { Button } from '@/components/ui/button';
 import { ParagraphAnalysisCard } from '@/components/books/ParagraphAnalysisCard';
 import { ParagraphTTSButton } from '@/components/books/ParagraphTTSButton';
+import { ParagraphActionsMenu } from '@/components/books/ParagraphActionsMenu';
 import { getCachedParagraphAnalysis, hashParagraph } from '@/lib/bookAnalysis';
 import { analyzeParagraphRouted } from '@/lib/bookAiRouter';
 import { coerceBookModel } from '@/lib/aiModels';

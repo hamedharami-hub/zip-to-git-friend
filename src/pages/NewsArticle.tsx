@@ -17,7 +17,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
 import { ChapterTTSPlayer } from '@/components/books/ChapterTTSPlayer';
 import { ReaderTTSQuickSettings } from '@/components/books/ReaderTTSQuickSettings';
-import { TranslateChapterButton } from '@/components/books/TranslateChapterButton';
+
 import type { BookChapter } from '@/types';
 import {
   generateDigest,
@@ -42,6 +42,8 @@ import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
+import { LangCycleButton } from '@/components/news/LangCycleButton';
+import { ChevronDown } from 'lucide-react';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -64,6 +66,7 @@ const NewsArticleReader = () => {
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
+  const [headerOpen, setHeaderOpen] = useState(false);
 
   // Rewrites cached per (article, length) in news_digests via source_articles.
   const [rewrites, setRewrites] = useState<Record<RewriteLength, NewsDigest | undefined>>(
@@ -454,49 +457,77 @@ const NewsArticleReader = () => {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
-      <header className="border-b border-border bg-background/95 backdrop-blur z-10">
-        <div className="max-w-4xl mx-auto px-3 sm:px-6 py-3 flex items-center gap-2">
-          <Button variant="ghost" size="icon" onClick={goBack} aria-label="Back"><ArrowLeft className="h-5 w-5" /></Button>
+      <header
+        className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      >
+        {/* Compact strip — like Android status/notification bar. Tap to expand. */}
+        <button
+          type="button"
+          onClick={() => setHeaderOpen((v) => !v)}
+          className="w-full flex items-center gap-1.5 px-2 py-1.5 text-start active:bg-accent/40 transition-colors"
+          aria-expanded={headerOpen}
+          aria-label="منوی خبر"
+        >
+          <span
+            onClick={(e) => { e.stopPropagation(); goBack(); }}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); goBack(); } }}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+            aria-label="Back"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </span>
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm sm:text-base font-semibold truncate leading-tight">{article.title}</h1>
-            <p className="text-[11px] text-muted-foreground truncate">
+            <h1 className="text-[12px] sm:text-sm font-semibold truncate leading-tight">{article.title}</h1>
+            <p className="text-[10px] text-muted-foreground truncate">
               {article.siteName ?? ''}
               {article.author ? ` · ${article.author}` : ''}
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={toggleSave} aria-label="Save article" title={article.isSaved ? 'حذف از سیو' : 'سیو'}>
-            {article.isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
-          </Button>
-          <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTypographyMenu onChange={handleTypoChange} />
-          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
-          {(view === 'rewrite' ? rwChapter : origChapter) && (
-            <TranslateChapterButton
-              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
-              chapter={view === 'rewrite' ? rwChapter : origChapter}
-              displayLang={view === 'rewrite' ? rwDisplayLang : origDisplayLang}
-              onDisplayLangChange={view === 'rewrite' ? setRwDisplayLang : setOrigDisplayLang}
-              hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
-            />
-          )}
-          {(view === 'rewrite' ? rwChapter : origChapter) && (
-            <NewsShareMenu
-              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
-              chapterIndex={0}
-              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
-              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
-              url={article.url}
-              siteName={article.siteName}
-              aiModel={newsModelRef.model}
-            />
-          )}
-          <Button variant="ghost" size="icon" onClick={() => runScrape(article)} disabled={scraping} aria-label="Re-scrape">
-            {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          </Button>
-          <a href={article.url} target="_blank" rel="noopener noreferrer">
-            <Button variant="ghost" size="icon" aria-label="Open original"><ExternalLink className="h-4 w-4" /></Button>
-          </a>
+          <LangCycleButton
+            value={view === 'rewrite' ? rwDisplayLang : origDisplayLang}
+            onChange={view === 'rewrite' ? setRwDisplayLang : setOrigDisplayLang}
+            hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
+          />
+          <ChevronDown
+            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${headerOpen ? 'rotate-180' : ''}`}
+          />
+        </button>
+
+        {/* Expanded action drawer — slides down like a notification panel. */}
+        <div
+          className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
+            headerOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="flex items-center gap-1 px-2 pb-2 pt-1 flex-wrap">
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSave} aria-label="Save article" title={article.isSaved ? 'حذف از سیو' : 'سیو'}>
+              {article.isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
+            </Button>
+            <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
+            <NewsTypographyMenu onChange={handleTypoChange} />
+            <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+            {(view === 'rewrite' ? rwChapter : origChapter) && (
+              <NewsShareMenu
+                bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
+                chapterIndex={0}
+                title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
+                contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+                contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
+                url={article.url}
+                siteName={article.siteName}
+                aiModel={newsModelRef.model}
+              />
+            )}
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runScrape(article)} disabled={scraping} aria-label="Re-scrape">
+              {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+            </Button>
+            <a href={article.url} target="_blank" rel="noopener noreferrer">
+              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open original"><ExternalLink className="h-4 w-4" /></Button>
+            </a>
+          </div>
         </div>
       </header>
 

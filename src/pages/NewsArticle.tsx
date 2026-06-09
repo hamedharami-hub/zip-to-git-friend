@@ -10,8 +10,15 @@ import {
   BookmarkCheck,
   Sparkles,
   Trash2,
+  MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/EmptyState';
 import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
@@ -43,7 +50,6 @@ import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
 import { LangCycleButton } from '@/components/news/LangCycleButton';
-import { ChevronDown } from 'lucide-react';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -66,7 +72,7 @@ const NewsArticleReader = () => {
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
-  const [headerOpen, setHeaderOpen] = useState(false);
+  
 
   // Rewrites cached per (article, length) in news_digests via source_articles.
   const [rewrites, setRewrites] = useState<Record<RewriteLength, NewsDigest | undefined>>(
@@ -211,14 +217,10 @@ const NewsArticleReader = () => {
     };
 
     void (async () => {
-      // If the article was opened before, treat it as offline-ready and
-      // skip any AI calls — only assemble the Persian script from cache.
-      if (article && isSeen(article.url)) {
-        await buildFaText();
-        return;
-      }
       try {
-        // Kick off translation (uses cache, free if already done).
+        // batchAnalyzeChapter reuses the per-paragraph cache, so re-opens
+        // are free (no AI calls). Always run it so first-time opens still
+        // produce Persian translations under each paragraph.
         const final = await batchAnalyzeChapter(activeBookId, chapter, {
           concurrency: 5,
           signal: controller.signal,
@@ -230,7 +232,6 @@ const NewsArticleReader = () => {
         if (cancelled) return;
         emitChapterAnalyses(activeBookId, 0, final.results);
         await buildFaText();
-        // Mark as seen so future opens skip AI processing entirely.
         if (article) markSeen(article.url);
       } catch {
         // best-effort; the user can still trigger translate manually
@@ -464,27 +465,19 @@ const NewsArticleReader = () => {
         className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {/* Compact strip — like Android status/notification bar. Tap to expand. */}
-        <button
-          type="button"
-          onClick={() => setHeaderOpen((v) => !v)}
-          className="w-full flex items-center gap-1.5 px-2 py-1.5 text-start active:bg-accent/40 transition-colors"
-          aria-expanded={headerOpen}
-          aria-label="منوی خبر"
-        >
-          <span
-            onClick={(e) => { e.stopPropagation(); goBack(); }}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); goBack(); } }}
+        {/* Single ultra-thin row — back, title, language, kebab menu. */}
+        <div className="flex items-center gap-1 px-2 py-1">
+          <button
+            type="button"
+            onClick={goBack}
             className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
-          </span>
+          </button>
           <div className="flex-1 min-w-0">
-            <h1 className="text-[12px] sm:text-sm font-semibold truncate leading-tight">{article.title}</h1>
-            <p className="text-[10px] text-muted-foreground truncate">
+            <h1 className="text-[12px] font-semibold truncate leading-tight">{article.title}</h1>
+            <p className="text-[10px] text-muted-foreground truncate leading-tight">
               {article.siteName ?? ''}
               {article.author ? ` · ${article.author}` : ''}
             </p>
@@ -494,43 +487,51 @@ const NewsArticleReader = () => {
             onChange={view === 'rewrite' ? setRwDisplayLang : setOrigDisplayLang}
             hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
           />
-          <ChevronDown
-            className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${headerOpen ? 'rotate-180' : ''}`}
-          />
-        </button>
-
-        {/* Expanded action drawer — slides down like a notification panel. */}
-        <div
-          className={`overflow-hidden transition-[max-height,opacity] duration-200 ease-out ${
-            headerOpen ? 'max-h-24 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className="flex items-center gap-1 px-2 pb-2 pt-1 flex-wrap">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={toggleSave} aria-label="Save article" title={article.isSaved ? 'حذف از سیو' : 'سیو'}>
-              {article.isSaved ? <BookmarkCheck className="h-4 w-4 text-primary" /> : <Bookmark className="h-4 w-4" />}
-            </Button>
-            <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-            <NewsTypographyMenu onChange={handleTypoChange} />
-            <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
-            {(view === 'rewrite' ? rwChapter : origChapter) && (
-              <NewsShareMenu
-                bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
-                chapterIndex={0}
-                title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-                contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
-                contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
-                url={article.url}
-                siteName={article.siteName}
-                aiModel={newsModelRef.model}
-              />
-            )}
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => runScrape(article)} disabled={scraping} aria-label="Re-scrape">
-              {scraping ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-            </Button>
-            <a href={article.url} target="_blank" rel="noopener noreferrer">
-              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Open original"><ExternalLink className="h-4 w-4" /></Button>
-            </a>
-          </div>
+          <NewsTypographyMenu onChange={handleTypoChange} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="منو">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={toggleSave}>
+                {article.isSaved ? (
+                  <><BookmarkCheck className="h-4 w-4 me-2 text-primary" /> حذف از سیو</>
+                ) : (
+                  <><Bookmark className="h-4 w-4 me-2" /> سیو</>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => runScrape(article)} disabled={scraping}>
+                {scraping
+                  ? <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                  : <RefreshCw className="h-4 w-4 me-2" />}
+                بازخوانی
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a href={article.url} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4 me-2" /> اصل خبر
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {/* Secondary thin row: TOC + share inline (kept tiny). */}
+        <div className="flex items-center gap-0.5 px-2 pb-1 -mt-0.5">
+          <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
+          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+          {(view === 'rewrite' ? rwChapter : origChapter) && (
+            <NewsShareMenu
+              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
+              chapterIndex={0}
+              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
+              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
+              url={article.url}
+              siteName={article.siteName}
+              aiModel={newsModelRef.model}
+            />
+          )}
         </div>
       </header>
 

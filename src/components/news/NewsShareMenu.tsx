@@ -221,8 +221,8 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-theme="dark" type="button">شب</button>
   </div>
   <div class="row"><strong>فونت</strong>
-    <button data-font="sans" class="active" type="button">Sans</button>
-    <button data-font="serif" type="button">Serif</button>
+    <button data-font="sans" type="button">Sans</button>
+    <button data-font="serif" class="active" type="button">Serif</button>
     <button data-font="vazir" type="button">Vazir</button>
   </div>
   <div class="row"><strong>اندازه</strong>
@@ -231,8 +231,8 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-fs="inc" type="button">A+</button>
   </div>
   <div class="row"><strong>چینش</strong>
-    <button data-align="start" class="active" type="button">طبیعی</button>
-    <button data-align="justify" type="button">هم‌تراز</button>
+    <button data-align="start" type="button">طبیعی</button>
+    <button data-align="justify" class="active" type="button">هم‌تراز</button>
     <button data-align="center" type="button">وسط</button>
   </div>
   <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید.</div>

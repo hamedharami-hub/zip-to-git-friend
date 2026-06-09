@@ -130,7 +130,7 @@ export function ChapterTTSPlayer({
   const [engine, setEngine] = useState<Engine>(() => {
     try {
       const saved = localStorage.getItem(ENGINE_KEY) as Engine | null;
-      if (saved === 'gemini' || saved === 'browser' || saved === 'elevenlabs') return saved;
+      if (saved && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(saved)) return saved as Engine;
     } catch {
       /* noop */
     }
@@ -145,8 +145,8 @@ export function ChapterTTSPlayer({
   }, [engine]);
   useEffect(() => {
     const sync = (e: StorageEvent) => {
-      if (e.key === ENGINE_KEY && (e.newValue === 'browser' || e.newValue === 'gemini' || e.newValue === 'elevenlabs')) {
-        setEngine(e.newValue);
+      if (e.key === ENGINE_KEY && e.newValue && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(e.newValue)) {
+        setEngine(e.newValue as Engine);
       }
       if (e.key === TTS_LANG_KEY && (e.newValue === 'en' || e.newValue === 'fa')) {
         setTtsLang(e.newValue);

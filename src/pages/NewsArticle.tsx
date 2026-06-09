@@ -66,6 +66,7 @@ const NewsArticleReader = () => {
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
+  const [headerOpen, setHeaderOpen] = useState(false);
 
   // Rewrites cached per (article, length) in news_digests via source_articles.
   const [rewrites, setRewrites] = useState<Record<RewriteLength, NewsDigest | undefined>>(

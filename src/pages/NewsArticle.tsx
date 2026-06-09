@@ -41,6 +41,7 @@ import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
+import { isSeen, markSeen } from '@/lib/seenArticles';
 
 function isYoutubeUrl(url: string): boolean {
   try {

@@ -71,7 +71,13 @@ async function buildPairs(
     if (!raw) continue;
     const tag = el.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)) {
-      out.push({ kind: 'h', level: Number(tag.slice(1)), en: raw });
+      // Headings are also analyzed/translated — pull the cached translation.
+      let fa: string | undefined;
+      try {
+        const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, raw);
+        fa = cached?.translation?.trim() || undefined;
+      } catch { /* ignore */ }
+      out.push({ kind: 'h', level: Number(tag.slice(1)), en: raw, fa });
       continue;
     }
     // Mirror the renderer's chunking so cache lookups align with what the
@@ -118,7 +124,11 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     .map((p) => {
       if (p.kind === 'h') {
         const lvl = Math.max(2, Math.min(6, p.level ?? 2));
-        return `<h${lvl} class="heading">${esc(p.en)}</h${lvl}>`;
+        const enH = `<h${lvl} class="heading en" dir="ltr">${esc(p.en)}</h${lvl}>`;
+        const faH = p.fa
+          ? `<h${lvl} class="heading fa" dir="rtl">${esc(p.fa)}</h${lvl}>`
+          : '';
+        return `<div class="para">${enH}${faH}</div>`;
       }
       const en = `<p class="en" dir="ltr">${esc(p.en)}</p>`;
       const fa = p.fa
@@ -139,11 +149,12 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; --panelBg:#18181a; }
   body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; --panelBg:#fbf5e3; }
   * { box-sizing: border-box; }
+  html { font-size: var(--fs, 17px); }
   html, body { margin:0; padding:0; touch-action: pan-x pan-y; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
     max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
     line-height: 1.85; color: var(--fg); background: var(--bg);
-    font-size: var(--fs, 17px); transition: background .15s, color .15s; }
+    transition: background .15s, color .15s; }
   body[data-font="serif"] { font-family: 'Iowan Old Style','Palatino Linotype','Georgia',serif; }
   body[data-font="mono"]  { font-family: ui-monospace,'SF Mono',Menlo,Consolas,monospace; }
   body[data-font="vazir"] { font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
@@ -225,7 +236,7 @@ ${body}
   var prefs={}; try{ prefs=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
   var fs = prefs.fs || 17;
   function apply(){
-    document.body.style.setProperty('--fs', fs+'px');
+    document.documentElement.style.setProperty("--fs", fs+'px');
     ['mode','theme','font','align'].forEach(function(g){
       var v = prefs[g]; if(!v) return;
       document.body.setAttribute('data-'+g, v);
@@ -251,7 +262,7 @@ ${body}
       if (fsCmd === 'inc') fs = Math.min(40, fs+2);
       else if (fsCmd === 'dec') fs = Math.max(10, fs-2);
       else if (fsCmd === 'reset') fs = 17;
-      if (fsCmd){ prefs.fs = fs; document.body.style.setProperty('--fs', fs+'px'); }
+      if (fsCmd){ prefs.fs = fs; document.documentElement.style.setProperty("--fs", fs+'px'); }
       save();
     });
   });
@@ -272,7 +283,7 @@ ${body}
       var d = dist(e.touches);
       var ratio = d / startDist;
       var next = Math.round(Math.max(10, Math.min(40, startFs * ratio)));
-      if (next !== fs){ fs = next; document.body.style.setProperty('--fs', fs+'px'); }
+      if (next !== fs){ fs = next; document.documentElement.style.setProperty("--fs", fs+'px'); }
     }
   }, { passive: true });
   document.addEventListener('touchend', function(e){

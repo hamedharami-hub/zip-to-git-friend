@@ -71,7 +71,13 @@ async function buildPairs(
     if (!raw) continue;
     const tag = el.tagName.toLowerCase();
     if (/^h[1-6]$/.test(tag)) {
-      out.push({ kind: 'h', level: Number(tag.slice(1)), en: raw });
+      // Headings are also analyzed/translated — pull the cached translation.
+      let fa: string | undefined;
+      try {
+        const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, raw);
+        fa = cached?.translation?.trim() || undefined;
+      } catch { /* ignore */ }
+      out.push({ kind: 'h', level: Number(tag.slice(1)), en: raw, fa });
       continue;
     }
     // Mirror the renderer's chunking so cache lookups align with what the

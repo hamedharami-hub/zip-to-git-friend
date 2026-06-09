@@ -22,6 +22,7 @@ interface FeedItem {
   author?: string;
   publishedAt?: string;
   imageUrl?: string;
+  siteName?: string;
 }
 
 function decodeEntities(s: string): string {
@@ -52,6 +53,77 @@ function pickAttr(xml: string, tag: string, attr: string): string | undefined {
   const re = new RegExp(`<${tag}[^>]*\\b${attr}=["']([^"']+)["']`, "i");
   const m = xml.match(re);
   return m ? m[1] : undefined;
+}
+
+function shouldTranslateTitle(title: string): boolean {
+  const clean = (title ?? '').trim();
+  if (!clean) return false;
+  if (/^[\x00-\x7F\s.,:;!?"'()\-_/&%0-9]+$/.test(clean) && /[A-Za-z]{3,}/.test(clean)) return false;
+  return /[^\x00-\x7F]/.test(clean) || !/[A-Za-z]{3,}/.test(clean);
+}
+
+async function translateTitles(items: FeedItem[]): Promise<FeedItem[]> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const targets = items
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => shouldTranslateTitle(item.title));
+  if (!apiKey || targets.length === 0) return items;
+
+  try {
+    const payload = targets.map(({ item, index }) => ({ id: index, title: item.title }));
+    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'google/gemini-3.1-flash-lite-preview',
+        messages: [
+          {
+            role: 'system',
+            content: 'Translate non-English news headlines into natural concise English. If a title is already English, keep it nearly unchanged. Return JSON only via the provided tool.',
+          },
+          { role: 'user', content: JSON.stringify(payload) },
+        ],
+        tools: [{
+          type: 'function',
+          function: {
+            name: 'return_titles',
+            description: 'Return English titles by id.',
+            parameters: {
+              type: 'object',
+              properties: {
+                titles: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: { id: { type: 'integer' }, title: { type: 'string' } },
+                    required: ['id', 'title'],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ['titles'],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: 'function', function: { name: 'return_titles' } },
+      }),
+    });
+    if (!res.ok) return items;
+    const json = await res.json();
+    const argsStr = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    if (!argsStr) return items;
+    const parsed = JSON.parse(argsStr);
+    const map = new Map<number, string>();
+    for (const row of parsed?.titles ?? []) {
+      if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+        map.set(row.id, row.title.trim());
+      }
+    }
+    return items.map((item, index) => ({ ...item, title: map.get(index) ?? item.title }));
+  } catch {
+    return items;
+  }
 }
 
 function parseFeed(xml: string): FeedItem[] {
@@ -85,6 +157,8 @@ function parseFeed(xml: string): FeedItem[] {
       pick(block, "published") ??
       pick(block, "updated") ??
       undefined;
+    const sourceTag = pick(block, 'source') ?? '';
+    const siteName = stripTags(sourceTag) || undefined;
     let imageUrl =
       pickAttr(block, "media:content", "url") ??
       pickAttr(block, "media:thumbnail", "url") ??
@@ -98,6 +172,7 @@ function parseFeed(xml: string): FeedItem[] {
       url,
       excerpt,
       author: author || undefined,
+      siteName,
       publishedAt: publishedAt
         ? new Date(publishedAt).toISOString()
         : undefined,
@@ -142,7 +217,7 @@ serve(async (req) => {
       );
     }
     const xml = await resp.text();
-    const items = parseFeed(xml).slice(0, Math.max(1, Math.min(100, limit)));
+    const items = await translateTitles(parseFeed(xml).slice(0, Math.max(1, Math.min(100, limit))));
 
     // Try to pick a feed-level title for nicer UI labels.
     const feedTitle =

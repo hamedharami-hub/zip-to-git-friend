@@ -121,6 +121,12 @@ const Settings = () => {
   const [groq, setGroq] = useState(settings.groqApiKey);
   const [geminiTts, setGeminiTts] = useState(settings.geminiTtsApiKey);
   const [elevenLabs, setElevenLabs] = useState(settings.elevenLabsApiKey ?? '');
+  const [azureKey, setAzureKey] = useState(settings.azureTtsApiKey ?? '');
+  const [azureRegion, setAzureRegion] = useState(settings.azureTtsRegion ?? 'westeurope');
+  const [hfKey, setHfKey] = useState(settings.huggingFaceApiKey ?? '');
+  const [playHtUser, setPlayHtUser] = useState(settings.playHtUserId ?? '');
+  const [playHtKey, setPlayHtKey] = useState(settings.playHtApiKey ?? '');
+  const [openTtsUrl, setOpenTtsUrl] = useState(settings.openTtsUrl ?? '');
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingGroq, setTestingGroq] = useState(false);
   const [testingTts, setTestingTts] = useState(false);
@@ -135,10 +141,22 @@ const Settings = () => {
     setGroq(settings.groqApiKey);
     setGeminiTts(settings.geminiTtsApiKey);
     setElevenLabs(settings.elevenLabsApiKey ?? '');
-  }, [settings.geminiApiKey, settings.groqApiKey, settings.geminiTtsApiKey, settings.elevenLabsApiKey]);
+    setAzureKey(settings.azureTtsApiKey ?? '');
+    setAzureRegion(settings.azureTtsRegion ?? 'westeurope');
+    setHfKey(settings.huggingFaceApiKey ?? '');
+    setPlayHtUser(settings.playHtUserId ?? '');
+    setPlayHtKey(settings.playHtApiKey ?? '');
+    setOpenTtsUrl(settings.openTtsUrl ?? '');
+  }, [settings.geminiApiKey, settings.groqApiKey, settings.geminiTtsApiKey, settings.elevenLabsApiKey, settings.azureTtsApiKey, settings.azureTtsRegion, settings.huggingFaceApiKey, settings.playHtUserId, settings.playHtApiKey, settings.openTtsUrl]);
 
   const save = async () => {
-    await update({ geminiApiKey: gemini, groqApiKey: groq, geminiTtsApiKey: geminiTts, elevenLabsApiKey: elevenLabs });
+    await update({
+      geminiApiKey: gemini, groqApiKey: groq, geminiTtsApiKey: geminiTts, elevenLabsApiKey: elevenLabs,
+      azureTtsApiKey: azureKey, azureTtsRegion: azureRegion,
+      huggingFaceApiKey: hfKey,
+      playHtUserId: playHtUser, playHtApiKey: playHtKey,
+      openTtsUrl: openTtsUrl,
+    });
     toast.success('Settings saved.');
   };
 

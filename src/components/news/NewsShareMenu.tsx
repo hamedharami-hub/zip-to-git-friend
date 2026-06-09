@@ -149,11 +149,12 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; --panelBg:#18181a; }
   body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; --panelBg:#fbf5e3; }
   * { box-sizing: border-box; }
+  html { font-size: var(--fs, 17px); }
   html, body { margin:0; padding:0; touch-action: pan-x pan-y; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
     max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
     line-height: 1.85; color: var(--fg); background: var(--bg);
-    font-size: var(--fs, 17px); transition: background .15s, color .15s; }
+    transition: background .15s, color .15s; }
   body[data-font="serif"] { font-family: 'Iowan Old Style','Palatino Linotype','Georgia',serif; }
   body[data-font="mono"]  { font-family: ui-monospace,'SF Mono',Menlo,Consolas,monospace; }
   body[data-font="vazir"] { font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }

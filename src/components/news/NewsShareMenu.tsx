@@ -212,7 +212,11 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-mode="fa" type="button">فا</button>
     <button data-mode="en" type="button">EN</button>
   </div>
-  <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
+  <div class="grp">
+    <button id="ttsBtn" type="button" aria-label="پخش">▶︎</button>
+    <button id="ttsStopBtn" type="button" aria-label="توقف" style="display:none">■</button>
+    <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
+  </div>
 </nav>
 <div class="panel" id="settingsPanel" dir="rtl">
   <div class="row"><strong>تم</strong>

@@ -239,7 +239,17 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-align="justify" class="active" type="button">هم‌تراز</button>
     <button data-align="center" type="button">وسط</button>
   </div>
-  <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید.</div>
+  <div class="row"><strong>صدا</strong>
+    <select id="ttsVoiceFa" style="font:inherit;padding:.25rem;border-radius:6px;border:1px solid var(--btnBorder);background:var(--btn);color:var(--btnFg);max-width:130px"></select>
+    <select id="ttsVoiceEn" style="font:inherit;padding:.25rem;border-radius:6px;border:1px solid var(--btnBorder);background:var(--btn);color:var(--btnFg);max-width:130px"></select>
+  </div>
+  <div class="row"><strong>سرعت</strong>
+    <button data-rate="0.8" type="button">۰٫۸×</button>
+    <button data-rate="1" class="active" type="button">۱×</button>
+    <button data-rate="1.25" type="button">۱٫۲۵×</button>
+    <button data-rate="1.5" type="button">۱٫۵×</button>
+  </div>
+  <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید. پخش صوتی از TTS سیستم استفاده می‌کند.</div>
 </div>
 <h1>${esc(title)}</h1>
 <p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>

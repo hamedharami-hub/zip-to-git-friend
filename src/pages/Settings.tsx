@@ -121,6 +121,12 @@ const Settings = () => {
   const [groq, setGroq] = useState(settings.groqApiKey);
   const [geminiTts, setGeminiTts] = useState(settings.geminiTtsApiKey);
   const [elevenLabs, setElevenLabs] = useState(settings.elevenLabsApiKey ?? '');
+  const [azureKey, setAzureKey] = useState(settings.azureTtsApiKey ?? '');
+  const [azureRegion, setAzureRegion] = useState(settings.azureTtsRegion ?? 'westeurope');
+  const [hfKey, setHfKey] = useState(settings.huggingFaceApiKey ?? '');
+  const [playHtUser, setPlayHtUser] = useState(settings.playHtUserId ?? '');
+  const [playHtKey, setPlayHtKey] = useState(settings.playHtApiKey ?? '');
+  const [openTtsUrl, setOpenTtsUrl] = useState(settings.openTtsUrl ?? '');
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingGroq, setTestingGroq] = useState(false);
   const [testingTts, setTestingTts] = useState(false);
@@ -135,10 +141,22 @@ const Settings = () => {
     setGroq(settings.groqApiKey);
     setGeminiTts(settings.geminiTtsApiKey);
     setElevenLabs(settings.elevenLabsApiKey ?? '');
-  }, [settings.geminiApiKey, settings.groqApiKey, settings.geminiTtsApiKey, settings.elevenLabsApiKey]);
+    setAzureKey(settings.azureTtsApiKey ?? '');
+    setAzureRegion(settings.azureTtsRegion ?? 'westeurope');
+    setHfKey(settings.huggingFaceApiKey ?? '');
+    setPlayHtUser(settings.playHtUserId ?? '');
+    setPlayHtKey(settings.playHtApiKey ?? '');
+    setOpenTtsUrl(settings.openTtsUrl ?? '');
+  }, [settings.geminiApiKey, settings.groqApiKey, settings.geminiTtsApiKey, settings.elevenLabsApiKey, settings.azureTtsApiKey, settings.azureTtsRegion, settings.huggingFaceApiKey, settings.playHtUserId, settings.playHtApiKey, settings.openTtsUrl]);
 
   const save = async () => {
-    await update({ geminiApiKey: gemini, groqApiKey: groq, geminiTtsApiKey: geminiTts, elevenLabsApiKey: elevenLabs });
+    await update({
+      geminiApiKey: gemini, groqApiKey: groq, geminiTtsApiKey: geminiTts, elevenLabsApiKey: elevenLabs,
+      azureTtsApiKey: azureKey, azureTtsRegion: azureRegion,
+      huggingFaceApiKey: hfKey,
+      playHtUserId: playHtUser, playHtApiKey: playHtKey,
+      openTtsUrl: openTtsUrl,
+    });
     toast.success('Settings saved.');
   };
 
@@ -383,6 +401,75 @@ const Settings = () => {
               <p className="text-xs text-muted-foreground">
                 صدای حرفه‌ای برای روایت متن خبر و کتاب با ElevenLabs.
                 کلید را از <span className="font-mono">elevenlabs.io</span> → Profile → API Keys بگیر.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <ApiKeyInput
+                label="Azure Speech key (TTS — بهترین فارسی)"
+                value={azureKey}
+                onChange={setAzureKey}
+                placeholder="32-char key (اختیاری — صدای فارسی طبیعی)"
+              />
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-muted-foreground w-20">Region</label>
+                <input
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={azureRegion}
+                  onChange={(e) => setAzureRegion(e.target.value)}
+                  placeholder="westeurope / eastus / ..."
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Microsoft Azure Cognitive Services — صدای fa-IR-DilaraNeural و FaridNeural.
+                از <span className="font-mono">portal.azure.com</span> → Speech service.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <ApiKeyInput
+                label="Hugging Face Inference token"
+                value={hfKey}
+                onChange={setHfKey}
+                placeholder="hf_... (اختیاری — MMS-TTS رایگان)"
+              />
+              <p className="text-xs text-muted-foreground">
+                مدل‌های facebook/mms-tts-fas و mms-tts-eng. توکن از
+                <span className="font-mono"> huggingface.co/settings/tokens</span>.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <ApiKeyInput
+                  label="Play.ht User ID"
+                  value={playHtUser}
+                  onChange={setPlayHtUser}
+                  placeholder="User ID"
+                />
+                <ApiKeyInput
+                  label="Play.ht Secret Key"
+                  value={playHtKey}
+                  onChange={setPlayHtKey}
+                  placeholder="Secret key"
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Play.ht — صدای چندزبانه‌ی PlayHT2.0 (فارسی + انگلیسی).
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">OpenTTS server URL</label>
+              <input
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                value={openTtsUrl}
+                onChange={(e) => setOpenTtsUrl(e.target.value)}
+                placeholder="http://localhost:5500 (اختیاری — self-hosted رایگان)"
+              />
+              <p className="text-xs text-muted-foreground">
+                OpenTTS رایگان و self-hosted — راه‌اندازی با docker از
+                <span className="font-mono"> github.com/synesthesiam/opentts</span>.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

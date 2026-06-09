@@ -1467,8 +1467,7 @@ function SourcesTree({
     <div className="space-y-2">
       {folders.map((folder) => {
         const items = sourcesByFolder.get(folder.id) ?? [];
-        const containsActiveSource = items.some((s) => s.id === activeSourceId);
-        const isOpen = activeFolderId === folder.id || containsActiveSource || collapsed[folder.id] === true;
+        const isOpen = collapsed[folder.id] === true;
         const isActive = activeFolderId === folder.id;
         return (
           <div key={folder.id}>

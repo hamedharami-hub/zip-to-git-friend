@@ -1286,7 +1286,7 @@ function SourceRow({
     }
   };
   return (
-    <li className="group flex items-center gap-1">
+    <li className="group flex items-center gap-1.5 rounded-xl px-1 py-0.5">
       <button
         type="button"
         onClick={(e) => {
@@ -1300,10 +1300,14 @@ function SourceRow({
         onTouchCancel={longPress.onTouchCancel}
         onContextMenu={longPress.onContextMenu}
         className={
-          'flex-1 flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-start transition-colors ' +
-          (isActive ? 'bg-primary/10 text-foreground' : 'hover:bg-accent text-muted-foreground hover:text-foreground')
+          'flex-1 flex items-center gap-2 rounded-xl border px-2.5 py-2 text-sm text-start transition-colors ' +
+          (isActive
+            ? 'border-primary/25 bg-primary/10 text-foreground shadow-sm'
+            : 'border-transparent hover:border-border/70 hover:bg-accent text-muted-foreground hover:text-foreground')
         }>
-        <Icon className="h-3.5 w-3.5 shrink-0" />
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
+          <Icon className="h-3.5 w-3.5 shrink-0" />
+        </span>
         <span className="truncate">{source.name}</span>
       </button>
       <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
@@ -1473,28 +1477,31 @@ function SourcesTree({
     <div className="space-y-2">
       {folders.map((folder) => {
         const items = sourcesByFolder.get(folder.id) ?? [];
-        const isOpen = !collapsed[folder.id];
+        const containsActiveSource = items.some((s) => s.id === activeSourceId);
+        const isOpen = activeFolderId === folder.id || containsActiveSource || !collapsed[folder.id];
         const isActive = activeFolderId === folder.id;
         return (
           <div key={folder.id}>
-            <div className="group flex items-center gap-0.5">
+            <div className="group flex items-center gap-1 rounded-2xl border border-border/60 bg-card/60 px-1.5 py-1 shadow-sm">
               <button type="button" onClick={() => onToggleFolder(folder.id)}
-                className="p-1 rounded hover:bg-accent/50"
+                className="p-1 rounded-full hover:bg-accent/50"
                 title={isOpen ? 'بستن' : 'بازکردن'}>
                 {isOpen ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
               </button>
               <button type="button" onClick={() => onPickFolder(folder.id)}
                 onDoubleClick={() => renameFolder(folder)}
                 className={
-                  'flex-1 flex items-center gap-1.5 px-1 py-1 rounded text-xs font-medium ' +
+                  'flex-1 flex items-center gap-2 px-2 py-1.5 rounded-xl text-xs font-medium transition-colors ' +
                   (isActive ? 'bg-primary/10 text-foreground' : 'hover:bg-accent/50')
                 }>
-                <Folder className="h-3.5 w-3.5" style={folder.color ? { color: folder.color } : undefined} />
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
+                  <Folder className="h-3.5 w-3.5" style={folder.color ? { color: folder.color } : undefined} />
+                </span>
                 <span className="truncate flex-1 text-start">{folder.name}</span>
-                <span className="text-[10px] text-muted-foreground">{items.length}</span>
+                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">{items.length}</span>
               </button>
               <Button size="icon" variant="ghost"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100"
+                className="h-7 w-7 rounded-full opacity-70 sm:opacity-0 sm:group-hover:opacity-100"
                 title="تغییر نام پوشه"
                 onClick={() => renameFolder(folder)}>
                 <SettingsIcon className="h-3 w-3" />

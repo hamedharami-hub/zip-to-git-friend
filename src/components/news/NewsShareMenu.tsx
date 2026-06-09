@@ -144,31 +144,45 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <title>${esc(title)}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito+Sans:wght@300;400;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: light dark; --bg:#fafaf9; --fg:#1a1a1a; --muted:#666; --border:#e5e5e3; --btn:#fff; --btnFg:#1a1a1a; --btnBorder:#d4d4d2; --accent:#3b82f6; --toolbarBg:#fafaf9; --panelBg:#ffffff; }
-  body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; --panelBg:#18181a; }
-  body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; --panelBg:#fbf5e3; }
+  :root { color-scheme: light dark; --bg:#fafaf9; --fg:#1a1a1a; --muted:#666; --border:#e5e5e3; --btn:#fff; --btnFg:#1a1a1a; --btnBorder:#d4d4d2; --accent:#3b82f6; --accentSoft:rgba(59,130,246,.08); --toolbarBg:#fafaf9; --panelBg:#ffffff; }
+  body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --accentSoft:rgba(96,165,250,.12); --toolbarBg:#1a1a1c; --panelBg:#18181a; }
+  body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --accentSoft:rgba(140,90,40,.10); --toolbarBg:#f4ecd8; --panelBg:#fbf5e3; }
   * { box-sizing: border-box; }
-  html { font-size: var(--fs, 17px); }
+  html { font-size: var(--fs, 18px); }
   html, body { margin:0; padding:0; touch-action: pan-x pan-y; }
-  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
-    max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
+  body { font-family: 'Lora','Iowan Old Style','Palatino Linotype','Georgia','Vazirmatn',serif;
+    max-width: 720px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
     line-height: 1.85; color: var(--fg); background: var(--bg);
     transition: background .15s, color .15s; }
-  body[data-font="serif"] { font-family: 'Iowan Old Style','Palatino Linotype','Georgia',serif; }
+  body[data-font="sans"]  { font-family: 'Nunito Sans','Vazirmatn',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; }
+  body[data-font="serif"] { font-family: 'Lora','Iowan Old Style','Palatino Linotype','Georgia','Vazirmatn',serif; }
   body[data-font="mono"]  { font-family: ui-monospace,'SF Mono',Menlo,Consolas,monospace; }
   body[data-font="vazir"] { font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
-  body[data-align="justify"] .en, body[data-align="justify"] .fa, body[data-align="justify"] .heading { text-align: justify; text-justify: inter-word; }
+  body[data-align="justify"] .en, body[data-align="justify"] .fa, body[data-align="justify"] .heading,
+  body[data-align="justify"] h1, body[data-align="justify"] p { text-align: justify; text-justify: inter-word; }
+  body[data-align="justify"] .fa { text-align: justify; }
   body[data-align="center"]  .en, body[data-align="center"]  .fa, body[data-align="center"]  .heading { text-align: center; }
   body[data-align="start"]   .en { text-align: left; }
   body[data-align="start"]   .fa { text-align: right; }
-  h1 { font-size: 1.75rem; margin: 0 0 .25rem; }
-  .meta { color: var(--muted); font-size: .85rem; margin-bottom: 1.25rem; }
-  .heading { margin: 1.5rem 0 .5rem; font-weight: 700; }
-  .para { margin: .5rem 0; }
-  .en, .fa { margin: .25rem 0; }
+  h1 { font-family: 'Lora','Vazirmatn',Georgia,serif; font-size: 2rem; line-height: 1.2; margin: 0 0 .5rem; font-weight: 600; letter-spacing: -0.01em; }
+  .meta { color: var(--muted); font-size: .85rem; margin-bottom: 1.75rem; }
+  .heading { font-family: 'Lora','Vazirmatn',Georgia,serif; margin: 1.75rem 0 .6rem; font-weight: 600; letter-spacing: -0.005em; line-height: 1.3; }
+  h2.heading { font-size: 1.5rem; }
+  h3.heading { font-size: 1.2rem; }
+  .para { margin: .65rem 0; }
+  .en, .fa { margin: .35rem 0; }
   .fa { font-size: 1.02rem; line-height: 2;
     font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
+  /* Drop-cap on first paragraph (English only — RTL drop-caps look odd) */
+  .para:first-of-type .en::first-letter {
+    font-family: 'Lora',Georgia,serif;
+    font-size: 3.1em; float: left; line-height: .9;
+    padding: .08em .12em 0 0; color: var(--accent); font-weight: 600;
+  }
   .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .4rem;
     padding: .5rem .6rem; background: var(--toolbarBg); border-bottom: 1px solid var(--border);
     margin: -1rem -1.25rem 1rem; align-items: center; justify-content: space-between; }
@@ -191,7 +205,7 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   .hint { font-size:.7rem; color: var(--muted); margin-top:.4rem; }
 </style>
 </head>
-<body data-mode="both" data-theme="light" data-font="sans" data-align="start" style="--fs:17px">
+<body data-mode="both" data-theme="light" data-font="serif" data-align="justify" style="--fs:18px">
 <nav class="toolbar" dir="rtl">
   <div class="grp">
     <button data-mode="both" class="active" type="button">دو</button>

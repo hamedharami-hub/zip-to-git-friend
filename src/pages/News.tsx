@@ -910,17 +910,18 @@ const News = () => {
                                 {item.excerpt}
                               </p>
                             )}
-                            <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground">
+                            <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
                               {(item.siteName || siteFromUrl(item.url)) && (
-                                <span className="truncate">
-                                  {item.siteName ?? siteFromUrl(item.url)}
+                                <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
+                                  <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
+                                  <span className="truncate">{item.siteName ?? siteFromUrl(item.url)}</span>
                                 </span>
                               )}
                               {item.publishedAt && (
-                                <>
-                                  <span aria-hidden>·</span>
-                                  <span>{formatTime(item.publishedAt)}</span>
-                                </>
+                                <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
+                                  <Clock className="me-1 h-3 w-3" />
+                                  {formatTime(item.publishedAt)}
+                                </span>
                               )}
                               {openArticle === item.url && (
                                 <Loader2 className="h-3 w-3 animate-spin ms-auto" />
@@ -1416,18 +1417,22 @@ function FolderAggregatedView({
                       )}
                       <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
                         {item._sourceName && (
-                          <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary truncate">
-                            {item._sourceName}
+                          <span className="inline-flex max-w-full items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                            <Folder className="me-1 h-3 w-3 shrink-0" />
+                            <span className="truncate">{item._sourceName}</span>
                           </span>
                         )}
                         {(item.siteName || siteFromUrl(item.url)) && (
-                          <span className="truncate">{item.siteName ?? siteFromUrl(item.url)}</span>
+                          <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
+                            <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
+                            <span className="truncate">{item.siteName ?? siteFromUrl(item.url)}</span>
+                          </span>
                         )}
                         {item.publishedAt && (
-                          <>
-                            <span aria-hidden>·</span>
-                            <span>{formatTime(item.publishedAt)}</span>
-                          </>
+                          <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
+                            <Clock className="me-1 h-3 w-3" />
+                            {formatTime(item.publishedAt)}
+                          </span>
                         )}
                       </div>
                     </div>

@@ -205,6 +205,12 @@ const NewsArticleReader = () => {
     };
 
     void (async () => {
+      // If the article was opened before, treat it as offline-ready and
+      // skip any AI calls — only assemble the Persian script from cache.
+      if (article && isSeen(article.url)) {
+        await buildFaText();
+        return;
+      }
       try {
         // Kick off translation (uses cache, free if already done).
         const final = await batchAnalyzeChapter(activeBookId, chapter, {
@@ -218,6 +224,8 @@ const NewsArticleReader = () => {
         if (cancelled) return;
         emitChapterAnalyses(activeBookId, 0, final.results);
         await buildFaText();
+        // Mark as seen so future opens skip AI processing entirely.
+        if (article) markSeen(article.url);
       } catch {
         // best-effort; the user can still trigger translate manually
         await buildFaText();

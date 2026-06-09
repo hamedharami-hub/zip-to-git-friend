@@ -203,7 +203,6 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   .src { margin-top: 3rem; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
   a { color: var(--accent); }
   .hint { font-size:.7rem; color: var(--muted); margin-top:.4rem; }
-  .speaking { background: var(--accentSoft); border-radius: 6px; box-shadow: 0 0 0 4px var(--accentSoft); transition: background .2s; }
 </style>
 </head>
 <body data-mode="both" data-theme="light" data-font="serif" data-align="justify" style="--fs:18px">
@@ -213,11 +212,7 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-mode="fa" type="button">فا</button>
     <button data-mode="en" type="button">EN</button>
   </div>
-  <div class="grp">
-    <button id="ttsBtn" type="button" aria-label="پخش">▶︎</button>
-    <button id="ttsStopBtn" type="button" aria-label="توقف" style="display:none">■</button>
-    <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
-  </div>
+  <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
 </nav>
 <div class="panel" id="settingsPanel" dir="rtl">
   <div class="row"><strong>تم</strong>
@@ -240,17 +235,7 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
     <button data-align="justify" class="active" type="button">هم‌تراز</button>
     <button data-align="center" type="button">وسط</button>
   </div>
-  <div class="row"><strong>صدا</strong>
-    <select id="ttsVoiceFa" style="font:inherit;padding:.25rem;border-radius:6px;border:1px solid var(--btnBorder);background:var(--btn);color:var(--btnFg);max-width:130px"></select>
-    <select id="ttsVoiceEn" style="font:inherit;padding:.25rem;border-radius:6px;border:1px solid var(--btnBorder);background:var(--btn);color:var(--btnFg);max-width:130px"></select>
-  </div>
-  <div class="row"><strong>سرعت</strong>
-    <button data-rate="0.8" type="button">۰٫۸×</button>
-    <button data-rate="1" class="active" type="button">۱×</button>
-    <button data-rate="1.25" type="button">۱٫۲۵×</button>
-    <button data-rate="1.5" type="button">۱٫۵×</button>
-  </div>
-  <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید. پخش صوتی از TTS سیستم استفاده می‌کند.</div>
+  <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید.</div>
 </div>
 <h1>${esc(title)}</h1>
 <p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>
@@ -319,116 +304,6 @@ ${body}
     if (startDist > 0 && e.touches.length < 2){ startDist = 0; prefs.fs = fs; save(); }
   });
   apply();
-
-  // -------- TTS playback (browser SpeechSynthesis) --------
-  var synth = window.speechSynthesis;
-  var ttsBtn = document.getElementById('ttsBtn');
-  var ttsStop = document.getElementById('ttsStopBtn');
-  var selFa = document.getElementById('ttsVoiceFa');
-  var selEn = document.getElementById('ttsVoiceEn');
-  var rate = prefs.rate || 1;
-  var queue = [], qi = 0, playing = false, currentEl = null;
-
-  function loadVoices(){
-    if (!synth) return;
-    var voices = synth.getVoices() || [];
-    function fill(sel, langPrefix, savedKey){
-      sel.innerHTML = '';
-      var matches = voices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf(langPrefix) === 0; });
-      var list = matches.length ? matches : voices;
-      list.forEach(function(v){
-        var o = document.createElement('option');
-        o.value = v.name; o.textContent = v.name + ' (' + v.lang + ')';
-        if (prefs[savedKey] === v.name) o.selected = true;
-        sel.appendChild(o);
-      });
-    }
-    fill(selFa, 'fa', 'voiceFa');
-    fill(selEn, 'en', 'voiceEn');
-  }
-  if (synth){
-    loadVoices();
-    synth.onvoiceschanged = loadVoices;
-  }
-  selFa && selFa.addEventListener('change', function(){ prefs.voiceFa = selFa.value; save(); });
-  selEn && selEn.addEventListener('change', function(){ prefs.voiceEn = selEn.value; save(); });
-
-  document.querySelectorAll('button[data-rate]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      rate = parseFloat(btn.getAttribute('data-rate'));
-      prefs.rate = rate; save();
-      document.querySelectorAll('button[data-rate]').forEach(function(b){
-        b.classList.toggle('active', b === btn);
-      });
-      // restart current item with new rate
-      if (playing){ synth.cancel(); speakAt(qi); }
-    });
-  });
-
-  function buildQueue(){
-    var items = [];
-    var mode = document.body.getAttribute('data-mode') || 'both';
-    // include H1 title
-    var h1 = document.querySelector('h1');
-    if (h1) items.push({ el: h1, text: h1.textContent.trim(), lang: 'en' });
-    document.querySelectorAll('.para').forEach(function(p){
-      var en = p.querySelector('.en');
-      var fa = p.querySelector('.fa');
-      if (mode === 'en' || mode === 'both'){
-        if (en && en.textContent.trim()) items.push({ el: en, text: en.textContent.trim(), lang: 'en' });
-      }
-      if (mode === 'fa' || mode === 'both'){
-        if (fa && fa.textContent.trim()) items.push({ el: fa, text: fa.textContent.trim(), lang: 'fa' });
-      }
-    });
-    return items;
-  }
-  function pickVoice(lang){
-    var voices = synth.getVoices() || [];
-    var name = lang === 'fa' ? prefs.voiceFa : prefs.voiceEn;
-    if (name){ var m = voices.find(function(v){ return v.name === name; }); if (m) return m; }
-    return voices.find(function(v){ return v.lang && v.lang.toLowerCase().indexOf(lang) === 0; }) || null;
-  }
-  function clearHL(){ if (currentEl){ currentEl.classList.remove('speaking'); currentEl = null; } }
-  function speakAt(i){
-    if (!synth) return;
-    qi = i;
-    if (qi >= queue.length){ stop(); return; }
-    var it = queue[qi];
-    clearHL();
-    currentEl = it.el; currentEl.classList.add('speaking');
-    try { currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
-    var u = new SpeechSynthesisUtterance(it.text);
-    u.lang = it.lang === 'fa' ? 'fa-IR' : 'en-US';
-    var v = pickVoice(it.lang); if (v) u.voice = v;
-    u.rate = rate;
-    u.onend = function(){ if (playing) speakAt(qi + 1); };
-    u.onerror = function(){ if (playing) speakAt(qi + 1); };
-    synth.speak(u);
-  }
-  function start(){
-    if (!synth){ alert('مرورگر شما از TTS پشتیبانی نمی‌کند.'); return; }
-    queue = buildQueue();
-    if (!queue.length) return;
-    playing = true;
-    ttsBtn.style.display = 'none';
-    ttsStop.style.display = '';
-    synth.cancel();
-    speakAt(0);
-  }
-  function stop(){
-    playing = false;
-    if (synth) synth.cancel();
-    clearHL();
-    ttsBtn.style.display = '';
-    ttsStop.style.display = 'none';
-  }
-  ttsBtn && ttsBtn.addEventListener('click', start);
-  ttsStop && ttsStop.addEventListener('click', stop);
-  // set active rate button from prefs
-  document.querySelectorAll('button[data-rate]').forEach(function(b){
-    b.classList.toggle('active', parseFloat(b.getAttribute('data-rate')) === rate);
-  });
 })();
 </script>
 </body>
@@ -474,18 +349,12 @@ export function NewsShareMenu({
         toast.error('متنی برای خروجی پیدا نشد.');
         return;
       }
-      // Try cached Persian translation of the title for the filename.
-      let faTitle: string | undefined;
-      try {
-        const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, title);
-        faTitle = cached?.translation?.trim() || undefined;
-      } catch { /* ignore */ }
       const html = buildBilingualHtml(title, siteName ?? undefined, url, pairs);
       const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
       const href = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = href;
-      a.download = `${safeFilename(faTitle || title)}.html`;
+      a.download = `${safeFilename(title)}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();

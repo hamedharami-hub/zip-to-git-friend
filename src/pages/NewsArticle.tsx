@@ -140,19 +140,22 @@ const NewsArticleReader = () => {
           }
           // Auto-generate a long, simple rewrite the very first time the
           // user opens this article so they immediately see a digestible
-          // version. Skip if any rewrite already exists.
-          try {
-            const { data: existing } = await supabase
-              .from('news_digests' as never)
-              .select('id')
-              .eq('topic', `article:${a.id}`)
-              .limit(1);
-            const hasAny = Array.isArray(existing) && existing.length > 0;
-            if (!hasAny) {
-              // Fire and forget — don't block initial render.
-              void handleRewrite('auto-max', false).catch(() => {});
-            }
-          } catch { /* ignore */ }
+          // version. Skip if any rewrite already exists OR the article was
+          // opened before (offline-friendly re-reads).
+          if (!isSeen(a.url)) {
+            try {
+              const { data: existing } = await supabase
+                .from('news_digests' as never)
+                .select('id')
+                .eq('topic', `article:${a.id}`)
+                .limit(1);
+              const hasAny = Array.isArray(existing) && existing.length > 0;
+              if (!hasAny) {
+                // Fire and forget — don't block initial render.
+                void handleRewrite('auto-max', false).catch(() => {});
+              }
+            } catch { /* ignore */ }
+          }
         }
       } catch (e: any) {
         toast.error(e.message ?? 'Failed to load article.');

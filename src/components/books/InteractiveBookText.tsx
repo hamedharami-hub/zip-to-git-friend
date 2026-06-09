@@ -738,13 +738,30 @@ function Paragraph({
     onSwipeRight: () => { void handleFaOnly(); },
     onSwipeLeft: () => { void handleAnalysis(); },
     onDoubleTap: handleDoubleTap,
-    onLongPress: () => { void copyText(); toggleStar(); },
+    onLongPress: () => { setMenuOpen(true); },
   });
+
+  // Long-press support when gestures mode is OFF: detect 500ms touch hold.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const lpTimer = useRef<number | null>(null);
+  const lpFired = useRef(false);
+  const startLp = () => {
+    if (gesturesEnabled) return;
+    lpFired.current = false;
+    if (lpTimer.current) window.clearTimeout(lpTimer.current);
+    lpTimer.current = window.setTimeout(() => { lpFired.current = true; setMenuOpen(true); }, 500);
+  };
+  const clearLp = () => { if (lpTimer.current) { window.clearTimeout(lpTimer.current); lpTimer.current = null; } };
+  const nonGestureHandlers = gesturesEnabled ? {} : {
+    onTouchStart: startLp, onTouchEnd: clearLp, onTouchMove: clearLp, onTouchCancel: clearLp,
+    onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); setMenuOpen(true); },
+  };
 
   return (
     <div
       ref={activeRef}
       {...gestureHandlers}
+      {...nonGestureHandlers}
       className={cn(
         'group relative rounded-lg transition-colors',
         gesturesEnabled && 'touch-pan-y select-none cursor-pointer',

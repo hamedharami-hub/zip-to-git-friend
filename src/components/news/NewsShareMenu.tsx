@@ -236,7 +236,7 @@ ${body}
   var prefs={}; try{ prefs=JSON.parse(localStorage.getItem(K)||'{}')||{}; }catch(e){}
   var fs = prefs.fs || 17;
   function apply(){
-    document.body.style.setProperty('--fs', fs+'px');
+    document.documentElement.style.setProperty("--fs", fs+'px');
     ['mode','theme','font','align'].forEach(function(g){
       var v = prefs[g]; if(!v) return;
       document.body.setAttribute('data-'+g, v);
@@ -262,7 +262,7 @@ ${body}
       if (fsCmd === 'inc') fs = Math.min(40, fs+2);
       else if (fsCmd === 'dec') fs = Math.max(10, fs-2);
       else if (fsCmd === 'reset') fs = 17;
-      if (fsCmd){ prefs.fs = fs; document.body.style.setProperty('--fs', fs+'px'); }
+      if (fsCmd){ prefs.fs = fs; document.documentElement.style.setProperty("--fs", fs+'px'); }
       save();
     });
   });
@@ -283,7 +283,7 @@ ${body}
       var d = dist(e.touches);
       var ratio = d / startDist;
       var next = Math.round(Math.max(10, Math.min(40, startFs * ratio)));
-      if (next !== fs){ fs = next; document.body.style.setProperty('--fs', fs+'px'); }
+      if (next !== fs){ fs = next; document.documentElement.style.setProperty("--fs", fs+'px'); }
     }
   }, { passive: true });
   document.addEventListener('touchend', function(e){

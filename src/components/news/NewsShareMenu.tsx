@@ -319,6 +319,116 @@ ${body}
     if (startDist > 0 && e.touches.length < 2){ startDist = 0; prefs.fs = fs; save(); }
   });
   apply();
+
+  // -------- TTS playback (browser SpeechSynthesis) --------
+  var synth = window.speechSynthesis;
+  var ttsBtn = document.getElementById('ttsBtn');
+  var ttsStop = document.getElementById('ttsStopBtn');
+  var selFa = document.getElementById('ttsVoiceFa');
+  var selEn = document.getElementById('ttsVoiceEn');
+  var rate = prefs.rate || 1;
+  var queue = [], qi = 0, playing = false, currentEl = null;
+
+  function loadVoices(){
+    if (!synth) return;
+    var voices = synth.getVoices() || [];
+    function fill(sel, langPrefix, savedKey){
+      sel.innerHTML = '';
+      var matches = voices.filter(function(v){ return v.lang && v.lang.toLowerCase().indexOf(langPrefix) === 0; });
+      var list = matches.length ? matches : voices;
+      list.forEach(function(v){
+        var o = document.createElement('option');
+        o.value = v.name; o.textContent = v.name + ' (' + v.lang + ')';
+        if (prefs[savedKey] === v.name) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+    fill(selFa, 'fa', 'voiceFa');
+    fill(selEn, 'en', 'voiceEn');
+  }
+  if (synth){
+    loadVoices();
+    synth.onvoiceschanged = loadVoices;
+  }
+  selFa && selFa.addEventListener('change', function(){ prefs.voiceFa = selFa.value; save(); });
+  selEn && selEn.addEventListener('change', function(){ prefs.voiceEn = selEn.value; save(); });
+
+  document.querySelectorAll('button[data-rate]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      rate = parseFloat(btn.getAttribute('data-rate'));
+      prefs.rate = rate; save();
+      document.querySelectorAll('button[data-rate]').forEach(function(b){
+        b.classList.toggle('active', b === btn);
+      });
+      // restart current item with new rate
+      if (playing){ synth.cancel(); speakAt(qi); }
+    });
+  });
+
+  function buildQueue(){
+    var items = [];
+    var mode = document.body.getAttribute('data-mode') || 'both';
+    // include H1 title
+    var h1 = document.querySelector('h1');
+    if (h1) items.push({ el: h1, text: h1.textContent.trim(), lang: 'en' });
+    document.querySelectorAll('.para').forEach(function(p){
+      var en = p.querySelector('.en');
+      var fa = p.querySelector('.fa');
+      if (mode === 'en' || mode === 'both'){
+        if (en && en.textContent.trim()) items.push({ el: en, text: en.textContent.trim(), lang: 'en' });
+      }
+      if (mode === 'fa' || mode === 'both'){
+        if (fa && fa.textContent.trim()) items.push({ el: fa, text: fa.textContent.trim(), lang: 'fa' });
+      }
+    });
+    return items;
+  }
+  function pickVoice(lang){
+    var voices = synth.getVoices() || [];
+    var name = lang === 'fa' ? prefs.voiceFa : prefs.voiceEn;
+    if (name){ var m = voices.find(function(v){ return v.name === name; }); if (m) return m; }
+    return voices.find(function(v){ return v.lang && v.lang.toLowerCase().indexOf(lang) === 0; }) || null;
+  }
+  function clearHL(){ if (currentEl){ currentEl.classList.remove('speaking'); currentEl = null; } }
+  function speakAt(i){
+    if (!synth) return;
+    qi = i;
+    if (qi >= queue.length){ stop(); return; }
+    var it = queue[qi];
+    clearHL();
+    currentEl = it.el; currentEl.classList.add('speaking');
+    try { currentEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch(e){}
+    var u = new SpeechSynthesisUtterance(it.text);
+    u.lang = it.lang === 'fa' ? 'fa-IR' : 'en-US';
+    var v = pickVoice(it.lang); if (v) u.voice = v;
+    u.rate = rate;
+    u.onend = function(){ if (playing) speakAt(qi + 1); };
+    u.onerror = function(){ if (playing) speakAt(qi + 1); };
+    synth.speak(u);
+  }
+  function start(){
+    if (!synth){ alert('مرورگر شما از TTS پشتیبانی نمی‌کند.'); return; }
+    queue = buildQueue();
+    if (!queue.length) return;
+    playing = true;
+    ttsBtn.style.display = 'none';
+    ttsStop.style.display = '';
+    synth.cancel();
+    speakAt(0);
+  }
+  function stop(){
+    playing = false;
+    if (synth) synth.cancel();
+    clearHL();
+    ttsBtn.style.display = '';
+    ttsStop.style.display = 'none';
+  }
+  ttsBtn && ttsBtn.addEventListener('click', start);
+  ttsStop && ttsStop.addEventListener('click', stop);
+  // set active rate button from prefs
+  document.querySelectorAll('button[data-rate]').forEach(function(b){
+    b.classList.toggle('active', parseFloat(b.getAttribute('data-rate')) === rate);
+  });
 })();
 </script>
 </body>

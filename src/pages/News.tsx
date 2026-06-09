@@ -638,8 +638,8 @@ const News = () => {
                 sourcesByFolder={sourcesByFolder}
                 activeSourceId={activeSourceId}
                 activeFolderId={activeFolderId}
-                collapsed={collapsedFolders}
-                onToggleFolder={(id) => setCollapsedFolders((c) => ({ ...c, [id]: !c[id] }))}
+                collapsed={expandedFolders}
+                onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
                 onPickFolder={(id) => { setActiveFolderId(id); setActiveSourceId(null); }}
                 onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); }}
                 onDeleteSource={handleDeleteSource}

@@ -65,6 +65,11 @@ import {
   ElevenLabsTtsError,
   synthesizeWithElevenLabs,
 } from '@/lib/elevenLabsTts';
+import { AZURE_VOICES, AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
+import { HUGGINGFACE_VOICES, HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
+import { PLAYHT_VOICES, PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
+import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
+import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 
 interface Props {
   bookId: string;
@@ -86,7 +91,7 @@ const ELEVEN_VOICE_KEY = 'llvp-tts-eleven-voice';
 const ELEVEN_MODEL_KEY = 'llvp-tts-eleven-model';
 const TTS_LANG_KEY = 'llvp-tts-lang';
 
-type Engine = 'browser' | 'gemini' | 'elevenlabs';
+type Engine = 'browser' | 'gemini' | 'elevenlabs' | 'azure' | 'huggingface' | 'playht' | 'opentts';
 
 function fmt(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) return '0:00';

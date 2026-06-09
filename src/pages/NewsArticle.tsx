@@ -42,6 +42,8 @@ import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
+import { LangCycleButton } from '@/components/news/LangCycleButton';
+import { ChevronDown } from 'lucide-react';
 
 function isYoutubeUrl(url: string): boolean {
   try {

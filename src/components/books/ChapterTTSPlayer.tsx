@@ -454,11 +454,14 @@ export function ChapterTTSPlayer({
           ? e.code === 'auth'
             ? 'Gemini rejected the TTS key — check Settings → AI.'
             : e.code === 'quota'
-              ? 'Gemini TTS rate-limit reached. Wait a minute and retry.'
+              ? 'Gemini TTS rate-limit reached. موقتاً به Browser TTS سوییچ شد.'
               : e.code === 'no-audio'
                 ? 'Gemini returned no audio. Try a different voice.'
                 : `TTS failed: ${e.message}`
           : 'TTS failed.';
+      if (e instanceof GeminiTtsError && e.code === 'quota' && isBrowserTtsSupported()) {
+        setEngine('browser');
+      }
       toast.error(msg);
     } finally {
       setLoading(false);

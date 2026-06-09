@@ -50,9 +50,6 @@ async function ttsChunk(
   const body: Record<string, unknown> = { text, model_id: modelId };
   if (previousText) body.previous_text = previousText.slice(-500);
   if (nextText) body.next_text = nextText.slice(0, 500);
-  // language_code is supported by turbo_v2_5 / flash_v2_5 and dramatically
-  // improves Persian pronunciation (otherwise ElevenLabs reads فارسی with
-  // an English/transliterated accent).
   if (languageCode) body.language_code = languageCode;
   const res = await fetch(url, {
     method: "POST",
@@ -86,10 +83,14 @@ serve(async (req) => {
     }
     const isFa = language === 'fa';
     const voice = (voiceId as string) || "EXAVITQu4vr4xnSDxMaL"; // Sarah
-    // For Persian, force Turbo v2.5 so we can pass language_code='fa' (the only
-    // way to stop ElevenLabs from reading فارسی with an English accent).
-    const model = isFa ? "eleven_turbo_v2_5" : ((modelId as string) || "eleven_multilingual_v2");
-    const langCode = isFa ? "fa" : undefined;
+    // The user's current error shows ElevenLabs rejecting `language_code=fa`
+    // for turbo_v2_5. To keep Persian working reliably, use the multilingual
+    // model for فارسی and let the provider infer the language from the text.
+    const requestedModel = (modelId as string) || "eleven_multilingual_v2";
+    const model = isFa ? "eleven_multilingual_v2" : requestedModel;
+    const langCode = !isFa && requestedModel === "eleven_turbo_v2_5"
+      ? undefined
+      : undefined;
 
     const chunks = chunkText(text);
     if (chunks.length === 0) {

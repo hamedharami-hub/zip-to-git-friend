@@ -31,6 +31,13 @@ interface RawItem {
   publishedAtMs: number;
 }
 
+function shouldTranslateTitle(title: string): boolean {
+  const clean = (title ?? '').trim();
+  if (!clean) return false;
+  if (/^[\x00-\x7F\s.,:;!?"'()\-_/&%0-9]+$/.test(clean) && /[A-Za-z]{3,}/.test(clean)) return false;
+  return /[^\x00-\x7F]/.test(clean) || !/[A-Za-z]{3,}/.test(clean);
+}
+
 function decodeEntities(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -263,6 +270,66 @@ async function summarizeWithGemini(opts: {
   return map;
 }
 
+async function translateTitlesWithGemini(opts: {
+  apiKey: string;
+  items: RawItem[];
+}): Promise<Record<string, string>> {
+  const list = opts.items
+    .map((it, i) => ({ id: i, title: it.title }))
+    .filter((it) => shouldTranslateTitle(it.title));
+  if (list.length === 0) return {};
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${opts.apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'google/gemini-3.1-flash-lite-preview',
+      messages: [
+        { role: 'system', content: 'Translate non-English news headlines into concise natural English. Return JSON only via the tool.' },
+        { role: 'user', content: JSON.stringify(list) },
+      ],
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'return_titles',
+          description: 'Return English titles by id.',
+          parameters: {
+            type: 'object',
+            properties: {
+              titles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: { id: { type: 'integer' }, title: { type: 'string' } },
+                  required: ['id', 'title'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['titles'],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: 'function', function: { name: 'return_titles' } },
+    }),
+  });
+  if (!res.ok) return {};
+  const json = await res.json();
+  const argsStr = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!argsStr) return {};
+  const parsed = JSON.parse(argsStr);
+  const map: Record<string, string> = {};
+  for (const row of parsed?.titles ?? []) {
+    if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+      map[String(row.id)] = row.title.trim();
+    }
+  }
+  return map;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -326,16 +393,22 @@ serve(async (req) => {
     // 5) Summarize with Gemini (optional — only adds excerpts; never URLs)
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
     let summaries: Record<string, string> = {};
+    let translatedTitles: Record<string, string> = {};
     if (lovableKey) {
       try {
         summaries = await summarizeWithGemini({ apiKey: lovableKey, items: resolved });
       } catch (e) {
         console.warn("summarize error:", e);
       }
+      try {
+        translatedTitles = await translateTitlesWithGemini({ apiKey: lovableKey, items: resolved });
+      } catch (e) {
+        console.warn('title translate error:', e);
+      }
     }
 
     const items = resolved.map((it, i) => ({
-      title: it.title,
+      title: translatedTitles[String(i)] || it.title,
       url: it.url,
       excerpt: summaries[String(i)] || it.excerpt || "",
       siteName: it.siteName,

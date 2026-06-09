@@ -43,6 +43,13 @@ interface SearchItem {
   publishedAt?: string;
 }
 
+function shouldTranslateTitle(title: string): boolean {
+  const clean = (title ?? '').trim();
+  if (!clean) return false;
+  if (/^[\x00-\x7F\s.,:;!?"'()\-_/&%0-9]+$/.test(clean) && /[A-Za-z]{3,}/.test(clean)) return false;
+  return /[^\x00-\x7F]/.test(clean) || !/[A-Za-z]{3,}/.test(clean);
+}
+
 function siteFromUrl(url: string): string | undefined {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -272,6 +279,60 @@ async function summarizeWithGemini(opts: {
   return map;
 }
 
+async function translateTitlesWithGemini(apiKey: string, items: SearchItem[]): Promise<Record<string, string>> {
+  const list = items
+    .map((it, i) => ({ id: i, title: it.title }))
+    .filter((it) => shouldTranslateTitle(it.title));
+  if (list.length === 0) return {};
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-3.1-flash-lite-preview',
+      messages: [
+        { role: 'system', content: 'Translate non-English news headlines into concise natural English. Return JSON only via the tool.' },
+        { role: 'user', content: JSON.stringify(list) },
+      ],
+      tools: [{
+        type: 'function',
+        function: {
+          name: 'return_titles',
+          description: 'Return translated English titles by id.',
+          parameters: {
+            type: 'object',
+            properties: {
+              titles: {
+                type: 'array',
+                items: {
+                  type: 'object',
+                  properties: { id: { type: 'integer' }, title: { type: 'string' } },
+                  required: ['id', 'title'],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ['titles'],
+            additionalProperties: false,
+          },
+        },
+      }],
+      tool_choice: { type: 'function', function: { name: 'return_titles' } },
+    }),
+  });
+  if (!res.ok) return {};
+  const json = await res.json();
+  const argsStr = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+  if (!argsStr) return {};
+  const parsed = JSON.parse(argsStr);
+  const out: Record<string, string> = {};
+  for (const row of parsed?.titles ?? []) {
+    if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+      out[String(row.id)] = row.title.trim();
+    }
+  }
+  return out;
+}
+
 async function searchWithRss(opts: {
   query?: string;
   site?: string;
@@ -300,16 +361,22 @@ async function searchWithRss(opts: {
   );
 
   let summaries: Record<string, string> = {};
+  let translatedTitles: Record<string, string> = {};
   if (opts.lovableKey) {
     try {
       summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved, model: opts.model });
     } catch (e) {
       console.warn("summarize error:", e);
     }
+    try {
+      translatedTitles = await translateTitlesWithGemini(opts.lovableKey, resolved);
+    } catch (e) {
+      console.warn('title translate error:', e);
+    }
   }
 
   return resolved.map((it, i) => ({
-    title: it.title,
+    title: translatedTitles[String(i)] || it.title,
     url: it.url,
     excerpt: summaries[String(i)] || it.excerpt || "",
     siteName: it.siteName,

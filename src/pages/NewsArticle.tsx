@@ -544,7 +544,7 @@ const NewsArticleReader = () => {
 
 
       <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef}>
-        <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
+        <main className="reader-prose max-w-3xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={typo.familyStyle ?? undefined}>
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />

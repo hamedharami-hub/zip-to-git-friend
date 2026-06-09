@@ -1370,16 +1370,6 @@ function FolderAggregatedView({
             بروزرسانی همه
           </Button>
         </div>
-        {sourcesInFolder.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {sourcesInFolder.map((s) => (
-              <button key={s.id} type="button" onClick={() => onPickSource(s.id)}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-muted hover:bg-accent border border-border">
-                {s.name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {items.length === 0 ? (

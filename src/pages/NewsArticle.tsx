@@ -138,14 +138,14 @@ const NewsArticleReader = () => {
         if (a) {
           document.title = `${a.title} — News`;
           await loadRewrites(a);
-          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__') {
+          const alreadySeen = isSeen(a.url);
+          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__' && !alreadySeen) {
             await runScrape(a, false);
           }
           // Auto-generate a long, simple rewrite the very first time the
           // user opens this article so they immediately see a digestible
-          // version. Skip if any rewrite already exists OR the article was
-          // opened before (offline-friendly re-reads).
-          if (!isSeen(a.url)) {
+          // version. Skip on every re-open (offline-friendly).
+          if (!alreadySeen) {
             try {
               const { data: existing } = await supabase
                 .from('news_digests' as never)
@@ -158,6 +158,9 @@ const NewsArticleReader = () => {
                 void handleRewrite('auto-max', false).catch(() => {});
               }
             } catch { /* ignore */ }
+            // Mark as seen immediately so any subsequent open is fully offline,
+            // even if the user leaves before background AI tasks finish.
+            markSeen(a.url);
           }
         }
       } catch (e: any) {

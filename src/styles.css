@@ -1,5 +1,4 @@
 @import "tailwindcss" source(none);
-@import url("https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Nunito+Sans:opsz,wght@6..12,400;6..12,500;6..12,600;6..12,700&family=Vazirmatn:wght@400;500;600;700&display=swap");
 @source "../src";
 @import "tw-animate-css";
 
@@ -314,81 +313,4 @@
   .m3-state-layer:hover::after { opacity: 0.08; }
   .m3-state-layer:focus-visible::after { opacity: 0.10; }
   .m3-state-layer:active::after { opacity: 0.12; }
-
-  /* ───── Reader typography: Lora (headings) + Nunito Sans (body),
-     with Vazirmatn for Persian. Used in the news reader. ───── */
-  .reader-prose {
-    font-family: "Nunito Sans", "Vazirmatn", system-ui, -apple-system, sans-serif;
-    font-feature-settings: "ss01", "cv11";
-    line-height: 1.75;
-    color: hsl(var(--foreground));
-  }
-  .reader-prose h1,
-  .reader-prose h2,
-  .reader-prose h3,
-  .reader-prose h4 {
-    font-family: "Lora", "Vazirmatn", Georgia, serif;
-    font-weight: 600;
-    letter-spacing: -0.012em;
-    line-height: 1.25;
-    color: hsl(var(--foreground));
-  }
-  .reader-prose h2 { font-size: 1.45em; margin-top: 1.6em; margin-bottom: 0.55em; }
-  .reader-prose h3 { font-size: 1.18em; margin-top: 1.3em; margin-bottom: 0.4em; }
-  .reader-prose p { margin: 0.85em 0; }
-  .reader-prose [lang="fa"],
-  .reader-prose [dir="rtl"] {
-    font-family: "Vazirmatn", "Nunito Sans", system-ui, sans-serif;
-    line-height: 1.95;
-    letter-spacing: 0;
-  }
-  .reader-prose [lang="fa"] h1,
-  .reader-prose [lang="fa"] h2,
-  .reader-prose [lang="fa"] h3 {
-    font-family: "Vazirmatn", "Lora", serif;
-    font-weight: 700;
-  }
-  /* Drop-cap on the first paragraph for editorial feel. */
-  .reader-prose > p:first-of-type::first-letter {
-    font-family: "Lora", Georgia, serif;
-    font-weight: 600;
-    font-size: 3.1em;
-    float: inline-start;
-    line-height: 0.95;
-    margin: 0.08em 0.12em 0 0;
-    color: hsl(var(--primary));
-  }
-  .reader-prose [dir="rtl"] > p:first-of-type::first-letter,
-  .reader-prose [lang="fa"]::first-letter { all: unset; }
-
-  /* Pull-quote / blockquote */
-  .reader-prose blockquote {
-    border-inline-start: 3px solid hsl(var(--primary) / 0.55);
-    padding: 0.4em 1em;
-    margin: 1.2em 0;
-    font-style: italic;
-    color: hsl(var(--muted-foreground));
-    background: hsl(var(--muted) / 0.4);
-    border-radius: 0 0.5rem 0.5rem 0;
-  }
-
-  /* Bullet / ordered lists — tighter, more elegant rhythm. */
-  .reader-prose ul,
-  .reader-prose ol {
-    margin: 0.9em 0;
-    padding-inline-start: 1.4em;
-  }
-  .reader-prose li { margin: 0.35em 0; }
-  .reader-prose ul > li::marker { color: hsl(var(--primary) / 0.8); }
-
-  /* Key Takeaways callout block — emitted by the AI rewrite via H2 "Key Takeaways". */
-  .reader-prose .takeaways,
-  .reader-prose h2:has(+ ul) + ul {
-    background: linear-gradient(180deg, hsl(var(--primary) / 0.06), hsl(var(--primary) / 0.02));
-    border: 1px solid hsl(var(--primary) / 0.18);
-    border-radius: 0.9rem;
-    padding: 0.9em 1.2em;
-    margin: 1.2em 0 1.6em;
-  }
-}
 }

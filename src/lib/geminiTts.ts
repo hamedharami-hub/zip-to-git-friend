@@ -100,41 +100,50 @@ async function generateChunkPcm(
     },
   };
 
-  let res: Response;
-  try {
-    res = await fetch(ENDPOINT(TTS_MODEL, apiKey), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
-  } catch {
-    throw new GeminiTtsError('network', 'Network error reaching Gemini TTS.');
-  }
-
-  const json = (await res.json().catch(() => ({}))) as TtsResponse;
-
-  if (!res.ok) {
-    const msg = json.error?.message ?? `HTTP ${res.status}`;
-    if (res.status === 401 || res.status === 403) {
-      throw new GeminiTtsError('auth', `Gemini rejected the TTS key: ${msg}`, res.status);
+  let lastQuotaMessage = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(ENDPOINT(TTS_MODEL, apiKey), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new GeminiTtsError('network', 'Network error reaching Gemini TTS.');
     }
-    if (res.status === 429) {
-      throw new GeminiTtsError('quota', `TTS quota / rate limit hit: ${msg}`, res.status);
+
+    const json = (await res.json().catch(() => ({}))) as TtsResponse;
+
+    if (!res.ok) {
+      const msg = json.error?.message ?? `HTTP ${res.status}`;
+      if (res.status === 401 || res.status === 403) {
+        throw new GeminiTtsError('auth', `Gemini rejected the TTS key: ${msg}`, res.status);
+      }
+      if (res.status === 429) {
+        lastQuotaMessage = msg;
+        if (attempt < 2) {
+          await new Promise((resolve) => setTimeout(resolve, 1200 * (attempt + 1)));
+          continue;
+        }
+        throw new GeminiTtsError('quota', `TTS quota / rate limit hit: ${msg}`, res.status);
+      }
+      throw new GeminiTtsError('unknown', `TTS request failed (${res.status}): ${msg}`, res.status);
     }
-    throw new GeminiTtsError('unknown', `TTS request failed (${res.status}): ${msg}`, res.status);
+
+    const part = json.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
+    if (!part?.inlineData?.data) {
+      throw new GeminiTtsError('no-audio', 'Gemini returned no audio for this chunk.');
+    }
+
+    const pcm = base64ToBytes(part.inlineData.data);
+    const mime = part.inlineData.mimeType ?? '';
+    const rateMatch = /rate=(\d+)/i.exec(mime);
+    const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000;
+    return { pcm, sampleRate };
   }
 
-  const part = json.candidates?.[0]?.content?.parts?.find((p) => p.inlineData?.data);
-  if (!part?.inlineData?.data) {
-    throw new GeminiTtsError('no-audio', 'Gemini returned no audio for this chunk.');
-  }
-
-  const pcm = base64ToBytes(part.inlineData.data);
-  // Gemini TTS returns 24kHz mono PCM regardless of the mime label.
-  const mime = part.inlineData.mimeType ?? '';
-  const rateMatch = /rate=(\d+)/i.exec(mime);
-  const sampleRate = rateMatch ? Number(rateMatch[1]) : 24000;
-  return { pcm, sampleRate };
+  throw new GeminiTtsError('quota', `TTS quota / rate limit hit: ${lastQuotaMessage || 'HTTP 429'}`, 429);
 }
 
 /* ─────────────────────────────────────────── public API ── */

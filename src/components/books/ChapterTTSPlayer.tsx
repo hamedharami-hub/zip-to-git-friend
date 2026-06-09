@@ -65,6 +65,11 @@ import {
   ElevenLabsTtsError,
   synthesizeWithElevenLabs,
 } from '@/lib/elevenLabsTts';
+import { AZURE_VOICES, AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
+import { HUGGINGFACE_VOICES, HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
+import { PLAYHT_VOICES, PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
+import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
+import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 
 interface Props {
   bookId: string;
@@ -86,7 +91,7 @@ const ELEVEN_VOICE_KEY = 'llvp-tts-eleven-voice';
 const ELEVEN_MODEL_KEY = 'llvp-tts-eleven-model';
 const TTS_LANG_KEY = 'llvp-tts-lang';
 
-type Engine = 'browser' | 'gemini' | 'elevenlabs';
+type Engine = 'browser' | 'gemini' | 'elevenlabs' | 'azure' | 'huggingface' | 'playht' | 'opentts';
 
 function fmt(sec: number): string {
   if (!Number.isFinite(sec) || sec < 0) return '0:00';
@@ -125,7 +130,7 @@ export function ChapterTTSPlayer({
   const [engine, setEngine] = useState<Engine>(() => {
     try {
       const saved = localStorage.getItem(ENGINE_KEY) as Engine | null;
-      if (saved === 'gemini' || saved === 'browser' || saved === 'elevenlabs') return saved;
+      if (saved && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(saved)) return saved as Engine;
     } catch {
       /* noop */
     }
@@ -140,8 +145,8 @@ export function ChapterTTSPlayer({
   }, [engine]);
   useEffect(() => {
     const sync = (e: StorageEvent) => {
-      if (e.key === ENGINE_KEY && (e.newValue === 'browser' || e.newValue === 'gemini' || e.newValue === 'elevenlabs')) {
-        setEngine(e.newValue);
+      if (e.key === ENGINE_KEY && e.newValue && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(e.newValue)) {
+        setEngine(e.newValue as Engine);
       }
       if (e.key === TTS_LANG_KEY && (e.newValue === 'en' || e.newValue === 'fa')) {
         setTtsLang(e.newValue);
@@ -219,6 +224,117 @@ export function ChapterTTSPlayer({
   useEffect(() => { try { localStorage.setItem(ELEVEN_VOICE_KEY, elevenVoice); } catch { /* */ } }, [elevenVoice]);
   useEffect(() => { try { localStorage.setItem(ELEVEN_MODEL_KEY, elevenModel); } catch { /* */ } }, [elevenModel]);
   const [elevenLoading, setElevenLoading] = useState(false);
+
+  // ───────── Azure / HF / Play.ht / OpenTTS state ─────────
+  const azureKey = settings.azureTtsApiKey?.trim() ?? '';
+  const azureRegion = settings.azureTtsRegion?.trim() || 'westeurope';
+  const hfKey = settings.huggingFaceApiKey?.trim() ?? '';
+  const playHtUser = settings.playHtUserId?.trim() ?? '';
+  const playHtKey = settings.playHtApiKey?.trim() ?? '';
+  const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
+  const azureVoiceOpts = AZURE_VOICES.filter((v) => v.lang === ttsLang);
+  const hfVoiceOpts = HUGGINGFACE_VOICES.filter((v) => v.lang === ttsLang);
+  const playHtVoiceOpts = PLAYHT_VOICES;
+  const [azureVoice, setAzureVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-azure-voice') || ''; } catch { return ''; }
+  });
+  const [hfVoice, setHfVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-hf-voice') || ''; } catch { return ''; }
+  });
+  const [playHtVoice, setPlayHtVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-playht-voice') || PLAYHT_VOICES[0].id; } catch { return PLAYHT_VOICES[0].id; }
+  });
+  const [openTtsVoice, setOpenTtsVoice] = useState<string>(() => {
+    try { return localStorage.getItem('llvp-tts-opentts-voice') || (ttsLang === 'fa' ? 'coqui-tts:fa_custom' : 'larynx:en-us/ek-glow_tts'); }
+    catch { return 'larynx:en-us/ek-glow_tts'; }
+  });
+  useEffect(() => { const v = azureVoiceOpts[0]?.id; if (!azureVoice && v) setAzureVoice(v); }, [azureVoiceOpts, azureVoice]);
+  useEffect(() => { const v = hfVoiceOpts[0]?.id; if (!hfVoice && v) setHfVoice(v); }, [hfVoiceOpts, hfVoice]);
+  useEffect(() => { try { if (azureVoice) localStorage.setItem('llvp-tts-azure-voice', azureVoice); } catch {/* */} }, [azureVoice]);
+  useEffect(() => { try { if (hfVoice) localStorage.setItem('llvp-tts-hf-voice', hfVoice); } catch {/* */} }, [hfVoice]);
+  useEffect(() => { try { localStorage.setItem('llvp-tts-playht-voice', playHtVoice); } catch {/* */} }, [playHtVoice]);
+  useEffect(() => { try { localStorage.setItem('llvp-tts-opentts-voice', openTtsVoice); } catch {/* */} }, [openTtsVoice]);
+  const [otherLoading, setOtherLoading] = useState(false);
+
+  /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
+  const loadOther = async () => {
+    if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
+    setOtherLoading(true);
+    try {
+      let blob: Blob;
+      if (engine === 'azure') {
+        blob = await synthesizeWithAzure({ apiKey: azureKey, region: azureRegion, text, voice: azureVoice, rate });
+      } else if (engine === 'huggingface') {
+        blob = await synthesizeWithHuggingFace({ apiKey: hfKey, text, model: hfVoice });
+      } else if (engine === 'playht') {
+        blob = await synthesizeWithPlayHt({ userId: playHtUser, apiKey: playHtKey, text, voice: playHtVoice, lang: ttsLang });
+      } else {
+        blob = await synthesizeWithOpenTts({ baseUrl: openTtsUrl, text, voice: openTtsVoice });
+      }
+      revokeUrl();
+      const url = URL.createObjectURL(blob);
+      lastUrlRef.current = url;
+      setAudioUrl(url);
+      toast.success('روایت آماده شد.');
+    } catch (e) {
+      const msg = e instanceof AzureTtsError || e instanceof HuggingFaceTtsError ||
+                  e instanceof PlayHtTtsError || e instanceof OpenTtsError
+                  ? e.message : (e instanceof Error ? e.message : 'TTS ناموفق');
+      toast.error(msg);
+    } finally { setOtherLoading(false); }
+  };
+
+  // ───────── Paragraph-speech-request bus (long-press menu) ─────────
+  useEffect(() => {
+    return subscribeParagraphSpeechRequest(bookId, chapterIndexProp, (req) => {
+      if (req.action === 'stop') {
+        try { window.speechSynthesis.cancel(); } catch { /* */ }
+        browserCtrlRef.current?.stop();
+        browserCtrlRef.current = null;
+        setBrowserPlaying(false);
+        setBrowserChunk(null);
+        return;
+      }
+      if (req.action === 'play-from') {
+        if (req.lang === 'fa') setTtsLang('fa');
+        else if (req.lang === 'en') setTtsLang('en');
+        setEngine('browser');
+        setOpen(true);
+        // Find matching chunk index by scanning chunks for the paragraph head.
+        setTimeout(() => {
+          if (!isBrowserTtsSupported()) return;
+          const fullText = req.lang === 'fa' && textFa ? textFa : textProp;
+          const head = req.text.replace(/\s+/g, ' ').trim().slice(0, 40).toLowerCase();
+          const idx = Math.max(0, fullText.toLowerCase().indexOf(head));
+          // Estimate chunk index by char offset / ~250 chars per chunk.
+          const chunkIdx = Math.floor(idx / 250);
+          resumeIndexRef.current = chunkIdx;
+          const ctl = new BrowserTtsController(fullText, {
+            voiceId: browserVoiceId,
+            lang: req.lang === 'fa' ? 'fa-IR' : 'en-US',
+            rate,
+            onChunkStart: (i, total) => {
+              setBrowserChunk({ done: i, total });
+              resumeIndexRef.current = i - 1;
+              try {
+                const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[i - 1];
+                if (chunk) emitParagraphSpeech(bookId, chapterIndexProp, chunk);
+              } catch {/* */}
+            },
+            onEnd: () => { setBrowserPlaying(false); setBrowserChunk(null); resumeIndexRef.current = 0; emitParagraphSpeech(bookId, chapterIndexProp, null); },
+            onError: () => { setBrowserPlaying(false); emitParagraphSpeech(bookId, chapterIndexProp, null); },
+          });
+          browserCtrlRef.current?.stop();
+          browserCtrlRef.current = ctl;
+          ctl.start(chunkIdx);
+          setBrowserPlaying(true);
+        }, 60);
+      }
+      // 'play-one' is handled by the menu's instant speechSynthesis call.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, chapterIndexProp, textProp, textFa, browserVoiceId, rate]);
+
 
   // Lazy-load voices the first time the panel opens.
   useEffect(() => {
@@ -641,57 +757,39 @@ export function ChapterTTSPlayer({
           <div
             role="tablist"
             aria-label="TTS engine"
-            className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
+            className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5 gap-0.5"
           >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'browser'}
-              disabled={!browserSupported}
-              onClick={() => setEngine('browser')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'browser'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="Built-in browser voice — free, offline"
-            >
-              <Mic className="h-3 w-3" />
-              Browser
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'gemini'}
-              onClick={() => setEngine('gemini')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'gemini'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="Gemini TTS — natural voices, needs API key"
-            >
-              <Sparkles className="h-3 w-3" />
-              Gemini
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={engine === 'elevenlabs'}
-              onClick={() => setEngine('elevenlabs')}
-              className={
-                'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                (engine === 'elevenlabs'
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground')
-              }
-              title="ElevenLabs — صدای حرفه‌ای، نیاز به API key"
-            >
-              <Sparkles className="h-3 w-3" />
-              ElevenLabs
-            </button>
+            {([
+              { id: 'browser', label: 'Browser', icon: Mic, title: 'Built-in browser voice — free, offline', disabled: !browserSupported },
+              { id: 'gemini', label: 'Gemini', icon: Sparkles, title: 'Gemini TTS — needs Gemini key' },
+              { id: 'elevenlabs', label: 'ElevenLabs', icon: Sparkles, title: 'ElevenLabs — premium' },
+              { id: 'azure', label: 'Azure', icon: Sparkles, title: 'Azure Speech — بهترین صدای فارسی' },
+              { id: 'huggingface', label: 'HF', icon: Sparkles, title: 'Hugging Face Inference' },
+              { id: 'playht', label: 'Play.ht', icon: Sparkles, title: 'Play.ht v2 streaming' },
+              { id: 'opentts', label: 'OpenTTS', icon: Sparkles, title: 'Self-hosted OpenTTS server' },
+            ] as const).map((t) => {
+              const Icon = t.icon;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={engine === t.id}
+                  disabled={(t as { disabled?: boolean }).disabled}
+                  onClick={() => setEngine(t.id as Engine)}
+                  className={
+                    'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
+                    (engine === t.id
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground disabled:opacity-50')
+                  }
+                  title={t.title}
+                >
+                  <Icon className="h-3 w-3" />
+                  {t.label}
+                </button>
+              );
+            })}
           </div>
 
           {/* Language picker — visible whenever a Persian script is available. */}
@@ -1109,6 +1207,78 @@ export function ChapterTTSPlayer({
                 </>
               )}
             </>
+          )}
+
+          {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
+          {(engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
+            <div className="space-y-3">
+              {engine === 'azure' && !azureKey && (
+                <div className="text-sm text-muted-foreground">
+                  Azure نیاز به key + region دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                </div>
+              )}
+              {engine === 'huggingface' && !hfKey && (
+                <div className="text-sm text-muted-foreground">
+                  Hugging Face نیاز به token دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                </div>
+              )}
+              {engine === 'playht' && (!playHtUser || !playHtKey) && (
+                <div className="text-sm text-muted-foreground">
+                  Play.ht نیاز به user id + key دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                </div>
+              )}
+              {engine === 'opentts' && !openTtsUrl && (
+                <div className="text-sm text-muted-foreground">
+                  آدرس سرور OpenTTS را در تنظیمات بگذار. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                </div>
+              )}
+              <div className="flex items-center gap-2 flex-wrap">
+                {engine === 'azure' && (
+                  <Select value={azureVoice} onValueChange={setAzureVoice}>
+                    <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>
+                    <SelectContent>{azureVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                )}
+                {engine === 'huggingface' && (
+                  <Select value={hfVoice} onValueChange={setHfVoice}>
+                    <SelectTrigger className="h-9 w-[260px]"><SelectValue placeholder="انتخاب مدل" /></SelectTrigger>
+                    <SelectContent>{hfVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                )}
+                {engine === 'playht' && (
+                  <Select value={playHtVoice} onValueChange={setPlayHtVoice}>
+                    <SelectTrigger className="h-9 w-[240px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>{playHtVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                )}
+                {engine === 'opentts' && (
+                  <input
+                    type="text"
+                    value={openTtsVoice}
+                    onChange={(e) => setOpenTtsVoice(e.target.value)}
+                    placeholder="e.g. coqui-tts:fa_custom"
+                    className="h-9 px-2 rounded-md border border-border bg-background text-sm w-[260px]"
+                  />
+                )}
+                <Button onClick={loadOther} disabled={otherLoading}>
+                  {otherLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
+                  {otherLoading ? 'در حال ساخت…' : 'Listen'}
+                </Button>
+              </div>
+              {audioUrl && (
+                <audio
+                  ref={audioRef}
+                  src={audioUrl}
+                  controls
+                  className="w-full"
+                  onLoadedMetadata={(e) => { const a = e.currentTarget; setDuration(a.duration || 0); a.playbackRate = rate; }}
+                  onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
+                  onPlay={() => setPlaying(true)}
+                  onPause={() => setPlaying(false)}
+                  onEnded={() => setPlaying(false)}
+                />
+              )}
+            </div>
           )}
         </div>
       </div>

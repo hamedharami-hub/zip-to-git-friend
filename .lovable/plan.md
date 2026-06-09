@@ -1,62 +1,52 @@
-# پلن بهبود بخش اخبار
+# پلن اجرای ۶ مورد درخواستی
 
-## ۱. رفع باگ‌های TTS سرتیتر
-**فایل‌ها:** `src/components/books/ChapterTTSPlayer.tsx`, `src/lib/batchAnalyzeChapter.ts`, `src/components/books/InteractiveBookText.tsx`
+## ۱. تکمیل موارد باقی‌مانده از پلن قبلی
+- **منوی تنظیمات یکپارچه ⚙ در صفحه خبر** (`NewsArticle.tsx` + کامپوننت جدید `NewsReaderSettings.tsx`):
+  - بالا فقط بماند: دکمه برگشت، عنوان کوتاه، تغییر زبان (FA/EN/دو) به‌صورت سه دکمه فشرده، دکمه پخش (TTS)، آیکن ⚙.
+  - داخل ⚙: تم (روز/شب/کاغذ)، اندازه فونت (۵ پله)، نوع فونت، چینش متن، ستاره‌دار کردن، باز کردن لینک منبع/یوتیوب، بازترجمه از اول، بازخوانی کامل، بازپردازش AI.
+- **MediaSession** برای پخش TTS (hook `useMediaSession.ts` موجود است؛ به `ChapterTTSPlayer.tsx` وصل می‌شود) تا کنترل پخش/توقف در نوتیفیکیشن گوشی بیاید + عنوان مقاله.
 
-- هر `<h1>..<h6>` به‌عنوان یک واحد گفتاری مستقل قرار می‌گیرد (جدا از پاراگراف بعدی) تا با هم خوانده نشوند.
-- منطق اسکرول `centerActiveParagraph` گسترش می‌یابد تا هدینگ‌ها و اولین پاراگراف بعد از هدینگ هم با کلید مشترک شناسایی شوند و در وسط صفحه قرار بگیرند.
-- ایندکس‌گذاری speech event برای هدینگ‌ها هم‌تراز با پاراگراف‌ها می‌شود.
+## ۲. ساده‌سازی نوار بالای HTML خروجی
+- در `NewsShareMenu.tsx → buildBilingualHtml`:
+  - بالا فقط سه دکمه زبان (دو / فا / EN) بماند.
+  - بقیه (تم، فونت، اندازه، چینش) داخل یک دکمه ⚙ به‌صورت popover/details ساده با همان CSS inline.
+  - تنظیمات باز/بسته شدن منو + کلیک خارج برای بستن.
 
-## ۲. منوی تنظیمات یکپارچه در صفحه خبر
-**فایل جدید:** `src/components/news/NewsReaderSettings.tsx`
-**ویرایش:** `src/pages/NewsArticle.tsx`
+## ۳. زوم با دو انگشت برای تغییر اندازه فونت
+- **در HTML خروجی**: یک listener کوچک `touchstart/touchmove` که فاصله بین دو انگشت را اندازه‌گیری می‌کند و `--fs` را بین ۱۲ تا ۲۸ تنظیم می‌کند (و در localStorage ذخیره).
+- **در صفحه خبر**: همان منطق در `NewsArticle.tsx` روی container متن، با به‌روزرسانی state اندازه فونت که از `NewsTypographyMenu` می‌آید.
 
-نوار بالای صفحه ساده می‌شود و فقط شامل: عنوان، دکمه «تغییر زبان» (تک‌کلیک toggle بین FA/EN/دوزبانه)، دکمه «خواندن» (TTS)، و یک دکمه چرخ‌دنده ⚙ که این Sheet را باز می‌کند:
+## ۴. منوی نگه‌داشتن (long-press) روی پاراگراف
+- اضافه‌کردن منو context روی هر `<p>/<h*>` در `InteractiveBookText.tsx` (از hook `useLongPress` موجود).
+- گزینه‌ها:
+  - 🔊 خواندن همین پاراگراف
+  - ▶️ خواندن از این پاراگراف تا توقف
+  - ⏹ توقف خواندن
+  - 📋 کپی متن
+  - 🌐 ترجمه/پردازش مجدد
+- خواندن از این پاراگراف تا توقف از طریق `chapterAnalysisBus`/`paragraphSpeechBus` به `ChapterTTSPlayer` سیگنال می‌دهد که از index مشخص شروع کند.
 
-- **تم مطالعه:** روز / شب / کاغذ (sepia)
-- **اندازه فونت:** ۵ سطح
-- **نوع فونت:** Sans/Serif/Vazir/Mono
-- **چینش متن:** راست/چپ/وسط/justify
-- **ستاره‌دار کردن خبر** (toggle)
-- **باز کردن منبع:** دکمه‌های YouTube/لینک اصلی
-- **ترجمه دوباره از اول** (پاک کردن کش ترجمه این مقاله)
-- **خواندن دوباره از اول** (reset TTS index)
-- **پردازش دوباره** (پاک کردن کش analysis)
+## ۵. رفع ارور TTS آنلاین ElevenLabs و Gemini
+- بررسی edge functionهای `elevenlabs-tts` و (در صورت وجود) `gemini-tts`؛ بررسی logها با `supabase--edge_function_logs`.
+- اصلاح: احتمالاً CORS، یا فرمت body، یا میدل turbo برای فارسی + voiceId مناسب.
+- برای Gemini: استفاده از `gemini-2.5-flash-tts` یا preview voice مناسب از طریق Lovable AI Gateway.
 
-## ۳. TTS کامپکت + MediaSession
-**فایل:** `src/components/books/ChapterTTSPlayer.tsx`, `src/hooks/useMediaSession.ts`
-
-- پنل گسترده فعلی به یک نوار باریک پایین صفحه (مثل mini-player) تبدیل می‌شود — حداکثر ۶۴px ارتفاع.
-- دکمه‌های Play/Pause/Stop/Restart/Speed در یک ردیف.
-- MediaSession API برای نمایش کنترل در نوتیفیکیشن بار (عنوان مقاله + actions: play, pause, stop, previoustrack=قبلی، nexttrack=بعدی).
-
-## ۴. HTML اکسپورت قابل تنظیم
-**فایل:** `src/components/news/NewsShareMenu.tsx`
-
-داخل HTML اکسپورت‌شده یک toolbar چسبان بالا اضافه می‌شود با:
-- زبان (FA/EN/دوزبانه)
-- تم (روشن/تاریک/کاغذ)
-- اندازه فونت (− / +)
-- چینش (راست/چپ/وسط/justify)
-
-همه با localStorage در خود فایل HTML ذخیره می‌شود (standalone، بدون وابستگی بیرونی).
-
-## ۵. متن پردازش‌شده عمیق‌تر
-**فایل:** `supabase/functions/analyze-paragraph/index.ts` (یا پرامپت معادل در `src/lib/batchAnalyzeChapter.ts`)
-
-پرامپت بازنویسی می‌شود تا خروجی:
-- توضیح مفهومی طولانی‌تر (۳-۵ پاراگراف به جای ۱-۲)
-- bullet points از نکات کلیدی
-- پس‌زمینه و context تاریخی/فنی
-- ارتباط با مفاهیم مرتبط
+## ۶. افزودن TTS providerهای جدید
+- در `Settings.tsx`: بخش جدید "TTS آنلاین" که از کاربر API key می‌گیرد برای:
+  - Microsoft Azure Speech (کلید + region)
+  - Hugging Face Inference (کلید + model id)
+  - Play.ht (کلید + userId)
+  - OpenTTS (URL سرور self-hosted)
+- ذخیره در `settingsStore` (localStorage).
+- ۴ تابع جدید در `src/lib/`:
+  - `azureTts.ts` — REST `cognitiveservices/voices/list` + SSML با locale `fa-IR` (`fa-IR-DilaraNeural`/`fa-IR-FaridNeural`) و `en-US`.
+  - `huggingfaceTts.ts` — POST به مدل (پیش‌فرض `facebook/mms-tts-fas` / `facebook/mms-tts-eng`).
+  - `playhtTts.ts` — `/api/v2/tts/stream` با voiceهای فارسی/انگلیسی.
+  - `openTts.ts` — GET ساده با voice locale.
+- در گزینه‌های انتخاب TTS (`ChapterTTSPlayer.tsx` و `ReaderTTSQuickSettings.tsx`) این provider‌ها اضافه می‌شوند، با فیلتر زبان (فارسی/انگلیسی) خودکار.
 
 ## ترتیب اجرا
-۱. رفع باگ TTS سرتیتر (سریع، تأثیر زیاد)
-۲. منوی تنظیمات یکپارچه + ساده‌سازی header
-۳. TTS کامپکت + MediaSession
-۴. HTML اکسپورت با toolbar
-۵. پرامپت پردازش عمیق‌تر
+۱) رفع باگ TTS فعلی (مورد ۵) → ۲) منوی long-press پاراگراف (۴) → ۳) ساده‌سازی HTML + پینچ زوم (۲،۳) → ۴) منوی ⚙ صفحه خبر + MediaSession (۱) → ۵) providerهای جدید TTS (۶).
 
----
-
-پس از تأیید، شروع می‌کنم. اگر بخشی اولویت پایین‌تری دارد بفرمایید تا حذف یا به مرحله بعد موکول شود.
+## نکته
+این حجم کار در چند پاسخ پشت‌سرهم انجام می‌شود. اگر می‌خواهی روی موارد مشخصی اول تمرکز کنم بگو، وگرنه از مورد ۵ (رفع باگ ElevenLabs/Gemini) شروع می‌کنم.

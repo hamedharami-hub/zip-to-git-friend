@@ -132,14 +132,14 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5">
 <title>${esc(title)}</title>
 <style>
-  :root { color-scheme: light dark; --bg:#fafaf9; --fg:#1a1a1a; --muted:#666; --border:#e5e5e3; --btn:#fff; --btnFg:#1a1a1a; --btnBorder:#d4d4d2; --accent:#3b82f6; --toolbarBg:#fafaf9; }
-  body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; }
-  body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; }
+  :root { color-scheme: light dark; --bg:#fafaf9; --fg:#1a1a1a; --muted:#666; --border:#e5e5e3; --btn:#fff; --btnFg:#1a1a1a; --btnBorder:#d4d4d2; --accent:#3b82f6; --toolbarBg:#fafaf9; --panelBg:#ffffff; }
+  body[data-theme="dark"]  { --bg:#0f0f10; --fg:#ececec; --muted:#888; --border:#2a2a2c; --btn:#2a2a2c; --btnFg:#ececec; --btnBorder:#3a3a3c; --toolbarBg:#1a1a1c; --panelBg:#18181a; }
+  body[data-theme="sepia"] { --bg:#f4ecd8; --fg:#3a2e1f; --muted:#7a6a55; --border:#e0d3b3; --btn:#fff8e8; --btnFg:#3a2e1f; --btnBorder:#d6c79a; --toolbarBg:#f4ecd8; --panelBg:#fbf5e3; }
   * { box-sizing: border-box; }
-  html, body { margin:0; padding:0; }
+  html, body { margin:0; padding:0; touch-action: pan-x pan-y; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Vazirmatn', 'Tahoma', sans-serif;
     max-width: 760px; margin: 0 auto; padding: 1rem 1.25rem 4rem;
     line-height: 1.85; color: var(--fg); background: var(--bg);
@@ -158,54 +158,60 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   .en, .fa { margin: .25rem 0; }
   .fa { font-size: 1.02rem; line-height: 2;
     font-family: 'Vazirmatn','IRANSans','Tahoma',sans-serif; }
-  .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .35rem;
+  .toolbar { position: sticky; top: 0; z-index: 5; display: flex; gap: .4rem;
     padding: .5rem .6rem; background: var(--toolbarBg); border-bottom: 1px solid var(--border);
-    margin: -1rem -1.25rem 1rem; flex-wrap: wrap; align-items: center; }
+    margin: -1rem -1.25rem 1rem; align-items: center; justify-content: space-between; }
   .toolbar .grp { display: inline-flex; gap: 2px; align-items: center; }
-  .toolbar .sep { width:1px; height: 22px; background: var(--border); margin: 0 .25rem; }
-  .toolbar strong { font-size: .72rem; opacity: .65; margin-inline-end: .15rem; font-weight: 600; }
-  button { font: inherit; font-size: .78rem; padding: .3rem .55rem;
+  button { font: inherit; font-size: .8rem; padding: .35rem .6rem;
     border: 1px solid var(--btnBorder); border-radius: 7px; background: var(--btn); color: var(--btnFg);
     cursor: pointer; line-height: 1; }
   button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.gear { padding: .35rem .55rem; font-size: 1rem; }
+  .panel { position: fixed; top: 3rem; right: .6rem; z-index: 10;
+    background: var(--panelBg); border:1px solid var(--border); border-radius: 12px;
+    padding: .75rem; box-shadow: 0 10px 30px rgba(0,0,0,.18); min-width: 240px; display:none; }
+  .panel.open { display: block; }
+  .panel .row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:.5rem; align-items:center; }
+  .panel strong { font-size: .72rem; opacity: .7; min-width: 50px; display:inline-block; }
   body[data-mode="en"] .fa { display: none; }
   body[data-mode="fa"] .en { display: none; }
   .src { margin-top: 3rem; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
   a { color: var(--accent); }
+  .hint { font-size:.7rem; color: var(--muted); margin-top:.4rem; }
 </style>
 </head>
 <body data-mode="both" data-theme="light" data-font="sans" data-align="start" style="--fs:17px">
 <nav class="toolbar" dir="rtl">
-  <div class="grp"><strong>زبان</strong>
+  <div class="grp">
     <button data-mode="both" class="active" type="button">دو</button>
     <button data-mode="fa" type="button">فا</button>
     <button data-mode="en" type="button">EN</button>
   </div>
-  <span class="sep"></span>
-  <div class="grp"><strong>تم</strong>
+  <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
+</nav>
+<div class="panel" id="settingsPanel" dir="rtl">
+  <div class="row"><strong>تم</strong>
     <button data-theme="light" class="active" type="button">روز</button>
     <button data-theme="sepia" type="button">کاغذ</button>
     <button data-theme="dark" type="button">شب</button>
   </div>
-  <span class="sep"></span>
-  <div class="grp"><strong>فونت</strong>
+  <div class="row"><strong>فونت</strong>
     <button data-font="sans" class="active" type="button">Sans</button>
     <button data-font="serif" type="button">Serif</button>
     <button data-font="vazir" type="button">Vazir</button>
   </div>
-  <span class="sep"></span>
-  <div class="grp"><strong>اندازه</strong>
+  <div class="row"><strong>اندازه</strong>
     <button data-fs="dec" type="button">A−</button>
     <button data-fs="reset" type="button">A</button>
     <button data-fs="inc" type="button">A+</button>
   </div>
-  <span class="sep"></span>
-  <div class="grp"><strong>چینش</strong>
+  <div class="row"><strong>چینش</strong>
     <button data-align="start" class="active" type="button">طبیعی</button>
     <button data-align="justify" type="button">هم‌تراز</button>
     <button data-align="center" type="button">وسط</button>
   </div>
-</nav>
+  <div class="hint">برای تغییر سریع اندازه، با دو انگشت روی متن زوم کنید.</div>
+</div>
 <h1>${esc(title)}</h1>
 <p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>
 
@@ -223,31 +229,54 @@ ${body}
     ['mode','theme','font','align'].forEach(function(g){
       var v = prefs[g]; if(!v) return;
       document.body.setAttribute('data-'+g, v);
-      document.querySelectorAll('.toolbar button[data-'+g+']').forEach(function(b){
+      document.querySelectorAll('button[data-'+g+']').forEach(function(b){
         b.classList.toggle('active', b.getAttribute('data-'+g) === v);
       });
     });
   }
   function save(){ try{ localStorage.setItem(K, JSON.stringify(prefs)); }catch(e){} }
-  document.querySelectorAll('.toolbar button').forEach(function(btn){
+  document.querySelectorAll('.toolbar button, .panel button').forEach(function(btn){
     btn.addEventListener('click', function(){
       ['mode','theme','font','align'].forEach(function(g){
         var v = btn.getAttribute('data-'+g);
         if (v){
           prefs[g]=v;
           document.body.setAttribute('data-'+g, v);
-          document.querySelectorAll('.toolbar button[data-'+g+']').forEach(function(b){
-            b.classList.toggle('active', b===btn);
+          document.querySelectorAll('button[data-'+g+']').forEach(function(b){
+            b.classList.toggle('active', b.getAttribute('data-'+g) === v);
           });
         }
       });
       var fsCmd = btn.getAttribute('data-fs');
-      if (fsCmd === 'inc') fs = Math.min(28, fs+1);
-      else if (fsCmd === 'dec') fs = Math.max(12, fs-1);
+      if (fsCmd === 'inc') fs = Math.min(40, fs+2);
+      else if (fsCmd === 'dec') fs = Math.max(10, fs-2);
       else if (fsCmd === 'reset') fs = 17;
       if (fsCmd){ prefs.fs = fs; document.body.style.setProperty('--fs', fs+'px'); }
       save();
     });
+  });
+  // ⚙ panel open/close
+  var gear = document.getElementById('gearBtn');
+  var panel = document.getElementById('settingsPanel');
+  gear.addEventListener('click', function(e){ e.stopPropagation(); panel.classList.toggle('open'); });
+  document.addEventListener('click', function(e){ if (!panel.contains(e.target) && e.target !== gear) panel.classList.remove('open'); });
+
+  // Pinch-zoom for font size
+  var startDist = 0, startFs = fs;
+  function dist(t){ var dx=t[0].clientX-t[1].clientX, dy=t[0].clientY-t[1].clientY; return Math.hypot(dx,dy); }
+  document.addEventListener('touchstart', function(e){
+    if (e.touches.length === 2){ startDist = dist(e.touches); startFs = fs; }
+  }, { passive: true });
+  document.addEventListener('touchmove', function(e){
+    if (e.touches.length === 2 && startDist > 0){
+      var d = dist(e.touches);
+      var ratio = d / startDist;
+      var next = Math.round(Math.max(10, Math.min(40, startFs * ratio)));
+      if (next !== fs){ fs = next; document.body.style.setProperty('--fs', fs+'px'); }
+    }
+  }, { passive: true });
+  document.addEventListener('touchend', function(e){
+    if (startDist > 0 && e.touches.length < 2){ startDist = 0; prefs.fs = fs; save(); }
   });
   apply();
 })();

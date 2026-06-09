@@ -62,6 +62,22 @@ export function NewsTypographyMenu({ onChange }: Props) {
     });
   }, [size, family, onChange]);
 
+  // External pinch-zoom: cycle the size up/down on `news-font-step` CustomEvent.
+  useEffect(() => {
+    const order: NewsFontSize[] = ['sm', 'base', 'lg', 'xl', '2xl'];
+    const handler = (e: Event) => {
+      const delta = (e as CustomEvent<{ delta: number }>).detail?.delta ?? 0;
+      if (!delta) return;
+      setSize((cur) => {
+        const i = order.indexOf(cur);
+        const next = Math.max(0, Math.min(order.length - 1, i + (delta > 0 ? 1 : -1)));
+        return order[next];
+      });
+    };
+    window.addEventListener('news-font-step', handler);
+    return () => window.removeEventListener('news-font-step', handler);
+  }, []);
+
   return (
     <Popover>
       <PopoverTrigger asChild>

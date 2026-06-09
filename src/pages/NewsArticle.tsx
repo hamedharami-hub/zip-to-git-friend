@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -40,6 +40,7 @@ import { RelatedNews } from '@/components/news/RelatedNews';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
+import { usePinchFontStep } from '@/hooks/usePinchZoom';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -83,6 +84,8 @@ const NewsArticleReader = () => {
     (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) => setTypo(v),
     [],
   );
+  const pinchScrollRef = useRef<HTMLDivElement | null>(null);
+  usePinchFontStep(pinchScrollRef);
 
   const settings = useSettingsStore((s) => s.settings);
   // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph
@@ -497,7 +500,7 @@ const NewsArticleReader = () => {
       )}
 
 
-      <div className="flex-1 overflow-y-auto overscroll-contain">
+      <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef}>
         <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">

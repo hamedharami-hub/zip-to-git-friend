@@ -92,7 +92,7 @@ const News = () => {
   const [sources, setSources] = useState<NewsSource[]>([]);
   const [folders, setFolders] = useState<NewsFolder[]>([]);
   const [blocked, setBlocked] = useState<BlockedDomain[]>([]);
-  const [collapsedFolders, setCollapsedFolders] = useState<Record<string, boolean>>({});
+  const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [manageOpen, setManageOpen] = useState(false);
   const [digests, setDigests] = useState<NewsDigest[]>([]);
   const [savedArticles, setSavedArticles] = useState<NewsArticle[]>([]);
@@ -638,8 +638,8 @@ const News = () => {
                 sourcesByFolder={sourcesByFolder}
                 activeSourceId={activeSourceId}
                 activeFolderId={activeFolderId}
-                collapsed={collapsedFolders}
-                onToggleFolder={(id) => setCollapsedFolders((c) => ({ ...c, [id]: !c[id] }))}
+                collapsed={expandedFolders}
+                onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
                 onPickFolder={(id) => { setActiveFolderId(id); setActiveSourceId(null); }}
                 onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); }}
                 onDeleteSource={handleDeleteSource}
@@ -1370,16 +1370,6 @@ function FolderAggregatedView({
             بروزرسانی همه
           </Button>
         </div>
-        {sourcesInFolder.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {sourcesInFolder.map((s) => (
-              <button key={s.id} type="button" onClick={() => onPickSource(s.id)}
-                className="text-[10px] px-2 py-0.5 rounded-full bg-muted hover:bg-accent border border-border">
-                {s.name}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {items.length === 0 ? (
@@ -1478,7 +1468,7 @@ function SourcesTree({
       {folders.map((folder) => {
         const items = sourcesByFolder.get(folder.id) ?? [];
         const containsActiveSource = items.some((s) => s.id === activeSourceId);
-        const isOpen = activeFolderId === folder.id || containsActiveSource || !collapsed[folder.id];
+        const isOpen = activeFolderId === folder.id || containsActiveSource || collapsed[folder.id] === true;
         const isActive = activeFolderId === folder.id;
         return (
           <div key={folder.id}>

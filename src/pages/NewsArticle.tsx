@@ -41,6 +41,7 @@ import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
+import { isSeen, markSeen } from '@/lib/seenArticles';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -139,19 +140,22 @@ const NewsArticleReader = () => {
           }
           // Auto-generate a long, simple rewrite the very first time the
           // user opens this article so they immediately see a digestible
-          // version. Skip if any rewrite already exists.
-          try {
-            const { data: existing } = await supabase
-              .from('news_digests' as never)
-              .select('id')
-              .eq('topic', `article:${a.id}`)
-              .limit(1);
-            const hasAny = Array.isArray(existing) && existing.length > 0;
-            if (!hasAny) {
-              // Fire and forget — don't block initial render.
-              void handleRewrite('auto-max', false).catch(() => {});
-            }
-          } catch { /* ignore */ }
+          // version. Skip if any rewrite already exists OR the article was
+          // opened before (offline-friendly re-reads).
+          if (!isSeen(a.url)) {
+            try {
+              const { data: existing } = await supabase
+                .from('news_digests' as never)
+                .select('id')
+                .eq('topic', `article:${a.id}`)
+                .limit(1);
+              const hasAny = Array.isArray(existing) && existing.length > 0;
+              if (!hasAny) {
+                // Fire and forget — don't block initial render.
+                void handleRewrite('auto-max', false).catch(() => {});
+              }
+            } catch { /* ignore */ }
+          }
         }
       } catch (e: any) {
         toast.error(e.message ?? 'Failed to load article.');
@@ -201,6 +205,12 @@ const NewsArticleReader = () => {
     };
 
     void (async () => {
+      // If the article was opened before, treat it as offline-ready and
+      // skip any AI calls — only assemble the Persian script from cache.
+      if (article && isSeen(article.url)) {
+        await buildFaText();
+        return;
+      }
       try {
         // Kick off translation (uses cache, free if already done).
         const final = await batchAnalyzeChapter(activeBookId, chapter, {
@@ -214,6 +224,8 @@ const NewsArticleReader = () => {
         if (cancelled) return;
         emitChapterAnalyses(activeBookId, 0, final.results);
         await buildFaText();
+        // Mark as seen so future opens skip AI processing entirely.
+        if (article) markSeen(article.url);
       } catch {
         // best-effort; the user can still trigger translate manually
         await buildFaText();

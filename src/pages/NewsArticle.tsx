@@ -40,6 +40,7 @@ import { RelatedNews } from '@/components/news/RelatedNews';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
+import { usePinchFontStep } from '@/hooks/usePinchZoom';
 
 function isYoutubeUrl(url: string): boolean {
   try {

@@ -203,6 +203,7 @@ function buildBilingualHtml(title: string, siteName: string | undefined, url: st
   .src { margin-top: 3rem; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
   a { color: var(--accent); }
   .hint { font-size:.7rem; color: var(--muted); margin-top:.4rem; }
+  .speaking { background: var(--accentSoft); border-radius: 6px; box-shadow: 0 0 0 4px var(--accentSoft); transition: background .2s; }
 </style>
 </head>
 <body data-mode="both" data-theme="light" data-font="serif" data-align="justify" style="--fs:18px">

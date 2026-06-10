@@ -287,6 +287,35 @@ export function ChapterTTSPlayer({
   // Keep the screen on while audio is playing (Wake Lock API; ignored on iOS Safari).
   useWakeLock(open && (playing || browserPlaying));
 
+  // Background keep-alive for browser TTS: a looping near-silent audio element
+  // grants the page audio focus on Android Chrome so speechSynthesis is less
+  // likely to be paused when the screen turns off or the app is backgrounded.
+  // Note: iOS Safari still pauses speech when locked — only Gemini (real audio
+  // file) plays in background there.
+  const keepAliveRef = useRef<HTMLAudioElement | null>(null);
+  useEffect(() => {
+    if (!browserPlaying) {
+      try { keepAliveRef.current?.pause(); } catch { /* */ }
+      return;
+    }
+    try {
+      if (!keepAliveRef.current) {
+        // 1-second silent WAV, looped.
+        const silent =
+          'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+        const a = new Audio(silent);
+        a.loop = true;
+        a.volume = 0.001;
+        keepAliveRef.current = a;
+      }
+      void keepAliveRef.current.play().catch(() => { /* autoplay may block; harmless */ });
+    } catch { /* noop */ }
+    return () => {
+      try { keepAliveRef.current?.pause(); } catch { /* */ }
+    };
+  }, [browserPlaying]);
+
+
   // ───────── ElevenLabs state ─────────
   const elevenKey = settings.elevenLabsApiKey?.trim() ?? '';
   const [elevenVoice, setElevenVoice] = useState<string>(() => {
@@ -855,29 +884,22 @@ export function ChapterTTSPlayer({
       >
         <div className="max-w-4xl mx-auto px-3 py-2 space-y-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
 
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Headphones className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-sm font-medium truncate">{chapterTitle}</span>
-              {cachedHit && audioUrl && engine === 'gemini' && (
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
-                  Cached
-                </span>
-              )}
-            </div>
+          {/* Tiny close button — title removed for compactness. */}
+          <div className="flex justify-end -mb-1">
             <Button
               variant="ghost"
               size="icon"
+              className="h-6 w-6"
               aria-label="Close player"
               onClick={() => {
                 stopBrowser();
                 setOpen(false);
               }}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
+
 
           {/* Engine picker */}
           <div
@@ -1049,10 +1071,7 @@ export function ChapterTTSPlayer({
                       </p>
                     </div>
                   )}
-                  <p className="text-[11px] text-muted-foreground">
-                    Free, offline, uses your device's built-in voices. iOS pauses speech when
-                    the screen turns off — switch to Gemini for true background audio.
-                  </p>
+
                 </>
               )}
             </div>

@@ -177,42 +177,58 @@ serve(async (req) => {
       "```",
     ].join("\n");
 
-    const aiRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userPrompt },
-          ],
-          tools: [
-            {
-              type: "function",
-              function: {
-                name: "emit_digest",
-                description: "Return the final digest.",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    title: { type: "string", description: "Concise digest title (≤ 12 words)." },
-                    markdown: { type: "string", description: "The full digest body in markdown." },
+    // Per-length output cap (in tokens). Without this the gateway truncates
+    // long features halfway through — symptom: headings appear but bodies are missing.
+    const maxTokensFor = (l: string): number => {
+      switch (l) {
+        case "auto-max": return 16000;
+        case "max":      return 12000;
+        case "short":    return 1500;
+        default:         return 8000; // long
+      }
+    };
+
+    async function callAi(): Promise<Response> {
+      return await fetch(
+        "https://ai.gateway.lovable.dev/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: maxTokensFor(length),
+            messages: [
+              { role: "system", content: SYSTEM_PROMPT },
+              { role: "user", content: userPrompt },
+            ],
+            tools: [
+              {
+                type: "function",
+                function: {
+                  name: "emit_digest",
+                  description: "Return the final digest.",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      title: { type: "string", description: "Concise digest title (≤ 12 words)." },
+                      markdown: { type: "string", description: "The full digest body in markdown." },
+                    },
+                    required: ["title", "markdown"],
+                    additionalProperties: false,
                   },
-                  required: ["title", "markdown"],
-                  additionalProperties: false,
                 },
               },
-            },
-          ],
-          tool_choice: { type: "function", function: { name: "emit_digest" } },
-        }),
-      },
-    );
+            ],
+            tool_choice: { type: "function", function: { name: "emit_digest" } },
+          }),
+        },
+      );
+    }
+
+    let aiRes = await callAi();
 
     if (!aiRes.ok) {
       const errBody = await aiRes.text();

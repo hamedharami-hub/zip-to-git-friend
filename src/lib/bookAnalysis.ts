@@ -7,10 +7,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { BookParagraphAnalysis, IdiomItem, VocabItem } from '@/types';
 import {
-  getParagraphAnalysis,
   paragraphAnalysisKey,
-  saveParagraphAnalysis,
 } from '@/lib/bookDb';
+import {
+  getCachedParagraphAnalysisShared,
+  saveParagraphAnalysisShared,
+} from '@/lib/paragraphAnalysisCloud';
 
 export class BookAnalysisError extends Error {
   code: 'rate_limit' | 'payment' | 'network' | 'invalid' | 'unknown';
@@ -43,14 +45,14 @@ export function hashParagraph(text: string): string {
   return h.toString(36);
 }
 
-/** Read-only cache lookup; never triggers an AI call. */
+/** Read-only cache lookup (local IDB + cloud); never triggers an AI call. */
 export async function getCachedParagraphAnalysis(
   bookId: string,
   chapterIndex: number,
   paragraphText: string,
 ): Promise<BookParagraphAnalysis | undefined> {
   const hash = hashParagraph(paragraphText.trim());
-  return getParagraphAnalysis(bookId, chapterIndex, hash);
+  return getCachedParagraphAnalysisShared(bookId, chapterIndex, hash);
 }
 
 /**
@@ -67,7 +69,7 @@ export async function analyzeParagraph(
   const hash = hashParagraph(text);
 
   if (!options.force) {
-    const cached = await getParagraphAnalysis(bookId, chapterIndex, hash);
+    const cached = await getCachedParagraphAnalysisShared(bookId, chapterIndex, hash);
     if (cached) return cached;
   }
 
@@ -112,7 +114,7 @@ export async function analyzeParagraph(
     model: data.model ?? 'unknown',
   };
 
-  await saveParagraphAnalysis(record);
+  await saveParagraphAnalysisShared(record);
   return record;
 }
 

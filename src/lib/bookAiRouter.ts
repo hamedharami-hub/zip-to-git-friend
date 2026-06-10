@@ -18,13 +18,15 @@ import { coerceBookModel } from '@/lib/aiModels';
 import { analyzeParagraph as analyzeParagraphGateway } from '@/lib/bookAnalysis';
 import { rewriteChapter as rewriteChapterGateway } from '@/lib/chapterRewrite';
 import {
-  getParagraphAnalysis,
   paragraphAnalysisKey,
-  saveParagraphAnalysis,
   getChapterRewrite,
   rewriteKey,
   saveChapterRewrite,
 } from '@/lib/bookDb';
+import {
+  getCachedParagraphAnalysisShared,
+  saveParagraphAnalysisShared,
+} from '@/lib/paragraphAnalysisCloud';
 import { hashParagraph } from '@/lib/bookAnalysis';
 import { ChapterRewriteError, REWRITE_STYLES } from '@/lib/chapterRewrite';
 import { BookAnalysisError } from '@/lib/bookAnalysis';
@@ -280,7 +282,7 @@ export async function analyzeParagraphRouted(
   const hash = hashParagraph(text);
 
   if (!options.force) {
-    const cached = await getParagraphAnalysis(bookId, chapterIndex, hash);
+    const cached = await getCachedParagraphAnalysisShared(bookId, chapterIndex, hash);
     if (cached) return cached;
   }
 
@@ -346,7 +348,7 @@ export async function analyzeParagraphRouted(
     analyzedAt: Date.now(),
     model: modelLabel,
   };
-  await saveParagraphAnalysis(record);
+  await saveParagraphAnalysisShared(record);
   return record;
 }
 

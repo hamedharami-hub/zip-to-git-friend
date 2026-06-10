@@ -55,9 +55,13 @@ function pickAttr(xml: string, tag: string, attr: string): string | undefined {
   return m ? m[1] : undefined;
 }
 
+const RTL_RE = /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+
 function shouldTranslateTitle(title: string): boolean {
   const clean = (title ?? '').trim();
   if (!clean) return false;
+  // Keep Persian / RTL headlines in their original script.
+  if (RTL_RE.test(clean)) return false;
   if (/^[\x00-\x7F\s.,:;!?"'()\-_/&%0-9]+$/.test(clean) && /[A-Za-z]{3,}/.test(clean)) return false;
   return /[^\x00-\x7F]/.test(clean) || !/[A-Za-z]{3,}/.test(clean);
 }

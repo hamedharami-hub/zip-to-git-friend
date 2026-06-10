@@ -246,33 +246,8 @@ export function ChapterTTSPlayer({
   // Keep the screen on while audio is playing (Wake Lock API; ignored on iOS Safari).
   useWakeLock(open && (playing || browserPlaying));
 
-  // Background keep-alive for browser TTS: a looping near-silent audio element
-  // grants the page audio focus on Android Chrome so speechSynthesis is less
-  // likely to be paused when the screen turns off or the app is backgrounded.
-  // Note: iOS Safari still pauses speech when locked — only Gemini (real audio
-  // file) plays in background there.
-  const keepAliveRef = useRef<HTMLAudioElement | null>(null);
-  useEffect(() => {
-    if (!browserPlaying) {
-      try { keepAliveRef.current?.pause(); } catch { /* */ }
-      return;
-    }
-    try {
-      if (!keepAliveRef.current) {
-        // 1-second silent WAV, looped.
-        const silent =
-          'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
-        const a = new Audio(silent);
-        a.loop = true;
-        a.volume = 0.001;
-        keepAliveRef.current = a;
-      }
-      void keepAliveRef.current.play().catch(() => { /* autoplay may block; harmless */ });
-    } catch { /* noop */ }
-    return () => {
-      try { keepAliveRef.current?.pause(); } catch { /* */ }
-    };
-  }, [browserPlaying]);
+  // Background keep-alive for browser TTS — see useTtsKeepAlive.
+  useTtsKeepAlive(browserPlaying);
 
 
   // ───────── ElevenLabs state ─────────

@@ -123,6 +123,9 @@ const NewsArticleReader = () => {
 
   // Load existing rewrites for this article from news_digests (scope='source', single article).
   const loadRewrites = async (a: NewsArticle) => {
+    // Hydrate from offline cache first so re-opens work without network.
+    const cached = getCachedRewrites(a.id);
+    if (cached) setRewrites(cached as Record<RewriteLength, NewsDigest | undefined>);
     try {
       const { data } = await supabase
         .from('news_digests' as never)
@@ -144,7 +147,8 @@ const NewsArticleReader = () => {
         }
       }
       setRewrites(map);
-    } catch { /* ignore */ }
+      cacheRewrites(a.id, map);
+    } catch { /* offline: keep cached */ }
   };
 
   useEffect(() => {

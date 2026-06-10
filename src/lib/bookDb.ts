@@ -83,7 +83,7 @@ let dbPromise: Promise<IDBPDatabase<BookSchema>> | null = null;
 
 export function getBookDb() {
   if (!dbPromise) {
-    dbPromise = openDB<BookSchema>('LLVPBookDatabase', 2, {
+    dbPromise = openDB<BookSchema>('LLVPBookDatabase', 3, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
         const books = db.createObjectStore('books', { keyPath: 'id' });
@@ -116,6 +116,12 @@ export function getBookDb() {
           const rw = db.createObjectStore('bookChapterRewrites', { keyPath: 'id' });
           rw.createIndex('bookId', 'bookId');
           rw.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+        }
+        if (oldVersion < 3) {
+          const chunks = db.createObjectStore('bookTTSChunks', { keyPath: 'id' });
+          chunks.createIndex('bookId', 'bookId');
+          chunks.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          chunks.createIndex('bookId+chapterIndex+voice', ['bookId', 'chapterIndex', 'voice']);
         }
       },
     });

@@ -43,11 +43,11 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
-  GEMINI_TTS_VOICES,
   type GeminiTtsVoice,
   GeminiTtsError,
   synthesizeChapter,
 } from '@/lib/geminiTts';
+import { GeminiVoicePicker } from './chapter-tts/GeminiVoicePicker';
 import { emitParagraphSpeech } from '@/lib/paragraphSpeechBus';
 import {
   BrowserTtsController,
@@ -589,7 +589,7 @@ export function ChapterTTSPlayer({
     URL.revokeObjectURL(url);
   };
 
-  const voiceOptions = useMemo(() => GEMINI_TTS_VOICES, []);
+  
 
   // ───────── ElevenLabs path ─────────
   const loadElevenLabs = async () => {
@@ -958,18 +958,7 @@ export function ChapterTTSPlayer({
               ) : !audioUrl ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Select value={voice} onValueChange={(v) => setVoice(v as GeminiTtsVoice)}>
-                      <SelectTrigger className="h-9 w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {voiceOptions.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <GeminiVoicePicker voice={voice} onChange={setVoice} size="lg" />
                     <Button onClick={() => loadOrSynthesize(false)} disabled={loading}>
                       {loading ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -1075,18 +1064,7 @@ export function ChapterTTSPlayer({
                           ))}
                         </SelectContent>
                       </Select>
-                      <Select value={voice} onValueChange={(v) => setVoice(v as GeminiTtsVoice)}>
-                        <SelectTrigger className="h-8 w-[160px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {voiceOptions.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <GeminiVoicePicker voice={voice} onChange={setVoice} size="sm" />
                       <Button
                         variant="ghost"
                         size="icon"

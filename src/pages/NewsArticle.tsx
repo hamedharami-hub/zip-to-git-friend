@@ -343,7 +343,9 @@ const NewsArticleReader = () => {
     const next = !article.isSaved;
     try {
       await setArticleSaved(article.id, next);
-      setArticle({ ...article, isSaved: next });
+      const next2 = { ...article, isSaved: next };
+      setArticle(next2);
+      cacheArticle(next2);
       toast.success(next ? 'خبر سیو شد.' : 'از سیوها حذف شد.');
     } catch (e: any) {
       toast.error(e.message ?? 'Save failed.');

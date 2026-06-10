@@ -602,7 +602,7 @@ export function ChapterTTSPlayer({
     }
     setElevenLoading(true);
     try {
-      const blob = await synthesizeWithElevenLabs({
+      const blob = await loadElevenLabsBlob({
         apiKey: elevenKey,
         text,
         voiceId: elevenVoice,
@@ -615,12 +615,7 @@ export function ChapterTTSPlayer({
       setAudioUrl(url);
       toast.success('روایت ElevenLabs آماده شد.');
     } catch (e) {
-      const msg = e instanceof ElevenLabsTtsError
-        ? e.code === 'auth' ? 'ElevenLabs کلید را رد کرد.'
-          : e.code === 'quota' ? 'محدودیت اعتبار ElevenLabs.'
-          : `خطا: ${e.message}`
-        : 'ElevenLabs ناموفق.';
-      toast.error(msg);
+      toast.error(elevenLabsErrorMessage(e));
     } finally {
       setElevenLoading(false);
     }

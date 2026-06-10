@@ -1,52 +1,59 @@
-# پلن اجرای ۶ مورد درخواستی
+# انتقال امن پروژه به اکانت دوم (بدون پاک شدن داده‌ها)
 
-## ۱. تکمیل موارد باقی‌مانده از پلن قبلی
-- **منوی تنظیمات یکپارچه ⚙ در صفحه خبر** (`NewsArticle.tsx` + کامپوننت جدید `NewsReaderSettings.tsx`):
-  - بالا فقط بماند: دکمه برگشت، عنوان کوتاه، تغییر زبان (FA/EN/دو) به‌صورت سه دکمه فشرده، دکمه پخش (TTS)، آیکن ⚙.
-  - داخل ⚙: تم (روز/شب/کاغذ)، اندازه فونت (۵ پله)، نوع فونت، چینش متن، ستاره‌دار کردن، باز کردن لینک منبع/یوتیوب، بازترجمه از اول، بازخوانی کامل، بازپردازش AI.
-- **MediaSession** برای پخش TTS (hook `useMediaSession.ts` موجود است؛ به `ChapterTTSPlayer.tsx` وصل می‌شود) تا کنترل پخش/توقف در نوتیفیکیشن گوشی بیاید + عنوان مقاله.
+## چرا دفعه‌ی قبل داده‌ها (مثلاً Sentence Lab) پاک شده بود؟
 
-## ۲. ساده‌سازی نوار بالای HTML خروجی
-- در `NewsShareMenu.tsx → buildBilingualHtml`:
-  - بالا فقط سه دکمه زبان (دو / فا / EN) بماند.
-  - بقیه (تم، فونت، اندازه، چینش) داخل یک دکمه ⚙ به‌صورت popover/details ساده با همان CSS inline.
-  - تنظیمات باز/بسته شدن منو + کلیک خارج برای بستن.
+دو دلیل اصلی وجود داره و هر دو رو در این پلن پوشش می‌دیم:
 
-## ۳. زوم با دو انگشت برای تغییر اندازه فونت
-- **در HTML خروجی**: یک listener کوچک `touchstart/touchmove` که فاصله بین دو انگشت را اندازه‌گیری می‌کند و `--fs` را بین ۱۲ تا ۲۸ تنظیم می‌کند (و در localStorage ذخیره).
-- **در صفحه خبر**: همان منطق در `NewsArticle.tsx` روی container متن، با به‌روزرسانی state اندازه فونت که از `NewsTypographyMenu` می‌آید.
+1. **Seed/Reset Script اشتباه اجرا شد** — در این پروژه یک endpoint عمومی هست: `src/routes/api/public/seed-sentence-lab.ts` که با `supabaseAdmin.upsert(..., { onConflict: 'id' })` روی جداول `sentence_categories`, `sentence_paths`, `sentence_lab` می‌نویسه. اگر بعد از انتقال این فراخوانی بشه، رکوردهای کاربر با نسخه‌ی seed بازنویسی می‌شن.
+2. **انتقال فقط Code انجام شد، نه Database** — یعنی Cloud (Supabase) جدیدی به پروژه‌ی مقصد وصل شد و چون migrationها دوباره از صفر اجرا شدن، جداول خالی موندن.
 
-## ۴. منوی نگه‌داشتن (long-press) روی پاراگراف
-- اضافه‌کردن منو context روی هر `<p>/<h*>` در `InteractiveBookText.tsx` (از hook `useLongPress` موجود).
-- گزینه‌ها:
-  - 🔊 خواندن همین پاراگراف
-  - ▶️ خواندن از این پاراگراف تا توقف
-  - ⏹ توقف خواندن
-  - 📋 کپی متن
-  - 🌐 ترجمه/پردازش مجدد
-- خواندن از این پاراگراف تا توقف از طریق `chapterAnalysisBus`/`paragraphSpeechBus` به `ChapterTTSPlayer` سیگنال می‌دهد که از index مشخص شروع کند.
+## روش پیشنهادی: Transfer Ownership (روش ۱)
 
-## ۵. رفع ارور TTS آنلاین ElevenLabs و Gemini
-- بررسی edge functionهای `elevenlabs-tts` و (در صورت وجود) `gemini-tts`؛ بررسی logها با `supabase--edge_function_logs`.
-- اصلاح: احتمالاً CORS، یا فرمت body، یا میدل turbo برای فارسی + voiceId مناسب.
-- برای Gemini: استفاده از `gemini-2.5-flash-tts` یا preview voice مناسب از طریق Lovable AI Gateway.
+این روش **همه چیز را با هم منتقل می‌کند**: کد + دیتابیس + Storage + Auth users + Secrets + Edge Functions. هیچ export/import دستی لازم نیست چون پروژه‌ی Cloud عوض نمی‌شه، فقط مالکیتش.
 
-## ۶. افزودن TTS providerهای جدید
-- در `Settings.tsx`: بخش جدید "TTS آنلاین" که از کاربر API key می‌گیرد برای:
-  - Microsoft Azure Speech (کلید + region)
-  - Hugging Face Inference (کلید + model id)
-  - Play.ht (کلید + userId)
-  - OpenTTS (URL سرور self-hosted)
-- ذخیره در `settingsStore` (localStorage).
-- ۴ تابع جدید در `src/lib/`:
-  - `azureTts.ts` — REST `cognitiveservices/voices/list` + SSML با locale `fa-IR` (`fa-IR-DilaraNeural`/`fa-IR-FaridNeural`) و `en-US`.
-  - `huggingfaceTts.ts` — POST به مدل (پیش‌فرض `facebook/mms-tts-fas` / `facebook/mms-tts-eng`).
-  - `playhtTts.ts` — `/api/v2/tts/stream` با voiceهای فارسی/انگلیسی.
-  - `openTts.ts` — GET ساده با voice locale.
-- در گزینه‌های انتخاب TTS (`ChapterTTSPlayer.tsx` و `ReaderTTSQuickSettings.tsx`) این provider‌ها اضافه می‌شوند، با فیلتر زبان (فارسی/انگلیسی) خودکار.
+### مراحل
 
-## ترتیب اجرا
-۱) رفع باگ TTS فعلی (مورد ۵) → ۲) منوی long-press پاراگراف (۴) → ۳) ساده‌سازی HTML + پینچ زوم (۲،۳) → ۴) منوی ⚙ صفحه خبر + MediaSession (۱) → ۵) providerهای جدید TTS (۶).
+1. **Backup کامل (قبل از هر کاری — برای امنیت خاطر)**
+   - export کامل CSV از همه‌ی جداول کاربری به `/mnt/documents/backup-<date>/`:
+     - `books`, `book_chapters`
+     - `leitner_cards`, `leitner_folders`
+     - `sentence_categories`, `sentence_paths`, `sentence_lab`, `sentence_progress`, `sentence_flags`, `scenario_sessions`, `scenario_saved_sentences`
+     - `news_articles`, `news_sources`, `news_folders`, `news_digests`, `news_blocked_domains`
+     - `profiles`, `user_achievements`, `user_gamification`, `daily_quests`
+   - اگه چیزی هم خراب شد، با همین فایل‌ها می‌شه بازگردانی کرد.
 
-## نکته
-این حجم کار در چند پاسخ پشت‌سرهم انجام می‌شود. اگر می‌خواهی روی موارد مشخصی اول تمرکز کنم بگو، وگرنه از مورد ۵ (رفع باگ ElevenLabs/Gemini) شروع می‌کنم.
+2. **دعوت اکانت دوم به Workspace فعلی**
+   - Workspace Settings → People → Invite → ایمیل اکانت دوم → نقش **Admin**
+   - از اکانت دوم Invite رو Accept کن.
+
+3. **Transfer Ownership پروژه**
+   - Project Settings → General → **Transfer ownership** → اکانت دوم رو انتخاب کن.
+   - بعد از Transfer:
+     - ✅ کد کامل
+     - ✅ Lovable Cloud (دیتابیس + همه‌ی رکوردها — Sentence Lab، Leitner، Books، …)
+     - ✅ Storage buckets (`book-files`, `leitner-audio`, `sentence-audio`, `leitner-images`)
+     - ✅ Auth users
+     - ✅ Edge Functions + Secrets (`LOVABLE_API_KEY`, …)
+   - ⚠️ Credits منتقل نمی‌شن (اکانت دوم پلن خودش رو داره — همینی که می‌خوای).
+
+4. **بعد از انتقال — چک‌های امنیتی**
+   - login کن با همون کاربر تستی و مطمئن شو Sentence Lab، Leitner، Books همگی پیدا میشن.
+   - یک query شمارش رکورد قبل و بعد از انتقال مقایسه کن (تعداد ردیف هر جدول).
+
+5. **محافظت در برابر اشتباه دفعه‌ی قبل (seed endpoint)**
+   - endpoint `‎/api/public/seed-sentence-lab` رو غیرفعال یا با guard محافظت می‌کنیم تا تصادفاً بعد از انتقال اجرا نشه و داده‌ی کاربر رو overwrite نکنه. (اگه تأیید کنی، در حالت build این تغییر رو هم اعمال می‌کنم.)
+
+6. **حذف اکانت اول از Workspace (اختیاری)**
+   - بعد از اطمینان از کارکرد، اکانت اول رو از People حذف کن.
+
+## نکات تکمیلی
+
+- **Published URL**: ممکنه slug عوض بشه — قبل از انتقال URL فعلی رو یادداشت کن.
+- **Custom Domain**: اگه داشتی، DNS باید دوباره verify بشه.
+- **GitHub**: اگه connected هست، بعد از انتقال ممکنه دوباره authorize لازم بشه.
+
+## چیزی که از من می‌خوای تایید کنی
+
+- [ ] ادامه دادن با همین روش (Transfer Ownership) — توصیه‌شده
+- [ ] اجرای script پشتیبان‌گیری CSV از همه‌ی جداول قبل از انتقال (در حالت build)
+- [ ] محافظت از `seed-sentence-lab` endpoint با guard تا تصادفاً overwrite نکنه

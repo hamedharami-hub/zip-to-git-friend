@@ -1046,6 +1046,7 @@ export function ChapterTTSPlayer({
                     Free, offline, uses your device's built-in voices. iOS pauses speech when
                     the screen turns off — switch to Gemini for true background audio.
                   </p>
+
                 </>
               )}
             </div>

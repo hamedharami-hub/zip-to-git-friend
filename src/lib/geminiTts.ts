@@ -9,8 +9,16 @@
  * Audio is cached per-chapter in IndexedDB via `bookDb.saveTTSAudio`.
  */
 
-import { getTTSAudio, saveTTSAudio, ttsKey } from './bookDb';
-import type { BookTTSAudio } from '@/types';
+import {
+  getTTSAudio,
+  saveTTSAudio,
+  ttsKey,
+  getTTSChunks,
+  saveTTSChunk,
+  deleteTTSChunks,
+  ttsChunkKey,
+} from './bookDb';
+import type { BookTTSAudio, BookTTSChunk } from '@/types';
 
 export const GEMINI_TTS_VOICES = [
   { id: 'Kore', label: 'Kore — firm female' },

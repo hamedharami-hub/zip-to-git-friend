@@ -695,8 +695,6 @@ const NewsArticleReader = () => {
                   })}
                 </Tabs>
               </section>
-
-              <RelatedNews article={article} />
             </>
 
           ) : (

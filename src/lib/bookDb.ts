@@ -342,6 +342,48 @@ export async function deleteTTSAudio(
   await (await getBookDb()).delete('bookTTSAudio', ttsKey(bookId, chapterIndex, voice));
 }
 
+// ───────────────────────────── TTS per-chunk cache ──
+export function ttsChunkKey(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+  chunkIndex: number,
+): string {
+  return `${bookId}:${chapterIndex}:${voice}:${chunkIndex}`;
+}
+
+export async function saveTTSChunk(chunk: BookTTSChunk): Promise<void> {
+  await (await getBookDb()).put('bookTTSChunks', chunk);
+}
+
+export async function getTTSChunks(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+): Promise<BookTTSChunk[]> {
+  const all = await (await getBookDb()).getAllFromIndex(
+    'bookTTSChunks',
+    'bookId+chapterIndex+voice',
+    [bookId, chapterIndex, voice],
+  );
+  return all.sort((a, b) => a.chunkIndex - b.chunkIndex);
+}
+
+export async function deleteTTSChunks(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+): Promise<void> {
+  const db = await getBookDb();
+  const all = await db.getAllFromIndex(
+    'bookTTSChunks',
+    'bookId+chapterIndex+voice',
+    [bookId, chapterIndex, voice],
+  );
+  await Promise.all(all.map((c) => db.delete('bookTTSChunks', c.id)));
+}
+
+
 // ───────────────────────────── Chapter rewrites ──
 export function rewriteKey(
   bookId: string,

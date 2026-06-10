@@ -1,93 +1,37 @@
+## تغییرات درخواستی
 
-# بازطراحی Editorial گرم — Design System کل برنامه
+### ۱. سرتیتر اخبار فارسی به زبان فارسی
+در حال حاضر تیتر اخبار از منبع اصلی (انگلیسی) نمایش داده می‌شود حتی برای کاربر فارسی‌زبان. باید:
+- بررسی کنم در `src/pages/News.tsx` و `src/lib/news.ts` که آیا فیلد `title_fa` یا ترجمه‌شده داریم
+- اگر داریم: در لیست اخبار، وقتی زبان UI فارسی است، `title_fa ?? title` نمایش داده شود
+- اگر نداریم: یک fallback ساده اضافه کنم که اگر تیتر فارسی موجود بود استفاده شود (بدون فراخوانی AI جدید — فقط نمایش فیلد موجود در DB)
 
-سبک انتخابی: **Editorial گرم** (حس مجله‌ی کاغذی، serif برای تیترها، رنگ‌های کرم/خاکی/مس، انیمیشن متوسط)
-
-## فلسفه طراحی
-
-از Material 3 رنگی فعلی (teal + warm tertiary) به یک سیستم **مجله‌ای گرم** مهاجرت می‌کنیم:
-- **پس‌زمینه**: کرمی کاغذی `#faf8f5` به‌جای سفید استریل
-- **متن**: مشکی نرم `#2d2d2d` به‌جای مشکی محض
-- **رنگ اصلی**: مس/تراکوتا `#c2410c` (به‌جای teal فعلی)
-- **سطوح**: لایه‌های کرمی متفاوت با کنتراست ملایم
-- **تایپوگرافی دوگانه**: یک serif برجسته برای تیترها (مثل **Fraunces** یا **Instrument Serif**) + sans تمیز برای متن (**Inter Tight**) + **Vazirmatn** برای فارسی
-- **انیمیشن متوسط (۳/۵)**: fade-in نرم، hover-lift ملایم، transition روان — بدون اغراق
-
-## محدوده تغییرات (کل برنامه از طریق Design System)
-
-با تغییر توکن‌های مرکزی، تقریباً همه‌ی صفحات خودبه‌خود به‌روز می‌شوند چون اکثر کامپوننت‌ها از توکن‌های semantic استفاده می‌کنند.
-
-### ۱. توکن‌های CSS (`src/styles.css`)
-- بازنویسی متغیرهای `:root` با پالت Editorial گرم (light)
-- بازنویسی `.dark` با نسخه‌ی شب گرم (پس‌زمینه `#1a1614`، متن کرم)
-- اضافه کردن `--font-serif: "Fraunces"` و `--font-display: "Fraunces"`
-- نگه‌داشتن `--font-sans: "Inter Tight", Vazirmatn` برای body
-- اضافه کردن توکن‌های جدید:
-  - `--shadow-paper`: سایه‌ی نرم کاغذی به‌جای elevation سخت
-  - `--gradient-warm`: گرادیان نامحسوس کرم→صدفی برای hero
-  - `--texture-grain`: noise SVG ظریف برای پس‌زمینه (اختیاری، CSS-only)
-- کاهش radius پیش‌فرض: `--radius: 12px` (به‌جای 16px فعلی) — حس editorial نه material
-
-### ۲. فونت‌ها (`src/routes/__root.tsx`)
-- اضافه‌کردن `<link>` به Google Fonts برای **Fraunces** (400/600/700, opsz) و **Inter Tight** (400/500/600)
-- حذف لود فعلی Roboto Flex اگر هست
-
-### ۳. کامپوننت‌های کلیدی UI
-- **`button.tsx`**: حذف pill rounded-full از variant های اصلی → `rounded-lg`، حذف elevation سنگین، اضافه کردن variant `editorial` (border زیرین مسی)
-- **`card.tsx`**: کاهش shadow، اضافه‌کردن گزینه border ظریف کرمی به‌جای elevation
-- **`input.tsx`**: کاهش به `rounded-md`، border زیرین تنها (underline-style اختیاری برای فرم‌های مهم)
-- **`badge.tsx`**: حالت outline ظریف به‌عنوان پیش‌فرض
-
-### ۴. صفحه Home (`src/pages/Home.tsx`)
-- تیتر اصلی با فونت Fraunces بزرگ (display)
-- یک "eyebrow" کوچک با حروف بزرگ تایپوگرافی editorial بالای تیتر
-- کارت‌های Mode: کاهش radius از 28px به 16px، حذف tone container های پررنگ و جایگزینی با border کرمی + یک accent مسی روی آیکون
-- جداکننده‌های افقی ظریف بین بخش‌ها (مثل مجله)
-
-### ۵. صفحات محتوایی (Reader, News, Books)
-- این صفحات از طریق توکن‌ها خودکار به‌روز می‌شوند
-- در `BookReader` و `NewsArticle` فقط: تنظیم max-width مطالعه (`max-w-prose`) و فونت serif برای متن مقاله
-
-### ۶. انیمیشن (سطح ۳/۵)
-- `animate-fade-in` روی mount صفحات
-- hover lift ملایم (`hover:-translate-y-0.5`) روی کارت‌ها
-- transition روی رنگ/سایه با `duration-300 ease-out`
-- یک ingress ظریف برای hero با blur-fade (بدون کتابخانه اضافه)
-
-## جزئیات فنی (برای مرجع)
+### ۲. تم شب → مشکی عمیق (Deep Black)
+تم شب فعلی charcoal گرم (`hsl(20 12% 9%)`) است. تغییر به مشکی عمیق چشم‌نواز:
 
 ```text
-رنگ‌های اصلی (light mode):
-  background:       #faf8f5  (کرم کاغذی)
-  surface:          #f5f0e8
-  surface-container:#ede5d6
-  foreground:       #2d2d2d
-  muted-foreground: #6b5d4f
-  primary:          #c2410c  (تراکوتا/مس)
-  secondary:        #8b6f47  (خاکی گرم)
-  accent:           #a8856a
-  border:           #e0d5c2
-
-dark mode:
-  background:       #1a1614
-  surface:          #241f1b
-  foreground:       #f0e8dc
-  primary:          #e8a87c  (مس روشن‌تر برای کنتراست)
+--background:      0 0% 4%      (تقریبا #0a0a0a — مشکی عمیق)
+--card:            0 0% 7%      (#121212 — surface کمی روشن‌تر)
+--popover:         0 0% 7%
+--muted:           0 0% 10%
+--accent:          22 40% 14%   (لمسی از warm primary)
+--border:          0 0% 16%     (خطوط ظریف)
+--input:           0 0% 16%
+--surface*:        0 0% 4-12%   (مقیاس خاکستری خالص)
+--foreground:      0 0% 92%     (سفید نرم، نه خیره‌کننده)
+--muted-foreground:0 0% 65%
+--primary:         22 85% 62%   (ember کمی روشن‌تر برای کنتراست با مشکی)
 ```
 
-## فایل‌هایی که تغییر می‌کنند
+فقط بلاک `.dark { ... }` در `src/styles.css` تغییر می‌کند. حالت روز (cream paper) دست‌نخورده می‌ماند.
 
-- `src/styles.css` — کل متغیرها + توکن‌های جدید
-- `src/routes/__root.tsx` — لود فونت‌ها
-- `src/components/ui/button.tsx` — حذف pill، editorial variant
-- `src/components/ui/card.tsx` — کاهش shadow
-- `src/components/ui/input.tsx` — کاهش radius
-- `src/pages/Home.tsx` — تایپوگرافی editorial، layout مجله‌ای
-- `src/pages/BookReader.tsx` و `src/pages/NewsArticle.tsx` — فقط فونت body مقاله (max-w-prose + font-serif)
+### فایل‌های تغییریافته
+- `src/styles.css` — فقط بلاک `.dark`
+- `src/pages/News.tsx` (یا کامپوننت کارت خبر) — نمایش تیتر فارسی در صورت وجود
+- در صورت لزوم `src/lib/news.ts` برای type
 
-## چیزی که تغییر نمی‌کند
-- منطق برنامه، روتر، state، AI، DB — هیچ
-- ساختار کامپوننت‌ها — فقط استایل
-- زبان فارسی و RTL — حفظ کامل (Vazirmatn fallback)
+### بدون تغییر
+- منطق برنامه، AI، DB schema، حالت روز، فونت‌ها، چیدمان
 
-پس از پیاده‌سازی، کل برنامه حس یک مجله‌ی گرم کاغذی پیدا می‌کند بدون از دست رفتن کارایی.
+## سوال
+آیا فیلد ترجمه‌شده تیتر فارسی (مثلاً `title_fa`) از قبل در دیتابیس ذخیره می‌شود، یا باید موقع نمایش با AI ترجمه شود؟ (اگر دومی → هزینه توکن دارد و باید کش شود — می‌خواهید؟)

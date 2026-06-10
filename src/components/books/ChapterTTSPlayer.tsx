@@ -575,7 +575,12 @@ export function ChapterTTSPlayer({
 
   const handleClear = async () => {
     await deleteTTSAudio(bookId, effectiveChapterIndex, voice);
+    await deleteTTSChunks(bookId, effectiveChapterIndex, voice);
     revokeUrl();
+    revokeChunkUrls();
+    setReadyChunks([]);
+    setPlayingChunk(null);
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);

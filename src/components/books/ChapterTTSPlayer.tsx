@@ -1051,18 +1051,30 @@ export function ChapterTTSPlayer({
                     <div className="space-y-1">
                       <Progress value={progress * 100} />
                       <p className="text-xs text-muted-foreground">
-                        Chunk {chunkInfo.done} / {chunkInfo.total} —{' '}
-                        {Math.round(progress * 100)}%
+                        پاراگراف {chunkInfo.done} از {chunkInfo.total} — {Math.round(progress * 100)}٪
                       </p>
                     </div>
                   )}
+                  {readyChunks.length > 0 && (
+                    <ParagraphChunkList
+                      chunks={readyChunks}
+                      playingIndex={playingChunk}
+                      onPlay={playChunk}
+                    />
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    ~{Math.ceil(text.length / 1000)}k characters · cached after first generation,
-                    plays in background with lock-screen controls.
+                    ~{Math.ceil(text.length / 1000)}k نویسه · هر پاراگراف بلافاصله بعد از ساخت قابل پخش است و در حافظهٔ آفلاین می‌ماند.
                   </p>
                 </div>
               ) : (
                 <>
+                  {readyChunks.length > 0 && (
+                    <ParagraphChunkList
+                      chunks={readyChunks}
+                      playingIndex={playingChunk}
+                      onPlay={playChunk}
+                    />
+                  )}
                   <audio
                     ref={audioRef}
                     src={audioUrl}

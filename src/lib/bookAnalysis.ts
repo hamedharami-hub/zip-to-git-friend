@@ -69,7 +69,7 @@ export async function analyzeParagraph(
   const hash = hashParagraph(text);
 
   if (!options.force) {
-    const cached = await getParagraphAnalysis(bookId, chapterIndex, hash);
+    const cached = await getCachedParagraphAnalysisShared(bookId, chapterIndex, hash);
     if (cached) return cached;
   }
 

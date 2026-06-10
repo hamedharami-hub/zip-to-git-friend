@@ -381,7 +381,11 @@ const NewsArticleReader = () => {
         windowHours: 24,
         model: newsModelRef.model,
       });
-      setRewrites((m) => ({ ...m, [length]: digest }));
+      setRewrites((m) => {
+        const next = { ...m, [length]: digest };
+        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
+        return next;
+      });
       setActiveRewrite(length);
       setView('rewrite');
       toast.success('بازنویسی آماده شد.');

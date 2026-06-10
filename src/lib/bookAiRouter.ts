@@ -348,7 +348,7 @@ export async function analyzeParagraphRouted(
     analyzedAt: Date.now(),
     model: modelLabel,
   };
-  await saveParagraphAnalysis(record);
+  await saveParagraphAnalysisShared(record);
   return record;
 }
 

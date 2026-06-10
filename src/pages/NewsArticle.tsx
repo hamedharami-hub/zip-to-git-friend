@@ -311,6 +311,7 @@ const NewsArticleReader = () => {
         wordCount: scraped.wordCount,
       });
       setArticle(updated);
+      cacheArticle(updated);
       if (scraped.blocked && manual) {
         toast.info('این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.');
       }

@@ -271,28 +271,13 @@ export function ChapterTTSPlayer({
   const playHtUser = settings.playHtUserId?.trim() ?? '';
   const playHtKey = settings.playHtApiKey?.trim() ?? '';
   const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
-  const azureVoiceOpts = AZURE_VOICES.filter((v) => v.lang === ttsLang);
-  const hfVoiceOpts = HUGGINGFACE_VOICES.filter((v) => v.lang === ttsLang);
-  const playHtVoiceOpts = PLAYHT_VOICES;
-  const [azureVoice, setAzureVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-azure-voice') || ''; } catch { return ''; }
-  });
-  const [hfVoice, setHfVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-hf-voice') || ''; } catch { return ''; }
-  });
-  const [playHtVoice, setPlayHtVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-playht-voice') || PLAYHT_VOICES[0].id; } catch { return PLAYHT_VOICES[0].id; }
-  });
-  const [openTtsVoice, setOpenTtsVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-opentts-voice') || (ttsLang === 'fa' ? 'coqui-tts:fa_custom' : 'larynx:en-us/ek-glow_tts'); }
-    catch { return 'larynx:en-us/ek-glow_tts'; }
-  });
-  useEffect(() => { const v = azureVoiceOpts[0]?.id; if (!azureVoice && v) setAzureVoice(v); }, [azureVoiceOpts, azureVoice]);
-  useEffect(() => { const v = hfVoiceOpts[0]?.id; if (!hfVoice && v) setHfVoice(v); }, [hfVoiceOpts, hfVoice]);
-  useEffect(() => { try { if (azureVoice) localStorage.setItem('llvp-tts-azure-voice', azureVoice); } catch {/* */} }, [azureVoice]);
-  useEffect(() => { try { if (hfVoice) localStorage.setItem('llvp-tts-hf-voice', hfVoice); } catch {/* */} }, [hfVoice]);
-  useEffect(() => { try { localStorage.setItem('llvp-tts-playht-voice', playHtVoice); } catch {/* */} }, [playHtVoice]);
-  useEffect(() => { try { localStorage.setItem('llvp-tts-opentts-voice', openTtsVoice); } catch {/* */} }, [openTtsVoice]);
+  const {
+    azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
+    azureVoice, setAzureVoice,
+    hfVoice, setHfVoice,
+    playHtVoice, setPlayHtVoice,
+    openTtsVoice, setOpenTtsVoice,
+  } = useOtherEngineVoices(ttsLang);
   const [otherLoading, setOtherLoading] = useState(false);
 
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */

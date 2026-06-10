@@ -61,6 +61,8 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
 import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '@/lib/elevenLabsTts';
 import { loadElevenLabsBlob, elevenLabsErrorMessage } from './chapter-tts/loadElevenLabs';
+import { ElevenLabsPanel } from './chapter-tts/ElevenLabsPanel';
+import { LangToggle } from './chapter-tts/LangToggle';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 import { synthesizeOther, otherEngineErrorMessage } from './chapter-tts/synthesizeOther';
 import {
@@ -796,34 +798,7 @@ export function ChapterTTSPlayer({
             />
 
 
-            {textFa && (
-              <div role="tablist" aria-label="زبان" className="inline-flex rounded-md border border-border bg-muted/40 p-0.5">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={ttsLang === 'en'}
-                  onClick={() => setTtsLang('en')}
-                  className={
-                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
-                    (ttsLang === 'en' ? 'bg-background shadow-sm' : 'text-muted-foreground')
-                  }
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={ttsLang === 'fa'}
-                  onClick={() => setTtsLang('fa')}
-                  className={
-                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
-                    (ttsLang === 'fa' ? 'bg-background shadow-sm' : 'text-muted-foreground')
-                  }
-                >
-                  FA
-                </button>
-              </div>
-            )}
+            {textFa && <LangToggle value={ttsLang} onChange={setTtsLang} />}
 
             <div className="flex-1" />
 
@@ -1106,109 +1081,30 @@ export function ChapterTTSPlayer({
 
           {/* Body — ElevenLabs */}
           {engine === 'elevenlabs' && (
-            <>
-              {!elevenKey ? (
-                <div className="text-sm text-muted-foreground">
-                  ElevenLabs نیاز به API key دارد.{' '}
-                  <Link to="/settings" className="text-primary underline underline-offset-2">
-                    در تنظیمات → AI اضافه کن
-                  </Link>
-                  .
-                </div>
-              ) : !audioUrl ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Select value={elevenVoice} onValueChange={setElevenVoice}>
-                      <SelectTrigger className="h-9 w-[240px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ELEVENLABS_VOICES.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={elevenModel} onValueChange={setElevenModel}>
-                      <SelectTrigger className="h-9 w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ELEVENLABS_MODELS.map((m) => (
-                          <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Button onClick={loadElevenLabs} disabled={elevenLoading}>
-                      {elevenLoading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4 mr-2" />
-                      )}
-                      {elevenLoading ? 'در حال ساخت…' : 'Listen'}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    ~{Math.ceil(text.length / 1000)}k نویسه · multilingual_v2 از انگلیسی و فارسی پشتیبانی می‌کند.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  <audio
-                    ref={audioRef}
-                    src={audioUrl}
-                    preload="metadata"
-                    onLoadedMetadata={(e) => {
-                      const a = e.currentTarget;
-                      setDuration(a.duration || 0);
-                      a.playbackRate = rate;
-                    }}
-                    onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
-                    onPlay={() => setPlaying(true)}
-                    onPause={() => setPlaying(false)}
-                    onEnded={() => setPlaying(false)}
-                  />
-                  <Slider
-                    value={[duration ? current / duration : 0]}
-                    min={0} max={1} step={0.001}
-                    onValueChange={onSeek}
-                    aria-label="Seek"
-                  />
-                  <div className="flex items-center justify-between text-xs tabular-nums text-muted-foreground">
-                    <span>{fmt(current)}</span>
-                    <span>{fmt(duration)}</span>
-                  </div>
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => seekRel(-15)} aria-label="Back 15s">
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                      <Button size="icon" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'}>
-                        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => seekRel(15)} aria-label="Forward 15s">
-                        <RotateCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Select value={String(rate)} onValueChange={(v) => onRate(Number(v))}>
-                        <SelectTrigger className="h-8 w-[78px]"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                            <SelectItem key={r} value={String(r)}>{r}×</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button variant="ghost" size="icon" onClick={downloadElevenLabs} aria-label="Download" title="Download .mp3">
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={loadElevenLabs} disabled={elevenLoading} aria-label="Re-generate" title="Re-generate">
-                        {elevenLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
+            <ElevenLabsPanel
+              elevenKey={elevenKey}
+              audioUrl={audioUrl}
+              elevenVoice={elevenVoice}
+              setElevenVoice={setElevenVoice}
+              elevenModel={elevenModel}
+              setElevenModel={setElevenModel}
+              elevenLoading={elevenLoading}
+              textLength={text.length}
+              load={loadElevenLabs}
+              download={downloadElevenLabs}
+              audioRef={audioRef}
+              rate={rate}
+              onRate={onRate}
+              onSeek={onSeek}
+              current={current}
+              duration={duration}
+              setDuration={setDuration}
+              setCurrent={setCurrent}
+              playing={playing}
+              setPlaying={setPlaying}
+              togglePlay={togglePlay}
+              seekRel={seekRel}
+            />
           )}
 
           {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}

@@ -1064,18 +1064,7 @@ export function ChapterTTSPlayer({
                           ))}
                         </SelectContent>
                       </Select>
-                      <Select value={voice} onValueChange={(v) => setVoice(v as GeminiTtsVoice)}>
-                        <SelectTrigger className="h-8 w-[160px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {voiceOptions.map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <GeminiVoicePicker voice={voice} onChange={setVoice} size="sm" />
                       <Button
                         variant="ghost"
                         size="icon"

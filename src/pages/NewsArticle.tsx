@@ -401,7 +401,11 @@ const NewsArticleReader = () => {
     if (!r) return;
     try {
       await supabase.from('news_digests' as never).delete().eq('id', r.id);
-      setRewrites((m) => ({ ...m, [length]: undefined }));
+      setRewrites((m) => {
+        const next = { ...m, [length]: undefined };
+        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
+        return next;
+      });
       toast.success('حذف شد.');
     } catch (e: any) {
       toast.error(e.message ?? 'Delete failed.');

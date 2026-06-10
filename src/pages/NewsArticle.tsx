@@ -156,39 +156,44 @@ const NewsArticleReader = () => {
     void (async () => {
       try {
         const a = await getArticleById(articleId);
-        setArticle(a);
-        if (a) {
-          document.title = `${a.title} — News`;
-          await loadRewrites(a);
-          const alreadySeen = isSeen(a.url);
-          // Always try to scrape if we don't have the body yet — being "seen"
-          // in the feed list doesn't mean the full text was ever fetched.
-          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__') {
-            await runScrape(a, false);
+  useEffect(() => {
+    if (!articleId) return;
+    void (async () => {
+      // 1) Hydrate from offline cache first so the UI is instant + offline-safe.
+      const cached = getCachedArticle(articleId);
+      if (cached) setArticle(cached);
+      try {
+        const a = await getArticleById(articleId).catch(() => null);
+        const useArticle = a ?? cached;
+        if (useArticle) {
+          if (a) {
+            setArticle(a);
+            cacheArticle(a);
           }
-          // Auto-generate a long, simple rewrite the very first time the
-          // user opens this article so they immediately see a digestible
-          // version. Skip on every re-open (offline-friendly).
-          if (!alreadySeen) {
+          document.title = `${useArticle.title} — News`;
+          await loadRewrites(useArticle);
+          const alreadySeen = isSeen(useArticle.url);
+          // Only scrape when we have NO body at all and are online.
+          if (!useArticle.contentHtml && useArticle.contentMd !== '__SCRAPE_FAILED__' && navigator.onLine) {
+            await runScrape(useArticle, false);
+          }
+          if (!alreadySeen && navigator.onLine) {
             try {
               const { data: existing } = await supabase
                 .from('news_digests' as never)
                 .select('id')
-                .eq('topic', `article:${a.id}`)
+                .eq('topic', `article:${useArticle.id}`)
                 .limit(1);
               const hasAny = Array.isArray(existing) && existing.length > 0;
               if (!hasAny) {
-                // Fire and forget — don't block initial render.
                 void handleRewrite('auto-max', false).catch(() => {});
               }
             } catch { /* ignore */ }
-            // Mark as seen immediately so any subsequent open is fully offline,
-            // even if the user leaves before background AI tasks finish.
-            markSeen(a.url);
+            markSeen(useArticle.url);
           }
         }
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to load article.');
+        if (!cached) toast.error(e.message ?? 'Failed to load article.');
       } finally {
         setLoading(false);
       }

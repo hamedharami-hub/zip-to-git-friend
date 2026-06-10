@@ -65,9 +65,9 @@ import {
   ElevenLabsTtsError,
   synthesizeWithElevenLabs,
 } from '@/lib/elevenLabsTts';
-import { AZURE_VOICES, AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
-import { HUGGINGFACE_VOICES, HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
-import { PLAYHT_VOICES, PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
+import { AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
+import { HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
+import { PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
 import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 import {
@@ -86,6 +86,8 @@ import {
   ParagraphChunkList,
   type ReadyChunk,
 } from './chapter-tts/ParagraphChunkList';
+import { useTtsKeepAlive } from './chapter-tts/useTtsKeepAlive';
+import { useOtherEngineVoices } from './chapter-tts/useOtherEngineVoices';
 
 interface Props {
   bookId: string;
@@ -244,33 +246,8 @@ export function ChapterTTSPlayer({
   // Keep the screen on while audio is playing (Wake Lock API; ignored on iOS Safari).
   useWakeLock(open && (playing || browserPlaying));
 
-  // Background keep-alive for browser TTS: a looping near-silent audio element
-  // grants the page audio focus on Android Chrome so speechSynthesis is less
-  // likely to be paused when the screen turns off or the app is backgrounded.
-  // Note: iOS Safari still pauses speech when locked — only Gemini (real audio
-  // file) plays in background there.
-  const keepAliveRef = useRef<HTMLAudioElement | null>(null);
-  useEffect(() => {
-    if (!browserPlaying) {
-      try { keepAliveRef.current?.pause(); } catch { /* */ }
-      return;
-    }
-    try {
-      if (!keepAliveRef.current) {
-        // 1-second silent WAV, looped.
-        const silent =
-          'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
-        const a = new Audio(silent);
-        a.loop = true;
-        a.volume = 0.001;
-        keepAliveRef.current = a;
-      }
-      void keepAliveRef.current.play().catch(() => { /* autoplay may block; harmless */ });
-    } catch { /* noop */ }
-    return () => {
-      try { keepAliveRef.current?.pause(); } catch { /* */ }
-    };
-  }, [browserPlaying]);
+  // Background keep-alive for browser TTS — see useTtsKeepAlive.
+  useTtsKeepAlive(browserPlaying);
 
 
   // ───────── ElevenLabs state ─────────
@@ -294,28 +271,13 @@ export function ChapterTTSPlayer({
   const playHtUser = settings.playHtUserId?.trim() ?? '';
   const playHtKey = settings.playHtApiKey?.trim() ?? '';
   const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
-  const azureVoiceOpts = AZURE_VOICES.filter((v) => v.lang === ttsLang);
-  const hfVoiceOpts = HUGGINGFACE_VOICES.filter((v) => v.lang === ttsLang);
-  const playHtVoiceOpts = PLAYHT_VOICES;
-  const [azureVoice, setAzureVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-azure-voice') || ''; } catch { return ''; }
-  });
-  const [hfVoice, setHfVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-hf-voice') || ''; } catch { return ''; }
-  });
-  const [playHtVoice, setPlayHtVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-playht-voice') || PLAYHT_VOICES[0].id; } catch { return PLAYHT_VOICES[0].id; }
-  });
-  const [openTtsVoice, setOpenTtsVoice] = useState<string>(() => {
-    try { return localStorage.getItem('llvp-tts-opentts-voice') || (ttsLang === 'fa' ? 'coqui-tts:fa_custom' : 'larynx:en-us/ek-glow_tts'); }
-    catch { return 'larynx:en-us/ek-glow_tts'; }
-  });
-  useEffect(() => { const v = azureVoiceOpts[0]?.id; if (!azureVoice && v) setAzureVoice(v); }, [azureVoiceOpts, azureVoice]);
-  useEffect(() => { const v = hfVoiceOpts[0]?.id; if (!hfVoice && v) setHfVoice(v); }, [hfVoiceOpts, hfVoice]);
-  useEffect(() => { try { if (azureVoice) localStorage.setItem('llvp-tts-azure-voice', azureVoice); } catch {/* */} }, [azureVoice]);
-  useEffect(() => { try { if (hfVoice) localStorage.setItem('llvp-tts-hf-voice', hfVoice); } catch {/* */} }, [hfVoice]);
-  useEffect(() => { try { localStorage.setItem('llvp-tts-playht-voice', playHtVoice); } catch {/* */} }, [playHtVoice]);
-  useEffect(() => { try { localStorage.setItem('llvp-tts-opentts-voice', openTtsVoice); } catch {/* */} }, [openTtsVoice]);
+  const {
+    azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
+    azureVoice, setAzureVoice,
+    hfVoice, setHfVoice,
+    playHtVoice, setPlayHtVoice,
+    openTtsVoice, setOpenTtsVoice,
+  } = useOtherEngineVoices(ttsLang);
   const [otherLoading, setOtherLoading] = useState(false);
 
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */

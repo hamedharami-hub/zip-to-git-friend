@@ -14,6 +14,7 @@ import type {
   BookBookmark,
   BookParagraphAnalysis,
   BookTTSAudio,
+  BookTTSChunk,
   BookChapterRewrite,
   ReadingSession,
   RewriteStyle,

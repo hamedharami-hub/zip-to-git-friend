@@ -43,11 +43,11 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useSettingsStore } from '@/store/settingsStore';
 import {
-  GEMINI_TTS_VOICES,
   type GeminiTtsVoice,
   GeminiTtsError,
   synthesizeChapter,
 } from '@/lib/geminiTts';
+import { GeminiVoicePicker } from './chapter-tts/GeminiVoicePicker';
 import { emitParagraphSpeech } from '@/lib/paragraphSpeechBus';
 import {
   BrowserTtsController,

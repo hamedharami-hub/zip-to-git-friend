@@ -131,8 +131,8 @@ export function ChapterTTSPlayer({
   const [open, setOpen] = useState(false);
   const [engine, setEngine] = useState<Engine>(() => {
     try {
-      const saved = localStorage.getItem(ENGINE_KEY) as Engine | null;
-      if (saved && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(saved)) return saved as Engine;
+      const saved = localStorage.getItem(ENGINE_KEY);
+      if (isEngine(saved)) return saved;
     } catch {
       /* noop */
     }
@@ -147,8 +147,8 @@ export function ChapterTTSPlayer({
   }, [engine]);
   useEffect(() => {
     const sync = (e: StorageEvent) => {
-      if (e.key === ENGINE_KEY && e.newValue && ['browser','gemini','elevenlabs','azure','huggingface','playht','opentts'].includes(e.newValue)) {
-        setEngine(e.newValue as Engine);
+      if (e.key === ENGINE_KEY && isEngine(e.newValue)) {
+        setEngine(e.newValue);
       }
       if (e.key === TTS_LANG_KEY && (e.newValue === 'en' || e.newValue === 'fa')) {
         setTtsLang(e.newValue);
@@ -157,6 +157,7 @@ export function ChapterTTSPlayer({
     window.addEventListener('storage', sync);
     return () => window.removeEventListener('storage', sync);
   }, []);
+
 
   // ───────── Gemini TTS state ─────────
   const [voice, setVoice] = useState<GeminiTtsVoice>(() => {

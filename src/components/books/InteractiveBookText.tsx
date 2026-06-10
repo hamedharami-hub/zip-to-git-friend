@@ -286,8 +286,29 @@ export function InteractiveBookText({
   useEffect(() => {
     if (!activeSpeechKey) return;
     const el = activeRef.current;
-    if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (!el) return;
+    // Center the active paragraph in the VISIBLE area above the fixed player.
+    const player = document.querySelector<HTMLElement>('[aria-label="Chapter narration player"]');
+    const playerH = player?.offsetHeight ?? 0;
+    const rect = el.getBoundingClientRect();
+    const visibleH = window.innerHeight - playerH;
+    const targetTop = rect.top + window.scrollY - (visibleH / 2 - rect.height / 2);
+    // Find the nearest scrollable ancestor (the article scroll container).
+    let scroller: HTMLElement | null = el.parentElement;
+    while (scroller && scroller !== document.body) {
+      const oy = getComputedStyle(scroller).overflowY;
+      if (oy === 'auto' || oy === 'scroll') break;
+      scroller = scroller.parentElement;
+    }
+    if (scroller && scroller !== document.body) {
+      const sRect = scroller.getBoundingClientRect();
+      const offset = rect.top - sRect.top + scroller.scrollTop - (visibleH / 2 - rect.height / 2);
+      scroller.scrollTo({ top: Math.max(0, offset), behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: Math.max(0, targetTop), behavior: 'smooth' });
+    }
   }, [activeSpeechKey]);
+
 
   if (blocks.length === 0) {
     return (

@@ -146,8 +146,10 @@ serve(async (req) => {
       : DEFAULT_MODEL;
 
     // Cap inputs so we stay within model context. For 'max'/'auto-max' allow more per article.
+    // Tightened defaults to cut token cost: we only need title + first 1–2 paragraphs
+    // for the digest to capture the gist; full body text isn't necessary.
     const isHugeLength = length === "max" || length === "auto-max";
-    const perArticleCap = isHugeLength ? 4500 : 1500;
+    const perArticleCap = isHugeLength ? 1800 : 600;
     const maxArticles = isHugeLength ? 30 : 25;
     const compact = articles.slice(0, maxArticles).map((a: any) => ({
       title: String(a.title ?? "").slice(0, 250),

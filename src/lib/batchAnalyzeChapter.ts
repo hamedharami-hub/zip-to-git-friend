@@ -145,13 +145,102 @@ export async function batchAnalyzeChapter(
 
   // Build the work queue out of remaining items.
   const remaining = items.filter((it) => !state.results[it.hash]);
-  let cursor = 0;
 
+  // ─── Fast path: gateway provider → batch endpoint (10 paragraphs/call) ──
+  const useBatch =
+    !effectiveRef || effectiveRef.provider === 'gateway';
+
+  if (useBatch && remaining.length > 0) {
+    const BATCH_SIZE = 10;
+    const chunks: Item[][] = [];
+    for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
+      chunks.push(remaining.slice(i, i + BATCH_SIZE));
+    }
+    // Process chunks with bounded concurrency too (concurrency batches at once).
+    let chunkCursor = 0;
+    let paymentHit = false;
+    const takeChunk = (): Item[] | null => {
+      if (signal?.aborted || paymentHit) return null;
+      return chunkCursor < chunks.length ? chunks[chunkCursor++] : null;
+    };
+    const batchModel = effectiveRef?.model;
+    const batchWorker = async () => {
+      while (true) {
+        const chunk = takeChunk();
+        if (!chunk) return;
+        state.inFlight += 1;
+        emit();
+        try {
+          const { data, error } = await supabase.functions.invoke<{
+            results: Array<
+              | { translation: string; vocabulary: never[]; idioms: never[] }
+              | { error: string }
+            >;
+            model: string;
+          }>('analyze-paragraphs-batch', {
+            body: { paragraphs: chunk.map((c) => c.text), model: batchModel },
+          });
+          if (error) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const status = (error as any)?.context?.status;
+            if (status === 402) paymentHit = true;
+            throw error;
+          }
+          const results = data?.results ?? [];
+          const modelLabel = data?.model ?? 'gateway-batch';
+          for (let i = 0; i < chunk.length; i++) {
+            const item = chunk[i];
+            const r = results[i] as
+              | { translation: string; vocabulary: never[]; idioms: never[] }
+              | { error: string }
+              | undefined;
+            if (!r || 'error' in r) {
+              state.failed += 1;
+              continue;
+            }
+            const record: BookParagraphAnalysis = {
+              id: paragraphAnalysisKey(bookId, chapter.index, item.hash),
+              bookId,
+              chapterIndex: chapter.index,
+              paragraphHash: item.hash,
+              translation: r.translation ?? '',
+              vocabulary: r.vocabulary ?? [],
+              idioms: r.idioms ?? [],
+              analyzedAt: Date.now(),
+              model: modelLabel,
+            };
+            await saveParagraphAnalysisShared(record);
+            state.results[item.hash] = record;
+            state.completed += 1;
+          }
+        } catch (e) {
+          state.failed += chunk.length;
+          state.lastError = bookAnalysisErrorMessage(e);
+        } finally {
+          state.inFlight -= 1;
+          emit();
+        }
+        if (signal?.aborted || paymentHit) return;
+      }
+    };
+    const pool = Array.from(
+      { length: Math.max(1, Math.min(concurrency, chunks.length)) },
+      batchWorker,
+    );
+    await Promise.all(pool);
+
+    state.cancelled = !!signal?.aborted;
+    state.done = true;
+    emit();
+    return state;
+  }
+
+  // ─── Fallback: per-paragraph (gemini / groq direct providers) ──────────
+  let cursor = 0;
   const next = (): Item | null => {
     if (signal?.aborted) return null;
     return cursor < remaining.length ? remaining[cursor++] : null;
   };
-
   const worker = async () => {
     while (true) {
       const item = next();
@@ -165,11 +254,9 @@ export async function batchAnalyzeChapter(
       } catch (e) {
         state.failed += 1;
         state.lastError = bookAnalysisErrorMessage(e);
-        // Don't keep hammering the gateway after a payment / rate-limit error.
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const code = (e as any)?.code;
         if (code === 'payment') {
-          // Drain the queue: swallow remaining items so the run ends gracefully.
           cursor = remaining.length;
         }
       } finally {
@@ -179,7 +266,6 @@ export async function batchAnalyzeChapter(
       if (signal?.aborted) return;
     }
   };
-
   const pool = Array.from({ length: Math.max(1, Math.min(concurrency, remaining.length || 1)) }, worker);
   await Promise.all(pool);
 

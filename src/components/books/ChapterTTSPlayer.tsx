@@ -958,18 +958,7 @@ export function ChapterTTSPlayer({
               ) : !audioUrl ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <Select value={voice} onValueChange={(v) => setVoice(v as GeminiTtsVoice)}>
-                      <SelectTrigger className="h-9 w-[200px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {voiceOptions.map((v) => (
-                          <SelectItem key={v.id} value={v.id}>
-                            {v.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <GeminiVoicePicker voice={voice} onChange={setVoice} size="lg" />
                     <Button onClick={() => loadOrSynthesize(false)} disabled={loading}>
                       {loading ? (
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />

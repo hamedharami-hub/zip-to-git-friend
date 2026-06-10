@@ -14,6 +14,7 @@ import type {
   BookBookmark,
   BookParagraphAnalysis,
   BookTTSAudio,
+  BookTTSChunk,
   BookChapterRewrite,
   ReadingSession,
   RewriteStyle,
@@ -58,6 +59,15 @@ interface BookSchema extends DBSchema {
     value: BookTTSAudio;
     indexes: { bookId: string; 'bookId+chapterIndex': [string, number] };
   };
+  bookTTSChunks: {
+    key: string;
+    value: BookTTSChunk;
+    indexes: {
+      bookId: string;
+      'bookId+chapterIndex': [string, number];
+      'bookId+chapterIndex+voice': [string, number, string];
+    };
+  };
   bookChapterRewrites: {
     key: string;
     value: BookChapterRewrite;
@@ -73,7 +83,7 @@ let dbPromise: Promise<IDBPDatabase<BookSchema>> | null = null;
 
 export function getBookDb() {
   if (!dbPromise) {
-    dbPromise = openDB<BookSchema>('LLVPBookDatabase', 2, {
+    dbPromise = openDB<BookSchema>('LLVPBookDatabase', 3, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
         const books = db.createObjectStore('books', { keyPath: 'id' });
@@ -106,6 +116,12 @@ export function getBookDb() {
           const rw = db.createObjectStore('bookChapterRewrites', { keyPath: 'id' });
           rw.createIndex('bookId', 'bookId');
           rw.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+        }
+        if (oldVersion < 3) {
+          const chunks = db.createObjectStore('bookTTSChunks', { keyPath: 'id' });
+          chunks.createIndex('bookId', 'bookId');
+          chunks.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          chunks.createIndex('bookId+chapterIndex+voice', ['bookId', 'chapterIndex', 'voice']);
         }
       },
     });
@@ -152,6 +168,10 @@ export async function deleteBook(id: string): Promise<void> {
     (async () => {
       const ts = await db.getAllFromIndex('bookTTSAudio', 'bookId', id);
       await Promise.all(ts.map((t) => db.delete('bookTTSAudio', t.id)));
+    })(),
+    (async () => {
+      const cs = await db.getAllFromIndex('bookTTSChunks', 'bookId', id);
+      await Promise.all(cs.map((c) => db.delete('bookTTSChunks', c.id)));
     })(),
     (async () => {
       const rs = await db.getAllFromIndex('bookChapterRewrites', 'bookId', id);
@@ -321,6 +341,48 @@ export async function deleteTTSAudio(
 ): Promise<void> {
   await (await getBookDb()).delete('bookTTSAudio', ttsKey(bookId, chapterIndex, voice));
 }
+
+// ───────────────────────────── TTS per-chunk cache ──
+export function ttsChunkKey(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+  chunkIndex: number,
+): string {
+  return `${bookId}:${chapterIndex}:${voice}:${chunkIndex}`;
+}
+
+export async function saveTTSChunk(chunk: BookTTSChunk): Promise<void> {
+  await (await getBookDb()).put('bookTTSChunks', chunk);
+}
+
+export async function getTTSChunks(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+): Promise<BookTTSChunk[]> {
+  const all = await (await getBookDb()).getAllFromIndex(
+    'bookTTSChunks',
+    'bookId+chapterIndex+voice',
+    [bookId, chapterIndex, voice],
+  );
+  return all.sort((a, b) => a.chunkIndex - b.chunkIndex);
+}
+
+export async function deleteTTSChunks(
+  bookId: string,
+  chapterIndex: number,
+  voice: string,
+): Promise<void> {
+  const db = await getBookDb();
+  const all = await db.getAllFromIndex(
+    'bookTTSChunks',
+    'bookId+chapterIndex+voice',
+    [bookId, chapterIndex, voice],
+  );
+  await Promise.all(all.map((c) => db.delete('bookTTSChunks', c.id)));
+}
+
 
 // ───────────────────────────── Chapter rewrites ──
 export function rewriteKey(

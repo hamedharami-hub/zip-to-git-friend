@@ -55,7 +55,7 @@ import {
   listVoices,
   type BrowserTtsVoice,
 } from '@/lib/browserTts';
-import { deleteTTSAudio, getTTSAudio } from '@/lib/bookDb';
+import { deleteTTSAudio, getTTSAudio, getTTSChunks, deleteTTSChunks } from '@/lib/bookDb';
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
@@ -99,6 +99,52 @@ function fmt(sec: number): string {
   const s = Math.floor(sec % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
+
+interface ChunkListProps {
+  chunks: Array<{ index: number; total: number; text: string; url: string; cached: boolean }>;
+  playingIndex: number | null;
+  onPlay: (index: number, url: string) => void;
+}
+
+function ParagraphChunkList({ chunks, playingIndex, onPlay }: ChunkListProps) {
+  if (chunks.length === 0) return null;
+  const total = chunks[0]?.total ?? chunks.length;
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-2 space-y-1 max-h-[180px] overflow-y-auto">
+      <div className="text-[11px] text-muted-foreground px-1">
+        {chunks.length} از {total} پاراگراف آماده — برای پخش روی هرکدام بزن
+      </div>
+      <div className="space-y-1">
+        {chunks.map((c) => {
+          const isPlaying = playingIndex === c.index;
+          const preview = c.text.trim().slice(0, 70) + (c.text.length > 70 ? '…' : '');
+          return (
+            <button
+              key={c.index}
+              type="button"
+              onClick={() => onPlay(c.index, c.url)}
+              className={
+                'w-full flex items-center gap-2 text-left rounded-md px-2 py-1.5 text-xs transition-colors ' +
+                (isPlaying
+                  ? 'bg-primary/15 text-foreground'
+                  : 'hover:bg-muted text-muted-foreground hover:text-foreground')
+              }
+              title={c.text}
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-background border border-border">
+                {isPlaying ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+              </span>
+              <span className="tabular-nums text-[10px] opacity-70 shrink-0">{c.index}.</span>
+              <span className="truncate flex-1">{preview}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+
 
 export function ChapterTTSPlayer({
   bookId,
@@ -178,6 +224,36 @@ export function ChapterTTSPlayer({
   const [progress, setProgress] = useState(0);
   const [chunkInfo, setChunkInfo] = useState<{ done: number; total: number } | null>(null);
   const [cachedHit, setCachedHit] = useState(false);
+
+  /** Live list of paragraphs whose audio is ready (cached or freshly generated). */
+  interface ReadyChunk { index: number; total: number; text: string; url: string; cached: boolean }
+  const [readyChunks, setReadyChunks] = useState<ReadyChunk[]>([]);
+  const chunkUrlsRef = useRef<string[]>([]);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingChunk, setPlayingChunk] = useState<number | null>(null);
+
+  function revokeChunkUrls() {
+    for (const u of chunkUrlsRef.current) {
+      try { URL.revokeObjectURL(u); } catch { /* */ }
+    }
+    chunkUrlsRef.current = [];
+  }
+
+  function playChunk(idx: number, url: string) {
+    if (!previewAudioRef.current) previewAudioRef.current = new Audio();
+    const a = previewAudioRef.current;
+    if (playingChunk === idx && !a.paused) {
+      a.pause();
+      setPlayingChunk(null);
+      return;
+    }
+    a.src = url;
+    a.playbackRate = rate;
+    a.onended = () => setPlayingChunk(null);
+    a.onpause = () => { if (a.ended) setPlayingChunk(null); };
+    a.play().then(() => setPlayingChunk(idx)).catch(() => setPlayingChunk(null));
+  }
+
 
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -387,6 +463,10 @@ export function ChapterTTSPlayer({
   // When chapter / engine / voice changes, dispose old playback.
   useEffect(() => {
     revokeUrl();
+    revokeChunkUrls();
+    setReadyChunks([]);
+    setPlayingChunk(null);
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);
@@ -409,8 +489,32 @@ export function ChapterTTSPlayer({
     }
   }
 
+  // Hydrate cached per-chunk audio whenever the Gemini panel is open for a
+  // (book, chapter, voice) combo — even before the user taps "Listen", so
+  // previously-generated paragraphs are immediately playable offline.
+  useEffect(() => {
+    if (engine !== 'gemini' || !open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cached = await getTTSChunks(bookId, effectiveChapterIndex, voice);
+        if (cancelled || cached.length === 0) return;
+        revokeChunkUrls();
+        const next: ReadyChunk[] = cached.map((c) => {
+          const url = URL.createObjectURL(c.blob);
+          chunkUrlsRef.current.push(url);
+          return { index: c.chunkIndex + 1, total: c.total, text: c.text, url, cached: true };
+        });
+        setReadyChunks(next);
+      } catch { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  }, [engine, open, bookId, effectiveChapterIndex, voice]);
+
   useEffect(() => () => {
     revokeUrl();
+    revokeChunkUrls();
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     browserCtrlRef.current?.stop();
   }, []);
 
@@ -427,6 +531,10 @@ export function ChapterTTSPlayer({
     setLoading(true);
     setProgress(0);
     setChunkInfo(null);
+    if (force) {
+      revokeChunkUrls();
+      setReadyChunks([]);
+    }
     try {
       const { blob, cached } = await synthesizeChapter(
         apiKey,
@@ -439,6 +547,16 @@ export function ChapterTTSPlayer({
           onChunkProgress: (done, total) => {
             setChunkInfo({ done, total });
             setProgress(done / total);
+          },
+          onChunkReady: ({ index, total, text: chunkText, blob: chunkBlob, cached: chunkCached }) => {
+            const url = URL.createObjectURL(chunkBlob);
+            chunkUrlsRef.current.push(url);
+            setReadyChunks((prev) => {
+              if (prev.some((p) => p.index === index)) return prev;
+              const next = [...prev, { index, total, text: chunkText, url, cached: chunkCached }];
+              next.sort((a, b) => a.index - b.index);
+              return next;
+            });
           },
         },
       );
@@ -503,7 +621,12 @@ export function ChapterTTSPlayer({
 
   const handleClear = async () => {
     await deleteTTSAudio(bookId, effectiveChapterIndex, voice);
+    await deleteTTSChunks(bookId, effectiveChapterIndex, voice);
     revokeUrl();
+    revokeChunkUrls();
+    setReadyChunks([]);
+    setPlayingChunk(null);
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);
@@ -974,18 +1097,30 @@ export function ChapterTTSPlayer({
                     <div className="space-y-1">
                       <Progress value={progress * 100} />
                       <p className="text-xs text-muted-foreground">
-                        Chunk {chunkInfo.done} / {chunkInfo.total} —{' '}
-                        {Math.round(progress * 100)}%
+                        پاراگراف {chunkInfo.done} از {chunkInfo.total} — {Math.round(progress * 100)}٪
                       </p>
                     </div>
                   )}
+                  {readyChunks.length > 0 && (
+                    <ParagraphChunkList
+                      chunks={readyChunks}
+                      playingIndex={playingChunk}
+                      onPlay={playChunk}
+                    />
+                  )}
                   <p className="text-xs text-muted-foreground">
-                    ~{Math.ceil(text.length / 1000)}k characters · cached after first generation,
-                    plays in background with lock-screen controls.
+                    ~{Math.ceil(text.length / 1000)}k نویسه · هر پاراگراف بلافاصله بعد از ساخت قابل پخش است و در حافظهٔ آفلاین می‌ماند.
                   </p>
                 </div>
               ) : (
                 <>
+                  {readyChunks.length > 0 && (
+                    <ParagraphChunkList
+                      chunks={readyChunks}
+                      playingIndex={playingChunk}
+                      onPlay={playChunk}
+                    />
+                  )}
                   <audio
                     ref={audioRef}
                     src={audioUrl}

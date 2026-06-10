@@ -878,146 +878,100 @@ export function ChapterTTSPlayer({
   return (
     <>
       <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[55dvh] overflow-y-auto overscroll-contain"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[42dvh] overflow-y-auto overscroll-contain"
         role="region"
         aria-label="Chapter narration player"
       >
-        <div className="max-w-4xl mx-auto px-3 py-2 space-y-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+        <div className="max-w-4xl mx-auto px-2 py-1.5 space-y-1.5 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
 
-          {/* Tiny close button — title removed for compactness. */}
-          <div className="flex justify-end -mb-1">
+          {/* One-row: engine dropdown + lang toggle + close */}
+          <div className="flex items-center gap-1.5">
+            <Select value={engine} onValueChange={(v) => setEngine(v as Engine)}>
+              <SelectTrigger className="h-7 w-[120px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {([
+                  { id: 'browser', label: 'Browser', disabled: !browserSupported },
+                  { id: 'gemini', label: 'Gemini' },
+                  { id: 'elevenlabs', label: 'ElevenLabs' },
+                  { id: 'azure', label: 'Azure' },
+                  { id: 'huggingface', label: 'HF' },
+                  { id: 'playht', label: 'Play.ht' },
+                  { id: 'opentts', label: 'OpenTTS' },
+                ] as const).map((t) => (
+                  <SelectItem key={t.id} value={t.id} disabled={(t as { disabled?: boolean }).disabled}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {textFa && (
+              <div role="tablist" aria-label="زبان" className="inline-flex rounded-md border border-border bg-muted/40 p-0.5">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={ttsLang === 'en'}
+                  onClick={() => setTtsLang('en')}
+                  className={
+                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
+                    (ttsLang === 'en' ? 'bg-background shadow-sm' : 'text-muted-foreground')
+                  }
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={ttsLang === 'fa'}
+                  onClick={() => setTtsLang('fa')}
+                  className={
+                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
+                    (ttsLang === 'fa' ? 'bg-background shadow-sm' : 'text-muted-foreground')
+                  }
+                >
+                  FA
+                </button>
+              </div>
+            )}
+
+            <div className="flex-1" />
+
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6"
               aria-label="Close player"
-              onClick={() => {
-                stopBrowser();
-                setOpen(false);
-              }}
+              onClick={() => { stopBrowser(); setOpen(false); }}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
 
-
-          {/* Engine picker */}
-          <div
-            role="tablist"
-            aria-label="TTS engine"
-            className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5 gap-0.5"
-          >
-            {([
-              { id: 'browser', label: 'Browser', icon: Mic, title: 'Built-in browser voice — free, offline', disabled: !browserSupported },
-              { id: 'gemini', label: 'Gemini', icon: Sparkles, title: 'Gemini TTS — needs Gemini key' },
-              { id: 'elevenlabs', label: 'ElevenLabs', icon: Sparkles, title: 'ElevenLabs — premium' },
-              { id: 'azure', label: 'Azure', icon: Sparkles, title: 'Azure Speech — بهترین صدای فارسی' },
-              { id: 'huggingface', label: 'HF', icon: Sparkles, title: 'Hugging Face Inference' },
-              { id: 'playht', label: 'Play.ht', icon: Sparkles, title: 'Play.ht v2 streaming' },
-              { id: 'opentts', label: 'OpenTTS', icon: Sparkles, title: 'Self-hosted OpenTTS server' },
-            ] as const).map((t) => {
-              const Icon = t.icon;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={engine === t.id}
-                  disabled={(t as { disabled?: boolean }).disabled}
-                  onClick={() => setEngine(t.id as Engine)}
-                  className={
-                    'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                    (engine === t.id
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground disabled:opacity-50')
-                  }
-                  title={t.title}
-                >
-                  <Icon className="h-3 w-3" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Language picker — visible whenever a Persian script is available. */}
-          {textFa && (
-            <div
-              role="tablist"
-              aria-label="زبان پخش"
-              className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={ttsLang === 'en'}
-                onClick={() => setTtsLang('en')}
-                className={
-                  'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ' +
-                  (ttsLang === 'en'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground')
-                }
-              >
-                English
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={ttsLang === 'fa'}
-                onClick={() => setTtsLang('fa')}
-                className={
-                  'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ' +
-                  (ttsLang === 'fa'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground')
-                }
-                title="نسخه فارسی متن"
-              >
-                فارسی
-              </button>
-            </div>
-          )}
-
           {/* Body — Browser TTS */}
           {engine === 'browser' && (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {!browserSupported ? (
-                <div className="text-sm text-muted-foreground">
-                  Your browser does not support built-in speech synthesis. Switch to Gemini.
+                <div className="text-xs text-muted-foreground">
+                  مرورگر شما TTS داخلی ندارد. Gemini را امتحان کن.
                 </div>
               ) : (
                 <>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Select value={browserLang} onValueChange={setBrowserLang}>
-                      <SelectTrigger className="h-9 w-[120px]" title="فیلتر زبان">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">همه زبان‌ها</SelectItem>
-                        <SelectItem value="en">English</SelectItem>
-                        <SelectItem value="fa">فارسی</SelectItem>
-                        <SelectItem value="ar">العربية</SelectItem>
-                        <SelectItem value="fr">Français</SelectItem>
-                        <SelectItem value="de">Deutsch</SelectItem>
-                        <SelectItem value="es">Español</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <Select
                       value={browserVoiceId ?? undefined}
                       onValueChange={(v) => setBrowserVoiceId(v)}
                     >
-                      <SelectTrigger className="h-9 max-w-[260px]">
-                        <SelectValue placeholder="Pick a voice" />
+                      <SelectTrigger className="h-7 max-w-[200px] text-[11px]">
+                        <SelectValue placeholder="Voice" />
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
                         {browserVoices.length === 0 && (
-                          <SelectItem value="__none__" disabled>
-                            Loading voices…
-                          </SelectItem>
+                          <SelectItem value="__none__" disabled>Loading…</SelectItem>
                         )}
                         {browserVoices
-                          .filter((v) => browserLang === 'all' || v.lang.toLowerCase().startsWith(browserLang))
+                          .filter((v) => v.lang.toLowerCase().startsWith(ttsLang === 'fa' ? 'fa' : 'en'))
                           .map((v) => (
                             <SelectItem key={v.id} value={v.id}>
                               {v.name} <span className="opacity-60">({v.lang})</span>
@@ -1026,56 +980,80 @@ export function ChapterTTSPlayer({
                       </SelectContent>
                     </Select>
                     <Select value={String(rate)} onValueChange={(v) => onRate(Number(v))}>
-                      <SelectTrigger className="h-9 w-[80px]">
+                      <SelectTrigger className="h-7 w-[60px] text-[11px]">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                          <SelectItem key={r} value={String(r)}>
-                            {r}×
-                          </SelectItem>
+                          <SelectItem key={r} value={String(r)}>{r}×</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+
                     <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      title="پاراگراف قبلی"
+                      onClick={() => {
+                        const c = browserCtrlRef.current;
+                        const idx = c ? c.index : resumeIndexRef.current;
+                        const target = Math.max(0, idx - 1);
+                        c?.stop();
+                        browserCtrlRef.current = null;
+                        resumeIndexRef.current = target;
+                        startBrowser();
+                      }}
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-7 px-2 gap-1 text-[11px]"
                       onClick={toggleBrowserPlay}
-                      className="gap-2"
                       title={browserPlaying ? 'Pause' : 'Listen'}
                     >
-                      {browserPlaying ? (
-                        <>
-                          <Pause className="h-4 w-4" /> Pause
-                        </>
-                      ) : (
-                        <>
-                          <Play className="h-4 w-4" /> Listen
-                        </>
-                      )}
+                      {browserPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                      {browserPlaying ? 'Pause' : 'Listen'}
                     </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7"
+                      title="پاراگراف بعدی"
+                      onClick={() => {
+                        const c = browserCtrlRef.current;
+                        const total = c ? c.totalChunks : 0;
+                        const idx = c ? c.index : resumeIndexRef.current;
+                        const target = total > 0 ? Math.min(total - 1, idx + 1) : idx + 1;
+                        c?.stop();
+                        browserCtrlRef.current = null;
+                        resumeIndexRef.current = target;
+                        startBrowser();
+                      }}
+                    >
+                      <RotateCw className="h-3.5 w-3.5" />
+                    </Button>
+
                     {(browserCtrlRef.current || resumeIndexRef.current > 0) && (
-                      <Button variant="ghost" size="sm" onClick={stopBrowser} title="توقف — با Listen از همین پاراگراف ادامه می‌دهد">
+                      <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={stopBrowser}>
                         Stop
-                      </Button>
-                    )}
-                    {resumeIndexRef.current > 0 && (
-                      <Button variant="ghost" size="sm" onClick={restartBrowser} title="شروع از ابتدای متن">
-                        <RotateCcw className="h-3.5 w-3.5 mr-1" /> Restart
                       </Button>
                     )}
                   </div>
                   {browserChunk && (
-                    <div className="space-y-1">
-                      <Progress value={(browserChunk.done / browserChunk.total) * 100} />
-                      <p className="text-xs text-muted-foreground">
-                        Sentence {browserChunk.done} / {browserChunk.total}
+                    <div className="space-y-0.5">
+                      <Progress value={(browserChunk.done / browserChunk.total) * 100} className="h-1" />
+                      <p className="text-[10px] text-muted-foreground">
+                        {browserChunk.done} / {browserChunk.total}
                       </p>
                     </div>
                   )}
-
                 </>
               )}
             </div>
           )}
+
 
           {/* Body — Gemini TTS */}
           {engine === 'gemini' && (

@@ -417,6 +417,10 @@ export function ChapterTTSPlayer({
   // When chapter / engine / voice changes, dispose old playback.
   useEffect(() => {
     revokeUrl();
+    revokeChunkUrls();
+    setReadyChunks([]);
+    setPlayingChunk(null);
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);
@@ -439,8 +443,32 @@ export function ChapterTTSPlayer({
     }
   }
 
+  // Hydrate cached per-chunk audio whenever the Gemini panel is open for a
+  // (book, chapter, voice) combo — even before the user taps "Listen", so
+  // previously-generated paragraphs are immediately playable offline.
+  useEffect(() => {
+    if (engine !== 'gemini' || !open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const cached = await getTTSChunks(bookId, effectiveChapterIndex, voice);
+        if (cancelled || cached.length === 0) return;
+        revokeChunkUrls();
+        const next: ReadyChunk[] = cached.map((c) => {
+          const url = URL.createObjectURL(c.blob);
+          chunkUrlsRef.current.push(url);
+          return { index: c.chunkIndex + 1, total: c.total, text: c.text, url, cached: true };
+        });
+        setReadyChunks(next);
+      } catch { /* noop */ }
+    })();
+    return () => { cancelled = true; };
+  }, [engine, open, bookId, effectiveChapterIndex, voice]);
+
   useEffect(() => () => {
     revokeUrl();
+    revokeChunkUrls();
+    try { previewAudioRef.current?.pause(); } catch { /* */ }
     browserCtrlRef.current?.stop();
   }, []);
 

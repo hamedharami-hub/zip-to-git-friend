@@ -156,9 +156,24 @@ async function generateChunkPcm(
 
 /* ─────────────────────────────────────────── public API ── */
 
+export interface ChunkReady {
+  index: number;       // 1-based
+  total: number;
+  text: string;
+  blob: Blob;          // standalone WAV for THIS chunk
+  cached: boolean;     // true when restored from IndexedDB on this run
+}
+
 export interface SynthesizeOptions {
   /** Called after each chunk completes (1-based index, total). */
   onChunkProgress?: (done: number, total: number) => void;
+  /**
+   * Called every time a chunk's WAV blob is ready — either because it was
+   * freshly generated OR loaded from the per-chunk IndexedDB cache. The UI
+   * uses this to render a live list of playable paragraphs while the rest
+   * of the chapter is still being synthesized.
+   */
+  onChunkReady?: (chunk: ChunkReady) => void;
   signal?: AbortSignal;
 }
 
@@ -172,7 +187,7 @@ export async function synthesizeText(
   voice: GeminiTtsVoice,
   opts: SynthesizeOptions = {},
 ): Promise<Blob> {
-  const { onChunkProgress, signal } = opts;
+  const { onChunkProgress, onChunkReady, signal } = opts;
   const trimmed = text.trim();
   if (!trimmed) throw new GeminiTtsError('no-audio', 'Empty text.');
 
@@ -185,6 +200,11 @@ export async function synthesizeText(
     const { pcm, sampleRate: sr } = await generateChunkPcm(apiKey, chunks[i], voice);
     pcmParts.push(pcm);
     sampleRate = sr;
+    if (onChunkReady) {
+      const chunkWav = pcmToWav(pcm, sr, 1, 16);
+      const chunkBlob = new Blob([chunkWav.buffer as ArrayBuffer], { type: 'audio/wav' });
+      onChunkReady({ index: i + 1, total: chunks.length, text: chunks[i], blob: chunkBlob, cached: false });
+    }
     onChunkProgress?.(i + 1, chunks.length);
   }
 
@@ -193,7 +213,17 @@ export async function synthesizeText(
   return new Blob([wav.buffer as ArrayBuffer], { type: 'audio/wav' });
 }
 
-/** Synthesize a chapter, using IndexedDB cache when available. */
+/**
+ * Synthesize a chapter, using IndexedDB cache when available.
+ *
+ * Cache behaviour:
+ *   1. Full-chapter blob hit → return immediately (still emits cached
+ *      per-chunk blobs first so the per-paragraph list can render).
+ *   2. Otherwise: emit any cached per-chunk blobs found, then generate the
+ *      missing chunks one by one. Each new chunk is persisted to the
+ *      per-chunk store right away so a refresh mid-generation keeps the
+ *      already-done paragraphs available offline.
+ */
 export async function synthesizeChapter(
   apiKey: string,
   bookId: string,
@@ -202,11 +232,90 @@ export async function synthesizeChapter(
   voice: GeminiTtsVoice,
   opts: SynthesizeOptions & { force?: boolean } = {},
 ): Promise<{ blob: Blob; cached: boolean }> {
-  if (!opts.force) {
-    const hit = await getTTSAudio(bookId, chapterIndex, voice);
-    if (hit) return { blob: hit.blob, cached: true };
+  const { onChunkReady, onChunkProgress, signal, force } = opts;
+
+  // 1) Always replay cached per-chunk blobs first (so the UI list lights up
+  //    instantly even when the full blob is available too).
+  let cachedChunks: BookTTSChunk[] = [];
+  if (!force) {
+    try {
+      cachedChunks = await getTTSChunks(bookId, chapterIndex, voice);
+    } catch {
+      cachedChunks = [];
+    }
+    for (const c of cachedChunks) {
+      onChunkReady?.({ index: c.chunkIndex + 1, total: c.total, text: c.text, blob: c.blob, cached: true });
+    }
+  } else {
+    // Force regenerate → wipe per-chunk cache too.
+    try { await deleteTTSChunks(bookId, chapterIndex, voice); } catch { /* noop */ }
   }
-  const blob = await synthesizeText(apiKey, text, voice, opts);
+
+  // 2) Full-chapter hit short-circuits actual synthesis.
+  if (!force) {
+    const hit = await getTTSAudio(bookId, chapterIndex, voice);
+    if (hit) {
+      // Make sure progress UI shows complete.
+      if (cachedChunks.length > 0) {
+        onChunkProgress?.(cachedChunks.length, cachedChunks.length);
+      }
+      return { blob: hit.blob, cached: true };
+    }
+  }
+
+  // 3) Synthesize missing chunks. We resume from the highest cached index.
+  const trimmed = text.trim();
+  if (!trimmed) throw new GeminiTtsError('no-audio', 'Empty text.');
+  const allChunks = chunkTextForTts(trimmed);
+
+  // Build PCM array, filling from cached chunk WAVs where possible.
+  const pcmParts: Uint8Array[] = new Array(allChunks.length);
+  let sampleRate = 24000;
+  for (const c of cachedChunks) {
+    if (c.chunkIndex < allChunks.length) {
+      try {
+        const buf = new Uint8Array(await c.blob.arrayBuffer());
+        // Strip 44-byte WAV header to get raw PCM back for concatenation.
+        if (buf.length > 44) pcmParts[c.chunkIndex] = buf.subarray(44);
+      } catch { /* skip */ }
+    }
+  }
+
+  // Synthesize any missing index.
+  for (let i = 0; i < allChunks.length; i++) {
+    if (pcmParts[i]) {
+      onChunkProgress?.(i + 1, allChunks.length);
+      continue;
+    }
+    if (signal?.aborted) throw new GeminiTtsError('unknown', 'Cancelled.');
+    const { pcm, sampleRate: sr } = await generateChunkPcm(apiKey, allChunks[i], voice);
+    pcmParts[i] = pcm;
+    sampleRate = sr;
+    const chunkWav = pcmToWav(pcm, sr, 1, 16);
+    const chunkBlob = new Blob([chunkWav.buffer as ArrayBuffer], { type: 'audio/wav' });
+    // Persist immediately so a refresh keeps it offline.
+    try {
+      await saveTTSChunk({
+        id: ttsChunkKey(bookId, chapterIndex, voice, i),
+        bookId,
+        chapterIndex,
+        voice,
+        chunkIndex: i,
+        total: allChunks.length,
+        text: allChunks[i],
+        blob: chunkBlob,
+        mimeType: 'audio/wav',
+        createdAt: Date.now(),
+      });
+    } catch { /* non-fatal */ }
+    onChunkReady?.({ index: i + 1, total: allChunks.length, text: allChunks[i], blob: chunkBlob, cached: false });
+    onChunkProgress?.(i + 1, allChunks.length);
+  }
+
+  const merged = concatBytes(pcmParts.filter(Boolean) as Uint8Array[]);
+  const wav = pcmToWav(merged, sampleRate, 1, 16);
+  const blob = new Blob([wav.buffer as ArrayBuffer], { type: 'audio/wav' });
+
   const row: BookTTSAudio = {
     id: ttsKey(bookId, chapterIndex, voice),
     bookId,

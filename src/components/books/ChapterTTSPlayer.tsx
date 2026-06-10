@@ -855,29 +855,22 @@ export function ChapterTTSPlayer({
       >
         <div className="max-w-4xl mx-auto px-3 py-2 space-y-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
 
-          {/* Header */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 min-w-0">
-              <Headphones className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-sm font-medium truncate">{chapterTitle}</span>
-              {cachedHit && audioUrl && engine === 'gemini' && (
-                <span className="text-[10px] uppercase tracking-wider text-muted-foreground border border-border rounded px-1.5 py-0.5 shrink-0">
-                  Cached
-                </span>
-              )}
-            </div>
+          {/* Tiny close button — title removed for compactness. */}
+          <div className="flex justify-end -mb-1">
             <Button
               variant="ghost"
               size="icon"
+              className="h-6 w-6"
               aria-label="Close player"
               onClick={() => {
                 stopBrowser();
                 setOpen(false);
               }}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
+
 
           {/* Engine picker */}
           <div

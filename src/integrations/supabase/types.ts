@@ -550,6 +550,51 @@ export type Database = {
         }
         Relationships: []
       }
+      paragraph_analyses: {
+        Row: {
+          analyzed_at: string
+          book_client_id: string | null
+          chapter_index: number | null
+          created_at: string
+          id: string
+          idioms: Json
+          model: string | null
+          paragraph_hash: string
+          translation: string
+          updated_at: string
+          user_id: string
+          vocabulary: Json
+        }
+        Insert: {
+          analyzed_at?: string
+          book_client_id?: string | null
+          chapter_index?: number | null
+          created_at?: string
+          id?: string
+          idioms?: Json
+          model?: string | null
+          paragraph_hash: string
+          translation?: string
+          updated_at?: string
+          user_id: string
+          vocabulary?: Json
+        }
+        Update: {
+          analyzed_at?: string
+          book_client_id?: string | null
+          chapter_index?: number | null
+          created_at?: string
+          id?: string
+          idioms?: Json
+          model?: string | null
+          paragraph_hash?: string
+          translation?: string
+          updated_at?: string
+          user_id?: string
+          vocabulary?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

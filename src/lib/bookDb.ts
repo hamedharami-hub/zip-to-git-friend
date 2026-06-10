@@ -59,6 +59,15 @@ interface BookSchema extends DBSchema {
     value: BookTTSAudio;
     indexes: { bookId: string; 'bookId+chapterIndex': [string, number] };
   };
+  bookTTSChunks: {
+    key: string;
+    value: BookTTSChunk;
+    indexes: {
+      bookId: string;
+      'bookId+chapterIndex': [string, number];
+      'bookId+chapterIndex+voice': [string, number, string];
+    };
+  };
   bookChapterRewrites: {
     key: string;
     value: BookChapterRewrite;

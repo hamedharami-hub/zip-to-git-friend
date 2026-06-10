@@ -183,7 +183,7 @@ export function ChapterTTSPlayer({
   const [cachedHit, setCachedHit] = useState(false);
 
   /** Live list of paragraphs whose audio is ready (cached or freshly generated). */
-  interface ReadyChunk { index: number; total: number; text: string; url: string; cached: boolean }
+
   const [readyChunks, setReadyChunks] = useState<ReadyChunk[]>([]);
   const chunkUrlsRef = useRef<string[]>([]);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);

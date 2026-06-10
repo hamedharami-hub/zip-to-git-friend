@@ -93,21 +93,21 @@ const SECONDARY_MODES: ModeItem[] = [
   },
 ];
 
-const toneClasses: Record<Tone, { card: string; iconBg: string; iconFg: string }> = {
+const toneClasses: Record<Tone, { iconBg: string; iconFg: string; accent: string }> = {
   primary: {
-    card: 'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]',
-    iconBg: 'bg-[hsl(var(--primary))]',
-    iconFg: 'text-[hsl(var(--primary-foreground))]',
+    iconBg: 'bg-[hsl(var(--primary)/0.12)]',
+    iconFg: 'text-[hsl(var(--primary))]',
+    accent: 'before:bg-[hsl(var(--primary))]',
   },
   secondary: {
-    card: 'bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]',
-    iconBg: 'bg-[hsl(var(--secondary))]',
-    iconFg: 'text-[hsl(var(--secondary-foreground))]',
+    iconBg: 'bg-[hsl(var(--secondary)/0.14)]',
+    iconFg: 'text-[hsl(var(--secondary))]',
+    accent: 'before:bg-[hsl(var(--secondary))]',
   },
   tertiary: {
-    card: 'bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))]',
-    iconBg: 'bg-[hsl(var(--tertiary))]',
-    iconFg: 'text-[hsl(var(--tertiary-foreground))]',
+    iconBg: 'bg-[hsl(var(--tertiary)/0.16)]',
+    iconFg: 'text-[hsl(var(--tertiary))]',
+    accent: 'before:bg-[hsl(var(--tertiary))]',
   },
 };
 
@@ -117,33 +117,25 @@ function ModeCard({ item, large }: { item: ModeItem; large?: boolean }) {
   return (
     <Link
       to={item.to}
-      className={`m3-state-layer group relative flex flex-col justify-between overflow-hidden rounded-[28px] p-5 sm:p-6 transition-all duration-300 hover:m3-elevation-2 hover:-translate-y-0.5 ${
-        t.card
-      } ${item.span ? 'sm:col-span-2 min-h-[200px]' : large ? 'min-h-[180px]' : 'min-h-[170px]'}`}
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl p-5 sm:p-6 bg-card border border-border/70 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:m3-elevation-2 before:absolute before:left-0 before:top-0 before:h-full before:w-[3px] before:opacity-0 before:transition-opacity group-hover:before:opacity-100 ${
+        t.accent
+      } ${item.span ? 'sm:col-span-2 min-h-[180px]' : large ? 'min-h-[170px]' : 'min-h-[160px]'}`}
     >
-      {/* Decorative blob */}
-      <div
-        aria-hidden="true"
-        className={`absolute -top-10 -right-10 h-32 w-32 rounded-full opacity-25 blur-2xl ${t.iconBg}`}
-      />
-
       <div className="relative flex items-start justify-between">
         <div
-          className={`h-14 w-14 rounded-[20px] flex items-center justify-center ${t.iconBg} ${t.iconFg} m3-elevation-1 transition-transform group-hover:scale-105 group-hover:rotate-[-4deg]`}
+          className={`h-12 w-12 rounded-xl flex items-center justify-center ${t.iconBg} ${t.iconFg} transition-transform group-hover:scale-105`}
         >
-          <Icon className="h-7 w-7" />
+          <Icon className="h-6 w-6" />
         </div>
-        <ArrowRight className="h-5 w-5 opacity-0 -translate-x-2 transition-all group-hover:opacity-70 group-hover:translate-x-0" />
+        <ArrowRight className="h-5 w-5 opacity-0 -translate-x-2 transition-all group-hover:opacity-60 group-hover:translate-x-0 text-muted-foreground" />
       </div>
 
-      <div className="relative mt-6">
-        <p className="text-[11px] uppercase tracking-[0.12em] font-medium opacity-70">
-          {item.eyebrow}
-        </p>
-        <h3 className="text-xl sm:text-2xl font-semibold mt-1 leading-tight">
+      <div className="relative mt-5">
+        <p className="editorial-eyebrow">{item.eyebrow}</p>
+        <h3 className="font-serif text-xl sm:text-2xl font-medium mt-1.5 leading-tight tracking-tight">
           {item.title}
         </h3>
-        <p className="text-sm mt-2 opacity-80 leading-relaxed line-clamp-2">{item.desc}</p>
+        <p className="text-sm mt-2 text-muted-foreground leading-relaxed line-clamp-2">{item.desc}</p>
       </div>
     </Link>
   );
@@ -196,48 +188,38 @@ const Home = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-10">
         <PWAInstallBanner />
 
-        {/* Hero — M3 expressive display */}
-        <section className="relative overflow-hidden rounded-[36px] bg-gradient-to-br from-[hsl(var(--primary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--tertiary-container))] p-6 sm:p-10">
+        {/* Hero — Editorial display */}
+        <section className="relative overflow-hidden rounded-3xl border border-border/70 bg-gradient-to-br from-[hsl(var(--primary-container)/0.6)] via-card to-[hsl(var(--tertiary-container)/0.5)] p-6 sm:p-12 animate-editorial-in">
           <div
             aria-hidden="true"
-            className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-[hsl(var(--primary)/0.18)] blur-3xl"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-20 -left-10 h-56 w-56 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl"
+            className="absolute -top-20 -right-20 h-72 w-72 rounded-full bg-[hsl(var(--primary)/0.10)] blur-3xl"
           />
           <div className="relative">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[hsl(var(--surface)/0.7)] text-[hsl(var(--on-surface-variant))] text-xs font-medium m3-elevation-1">
-              <Sparkles className="h-3.5 w-3.5 text-[hsl(var(--primary))]" />
-              Powered by AI
-            </div>
-            <h1 className="mt-4 text-3xl sm:text-5xl font-semibold tracking-tight leading-[1.05] text-[hsl(var(--on-primary-container))]">
+            <p className="editorial-eyebrow inline-flex items-center gap-2">
+              <Sparkles className="h-3.5 w-3.5" />
+              Powered by AI · Issue 01
+            </p>
+            <h1 className="mt-5 font-serif text-4xl sm:text-6xl font-medium tracking-tight leading-[1.02] text-foreground">
               یاد بگیر،<br />
-              <span className="text-[hsl(var(--primary))]">از چیزی که دوست داری</span>
+              <span className="italic text-primary">از چیزی که دوست داری</span>
             </h1>
-            <p className="mt-3 max-w-xl text-sm sm:text-base text-[hsl(var(--on-surface-variant))]">
+            <div className="editorial-rule my-6 max-w-xs" />
+            <p className="max-w-xl text-base sm:text-lg text-muted-foreground leading-relaxed">
               فیلم، پادکست، کتاب و خبر را تبدیل به جلسهٔ تمرین زبان کن — با
               فلش‌کارت، تحلیل هوشمند و تمرین گفتار.
             </p>
-            <div className="mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-7 flex flex-wrap items-center gap-3">
               <Link to="/leitner">
-                <Button
-                  size="lg"
-                  className="rounded-full h-12 px-6 gap-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 m3-elevation-2"
-                >
+                <Button size="lg" className="gap-2">
                   <Brain className="h-5 w-5" />
                   شروع مرور
                 </Button>
               </Link>
               <Link to="/sentence-lab">
-                <Button
-                  size="lg"
-                  variant="ghost"
-                  className="rounded-full h-12 px-5 gap-2 text-[hsl(var(--on-primary-container))] hover:bg-[hsl(var(--surface)/0.6)]"
-                >
+                <Button size="lg" variant="outline" className="gap-2">
                   <Mic className="h-5 w-5" />
                   تمرین گفتار
                 </Button>
@@ -246,7 +228,7 @@ const Home = () => {
           </div>
         </section>
 
-        {/* Quick actions — M3 assist chips */}
+        {/* Quick actions */}
         <section aria-label="Quick actions" className="flex flex-wrap gap-2">
           {[
             { to: '/stats', label: 'پیشرفت من', icon: TrendingUp },
@@ -258,49 +240,49 @@ const Home = () => {
             <Link
               key={to}
               to={to}
-              className="m3-state-layer inline-flex items-center gap-2 h-9 px-3 rounded-full border border-[hsl(var(--outline-variant))] bg-[hsl(var(--surface))] text-sm text-[hsl(var(--foreground))] hover:bg-[hsl(var(--surface-container))] transition-colors"
+              className="m3-state-layer inline-flex items-center gap-2 h-9 px-3.5 rounded-full border border-border bg-card text-sm text-foreground hover:border-primary/50 hover:text-primary transition-colors"
             >
-              <Icon className="h-4 w-4 text-[hsl(var(--primary))]" />
+              <Icon className="h-4 w-4 text-primary" />
               {label}
             </Link>
           ))}
         </section>
 
+        <div className="editorial-rule" />
+
         {/* Featured */}
-        <section className="space-y-4">
+        <section className="space-y-5">
           <div className="flex items-end justify-between px-1">
             <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[hsl(var(--on-surface-variant))] font-medium">
-                Featured
-              </p>
-              <h2 className="text-xl sm:text-2xl font-semibold mt-0.5">روزانه تمرین کن</h2>
+              <p className="editorial-eyebrow">Featured</p>
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium mt-1 tracking-tight">روزانه تمرین کن</h2>
             </div>
           </div>
-          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {PRIMARY_MODES.map((m) => (
               <ModeCard key={m.to} item={m} large />
             ))}
           </div>
         </section>
 
+        <div className="editorial-rule" />
+
         {/* All sources */}
-        <section className="space-y-4">
+        <section className="space-y-5">
           <div className="flex items-end justify-between px-1">
             <div>
-              <p className="text-xs uppercase tracking-[0.14em] text-[hsl(var(--on-surface-variant))] font-medium">
-                Library
-              </p>
-              <h2 className="text-xl sm:text-2xl font-semibold mt-0.5">منابع یادگیری</h2>
+              <p className="editorial-eyebrow">Library</p>
+              <h2 className="font-serif text-2xl sm:text-3xl font-medium mt-1 tracking-tight">منابع یادگیری</h2>
             </div>
             <Link
               to="/stats"
-              className="text-sm text-[hsl(var(--primary))] hover:underline inline-flex items-center gap-1"
+              className="text-sm text-primary hover:underline inline-flex items-center gap-1"
             >
               پیشرفت
               <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
-          <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             {SECONDARY_MODES.map((m) => (
               <ModeCard key={m.to} item={m} />
             ))}

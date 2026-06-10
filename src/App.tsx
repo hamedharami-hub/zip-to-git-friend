@@ -99,8 +99,9 @@ const SettingsBootstrap = ({ children }: { children: React.ReactNode }) => {
       const t = localStorage.getItem('llvp-theme');
       if (t === 'dark') document.documentElement.classList.add('dark');
       else if (t === 'light') document.documentElement.classList.remove('dark');
+      else document.documentElement.classList.add('dark');
     } catch {
-      /* ignore */
+      document.documentElement.classList.add('dark');
     }
     load();
     // Leitner stores are heavy (whole card set + folder sync). Defer them.

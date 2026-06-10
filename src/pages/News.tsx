@@ -904,15 +904,25 @@ const News = () => {
                             />
                           )}
                           <div className="flex-1 min-w-0">
-                            <h3 className={
-                              'font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors ' +
-                              (seen ? 'font-normal text-muted-foreground' : '')
-                            }>
+                            <h3
+                              dir={isRtlText(item.title) ? 'rtl' : 'ltr'}
+                              lang={isRtlText(item.title) ? 'fa' : undefined}
+                              className={
+                                'font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors ' +
+                                (isRtlText(item.title) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start ' : '') +
+                                (seen ? 'font-normal text-muted-foreground' : '')
+                              }>
                               {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
                               {item.title}
                             </h3>
                             {item.excerpt && (
-                              <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              <p
+                                dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}
+                                lang={isRtlText(item.excerpt) ? 'fa' : undefined}
+                                className={
+                                  'text-sm text-muted-foreground mt-1 line-clamp-2 ' +
+                                  (isRtlText(item.excerpt) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start' : '')
+                                }>
                                 {item.excerpt}
                               </p>
                             )}

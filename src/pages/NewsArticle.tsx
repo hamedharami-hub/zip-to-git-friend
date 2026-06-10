@@ -287,6 +287,7 @@ const NewsArticleReader = () => {
             wordCount: art.wordCount,
           });
           setArticle(updated);
+          cacheArticle(updated);
           return;
         }
       }

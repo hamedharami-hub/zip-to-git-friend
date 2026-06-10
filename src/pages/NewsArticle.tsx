@@ -154,11 +154,6 @@ const NewsArticleReader = () => {
   useEffect(() => {
     if (!articleId) return;
     void (async () => {
-      try {
-        const a = await getArticleById(articleId);
-  useEffect(() => {
-    if (!articleId) return;
-    void (async () => {
       // 1) Hydrate from offline cache first so the UI is instant + offline-safe.
       const cached = getCachedArticle(articleId);
       if (cached) setArticle(cached);

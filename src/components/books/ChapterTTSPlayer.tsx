@@ -81,6 +81,7 @@ import {
 } from './chapter-tts/ParagraphChunkList';
 import { useTtsKeepAlive } from './chapter-tts/useTtsKeepAlive';
 import { useOtherEngineVoices } from './chapter-tts/useOtherEngineVoices';
+import { EngineSelector } from './chapter-tts/EngineSelector';
 
 interface Props {
   bookId: string;
@@ -788,26 +789,12 @@ export function ChapterTTSPlayer({
 
           {/* One-row: engine dropdown + lang toggle + close */}
           <div className="flex items-center gap-1.5">
-            <Select value={engine} onValueChange={(v) => setEngine(v as Engine)}>
-              <SelectTrigger className="h-7 w-[120px] text-[11px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {([
-                  { id: 'browser', label: 'Browser', disabled: !browserSupported },
-                  { id: 'gemini', label: 'Gemini' },
-                  { id: 'elevenlabs', label: 'ElevenLabs' },
-                  { id: 'azure', label: 'Azure' },
-                  { id: 'huggingface', label: 'HF' },
-                  { id: 'playht', label: 'Play.ht' },
-                  { id: 'opentts', label: 'OpenTTS' },
-                ] as const).map((t) => (
-                  <SelectItem key={t.id} value={t.id} disabled={(t as { disabled?: boolean }).disabled}>
-                    {t.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <EngineSelector
+              engine={engine}
+              onChange={setEngine}
+              browserSupported={browserSupported}
+            />
+
 
             {textFa && (
               <div role="tablist" aria-label="زبان" className="inline-flex rounded-md border border-border bg-muted/40 p-0.5">

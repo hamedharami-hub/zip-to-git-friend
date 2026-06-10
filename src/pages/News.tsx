@@ -79,6 +79,12 @@ function siteFromUrl(url: string): string {
   }
 }
 
+/** Detect Persian/Arabic script so titles render RTL with the Persian font. */
+const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
+function isRtlText(s?: string | null): boolean {
+  return !!s && RTL_RE.test(s);
+}
+
 const News = () => {
   const navigate = useNavigate();
   const { user } = useAuth();

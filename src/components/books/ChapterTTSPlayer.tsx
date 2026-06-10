@@ -86,6 +86,8 @@ import {
   ParagraphChunkList,
   type ReadyChunk,
 } from './chapter-tts/ParagraphChunkList';
+import { useTtsKeepAlive } from './chapter-tts/useTtsKeepAlive';
+import { useOtherEngineVoices } from './chapter-tts/useOtherEngineVoices';
 
 interface Props {
   bookId: string;

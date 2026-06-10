@@ -114,7 +114,7 @@ export async function analyzeParagraph(
     model: data.model ?? 'unknown',
   };
 
-  await saveParagraphAnalysis(record);
+  await saveParagraphAnalysisShared(record);
   return record;
 }
 

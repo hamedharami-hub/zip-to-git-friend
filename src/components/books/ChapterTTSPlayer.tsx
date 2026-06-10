@@ -61,6 +61,8 @@ import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
 import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '@/lib/elevenLabsTts';
 import { loadElevenLabsBlob, elevenLabsErrorMessage } from './chapter-tts/loadElevenLabs';
+import { ElevenLabsPanel } from './chapter-tts/ElevenLabsPanel';
+import { LangToggle } from './chapter-tts/LangToggle';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 import { synthesizeOther, otherEngineErrorMessage } from './chapter-tts/synthesizeOther';
 import {
@@ -796,34 +798,7 @@ export function ChapterTTSPlayer({
             />
 
 
-            {textFa && (
-              <div role="tablist" aria-label="زبان" className="inline-flex rounded-md border border-border bg-muted/40 p-0.5">
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={ttsLang === 'en'}
-                  onClick={() => setTtsLang('en')}
-                  className={
-                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
-                    (ttsLang === 'en' ? 'bg-background shadow-sm' : 'text-muted-foreground')
-                  }
-                >
-                  EN
-                </button>
-                <button
-                  type="button"
-                  role="tab"
-                  aria-selected={ttsLang === 'fa'}
-                  onClick={() => setTtsLang('fa')}
-                  className={
-                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
-                    (ttsLang === 'fa' ? 'bg-background shadow-sm' : 'text-muted-foreground')
-                  }
-                >
-                  FA
-                </button>
-              </div>
-            )}
+            {textFa && <LangToggle value={ttsLang} onChange={setTtsLang} />}
 
             <div className="flex-1" />
 

@@ -65,9 +65,9 @@ import {
   ElevenLabsTtsError,
   synthesizeWithElevenLabs,
 } from '@/lib/elevenLabsTts';
-import { AZURE_VOICES, AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
-import { HUGGINGFACE_VOICES, HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
-import { PLAYHT_VOICES, PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
+import { AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
+import { HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
+import { PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
 import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 import {

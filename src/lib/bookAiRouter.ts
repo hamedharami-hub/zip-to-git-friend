@@ -18,13 +18,15 @@ import { coerceBookModel } from '@/lib/aiModels';
 import { analyzeParagraph as analyzeParagraphGateway } from '@/lib/bookAnalysis';
 import { rewriteChapter as rewriteChapterGateway } from '@/lib/chapterRewrite';
 import {
-  getParagraphAnalysis,
   paragraphAnalysisKey,
-  saveParagraphAnalysis,
   getChapterRewrite,
   rewriteKey,
   saveChapterRewrite,
 } from '@/lib/bookDb';
+import {
+  getCachedParagraphAnalysisShared,
+  saveParagraphAnalysisShared,
+} from '@/lib/paragraphAnalysisCloud';
 import { hashParagraph } from '@/lib/bookAnalysis';
 import { ChapterRewriteError, REWRITE_STYLES } from '@/lib/chapterRewrite';
 import { BookAnalysisError } from '@/lib/bookAnalysis';

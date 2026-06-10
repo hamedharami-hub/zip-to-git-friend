@@ -251,21 +251,50 @@ serve(async (req) => {
       );
     }
 
-    const aiData = await aiRes.json();
-    const call =
+    let aiData = await aiRes.json();
+    let call =
       aiData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-    if (!call) {
+    let finishReason: string | undefined = aiData?.choices?.[0]?.finish_reason;
+
+    /** Heuristic: detect a truncated digest (headings emitted but bodies missing). */
+    function looksTruncated(md: string): boolean {
+      if (!md) return true;
+      const h2s = (md.match(/^##\s+/gm) ?? []).length;
+      const paragraphs = md
+        .split(/\n{2,}/)
+        .map((p) => p.trim())
+        .filter((p) => p && !p.startsWith("#") && !p.startsWith(">")).length;
+      // A real article has many more body paragraphs than H2s
+      return h2s >= 3 && paragraphs < h2s * 2;
+    }
+
+    let parsed: { title: string; markdown: string } | null = null;
+    if (call) {
+      try { parsed = JSON.parse(call); } catch { parsed = null; }
+    }
+
+    // Auto-retry once if truncated by token cap or visibly incomplete.
+    if (!parsed || finishReason === "length" || looksTruncated(parsed.markdown)) {
+      console.warn("news-digest: truncated/empty output, retrying", { finishReason });
+      aiRes = await callAi();
+      if (aiRes.ok) {
+        aiData = await aiRes.json();
+        call = aiData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+        finishReason = aiData?.choices?.[0]?.finish_reason;
+        if (call) {
+          try {
+            const retry = JSON.parse(call);
+            if (retry?.markdown && (!parsed || retry.markdown.length > parsed.markdown.length)) {
+              parsed = retry;
+            }
+          } catch { /* keep previous */ }
+        }
+      }
+    }
+
+    if (!parsed) {
       console.error("No tool call in AI response", aiData);
       return new Response(JSON.stringify({ error: "AI returned no digest." }), {
-        status: 502,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    let parsed: { title: string; markdown: string };
-    try {
-      parsed = JSON.parse(call);
-    } catch (e) {
-      return new Response(JSON.stringify({ error: "AI output was not valid JSON." }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

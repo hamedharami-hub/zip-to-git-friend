@@ -59,12 +59,8 @@ import { deleteTTSAudio, getTTSAudio, getTTSChunks, deleteTTSChunks } from '@/li
 import { useMediaSession } from '@/hooks/useMediaSession';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { Link } from 'react-router-dom';
-import {
-  ELEVENLABS_MODELS,
-  ELEVENLABS_VOICES,
-  ElevenLabsTtsError,
-  synthesizeWithElevenLabs,
-} from '@/lib/elevenLabsTts';
+import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '@/lib/elevenLabsTts';
+import { loadElevenLabsBlob, elevenLabsErrorMessage } from './chapter-tts/loadElevenLabs';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
 import { synthesizeOther, otherEngineErrorMessage } from './chapter-tts/synthesizeOther';
 import {
@@ -606,7 +602,7 @@ export function ChapterTTSPlayer({
     }
     setElevenLoading(true);
     try {
-      const blob = await synthesizeWithElevenLabs({
+      const blob = await loadElevenLabsBlob({
         apiKey: elevenKey,
         text,
         voiceId: elevenVoice,
@@ -619,12 +615,7 @@ export function ChapterTTSPlayer({
       setAudioUrl(url);
       toast.success('روایت ElevenLabs آماده شد.');
     } catch (e) {
-      const msg = e instanceof ElevenLabsTtsError
-        ? e.code === 'auth' ? 'ElevenLabs کلید را رد کرد.'
-          : e.code === 'quota' ? 'محدودیت اعتبار ElevenLabs.'
-          : `خطا: ${e.message}`
-        : 'ElevenLabs ناموفق.';
-      toast.error(msg);
+      toast.error(elevenLabsErrorMessage(e));
     } finally {
       setElevenLoading(false);
     }

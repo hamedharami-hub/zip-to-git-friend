@@ -157,7 +157,9 @@ const NewsArticleReader = () => {
           document.title = `${a.title} — News`;
           await loadRewrites(a);
           const alreadySeen = isSeen(a.url);
-          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__' && !alreadySeen) {
+          // Always try to scrape if we don't have the body yet — being "seen"
+          // in the feed list doesn't mean the full text was ever fetched.
+          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__') {
             await runScrape(a, false);
           }
           // Auto-generate a long, simple rewrite the very first time the

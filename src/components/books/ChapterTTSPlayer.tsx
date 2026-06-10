@@ -485,6 +485,10 @@ export function ChapterTTSPlayer({
     setLoading(true);
     setProgress(0);
     setChunkInfo(null);
+    if (force) {
+      revokeChunkUrls();
+      setReadyChunks([]);
+    }
     try {
       const { blob, cached } = await synthesizeChapter(
         apiKey,
@@ -497,6 +501,16 @@ export function ChapterTTSPlayer({
           onChunkProgress: (done, total) => {
             setChunkInfo({ done, total });
             setProgress(done / total);
+          },
+          onChunkReady: ({ index, total, text: chunkText, blob: chunkBlob, cached: chunkCached }) => {
+            const url = URL.createObjectURL(chunkBlob);
+            chunkUrlsRef.current.push(url);
+            setReadyChunks((prev) => {
+              if (prev.some((p) => p.index === index)) return prev;
+              const next = [...prev, { index, total, text: chunkText, url, cached: chunkCached }];
+              next.sort((a, b) => a.index - b.index);
+              return next;
+            });
           },
         },
       );

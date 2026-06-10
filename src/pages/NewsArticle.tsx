@@ -43,7 +43,7 @@ import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAna
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
 import { toast } from 'sonner';
-import { RelatedNews } from '@/components/news/RelatedNews';
+import { cacheArticle, getCachedArticle, cacheRewrites, getCachedRewrites } from '@/lib/newsOfflineCache';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
 import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
 import { NewsTocMenu } from '@/components/news/NewsTocMenu';
@@ -123,6 +123,9 @@ const NewsArticleReader = () => {
 
   // Load existing rewrites for this article from news_digests (scope='source', single article).
   const loadRewrites = async (a: NewsArticle) => {
+    // Hydrate from offline cache first so re-opens work without network.
+    const cached = getCachedRewrites(a.id);
+    if (cached) setRewrites(cached as Record<RewriteLength, NewsDigest | undefined>);
     try {
       const { data } = await supabase
         .from('news_digests' as never)
@@ -144,47 +147,48 @@ const NewsArticleReader = () => {
         }
       }
       setRewrites(map);
-    } catch { /* ignore */ }
+      cacheRewrites(a.id, map);
+    } catch { /* offline: keep cached */ }
   };
 
   useEffect(() => {
     if (!articleId) return;
     void (async () => {
+      // 1) Hydrate from offline cache first so the UI is instant + offline-safe.
+      const cached = getCachedArticle(articleId);
+      if (cached) setArticle(cached);
       try {
-        const a = await getArticleById(articleId);
-        setArticle(a);
-        if (a) {
-          document.title = `${a.title} — News`;
-          await loadRewrites(a);
-          const alreadySeen = isSeen(a.url);
-          // Always try to scrape if we don't have the body yet — being "seen"
-          // in the feed list doesn't mean the full text was ever fetched.
-          if (!a.contentHtml && a.contentMd !== '__SCRAPE_FAILED__') {
-            await runScrape(a, false);
+        const a = await getArticleById(articleId).catch(() => null);
+        const useArticle = a ?? cached;
+        if (useArticle) {
+          if (a) {
+            setArticle(a);
+            cacheArticle(a);
           }
-          // Auto-generate a long, simple rewrite the very first time the
-          // user opens this article so they immediately see a digestible
-          // version. Skip on every re-open (offline-friendly).
-          if (!alreadySeen) {
+          document.title = `${useArticle.title} — News`;
+          await loadRewrites(useArticle);
+          const alreadySeen = isSeen(useArticle.url);
+          // Only scrape when we have NO body at all and are online.
+          if (!useArticle.contentHtml && useArticle.contentMd !== '__SCRAPE_FAILED__' && navigator.onLine) {
+            await runScrape(useArticle, false);
+          }
+          if (!alreadySeen && navigator.onLine) {
             try {
               const { data: existing } = await supabase
                 .from('news_digests' as never)
                 .select('id')
-                .eq('topic', `article:${a.id}`)
+                .eq('topic', `article:${useArticle.id}`)
                 .limit(1);
               const hasAny = Array.isArray(existing) && existing.length > 0;
               if (!hasAny) {
-                // Fire and forget — don't block initial render.
                 void handleRewrite('auto-max', false).catch(() => {});
               }
             } catch { /* ignore */ }
-            // Mark as seen immediately so any subsequent open is fully offline,
-            // even if the user leaves before background AI tasks finish.
-            markSeen(a.url);
+            markSeen(useArticle.url);
           }
         }
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to load article.');
+        if (!cached) toast.error(e.message ?? 'Failed to load article.');
       } finally {
         setLoading(false);
       }
@@ -283,6 +287,7 @@ const NewsArticleReader = () => {
             wordCount: art.wordCount,
           });
           setArticle(updated);
+          cacheArticle(updated);
           return;
         }
       }
@@ -306,6 +311,7 @@ const NewsArticleReader = () => {
         wordCount: scraped.wordCount,
       });
       setArticle(updated);
+      cacheArticle(updated);
       if (scraped.blocked && manual) {
         toast.info('این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.');
       }
@@ -337,7 +343,9 @@ const NewsArticleReader = () => {
     const next = !article.isSaved;
     try {
       await setArticleSaved(article.id, next);
-      setArticle({ ...article, isSaved: next });
+      const next2 = { ...article, isSaved: next };
+      setArticle(next2);
+      cacheArticle(next2);
       toast.success(next ? 'خبر سیو شد.' : 'از سیوها حذف شد.');
     } catch (e: any) {
       toast.error(e.message ?? 'Save failed.');
@@ -375,7 +383,11 @@ const NewsArticleReader = () => {
         windowHours: 24,
         model: newsModelRef.model,
       });
-      setRewrites((m) => ({ ...m, [length]: digest }));
+      setRewrites((m) => {
+        const next = { ...m, [length]: digest };
+        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
+        return next;
+      });
       setActiveRewrite(length);
       setView('rewrite');
       toast.success('بازنویسی آماده شد.');
@@ -391,7 +403,11 @@ const NewsArticleReader = () => {
     if (!r) return;
     try {
       await supabase.from('news_digests' as never).delete().eq('id', r.id);
-      setRewrites((m) => ({ ...m, [length]: undefined }));
+      setRewrites((m) => {
+        const next = { ...m, [length]: undefined };
+        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
+        return next;
+      });
       toast.success('حذف شد.');
     } catch (e: any) {
       toast.error(e.message ?? 'Delete failed.');
@@ -552,7 +568,7 @@ const NewsArticleReader = () => {
       )}
 
 
-      <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef}>
+      <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef} style={{ touchAction: 'pan-y' }}>
         <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
@@ -695,8 +711,6 @@ const NewsArticleReader = () => {
                   })}
                 </Tabs>
               </section>
-
-              <RelatedNews article={article} />
             </>
 
           ) : (

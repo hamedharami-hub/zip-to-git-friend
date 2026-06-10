@@ -179,6 +179,36 @@ export function ChapterTTSPlayer({
   const [chunkInfo, setChunkInfo] = useState<{ done: number; total: number } | null>(null);
   const [cachedHit, setCachedHit] = useState(false);
 
+  /** Live list of paragraphs whose audio is ready (cached or freshly generated). */
+  interface ReadyChunk { index: number; total: number; text: string; url: string; cached: boolean }
+  const [readyChunks, setReadyChunks] = useState<ReadyChunk[]>([]);
+  const chunkUrlsRef = useRef<string[]>([]);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [playingChunk, setPlayingChunk] = useState<number | null>(null);
+
+  function revokeChunkUrls() {
+    for (const u of chunkUrlsRef.current) {
+      try { URL.revokeObjectURL(u); } catch { /* */ }
+    }
+    chunkUrlsRef.current = [];
+  }
+
+  function playChunk(idx: number, url: string) {
+    if (!previewAudioRef.current) previewAudioRef.current = new Audio();
+    const a = previewAudioRef.current;
+    if (playingChunk === idx && !a.paused) {
+      a.pause();
+      setPlayingChunk(null);
+      return;
+    }
+    a.src = url;
+    a.playbackRate = rate;
+    a.onended = () => setPlayingChunk(null);
+    a.onpause = () => { if (a.ended) setPlayingChunk(null); };
+    a.play().then(() => setPlayingChunk(idx)).catch(() => setPlayingChunk(null));
+  }
+
+
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);

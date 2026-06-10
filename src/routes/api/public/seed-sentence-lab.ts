@@ -2,10 +2,25 @@ import { createFileRoute } from '@tanstack/react-router';
 import { supabaseAdmin } from '@/integrations/supabase/client.server';
 import { SENTENCE_BACKUP } from '@/data/sentenceLabSeed';
 
+// ⚠️ Destructive endpoint — overwrites sentence_categories / sentence_paths / sentence_lab
+// via upsert(onConflict: id). Disabled by default. To re-enable for a one-off run,
+// set the SEED_SENTENCE_LAB_TOKEN secret and POST with header `x-seed-token: <token>`.
 export const Route = createFileRoute('/api/public/seed-sentence-lab')({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        const token = process.env.SEED_SENTENCE_LAB_TOKEN;
+        const provided = request.headers.get('x-seed-token');
+        if (!token || !provided || provided !== token) {
+          return new Response(
+            JSON.stringify({
+              error:
+                'Seed endpoint is disabled. Set SEED_SENTENCE_LAB_TOKEN secret and pass matching x-seed-token header to enable.',
+            }),
+            { status: 403, headers: { 'Content-Type': 'application/json' } },
+          );
+        }
+
         const data = SENTENCE_BACKUP as any;
         const results = { categories: 0, paths: 0, sentences: 0, errors: [] as string[] };
 

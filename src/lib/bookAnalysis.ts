@@ -45,14 +45,14 @@ export function hashParagraph(text: string): string {
   return h.toString(36);
 }
 
-/** Read-only cache lookup; never triggers an AI call. */
+/** Read-only cache lookup (local IDB + cloud); never triggers an AI call. */
 export async function getCachedParagraphAnalysis(
   bookId: string,
   chapterIndex: number,
   paragraphText: string,
 ): Promise<BookParagraphAnalysis | undefined> {
   const hash = hashParagraph(paragraphText.trim());
-  return getParagraphAnalysis(bookId, chapterIndex, hash);
+  return getCachedParagraphAnalysisShared(bookId, chapterIndex, hash);
 }
 
 /**

@@ -477,32 +477,40 @@ const NewsArticleReader = () => {
         className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {/* Single ultra-thin row — back, title, language, kebab menu. */}
-        <div className="flex items-center gap-1 px-2 py-1">
+        {/* Single ultra-thin row — back + all controls inline, no title. */}
+        <div className="flex items-center gap-0.5 px-2 py-1 overflow-x-auto">
           <button
             type="button"
             onClick={goBack}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md hover:bg-accent shrink-0"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="text-[12px] font-semibold truncate leading-tight">{article.title}</h1>
-            <p className="text-[10px] text-muted-foreground truncate leading-tight">
-              {article.siteName ?? ''}
-              {article.author ? ` · ${article.author}` : ''}
-            </p>
-          </div>
+          <div className="flex-1" />
           <LangCycleButton
             value={view === 'rewrite' ? rwDisplayLang : origDisplayLang}
             onChange={view === 'rewrite' ? setRwDisplayLang : setOrigDisplayLang}
             hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
           />
           <NewsTypographyMenu onChange={handleTypoChange} />
+          <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
+          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+          {(view === 'rewrite' ? rwChapter : origChapter) && (
+            <NewsShareMenu
+              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
+              chapterIndex={0}
+              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
+              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
+              url={article.url}
+              siteName={article.siteName}
+              aiModel={newsModelRef.model}
+            />
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label="منو">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="منو">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -527,23 +535,6 @@ const NewsArticleReader = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </div>
-        {/* Secondary thin row: TOC + share inline (kept tiny). */}
-        <div className="flex items-center gap-0.5 px-2 pb-1 -mt-0.5">
-          <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
-          {(view === 'rewrite' ? rwChapter : origChapter) && (
-            <NewsShareMenu
-              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
-              chapterIndex={0}
-              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
-              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
-              url={article.url}
-              siteName={article.siteName}
-              aiModel={newsModelRef.model}
-            />
-          )}
         </div>
       </header>
 

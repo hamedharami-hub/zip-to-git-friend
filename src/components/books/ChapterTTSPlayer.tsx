@@ -65,11 +65,8 @@ import {
   ElevenLabsTtsError,
   synthesizeWithElevenLabs,
 } from '@/lib/elevenLabsTts';
-import { AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
-import { HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
-import { PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
-import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
 import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
+import { synthesizeOther, otherEngineErrorMessage } from './chapter-tts/synthesizeOther';
 import {
   ENGINE_KEY,
   VOICE_KEY,
@@ -285,26 +282,21 @@ export function ChapterTTSPlayer({
     if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
     setOtherLoading(true);
     try {
-      let blob: Blob;
-      if (engine === 'azure') {
-        blob = await synthesizeWithAzure({ apiKey: azureKey, region: azureRegion, text, voice: azureVoice, rate });
-      } else if (engine === 'huggingface') {
-        blob = await synthesizeWithHuggingFace({ apiKey: hfKey, text, model: hfVoice });
-      } else if (engine === 'playht') {
-        blob = await synthesizeWithPlayHt({ userId: playHtUser, apiKey: playHtKey, text, voice: playHtVoice, lang: ttsLang });
-      } else {
-        blob = await synthesizeWithOpenTts({ baseUrl: openTtsUrl, text, voice: openTtsVoice });
-      }
+      const blob = await synthesizeOther({
+        engine: engine as 'azure' | 'huggingface' | 'playht' | 'opentts',
+        text, rate, ttsLang,
+        azureKey, azureRegion, azureVoice,
+        hfKey, hfVoice,
+        playHtUser, playHtKey, playHtVoice,
+        openTtsUrl, openTtsVoice,
+      });
       revokeUrl();
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
       toast.success('روایت آماده شد.');
     } catch (e) {
-      const msg = e instanceof AzureTtsError || e instanceof HuggingFaceTtsError ||
-                  e instanceof PlayHtTtsError || e instanceof OpenTtsError
-                  ? e.message : (e instanceof Error ? e.message : 'TTS ناموفق');
-      toast.error(msg);
+      toast.error(otherEngineErrorMessage(e));
     } finally { setOtherLoading(false); }
   };
 

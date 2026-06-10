@@ -7,10 +7,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import type { BookParagraphAnalysis, IdiomItem, VocabItem } from '@/types';
 import {
-  getParagraphAnalysis,
   paragraphAnalysisKey,
-  saveParagraphAnalysis,
 } from '@/lib/bookDb';
+import {
+  getCachedParagraphAnalysisShared,
+  saveParagraphAnalysisShared,
+} from '@/lib/paragraphAnalysisCloud';
 
 export class BookAnalysisError extends Error {
   code: 'rate_limit' | 'payment' | 'network' | 'invalid' | 'unknown';

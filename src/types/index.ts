@@ -461,6 +461,26 @@ export interface BookTTSAudio {
   createdAt: number;
 }
 
+/**
+ * Cached TTS audio for a SINGLE chunk (paragraph-ish slice) of a chapter.
+ * Stored alongside the full chapter blob so the UI can render a live list
+ * of generated paragraphs while the chapter is still being synthesized, and
+ * the user can replay any individual paragraph offline on later visits.
+ */
+export interface BookTTSChunk {
+  /** Composite key: `${bookId}:${chapterIndex}:${voice}:${chunkIndex}`. */
+  id: string;
+  bookId: string;
+  chapterIndex: number;
+  voice: string;
+  chunkIndex: number;
+  total: number;
+  text: string;
+  blob: Blob;
+  mimeType: string;
+  createdAt: number;
+}
+
 /** Daily reading session row (key: YYYY-MM-DD). Mirrors ListeningSession. */
 export interface ReadingSession {
   date: string;

@@ -81,9 +81,9 @@ function RootComponent() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "hsl(40 22% 98%)",
-          color: "hsl(220 10% 14%)",
-          fontFamily: "system-ui, sans-serif",
+          background: "hsl(36 30% 97%)",
+          color: "hsl(24 10% 18%)",
+          fontFamily: "'Inter Tight', system-ui, sans-serif",
         }}
       >
         Loading…

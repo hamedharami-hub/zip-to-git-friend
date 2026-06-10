@@ -53,8 +53,18 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   loaded: false,
   load: async () => {
     const s = await getSettings();
+    let theme = s.theme;
+    try {
+      const persistedTheme = localStorage.getItem('llvp-theme');
+      if (persistedTheme === 'dark' || persistedTheme === 'light') {
+        theme = persistedTheme;
+      }
+    } catch {}
     set({ settings: s, loaded: true });
-    applyTheme(s.theme);
+    if (theme !== s.theme) {
+      set((state) => ({ settings: { ...state.settings, theme } }));
+    }
+    applyTheme(theme);
   },
   update: async (patch) => {
     const next = { ...get().settings, ...patch };

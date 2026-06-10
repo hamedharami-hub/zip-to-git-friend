@@ -170,6 +170,10 @@ export async function deleteBook(id: string): Promise<void> {
       await Promise.all(ts.map((t) => db.delete('bookTTSAudio', t.id)));
     })(),
     (async () => {
+      const cs = await db.getAllFromIndex('bookTTSChunks', 'bookId', id);
+      await Promise.all(cs.map((c) => db.delete('bookTTSChunks', c.id)));
+    })(),
+    (async () => {
       const rs = await db.getAllFromIndex('bookChapterRewrites', 'bookId', id);
       await Promise.all(rs.map((r) => db.delete('bookChapterRewrites', r.id)));
     })(),

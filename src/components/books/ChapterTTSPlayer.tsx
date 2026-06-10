@@ -589,7 +589,7 @@ export function ChapterTTSPlayer({
     URL.revokeObjectURL(url);
   };
 
-  const voiceOptions = useMemo(() => GEMINI_TTS_VOICES, []);
+  
 
   // ───────── ElevenLabs path ─────────
   const loadElevenLabs = async () => {

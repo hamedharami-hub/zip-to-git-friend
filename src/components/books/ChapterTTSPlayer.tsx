@@ -878,106 +878,76 @@ export function ChapterTTSPlayer({
   return (
     <>
       <div
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[55dvh] overflow-y-auto overscroll-contain"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 backdrop-blur-md shadow-2xl max-h-[42dvh] overflow-y-auto overscroll-contain"
         role="region"
         aria-label="Chapter narration player"
       >
-        <div className="max-w-4xl mx-auto px-3 py-2 space-y-2 pb-[max(env(safe-area-inset-bottom),0.5rem)]">
+        <div className="max-w-4xl mx-auto px-2 py-1.5 space-y-1.5 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
 
-          {/* Tiny close button — title removed for compactness. */}
-          <div className="flex justify-end -mb-1">
+          {/* One-row: engine dropdown + lang toggle + close */}
+          <div className="flex items-center gap-1.5">
+            <Select value={engine} onValueChange={(v) => setEngine(v as Engine)}>
+              <SelectTrigger className="h-7 w-[120px] text-[11px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {([
+                  { id: 'browser', label: 'Browser', disabled: !browserSupported },
+                  { id: 'gemini', label: 'Gemini' },
+                  { id: 'elevenlabs', label: 'ElevenLabs' },
+                  { id: 'azure', label: 'Azure' },
+                  { id: 'huggingface', label: 'HF' },
+                  { id: 'playht', label: 'Play.ht' },
+                  { id: 'opentts', label: 'OpenTTS' },
+                ] as const).map((t) => (
+                  <SelectItem key={t.id} value={t.id} disabled={(t as { disabled?: boolean }).disabled}>
+                    {t.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {textFa && (
+              <div role="tablist" aria-label="زبان" className="inline-flex rounded-md border border-border bg-muted/40 p-0.5">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={ttsLang === 'en'}
+                  onClick={() => setTtsLang('en')}
+                  className={
+                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
+                    (ttsLang === 'en' ? 'bg-background shadow-sm' : 'text-muted-foreground')
+                  }
+                >
+                  EN
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={ttsLang === 'fa'}
+                  onClick={() => setTtsLang('fa')}
+                  className={
+                    'px-2 py-0.5 text-[11px] font-medium rounded ' +
+                    (ttsLang === 'fa' ? 'bg-background shadow-sm' : 'text-muted-foreground')
+                  }
+                >
+                  FA
+                </button>
+              </div>
+            )}
+
+            <div className="flex-1" />
+
             <Button
               variant="ghost"
               size="icon"
               className="h-6 w-6"
               aria-label="Close player"
-              onClick={() => {
-                stopBrowser();
-                setOpen(false);
-              }}
+              onClick={() => { stopBrowser(); setOpen(false); }}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
-
-
-          {/* Engine picker */}
-          <div
-            role="tablist"
-            aria-label="TTS engine"
-            className="flex flex-wrap rounded-lg border border-border bg-muted/40 p-0.5 gap-0.5"
-          >
-            {([
-              { id: 'browser', label: 'Browser', icon: Mic, title: 'Built-in browser voice — free, offline', disabled: !browserSupported },
-              { id: 'gemini', label: 'Gemini', icon: Sparkles, title: 'Gemini TTS — needs Gemini key' },
-              { id: 'elevenlabs', label: 'ElevenLabs', icon: Sparkles, title: 'ElevenLabs — premium' },
-              { id: 'azure', label: 'Azure', icon: Sparkles, title: 'Azure Speech — بهترین صدای فارسی' },
-              { id: 'huggingface', label: 'HF', icon: Sparkles, title: 'Hugging Face Inference' },
-              { id: 'playht', label: 'Play.ht', icon: Sparkles, title: 'Play.ht v2 streaming' },
-              { id: 'opentts', label: 'OpenTTS', icon: Sparkles, title: 'Self-hosted OpenTTS server' },
-            ] as const).map((t) => {
-              const Icon = t.icon;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={engine === t.id}
-                  disabled={(t as { disabled?: boolean }).disabled}
-                  onClick={() => setEngine(t.id as Engine)}
-                  className={
-                    'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors flex items-center gap-1 ' +
-                    (engine === t.id
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground disabled:opacity-50')
-                  }
-                  title={t.title}
-                >
-                  <Icon className="h-3 w-3" />
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Language picker — visible whenever a Persian script is available. */}
-          {textFa && (
-            <div
-              role="tablist"
-              aria-label="زبان پخش"
-              className="inline-flex rounded-lg border border-border bg-muted/40 p-0.5"
-            >
-              <button
-                type="button"
-                role="tab"
-                aria-selected={ttsLang === 'en'}
-                onClick={() => setTtsLang('en')}
-                className={
-                  'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ' +
-                  (ttsLang === 'en'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground')
-                }
-              >
-                English
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={ttsLang === 'fa'}
-                onClick={() => setTtsLang('fa')}
-                className={
-                  'px-2.5 py-1 text-[11px] font-medium rounded-md transition-colors ' +
-                  (ttsLang === 'fa'
-                    ? 'bg-background text-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground')
-                }
-                title="نسخه فارسی متن"
-              >
-                فارسی
-              </button>
-            </div>
-          )}
 
           {/* Body — Browser TTS */}
           {engine === 'browser' && (

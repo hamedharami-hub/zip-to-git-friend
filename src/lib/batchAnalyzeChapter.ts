@@ -16,6 +16,9 @@ import {
 } from './bookAnalysis';
 import { analyzeParagraphRouted } from './bookAiRouter';
 import { splitIntoShortChunks } from './paragraphSplit';
+import { supabase } from '@/integrations/supabase/client';
+import { saveParagraphAnalysisShared } from '@/lib/paragraphAnalysisCloud';
+import { paragraphAnalysisKey } from '@/lib/bookDb';
 
 export interface BatchProgress {
   total: number;

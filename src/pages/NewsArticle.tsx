@@ -560,7 +560,7 @@ const NewsArticleReader = () => {
       {ttsText && (
         <ChapterTTSPlayer
           bookId={`news-${article.id}`}
-          chapterIndex={view === 'rewrite' ? (activeRewrite === 'max' ? 2 : activeRewrite === 'auto-max' ? 3 : 1) : 0}
+          chapterIndex={view === 'rewrite' ? (activeRewrite === 'max' ? 2 : activeRewrite === 'auto-max' ? 3 : activeRewrite === 'simple' ? 4 : 1) : 0}
           chapterTitle={article.title}
           text={ttsText}
           textFa={faTtsText || undefined}

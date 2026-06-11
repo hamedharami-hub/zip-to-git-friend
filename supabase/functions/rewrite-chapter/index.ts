@@ -27,6 +27,10 @@ const STYLE_INSTRUCTIONS: Record<string, string> = {
     "Distill the chapter into 6–12 KEY POINTS. Each point is one focused sentence in clear modern English. Keep the order of ideas from the chapter. Use a markdown bullet list.",
   simplified:
     "REWRITE the chapter in SIMPLIFIED English (CEFR B1 level). Same ideas, same order, but shorter sentences, common vocabulary, and no idioms. Length ≈ 60% of the original.",
+  everyday_simple:
+    "REWRITE the chapter in SIMPLE, EVERYDAY conversational English (CEFR A2–B1). Use the most common everyday words, short clear sentences (≤ 15 words on average), and the high-frequency phrasal verbs, idioms and collocations a native speaker uses in real conversation (e.g. 'find out', 'turn out', 'come up with', 'on the other hand', 'at the end of the day', 'a big deal', 'keep an eye on'). CRITICAL: do NOT summarise or shorten — preserve EVERY single fact, name, number, date, quote, example and idea in the original order. Output length must be roughly the SAME as the original (not shorter). The goal is daily-conversation language, not a summary. Pure prose paragraphs, no headings beyond what the source uses, no bullet lists.",
+  everyday_simple_b2:
+    "REWRITE the chapter in CLEAR, NATURAL everyday English (CEFR B1–B2). Use everyday words and natural rhythm — a bit richer than A2 but still conversational. Use common phrasal verbs, idioms and collocations a native speaker uses in real conversation. CRITICAL: do NOT summarise or shorten — preserve EVERY fact, name, number, date, quote, example and idea in the original order. Output length ≈ original length. Pure prose, no bullet lists.",
   key_quotes:
     "Extract 5–10 of the MOST POWERFUL or MOST QUOTABLE sentences from the chapter — verbatim, exactly as written. Render each as a markdown blockquote on its own line. After each quote add ONE short italic line (≤ 15 words) explaining why it matters.",
   review_questions:

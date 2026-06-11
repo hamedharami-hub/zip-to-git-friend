@@ -196,6 +196,8 @@ export interface AppSettings {
   /** When true, shows the cached AI translation under the source subtitle
    *  (only when no secondary subtitle track is loaded). */
   showInlineTranslation: boolean;
+  /** Difficulty level for the "everyday simple" rewrite (news & book chapters). */
+  simplifyLevel?: SimplifyLevel;
   geminiApiKey: string;
   groqApiKey: string;
   /** Optional separate Gemini API key dedicated to Text-to-Speech.
@@ -303,8 +305,12 @@ export type RewriteStyle =
   | 'detailed_summary'
   | 'key_points'
   | 'simplified'
+  | 'everyday_simple'
   | 'key_quotes'
   | 'review_questions';
+
+/** Difficulty level used by the "everyday simple" rewrite style. */
+export type SimplifyLevel = 'a2-b1' | 'b1-b2';
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */

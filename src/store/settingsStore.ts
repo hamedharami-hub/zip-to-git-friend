@@ -18,6 +18,7 @@ const DEFAULTS: AppSettings = {
   autoPauseAtCueEnd: false,
   autoImmersiveOnLandscape: false,
   showInlineTranslation: true,
+  simplifyLevel: 'a2-b1',
   geminiApiKey: '',
   groqApiKey: '',
   geminiTtsApiKey: '',

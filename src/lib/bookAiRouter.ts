@@ -122,6 +122,8 @@ const STYLE_INSTRUCTIONS: Record<RewriteStyle, string> = {
     'Distill the chapter into 6–12 KEY POINTS, each one focused sentence in clear modern English. Use a markdown bullet list. Keep the original order.',
   simplified:
     'REWRITE the chapter in SIMPLIFIED English (CEFR B1 level): same ideas, shorter sentences, common vocabulary, no idioms. ≈ 60% of original length.',
+  everyday_simple:
+    'REWRITE the chapter in SIMPLE, EVERYDAY conversational English (CEFR A2–B1). Use the most common everyday words, short sentences, and the high-frequency phrasal verbs / idioms / collocations a native speaker uses in daily conversation (e.g. "find out", "give up", "look forward to", "at the end of the day"). CRITICAL: do NOT shorten or summarise — preserve EVERY single fact, name, number, date, quote, example and idea in the original order. Output length should be roughly the SAME as the original (not shorter). The goal is daily-conversation language, not a summary.',
   key_quotes:
     'Extract 5–10 of the MOST POWERFUL sentences VERBATIM. Render each as a markdown blockquote. After each, add ONE short italic line (≤ 15 words) explaining why it matters.',
   review_questions:

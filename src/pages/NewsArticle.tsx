@@ -58,7 +58,7 @@ function isYoutubeUrl(url: string): boolean {
   } catch { return false; }
 }
 
-type RewriteLength = 'long' | 'max' | 'auto-max';
+type RewriteLength = 'long' | 'max' | 'auto-max' | 'simple';
 
 const DISPLAY_LANG_KEY = 'news.displayLang.v1';
 function loadDisplayLang(): DisplayLang {
@@ -142,7 +142,7 @@ const NewsArticleReader = () => {
           sourceArticles: row.source_articles ?? [], wordCount: row.word_count,
           model: row.model, createdAt: row.created_at, updatedAt: row.updated_at,
         };
-        if ((d.length === 'long' || d.length === 'max' || d.length === 'auto-max') && !map[d.length as RewriteLength]) {
+        if ((d.length === 'long' || d.length === 'max' || d.length === 'auto-max' || d.length === 'simple') && !map[d.length as RewriteLength]) {
           map[d.length as RewriteLength] = d;
         }
       }
@@ -382,6 +382,7 @@ const NewsArticleReader = () => {
         topic: `article:${article.id}`,
         windowHours: 24,
         model: newsModelRef.model,
+        simplifyLevel: length === 'simple' ? (settings.simplifyLevel ?? 'a2-b1') : undefined,
       });
       setRewrites((m) => {
         const next = { ...m, [length]: digest };
@@ -559,7 +560,7 @@ const NewsArticleReader = () => {
       {ttsText && (
         <ChapterTTSPlayer
           bookId={`news-${article.id}`}
-          chapterIndex={view === 'rewrite' ? (activeRewrite === 'max' ? 2 : activeRewrite === 'auto-max' ? 3 : 1) : 0}
+          chapterIndex={view === 'rewrite' ? (activeRewrite === 'max' ? 2 : activeRewrite === 'auto-max' ? 3 : activeRewrite === 'simple' ? 4 : 1) : 0}
           chapterTitle={article.title}
           text={ttsText}
           textFa={faTtsText || undefined}
@@ -644,6 +645,10 @@ const NewsArticleReader = () => {
 
                 <Tabs value={activeRewrite} onValueChange={(v) => setActiveRewrite(v as RewriteLength)}>
                   <TabsList className="bg-muted/50 flex-wrap h-auto">
+                    <TabsTrigger value="simple" className="text-xs">
+                      ساده روزمره
+                      {rewrites.simple && <span className="ms-1.5 text-primary">●</span>}
+                    </TabsTrigger>
                     <TabsTrigger value="auto-max" className="text-xs">
                       نسخه کامل ساده
                       {rewrites['auto-max'] && <span className="ms-1.5 text-primary">●</span>}
@@ -657,10 +662,13 @@ const NewsArticleReader = () => {
                       {rewrites.max && <span className="ms-1.5 text-primary">●</span>}
                     </TabsTrigger>
                   </TabsList>
-                  {(['auto-max', 'long', 'max'] as RewriteLength[]).map((len) => {
+                  {(['simple', 'auto-max', 'long', 'max'] as RewriteLength[]).map((len) => {
                     const r = rewrites[len];
                     const busy = rewriteBusy === len;
-                    const label = len === 'auto-max' ? 'نسخه کامل ساده' : len === 'long' ? 'خلاصه بلند' : 'خلاصه حداکثری';
+                    const label = len === 'simple' ? 'ساده‌سازی روزمره (با تمام نکته‌ها)'
+                      : len === 'auto-max' ? 'نسخه کامل ساده'
+                      : len === 'long' ? 'خلاصه بلند'
+                      : 'خلاصه حداکثری';
                     return (
                       <TabsContent key={len} value={len} className="mt-4">
                         <div className="rounded-lg border border-border bg-card/40 p-4 sm:p-6">

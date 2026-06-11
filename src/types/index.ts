@@ -198,6 +198,9 @@ export interface AppSettings {
   showInlineTranslation: boolean;
   /** Difficulty level for the "everyday simple" rewrite (news & book chapters). */
   simplifyLevel?: SimplifyLevel;
+  /** When true, every news article is auto-rewritten in everyday simple English
+   *  on first open (no need to press the "ساده روزمره" tab manually). */
+  defaultSimplifyArticles?: boolean;
   geminiApiKey: string;
   groqApiKey: string;
   /** Optional separate Gemini API key dedicated to Text-to-Speech.

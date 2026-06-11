@@ -645,6 +645,10 @@ const NewsArticleReader = () => {
 
                 <Tabs value={activeRewrite} onValueChange={(v) => setActiveRewrite(v as RewriteLength)}>
                   <TabsList className="bg-muted/50 flex-wrap h-auto">
+                    <TabsTrigger value="simple" className="text-xs">
+                      ساده روزمره
+                      {rewrites.simple && <span className="ms-1.5 text-primary">●</span>}
+                    </TabsTrigger>
                     <TabsTrigger value="auto-max" className="text-xs">
                       نسخه کامل ساده
                       {rewrites['auto-max'] && <span className="ms-1.5 text-primary">●</span>}
@@ -658,10 +662,13 @@ const NewsArticleReader = () => {
                       {rewrites.max && <span className="ms-1.5 text-primary">●</span>}
                     </TabsTrigger>
                   </TabsList>
-                  {(['auto-max', 'long', 'max'] as RewriteLength[]).map((len) => {
+                  {(['simple', 'auto-max', 'long', 'max'] as RewriteLength[]).map((len) => {
                     const r = rewrites[len];
                     const busy = rewriteBusy === len;
-                    const label = len === 'auto-max' ? 'نسخه کامل ساده' : len === 'long' ? 'خلاصه بلند' : 'خلاصه حداکثری';
+                    const label = len === 'simple' ? 'ساده‌سازی روزمره (با تمام نکته‌ها)'
+                      : len === 'auto-max' ? 'نسخه کامل ساده'
+                      : len === 'long' ? 'خلاصه بلند'
+                      : 'خلاصه حداکثری';
                     return (
                       <TabsContent key={len} value={len} className="mt-4">
                         <div className="rounded-lg border border-border bg-card/40 p-4 sm:p-6">

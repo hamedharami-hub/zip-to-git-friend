@@ -69,6 +69,13 @@ const AUTO_MAX_INSTRUCTIONS =
 const SHORT_INSTRUCTIONS =
   "Write a concise first-person article of ~320–450 words. Follow the article-shape rules at small scale: bold # title, italic TL;DR, a 1-paragraph lede, then 2–3 short thematic H2 sections of 1–2 paragraphs each, and a tight final ## Where I Land paragraph.";
 
+// "Simple everyday English" — rewrite (NOT summary). Preserves every fact.
+const SIMPLE_INSTRUCTIONS_A2 =
+  "REWRITE the article in SIMPLE, EVERYDAY conversational English (CEFR A2–B1) — the kind of language a native speaker uses in daily life. Use the most common everyday words, short clear sentences (≤ 15 words on average), and the high-frequency phrasal verbs, idioms and collocations that appear in real conversation (e.g. 'find out', 'turn out', 'come up with', 'on the other hand', 'at the end of the day', 'a big deal', 'keep an eye on'). CRITICAL: do NOT summarise or shorten — preserve EVERY fact, name, number, date, quote, example and idea from the source, in the same order. The output should be roughly the SAME length as the source (not shorter). Keep the article structure: bold # title (real headline, not a label), italic *TL;DR*, a short lede, then ## H2 sections in original order, ending with a ## Where I Land section. First-person voice. Pure prose, no bullet lists.";
+
+const SIMPLE_INSTRUCTIONS_B2 =
+  "REWRITE the article in CLEAR, NATURAL everyday English (CEFR B1–B2). Use everyday words and natural rhythm — slightly richer than A2 but still conversational. Use common phrasal verbs, idioms and collocations a native speaker uses in real conversation. CRITICAL: do NOT summarise or shorten — preserve EVERY fact, name, number, date, quote, example and idea, in the same order. Output length ≈ source length. Keep the article structure: bold # title, italic *TL;DR*, lede, ## H2 sections, closing ## Where I Land. First-person voice. Pure prose.";
+
 /** Tiny markdown→HTML converter (mirror of news-scrape-article). */
 function mdToHtml(md: string): string {
   let s = md.replace(/\r\n/g, "\n").trim();

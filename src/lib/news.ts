@@ -515,6 +515,7 @@ export async function generateDigest(opts: {
   topic?: string;
   windowHours?: number;
   model?: string;
+  simplifyLevel?: 'a2-b1' | 'b1-b2';
 }): Promise<NewsDigest> {
   const { data, error } = await supabase.functions.invoke<{
     title: string;
@@ -529,6 +530,7 @@ export async function generateDigest(opts: {
       topic: opts.topic,
       windowHours: opts.windowHours ?? 24,
       model: opts.model,
+      simplifyLevel: opts.simplifyLevel,
     },
   });
   if (error) throw new Error(extractErr(error, 'Digest generation failed.'));

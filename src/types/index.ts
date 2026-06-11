@@ -303,8 +303,12 @@ export type RewriteStyle =
   | 'detailed_summary'
   | 'key_points'
   | 'simplified'
+  | 'everyday_simple'
   | 'key_quotes'
   | 'review_questions';
+
+/** Difficulty level used by the "everyday simple" rewrite style. */
+export type SimplifyLevel = 'a2-b1' | 'b1-b2';
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */

@@ -170,6 +170,7 @@ serve(async (req) => {
       length === "auto-max" ? AUTO_MAX_INSTRUCTIONS :
       length === "max" ? MAX_INSTRUCTIONS :
       length === "short" ? SHORT_INSTRUCTIONS :
+      length === "simple" ? (simplifyLevel === "b1-b2" ? SIMPLE_INSTRUCTIONS_B2 : SIMPLE_INSTRUCTIONS_A2) :
       LONG_INSTRUCTIONS;
 
     const userPrompt = [
@@ -190,6 +191,7 @@ serve(async (req) => {
       switch (l) {
         case "auto-max": return 16000;
         case "max":      return 12000;
+        case "simple":   return 12000;
         case "short":    return 1500;
         default:         return 8000; // long
       }

@@ -19,6 +19,7 @@ const DEFAULTS: AppSettings = {
   autoImmersiveOnLandscape: false,
   showInlineTranslation: true,
   simplifyLevel: 'a2-b1',
+  defaultSimplifyArticles: false,
   geminiApiKey: '',
   groqApiKey: '',
   geminiTtsApiKey: '',

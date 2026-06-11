@@ -382,6 +382,7 @@ const NewsArticleReader = () => {
         topic: `article:${article.id}`,
         windowHours: 24,
         model: newsModelRef.model,
+        simplifyLevel: length === 'simple' ? (settings.simplifyLevel ?? 'a2-b1') : undefined,
       });
       setRewrites((m) => {
         const next = { ...m, [length]: digest };

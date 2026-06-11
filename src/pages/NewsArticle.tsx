@@ -172,7 +172,30 @@ const NewsArticleReader = () => {
           if (!useArticle.contentHtml && useArticle.contentMd !== '__SCRAPE_FAILED__' && navigator.onLine) {
             await runScrape(useArticle, false);
           }
-          if (!alreadySeen && navigator.onLine) {
+          // Decide what to auto-generate on first open:
+          // - if user enabled "default simplify", make the everyday-simple
+          //   version from the start (and switch the reader to it);
+          // - otherwise behave as before and pre-bake the auto-max rewrite.
+          const wantSimple = !!settings.defaultSimplifyArticles;
+          if (wantSimple) {
+            try {
+              const { data: existingSimple } = await supabase
+                .from('news_digests' as never)
+                .select('id')
+                .eq('topic', `article:${useArticle.id}`)
+                .eq('length', 'simple')
+                .limit(1);
+              const has = Array.isArray(existingSimple) && existingSimple.length > 0;
+              if (!has && navigator.onLine) {
+                void handleRewrite('simple', false).catch(() => {});
+              } else {
+                // Already cached — switch to the simple tab on open.
+                setActiveRewrite('simple');
+                setView('rewrite');
+              }
+            } catch { /* ignore */ }
+            if (!alreadySeen) markSeen(useArticle.url);
+          } else if (!alreadySeen && navigator.onLine) {
             try {
               const { data: existing } = await supabase
                 .from('news_digests' as never)

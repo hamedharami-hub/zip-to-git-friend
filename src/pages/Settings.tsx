@@ -356,6 +356,37 @@ const Settings = () => {
               onCheckedChange={(v) => update({ showInlineTranslation: !!v })}
             />
           </div>
+          <div className="rounded-lg border border-border p-4 space-y-3">
+            <div>
+              <p className="font-medium">ساده‌سازی متن انگلیسی (روزمره)</p>
+              <p className="text-sm text-muted-foreground">
+                وقتی روی تب «ساده روزمره» در یک خبر یا فصل کتاب می‌زنی، متن انگلیسی با
+                همین سطح بازنویسی می‌شه — با کلمات و اصطلاحات پرکاربرد مکالمه‌ی روزمره،
+                <strong className="font-semibold"> بدون حذف هیچ نکته‌ای</strong>.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {[
+                { v: 'a2-b1', label: 'مبتدی-متوسط (A2–B1)', desc: 'ساده‌ترین حالت' },
+                { v: 'b1-b2', label: 'متوسط (B1–B2)', desc: 'کمی پیشرفته‌تر' },
+              ].map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => update({ simplifyLevel: opt.v as 'a2-b1' | 'b1-b2' })}
+                  className={
+                    'flex-1 rounded-md border px-3 py-2 text-right transition-colors ' +
+                    ((settings.simplifyLevel ?? 'a2-b1') === opt.v
+                      ? 'border-primary bg-primary/10 text-foreground'
+                      : 'border-border bg-muted/30 text-muted-foreground hover:bg-muted/60')
+                  }
+                >
+                  <div className="text-sm font-medium">{opt.label}</div>
+                  <div className="text-[11px] opacity-70">{opt.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="space-y-3">

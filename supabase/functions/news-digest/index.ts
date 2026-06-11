@@ -140,7 +140,7 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const { articles, length = "long", topic, windowHours = 24, model: requestedModel } = await req.json();
+    const { articles, length = "long", topic, windowHours = 24, model: requestedModel, simplifyLevel } = await req.json();
     if (!Array.isArray(articles) || articles.length === 0) {
       return new Response(JSON.stringify({ error: "articles array is required" }), {
         status: 400,

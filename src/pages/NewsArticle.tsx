@@ -142,7 +142,7 @@ const NewsArticleReader = () => {
           sourceArticles: row.source_articles ?? [], wordCount: row.word_count,
           model: row.model, createdAt: row.created_at, updatedAt: row.updated_at,
         };
-        if ((d.length === 'long' || d.length === 'max' || d.length === 'auto-max') && !map[d.length as RewriteLength]) {
+        if ((d.length === 'long' || d.length === 'max' || d.length === 'auto-max' || d.length === 'simple') && !map[d.length as RewriteLength]) {
           map[d.length as RewriteLength] = d;
         }
       }

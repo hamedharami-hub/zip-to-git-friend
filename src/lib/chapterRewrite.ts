@@ -57,6 +57,11 @@ export const REWRITE_STYLES: RewriteStyleMeta[] = [
     description: 'Same ideas in easy English, ≈ 60% the length.',
   },
   {
+    id: 'everyday_simple',
+    label: 'Everyday simple (full detail)',
+    description: 'Same length, everyday words + common phrases — no detail dropped.',
+  },
+  {
     id: 'key_quotes',
     label: 'Key quotes',
     description: '5–10 most powerful sentences, verbatim.',

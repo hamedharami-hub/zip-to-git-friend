@@ -58,7 +58,7 @@ function isYoutubeUrl(url: string): boolean {
   } catch { return false; }
 }
 
-type RewriteLength = 'long' | 'max' | 'auto-max';
+type RewriteLength = 'long' | 'max' | 'auto-max' | 'simple';
 
 const DISPLAY_LANG_KEY = 'news.displayLang.v1';
 function loadDisplayLang(): DisplayLang {

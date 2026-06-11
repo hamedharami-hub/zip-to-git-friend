@@ -386,6 +386,19 @@ const Settings = () => {
                 </button>
               ))}
             </div>
+            <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 p-3">
+              <div className="pr-3">
+                <p className="text-sm font-medium">ساده‌سازی خودکار خبرها از ابتدا</p>
+                <p className="text-xs text-muted-foreground">
+                  وقتی روشن باشد، هر خبر (سایت یا یوتیوب) از همان لحظه‌ی باز شدن
+                  به‌صورت ساده‌ی روزمره ساخته می‌شود — بدون اینکه چیزی از متن اصلی حذف شود.
+                </p>
+              </div>
+              <Switch
+                checked={settings.defaultSimplifyArticles ?? false}
+                onCheckedChange={(v) => update({ defaultSimplifyArticles: !!v })}
+              />
+            </div>
           </div>
         </section>
 

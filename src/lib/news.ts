@@ -7,7 +7,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export type NewsSourceKind = 'rss' | 'topic' | 'site';
-export type DigestLength = 'short' | 'long' | 'max' | 'auto-max';
+export type DigestLength = 'short' | 'long' | 'max' | 'auto-max' | 'simple';
 export type DigestScope = 'topic' | 'site' | 'source';
 
 export interface NewsSource {

@@ -170,7 +170,8 @@ serve(async (req) => {
       );
     }
 
-    // Sanitise items
+    // Sanitise items + drop anything older than the requested window when a date is present.
+    const cutoffMs = cutoff.getTime();
     const items = (parsed.items as any[])
       .filter((it) => it && typeof it.url === "string" && /^https?:\/\//i.test(it.url))
       .slice(0, 20)
@@ -180,7 +181,13 @@ serve(async (req) => {
         source: String(it.source ?? "").slice(0, 120),
         publishedAt: it.publishedAt ? String(it.publishedAt).slice(0, 80) : null,
         summary: String(it.summary ?? "").slice(0, 1200),
-      }));
+      }))
+      .filter((it) => {
+        if (!it.publishedAt) return true;
+        const t = Date.parse(it.publishedAt);
+        if (!Number.isFinite(t)) return true;
+        return t >= cutoffMs;
+      });
 
     const combinedArticle = parsed.combinedArticle && typeof parsed.combinedArticle === "object"
       ? {

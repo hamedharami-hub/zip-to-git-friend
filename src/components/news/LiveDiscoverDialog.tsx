@@ -3,9 +3,9 @@
  * User enters a topic and a time window; the model searches the web
  * in real time and returns fresh articles + an optional combined article.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Loader2, Clock, ExternalLink, Newspaper } from 'lucide-react';
+import { Sparkles, Loader2, Clock, ExternalLink, Newspaper, Bookmark, Trash2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,10 @@ import {
   discoverLiveNews, scrapeArticle, upsertArticle,
   type LiveDiscoverItem, type LiveDiscoverResult,
 } from '@/lib/news';
+import {
+  listSavedDiscover, saveDiscover, deleteSavedDiscover,
+  type SavedDiscover,
+} from '@/lib/savedDiscover';
 
 const WINDOW_OPTIONS = [
   { value: '6', label: '۶ ساعت اخیر' },

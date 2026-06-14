@@ -76,13 +76,19 @@ serve(async (req) => {
       });
     }
 
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const cutoff = new Date(now.getTime() - windowHours * 3600 * 1000);
+    const cutoffIso = cutoff.toISOString();
+
     const userPrompt = [
+      `Current date/time (UTC): ${nowIso}`,
       `Topic: ${topic}`,
-      `Time window: news published within the last ${windowHours} hour(s).`,
+      `Time window: ONLY news published between ${cutoffIso} and ${nowIso} (i.e. within the last ${windowHours} hour(s)). Reject anything older.`,
       `Return at most ${Math.min(Math.max(maxResults, 3), 15)} items.`,
       `Preferred language of sources: ${language}.`,
       "",
-      "Use Google Search NOW to find the freshest articles, then return the JSON.",
+      `Use Google Search NOW (today is ${now.toUTCString()}) to find the freshest articles, then return the JSON. Discard any result whose publication date is before ${cutoffIso}.`,
     ].join("\n");
 
     const aiRes = await fetch(
@@ -97,7 +103,7 @@ serve(async (req) => {
           model: MODEL,
           max_tokens: 8000,
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: buildSystemPrompt(nowIso) },
             { role: "user", content: userPrompt },
           ],
           // Built-in Google Search grounding tool.

@@ -80,17 +80,84 @@ function countWords(text: string): number {
 }
 
 /**
- * Resolve Google News (and other shortened/redirect) URLs to the actual
- * publisher URL by following redirects. Falls back to the input URL on
- * any error.
+ * Decode a Google News article URL of the form
+ *   https://news.google.com/rss/articles/CBMi....
+ * Many of these embed the original publisher URL inside a base64-encoded
+ * protobuf payload. We brute-scan the decoded bytes for an http(s):// URL.
  */
-async function resolveFinalUrl(url: string): Promise<string> {
+function decodeGoogleNewsUrl(url: string): string | null {
   try {
-    const isGoogleNews = /(?:^|\.)news\.google\.com\//i.test(url);
-    if (!isGoogleNews) return url;
+    const m = url.match(/news\.google\.com\/(?:rss\/)?articles\/([A-Za-z0-9_-]+)/i);
+    if (!m) return null;
+    let b64 = m[1].replace(/-/g, "+").replace(/_/g, "/");
+    b64 += "=".repeat((4 - (b64.length % 4)) % 4);
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    const str = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    const um = str.match(/https?:\/\/[^\x00-\x1f\x7f"'<>\\\s]+/);
+    if (!um) return null;
+    let found = um[0].replace(/[^\w\-./?=&%#:+,;@~!$()*]+$/, "");
+    if (!/^https?:\/\/[^/]+\.[^/]+/.test(found)) return null;
+    if (/news\.google\.com/i.test(found)) return null;
+    return found;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Ask Google News' batchexecute endpoint to resolve a modern (ID-only)
+ * article URL to the publisher URL. Best-effort.
+ */
+async function resolveViaBatchExecute(articleId: string): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 8000);
+    const body = new URLSearchParams({
+      "f.req": JSON.stringify([[[
+        "Fbv4je",
+        `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${articleId}",${Math.floor(Date.now() / 1000)},"0"]`,
+      ]]]),
+    });
+    const res = await fetch(
+      "https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je",
+      {
+        method: "POST",
+        signal: ctrl.signal,
+        headers: {
+          "User-Agent": BROWSER_UA,
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        body,
+      },
+    );
+    clearTimeout(t);
+    if (!res.ok) return null;
+    const text = await res.text();
+    const m = text.match(/"(https?:\/\/(?!news\.google\.com)[^"\\]+)"/);
+    return m ? m[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveFinalUrl(url: string): Promise<string> {
+  const isGoogleNews = /(?:^|\.)news\.google\.com\//i.test(url);
+  if (!isGoogleNews) return url;
+
+  const decoded = decodeGoogleNewsUrl(url);
+  if (decoded) return decoded;
+
+  const idMatch = url.match(/articles\/([A-Za-z0-9_-]+)/i);
+  if (idMatch) {
+    const via = await resolveViaBatchExecute(idMatch[1]);
+    if (via) return via;
+  }
+
+  try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 6000);
-    // GET is more reliable than HEAD for Google News' JS-driven redirects.
     const res = await fetch(url, {
       method: "GET",
       redirect: "follow",
@@ -99,9 +166,6 @@ async function resolveFinalUrl(url: string): Promise<string> {
     });
     clearTimeout(t);
     let finalUrl = res.url || url;
-
-    // Google News sometimes returns an HTML interstitial with a meta refresh
-    // or JS rewrite — try to extract the canonical link.
     if (/news\.google\.com/i.test(finalUrl)) {
       try {
         const html = await res.text();

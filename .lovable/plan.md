@@ -1,45 +1,46 @@
-# حالت «ساده‌سازی روزمره» متن انگلیسی
+# کشف خبر زنده با Google Search Grounding
 
-یک نسخه‌ی جدید بازنویسی به سیستم اضافه می‌کنیم که متن انگلیسی را با کلمات/عبارت‌ها/اصطلاحاتِ پرکاربردِ مکالمه‌ی روزمره بازنویسی می‌کند — بدون حذف هیچ نکته‌ای. سطح سختی در تنظیمات قابل‌انتخاب است. وقتی روشن باشد، متنِ نمایش‌داده‌شده به‌جای نسخه‌ی اصلی، نسخه‌ی ساده‌شده می‌شود (همان رفتاری که برای rewrite‌های فعلی وجود دارد).
+## این خاصیت چیست؟
+مدل‌های Gemini (از جمله `google/gemini-3.5-flash`) یک ابزار داخلی به نام **Google Search Grounding** دارند. وقتی این ابزار در درخواست فعال شود، مدل قبل از پاسخ، خودش در گوگل جستجوی زنده انجام می‌دهد و نتایج تازه را همراه با لیست منابع (`groundingMetadata.groundingChunks` با `web.uri` و `web.title`) برمی‌گرداند. این یعنی محدود به دانش قدیمی مدل نیستیم و می‌توانیم خبرهای امروز را پیدا کنیم.
 
-## ۱) تنظیمات کاربر
-- در `src/types/index.ts` و `src/store/settingsStore.ts` فیلد جدید اضافه می‌شود:
-  - `simplifyLevel: 'a2-b1' | 'b1-b2'` (پیش‌فرض `a2-b1`)
-- در `src/pages/Settings.tsx` یک کارت جدید «ساده‌سازی متن انگلیسی» با دو رادیو (مبتدی-متوسط / متوسط) و یک توضیح کوتاه فارسی اضافه می‌شود.
+## آنچه ساخته می‌شود
 
-## ۲) Edge function `rewrite-chapter`
-- یک style جدید به `STYLE_INSTRUCTIONS` اضافه می‌شود: `everyday_simple` (و حالت سطح متوسط `everyday_simple_b2`). دستور سیستمی:
-  - زبانِ روزمره، جمله‌های کوتاه، اصطلاحات/phrasal verbs/collocations پرکاربرد.
-  - **حفظ کامل تمام نکته‌ها، اعداد، اسم‌ها، نقل‌قول‌ها و ترتیب ایده‌ها** — حق حذف هیچ نکته‌ای ندارد.
-  - طول خروجی تقریباً برابر متن اصلی (نه خلاصه).
-- استایل قدیمی `simplified_english` دست‌نخورده می‌ماند (برای کسانی که خلاصه‌ی ساده می‌خواهند).
+### ۱. Edge Function جدید: `news-discover-live`
+یک تابع جدید در `supabase/functions/news-discover-live/index.ts` که:
+- ورودی: `{ topic: string, windowHours?: number, maxResults?: number }`
+- مدل: `google/gemini-3.5-flash` از طریق Lovable AI Gateway
+- در body درخواست، فیلد `tools: [{ google_search: {} }]` اضافه می‌شود تا گراندینگ فعال شود.
+- system prompt: «جدیدترین خبرهای مرتبط با موضوع را در بازهٔ زمانی مشخص از وب پیدا کن. خروجی را با ابزار `emit_news` بفرست.»
+- از tool-calling (مثل `news-digest`) برای دریافت خروجی ساخت‌یافته استفاده می‌کنیم:
+  ```
+  emit_news({
+    items: [{ title, url, source, publishedAt?, summary }],
+    combinedArticle?: { title, markdown }   // مقالهٔ ترکیبی
+  })
+  ```
+- منابع را از `groundingMetadata` پاسخ هم استخراج می‌کنیم و با لیست مدل تلفیق می‌کنیم (برای اطمینان از لینک واقعی).
+- خروجی: `{ items: [...], combinedArticle: {...}, model }`
 
-## ۳) خبر (`src/pages/NewsArticle.tsx`)
-- `RewriteLength` به `'long' | 'max' | 'auto-max' | 'simple'` گسترش می‌یابد.
-- تب چهارم «ساده 🟢» کنار تب‌های موجود اضافه می‌شود.
-- در `handleRewrite('simple')` تابعِ خبر همان edge function را با style جدید (`everyday_simple` یا `everyday_simple_b2` بر اساس `simplifyLevel`) صدا می‌زند.
-- در `news_digests`، رکورد با `length='simple'` ذخیره می‌شود (همان مکانیزم cache فعلی، نیازی به migration نیست — ستون `length` متنی است).
-- اگر کاربر در تنظیمات «ساده‌سازی» را فعال کند (یک toggle بالا اضافه می‌کنیم: `defaultSimplifyArticles`)، با باز شدن خبر و وجود متن انگلیسی، تب simple خودکار ساخته/انتخاب می‌شود.
+### ۲. کلاینت: تابع `discoverLiveNews` در `src/lib/news.ts`
+wrapper سادهٔ `supabase.functions.invoke('news-discover-live', { body })`.
 
-## ۴) کتاب (`src/components/books/ChapterRewriteTabs.tsx`)
-- یک style جدید به لیست استایل‌های قابل‌انتخاب اضافه می‌شود: `everyday_simple` با عنوان «ساده‌سازی روزمره (کامل)».
-- یک تیک بالای فهرست استایل‌ها: «ساده‌سازی روزمره با ذکر تمام نکته‌ها» — وقتی روشن شود، استایل را روی `everyday_simple` می‌گذارد و دکمه «بساز» را برجسته می‌کند.
-- خروجی مثل بقیه‌ی rewrite‌ها در `book_chapter_rewrites` cache می‌شود (بدون تغییر اسکیما).
+### ۳. UI: دکمهٔ «کشف خبر» در صفحهٔ `src/pages/News.tsx`
+- یک دکمهٔ جدید کنار جستجو/Discovery فعلی با آیکون Sparkles و متن «کشف خبر زنده».
+- زدن دکمه → دیالوگ کوچک با ورودی موضوع (پیش‌فرض از topic فعلی) + اسلایدر windowHours.
+- بعد از پاسخ، دو بخش نمایش داده می‌شود:
+  - **لیست منابع**: کارت‌های قابل کلیک — هر آیتم با کلیک روی آن، مثل سایر اخبار به `NewsArticle` با URL منبع می‌رود (از مسیر import موجود استفاده می‌کنیم).
+  - **دکمهٔ «ساخت مقالهٔ ترکیبی»**: مقالهٔ تلفیقی بازگشتی از مدل را در یک view (مثل `NewsDigest`) نشان می‌دهد، با لیست منابع پاورقی.
 
-## ۵) راهنمای نمایش
-- وقتی نسخه‌ی ساده فعال است، یک badge کوچک «ساده‌شده» بالای محتوا نشان داده می‌شود تا کاربر بداند متن اصلی نیست.
+### ۴. تنظیمات
+هیچ تنظیم جدیدی لازم نیست؛ مدل ثابت `google/gemini-3.5-flash` در edge function تنظیم می‌شود.
 
-## جزئیات فنی
-- بدون migration دیتابیس.
-- بدون نیاز به secret جدید (از همان Lovable AI Gateway استفاده می‌شود).
-- مدل پیش‌فرض: `google/gemini-3-flash-preview` (با امکان override از تنظیمات مدل‌ها).
-- آفلاین: نتیجه پس از تولید در `newsOfflineCache` و IndexedDB کتاب ذخیره می‌شود — مثل بقیه‌ی rewrite‌ها.
+## ملاحظات فنی
+- اگر Lovable AI Gateway فیلد `tools: [{ google_search: {} }]` را به‌صورت native پاس‌ترو نکند، fallback: استفاده از prompt-only و واکشی URLها از پاسخ متنی — اما اول تست می‌کنیم. (برای Gemini روی Gateway، ابزار `google_search` پشتیبانی می‌شود.)
+- خطاهای ۴۲۹ و ۴۰۲ مانند سایر توابع به UI گزارش می‌شوند (toast).
+- نتیجه در حافظهٔ مرورگر cache می‌شود (مثل `getCachedDiscovery`) تا بار اضافه نزند.
 
-## فایل‌های تغییریافته
-- `src/types/index.ts` — افزودن `simplifyLevel` و `defaultSimplifyArticles`
-- `src/store/settingsStore.ts` — مقادیر پیش‌فرض
-- `src/pages/Settings.tsx` — UI تنظیمات
-- `supabase/functions/rewrite-chapter/index.ts` — استایل جدید
-- `src/pages/NewsArticle.tsx` — تب simple
-- `src/components/books/ChapterRewriteTabs.tsx` — تیک + استایل جدید
-- `src/lib/chapterRewrite.ts` — افزودن `everyday_simple` به نوع استایل‌ها
+## فایل‌های تغییر یافته
+- `supabase/functions/news-discover-live/index.ts` (جدید)
+- `src/lib/news.ts` (افزودن `discoverLiveNews`)
+- `src/pages/News.tsx` (افزودن دکمه + دیالوگ + نمایش نتایج)
+- `supabase/config.toml` (ثبت تابع جدید در صورت نیاز)

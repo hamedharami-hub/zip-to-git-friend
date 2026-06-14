@@ -10,6 +10,7 @@ import {
   X,
 } from 'lucide-react';
 import { ImportUrlDialog } from '@/components/news/ImportUrlDialog';
+import { LiveDiscoverDialog } from '@/components/news/LiveDiscoverDialog';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { loadCachedFeed, mergeIntoCache } from '@/lib/newsFeedCache';
 import { Button } from '@/components/ui/button';
@@ -607,6 +608,7 @@ const News = () => {
                 setActiveSourceId(s.id);
               }}
             />
+            <LiveDiscoverDialog />
             <AddSourceDialog
               onAdded={(s) => {
                 setSources((prev) => [...prev, s]);

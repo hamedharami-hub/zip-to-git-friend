@@ -531,6 +531,42 @@ const News = () => {
     }
   }, [feedItems, digestLength, activeSource, windowHours, navigate]);
 
+  /** Quick-summary from a topic feed URL (Google News / Bing News RSS). */
+  const handleInstantDigest = useCallback(
+    async (topicText: string, feedUrl: string, label: string) => {
+      try {
+        const r = await fetchRss(feedUrl, 20);
+        if (!r.items.length) {
+          toast.error('خبری در این فید پیدا نشد.');
+          return;
+        }
+        toast.info('در حال ساخت خلاصه از خبرهای زنده…');
+        const digest = await generateDigest({
+          articles: r.items.slice(0, 15).map((it) => ({
+            title: it.title,
+            url: it.url,
+            siteName: it.siteName ?? siteFromUrl(it.url),
+            excerpt: it.excerpt,
+            publishedAt: it.publishedAt,
+          })),
+          length: 'long',
+          scope: 'topic',
+          topic: topicText,
+          windowHours: 24,
+          model: newsModelRef.model,
+        });
+        setDigests((prev) => [digest, ...prev]);
+        toast.success(`خلاصه «${topicText}» از ${label === 'bing' ? 'Bing News' : 'Google News'} آماده شد.`);
+        navigate(`/news/digest/${digest.id}`);
+      } catch (e: any) {
+        toast.error(e.message ?? 'ساخت خلاصه شکست خورد.');
+      }
+    },
+    [navigate, newsModelRef.model],
+  );
+
+
+
   const handleDeleteSource = useCallback(
     async (id: string) => {
       try {

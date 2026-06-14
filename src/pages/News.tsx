@@ -1086,7 +1086,9 @@ function AddSourceDialog({
                   setUrl(feed.url);
                   if (!name.trim()) setName(feed.name);
                 }}
+                onInstantDigest={onInstantDigest}
               />
+
             </div>
           </TabsContent>
 

@@ -63,6 +63,7 @@ export function LiveDiscoverDialog() {
     }
     setBusy(true);
     setResult(null);
+    setFromCache(false);
     try {
       const r = await discoverLiveNews({
         topic: t,
@@ -78,6 +79,26 @@ export function LiveDiscoverDialog() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleSaveCurrent = () => {
+    if (!result) return;
+    saveDiscover(topic.trim() || 'untitled', Number(windowHours), result);
+    refreshSaved();
+    toast.success('جستجو ذخیره شد و آفلاین در دسترس است.');
+  };
+
+  const handleLoadSaved = (s: SavedDiscover) => {
+    setTopic(s.topic);
+    setWindowHours(String(s.windowHours));
+    setResult(s.result);
+    setFromCache(true);
+    toast.info('از حافظهٔ آفلاین بارگذاری شد.');
+  };
+
+  const handleDeleteSaved = (id: string) => {
+    deleteSavedDiscover(id);
+    refreshSaved();
   };
 
   const handleOpenItem = async (item: LiveDiscoverItem) => {

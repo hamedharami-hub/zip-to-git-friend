@@ -1008,9 +1008,11 @@ const News = () => {
 function AddSourceDialog({
   onAdded,
   trigger,
+  onInstantDigest,
 }: {
   onAdded: (s: NewsSource) => void;
   trigger?: React.ReactNode;
+  onInstantDigest?: (topicText: string, feedUrl: string, label: string) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
   const [kind, setKind] = useState<NewsSourceKind>('rss');

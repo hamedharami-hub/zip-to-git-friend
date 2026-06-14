@@ -45,7 +45,15 @@ export function LiveDiscoverDialog() {
   const [opening, setOpening] = useState<string | null>(null);
   const [combining, setCombining] = useState(false);
   const [result, setResult] = useState<LiveDiscoverResult | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [saved, setSaved] = useState<SavedDiscover[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (open) setSaved(listSavedDiscover());
+  }, [open]);
+
+  const refreshSaved = () => setSaved(listSavedDiscover());
 
   const handleDiscover = async () => {
     const t = topic.trim();

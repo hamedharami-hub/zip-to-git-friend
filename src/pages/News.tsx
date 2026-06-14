@@ -1170,10 +1170,22 @@ function AddSourceDialog({
   );
 }
 
-function RssDiscovery({ onPick }: { onPick: (feed: { name: string; url: string }) => void }) {
+function bingNewsRssUrl(topic: string): string {
+  return `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=rss`;
+}
+
+function RssDiscovery({
+  onPick,
+  onInstantDigest,
+}: {
+  onPick: (feed: { name: string; url: string }) => void;
+  onInstantDigest?: (topic: string, feedUrl: string, label: string) => Promise<void> | void;
+}) {
   const [topic, setTopic] = useState('');
   const [result, setResult] = useState<DiscoveryResult | null>(null);
+  const [searchedTopic, setSearchedTopic] = useState('');
   const [busy, setBusy] = useState(false);
+  const [digestBusy, setDigestBusy] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
@@ -1182,18 +1194,31 @@ function RssDiscovery({ onPick }: { onPick: (feed: { name: string; url: string }
     if (!t) return;
     setBusy(true);
     setSearched(true);
+    setSearchedTopic(t);
     try {
       const cached = getCachedDiscovery(t);
       if (cached && !forceRefresh) setResult(cached);
       const fresh = await discoverRss({ topic: t, forceRefresh });
       setResult(fresh);
-      if (fresh.sites.length === 0) toast.info('فقط Google News پیدا شد. سایت اختصاصی نبود.');
+      if (fresh.sites.length === 0) toast.info('سایت اختصاصی پیدا نشد — از Google News یا Bing News استفاده کن.');
     } catch (e: any) {
       toast.error(e.message ?? 'جستجو شکست خورد.');
     } finally {
       setBusy(false);
     }
   };
+
+  const runDigest = async (label: string, feedUrl: string) => {
+    if (!onInstantDigest || !searchedTopic) return;
+    setDigestBusy(label);
+    try {
+      await onInstantDigest(searchedTopic, feedUrl, label);
+    } finally {
+      setDigestBusy(null);
+    }
+  };
+
+  const bingUrl = searchedTopic ? bingNewsRssUrl(searchedTopic) : '';
 
   return (
     <div className="space-y-2">
@@ -1215,22 +1240,75 @@ function RssDiscovery({ onPick }: { onPick: (feed: { name: string; url: string }
         </Button>
       </div>
 
-      {result && (
-        <ul className="max-h-72 overflow-y-auto space-y-1 rounded-md border border-border bg-background p-1">
-          {result.googleNews.url && (
-            <li>
-              <button type="button"
-                onClick={() => onPick(result.googleNews)}
-                className="w-full text-start rounded px-2 py-1.5 hover:bg-accent transition-colors">
-                <div className="text-sm font-medium truncate flex items-center gap-1.5">
-                  <Sparkles className="h-3 w-3 text-primary" />
-                  {result.googleNews.name}
+      {result && searchedTopic && (
+        <div className="space-y-2">
+          {/* Topic header */}
+          <div className="rounded-lg bg-gradient-to-l from-primary/10 to-transparent border border-primary/20 px-3 py-2">
+            <div className="text-[10px] text-muted-foreground">موضوع جستجو</div>
+            <div className="text-sm font-semibold truncate">{searchedTopic}</div>
+          </div>
+
+          <ul className="max-h-80 overflow-y-auto space-y-1.5 rounded-md border border-border bg-background p-1.5">
+            {/* Google News — featured */}
+            {result.googleNews.url && (
+              <li className="rounded-lg border border-primary/30 bg-primary/5 p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <div className="text-sm font-semibold truncate flex-1">Google News — {searchedTopic}</div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">همه منابع، اخبار جدید</div>
-              </button>
-            </li>
-          )}
-          {result.sites.map((site) => {
+                <div className="text-[10px] text-muted-foreground">همه منابع، اخبار جدید و زنده</div>
+                <div className="flex gap-1.5 pt-0.5">
+                  <Button type="button" size="sm" variant="secondary" className="h-7 text-xs gap-1 flex-1"
+                    onClick={() => onPick({ name: `Google News — ${searchedTopic}`, url: result.googleNews.url })}>
+                    <Plus className="h-3 w-3" /> افزودن منبع
+                  </Button>
+                  {onInstantDigest && (
+                    <Button type="button" size="sm" className="h-7 text-xs gap-1 flex-1"
+                      disabled={digestBusy !== null}
+                      onClick={() => void runDigest('google', result.googleNews.url)}>
+                      {digestBusy === 'google'
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : <Sparkles className="h-3 w-3" />}
+                      خلاصه فوری
+                    </Button>
+                  )}
+                </div>
+              </li>
+            )}
+
+            {/* Bing News — also public, topic-based RSS */}
+            {bingUrl && (
+              <li className="rounded-lg border border-border bg-card p-2 space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <Globe2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <div className="text-sm font-semibold truncate flex-1">Bing News — {searchedTopic}</div>
+                </div>
+                <div className="text-[10px] text-muted-foreground">منبع عمومی جایگزین (مایکروسافت)</div>
+                <div className="flex gap-1.5 pt-0.5">
+                  <Button type="button" size="sm" variant="secondary" className="h-7 text-xs gap-1 flex-1"
+                    onClick={() => onPick({ name: `Bing News — ${searchedTopic}`, url: bingUrl })}>
+                    <Plus className="h-3 w-3" /> افزودن منبع
+                  </Button>
+                  {onInstantDigest && (
+                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1"
+                      disabled={digestBusy !== null}
+                      onClick={() => void runDigest('bing', bingUrl)}>
+                      {digestBusy === 'bing'
+                        ? <Loader2 className="h-3 w-3 animate-spin" />
+                        : <Sparkles className="h-3 w-3" />}
+                      خلاصه فوری
+                    </Button>
+                  )}
+                </div>
+              </li>
+            )}
+
+            {result.sites.length > 0 && (
+              <li className="px-1 pt-1 text-[10px] font-medium text-muted-foreground">
+                سایت‌های مرتبط با این موضوع
+              </li>
+            )}
+            {result.sites.map((site) => {
             const open = expanded[site.domain] ?? false;
             const hasMultiple = site.feeds.length > 1;
             return (

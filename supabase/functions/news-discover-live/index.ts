@@ -22,7 +22,8 @@ const corsHeaders = {
 
 const MODEL = "google/gemini-3.5-flash";
 
-const SYSTEM_PROMPT = `You are a real-time news researcher. Use Google Search to find the FRESHEST, most relevant, high-quality news on the user's topic. Prefer reputable mainstream sources. Diversify outlets.
+function buildSystemPrompt(nowIso: string): string {
+  return `You are a real-time news researcher. The current date and time is ${nowIso} (UTC). Use Google Search to find the FRESHEST, most recent news on the user's topic — published as close to NOW as possible. NEVER return articles older than the requested time window. Prefer reputable mainstream sources. Diversify outlets.
 
 Return ONLY valid minified JSON (no markdown, no commentary) matching exactly:
 {
@@ -34,9 +35,11 @@ Return ONLY valid minified JSON (no markdown, no commentary) matching exactly:
 
 Rules:
 - Every "url" MUST be a real article URL discovered via Google Search — NEVER invent.
+- "publishedAt" MUST be an ISO-8601 date that falls within the requested time window relative to ${nowIso}. If you cannot verify a recent publication date, DO NOT include the item.
 - "summary" is 2-3 sentences in English, factual.
 - "combinedArticle.markdown" is a single coherent magazine-style English article (~600-900 words) that synthesises the items, with ## H2 sections. Use first-person voice. No bullet lists. End with a "## Sources" section listing each source as a markdown link.
 - Output JSON only. No prose around it. No \`\`\` fences.`;
+}
 
 function safeParseJson(text: string): any | null {
   if (!text) return null;

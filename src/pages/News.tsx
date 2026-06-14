@@ -608,6 +608,7 @@ const News = () => {
                 setActiveSourceId(s.id);
               }}
             />
+            <LiveDiscoverDialog />
             <AddSourceDialog
               onAdded={(s) => {
                 setSources((prev) => [...prev, s]);

@@ -675,42 +675,4 @@ function extractErr(error: any, fallback: string): string {
   }
 }
 
-// ─────────── Live news discovery via Google Search Grounding ───────────
-
-export interface LiveDiscoverItem {
-  title: string;
-  url: string;
-  source: string;
-  publishedAt: string | null;
-  summary: string;
-}
-
-export interface LiveDiscoverResult {
-  items: LiveDiscoverItem[];
-  combinedArticle: { title: string; markdown: string };
-  sources: Array<{ title: string; url: string }>;
-  model: string;
-}
-
-export async function discoverLiveNews(opts: {
-  topic: string;
-  windowHours?: number;
-  maxResults?: number;
-  language?: string;
-}): Promise<LiveDiscoverResult> {
-  const { data, error } = await supabase.functions.invoke<LiveDiscoverResult>(
-    'news-discover-live',
-    {
-      body: {
-        topic: opts.topic,
-        windowHours: opts.windowHours ?? 24,
-        maxResults: opts.maxResults ?? 10,
-        language: opts.language ?? 'any',
-      },
-    },
-  );
-  if (error) throw new Error(extractErr(error, 'Live news discovery failed.'));
-  if (!data) throw new Error('Live news discovery returned empty result.');
-  return data;
-}
 

@@ -648,6 +648,7 @@ const News = () => {
                 setSources((prev) => [...prev, s]);
                 setActiveSourceId(s.id);
               }}
+              onInstantDigest={handleInstantDigest}
             />
             <InstallButton />
             <AccountButton />

@@ -22,7 +22,8 @@ const corsHeaders = {
 
 const MODEL = "google/gemini-3.5-flash";
 
-const SYSTEM_PROMPT = `You are a real-time news researcher. Use Google Search to find the FRESHEST, most relevant, high-quality news on the user's topic. Prefer reputable mainstream sources. Diversify outlets.
+function buildSystemPrompt(nowIso: string): string {
+  return `You are a real-time news researcher. The current date and time is ${nowIso} (UTC). Use Google Search to find the FRESHEST, most recent news on the user's topic — published as close to NOW as possible. NEVER return articles older than the requested time window. Prefer reputable mainstream sources. Diversify outlets.
 
 Return ONLY valid minified JSON (no markdown, no commentary) matching exactly:
 {
@@ -34,9 +35,11 @@ Return ONLY valid minified JSON (no markdown, no commentary) matching exactly:
 
 Rules:
 - Every "url" MUST be a real article URL discovered via Google Search — NEVER invent.
+- "publishedAt" MUST be an ISO-8601 date that falls within the requested time window relative to ${nowIso}. If you cannot verify a recent publication date, DO NOT include the item.
 - "summary" is 2-3 sentences in English, factual.
 - "combinedArticle.markdown" is a single coherent magazine-style English article (~600-900 words) that synthesises the items, with ## H2 sections. Use first-person voice. No bullet lists. End with a "## Sources" section listing each source as a markdown link.
 - Output JSON only. No prose around it. No \`\`\` fences.`;
+}
 
 function safeParseJson(text: string): any | null {
   if (!text) return null;
@@ -73,13 +76,19 @@ serve(async (req) => {
       });
     }
 
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const cutoff = new Date(now.getTime() - windowHours * 3600 * 1000);
+    const cutoffIso = cutoff.toISOString();
+
     const userPrompt = [
+      `Current date/time (UTC): ${nowIso}`,
       `Topic: ${topic}`,
-      `Time window: news published within the last ${windowHours} hour(s).`,
+      `Time window: ONLY news published between ${cutoffIso} and ${nowIso} (i.e. within the last ${windowHours} hour(s)). Reject anything older.`,
       `Return at most ${Math.min(Math.max(maxResults, 3), 15)} items.`,
       `Preferred language of sources: ${language}.`,
       "",
-      "Use Google Search NOW to find the freshest articles, then return the JSON.",
+      `Use Google Search NOW (today is ${now.toUTCString()}) to find the freshest articles, then return the JSON. Discard any result whose publication date is before ${cutoffIso}.`,
     ].join("\n");
 
     const aiRes = await fetch(
@@ -94,7 +103,7 @@ serve(async (req) => {
           model: MODEL,
           max_tokens: 8000,
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: buildSystemPrompt(nowIso) },
             { role: "user", content: userPrompt },
           ],
           // Built-in Google Search grounding tool.
@@ -161,7 +170,8 @@ serve(async (req) => {
       );
     }
 
-    // Sanitise items
+    // Sanitise items + drop anything older than the requested window when a date is present.
+    const cutoffMs = cutoff.getTime();
     const items = (parsed.items as any[])
       .filter((it) => it && typeof it.url === "string" && /^https?:\/\//i.test(it.url))
       .slice(0, 20)
@@ -171,7 +181,13 @@ serve(async (req) => {
         source: String(it.source ?? "").slice(0, 120),
         publishedAt: it.publishedAt ? String(it.publishedAt).slice(0, 80) : null,
         summary: String(it.summary ?? "").slice(0, 1200),
-      }));
+      }))
+      .filter((it) => {
+        if (!it.publishedAt) return true;
+        const t = Date.parse(it.publishedAt);
+        if (!Number.isFinite(t)) return true;
+        return t >= cutoffMs;
+      });
 
     const combinedArticle = parsed.combinedArticle && typeof parsed.combinedArticle === "object"
       ? {

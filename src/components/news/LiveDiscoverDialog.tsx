@@ -3,9 +3,9 @@
  * User enters a topic and a time window; the model searches the web
  * in real time and returns fresh articles + an optional combined article.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Loader2, Clock, ExternalLink, Newspaper } from 'lucide-react';
+import { Sparkles, Loader2, Clock, ExternalLink, Newspaper, Bookmark, Trash2, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,6 +21,10 @@ import {
   discoverLiveNews, scrapeArticle, upsertArticle,
   type LiveDiscoverItem, type LiveDiscoverResult,
 } from '@/lib/news';
+import {
+  listSavedDiscover, saveDiscover, deleteSavedDiscover,
+  type SavedDiscover,
+} from '@/lib/savedDiscover';
 
 const WINDOW_OPTIONS = [
   { value: '6', label: '۶ ساعت اخیر' },
@@ -41,7 +45,15 @@ export function LiveDiscoverDialog() {
   const [opening, setOpening] = useState<string | null>(null);
   const [combining, setCombining] = useState(false);
   const [result, setResult] = useState<LiveDiscoverResult | null>(null);
+  const [fromCache, setFromCache] = useState(false);
+  const [saved, setSaved] = useState<SavedDiscover[]>([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (open) setSaved(listSavedDiscover());
+  }, [open]);
+
+  const refreshSaved = () => setSaved(listSavedDiscover());
 
   const handleDiscover = async () => {
     const t = topic.trim();
@@ -51,6 +63,7 @@ export function LiveDiscoverDialog() {
     }
     setBusy(true);
     setResult(null);
+    setFromCache(false);
     try {
       const r = await discoverLiveNews({
         topic: t,
@@ -66,6 +79,26 @@ export function LiveDiscoverDialog() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const handleSaveCurrent = () => {
+    if (!result) return;
+    saveDiscover(topic.trim() || 'untitled', Number(windowHours), result);
+    refreshSaved();
+    toast.success('جستجو ذخیره شد و آفلاین در دسترس است.');
+  };
+
+  const handleLoadSaved = (s: SavedDiscover) => {
+    setTopic(s.topic);
+    setWindowHours(String(s.windowHours));
+    setResult(s.result);
+    setFromCache(true);
+    toast.info('از حافظهٔ آفلاین بارگذاری شد.');
+  };
+
+  const handleDeleteSaved = (id: string) => {
+    deleteSavedDiscover(id);
+    refreshSaved();
   };
 
   const handleOpenItem = async (item: LiveDiscoverItem) => {
@@ -185,8 +218,58 @@ export function LiveDiscoverDialog() {
           </div>
         </div>
 
+        {!result && saved.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <History className="h-3.5 w-3.5" />
+              جستجوهای ذخیره‌شده (آفلاین)
+            </div>
+            <ul className="space-y-1.5">
+              {saved.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex items-center gap-2 rounded-md border border-border p-2"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleLoadSaved(s)}
+                    className="flex-1 text-start text-sm hover:text-primary"
+                  >
+                    <div className="font-medium">{s.topic}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {s.result.items.length} منبع · {new Date(s.savedAt).toLocaleDateString('fa-IR')}
+                    </div>
+                  </button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7"
+                    onClick={() => handleDeleteSaved(s.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {result && (
           <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs text-muted-foreground">
+                {fromCache ? 'از حافظهٔ آفلاین' : 'نتایج تازه'}
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSaveCurrent}
+                className="gap-1.5 h-7 text-xs"
+              >
+                <Bookmark className="h-3.5 w-3.5" />
+                ذخیره برای آفلاین
+              </Button>
+            </div>
             {result.combinedArticle?.markdown && (
               <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 space-y-2">
                 <div className="flex items-center gap-2 text-sm font-medium">

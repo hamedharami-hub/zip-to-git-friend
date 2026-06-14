@@ -1349,6 +1349,7 @@ function RssDiscovery({
             );
           })}
         </ul>
+        </div>
       )}
       {searched && !busy && !result?.sites.length && !result?.googleNews.url && (
         <p className="text-[11px] text-muted-foreground">فیدی پیدا نشد.</p>

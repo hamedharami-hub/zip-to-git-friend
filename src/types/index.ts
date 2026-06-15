@@ -244,6 +244,8 @@ export interface AppSettings {
   bookRewriteModelRef?: BookAIModelRef;
   /** AI model used to write the long article-style news digest. */
   newsRewriteModelRef?: BookAIModelRef;
+  /** AI model used to batch-analyze every paragraph of a news article. */
+  newsBatchAnalysisModelRef?: BookAIModelRef;
   /** Shared AI model used for single-word meanings across app sections. */
   wordMeaningModel?: AIModelChoice;
   /** Shared AI model used for single-paragraph translation + phrase analysis across app sections. */

@@ -688,26 +688,23 @@ const NewsArticleReader = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(
-                          getAvailableBookModels(settings).reduce<Record<string, typeof getAvailableBookModels extends (s: any) => infer R ? R : never>>(
-                            (acc, o) => {
-                              (acc[o.group] ??= [] as any).push(o);
-                              return acc;
-                            },
-                            {},
-                          ),
-                        ).map(([group, items]) => (
-                          <div key={group}>
-                            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                              {group}
+                        {(() => {
+                          const opts = getAvailableBookModels(settings);
+                          const groups: Record<string, typeof opts> = {};
+                          for (const o of opts) (groups[o.group] ??= []).push(o);
+                          return Object.entries(groups).map(([group, items]) => (
+                            <div key={group}>
+                              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {group}
+                              </div>
+                              {items.map((o) => (
+                                <SelectItem key={o.value} value={o.value}>
+                                  {o.label}
+                                </SelectItem>
+                              ))}
                             </div>
-                            {(items as any[]).map((o) => (
-                              <SelectItem key={o.value} value={o.value}>
-                                {o.label}
-                              </SelectItem>
-                            ))}
-                          </div>
-                        ))}
+                          ));
+                        })()}
                       </SelectContent>
                     </Select>
                   </div>

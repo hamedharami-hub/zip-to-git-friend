@@ -238,7 +238,7 @@ function buildBilingualHtml(
   .panel .row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:.5rem; align-items:center; }
   .panel strong { font-size: .72rem; opacity: .7; min-width: 50px; display:inline-block; }
   html[data-mode="en"] .fa, html[data-mode="en"] .anx { display: none !important; }
-  html[data-mode="fa"] .en { display: none; }
+  html[data-mode="fa"] .en, html[data-mode="fa"] .anx { display: none !important; }
   .src { margin-top: 3rem; font-size: .8rem; color: var(--muted); border-top: 1px solid var(--border); padding-top: 1rem; }
   a { color: var(--accent); }
   .hint { font-size:.7rem; color: var(--muted); margin-top:.4rem; }

@@ -20,6 +20,7 @@ import { ReviewMode } from '@/components/leitner/ReviewMode';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { CueListWithAnalysis } from '@/components/subtitles/CueListWithAnalysis';
 import { ImmersiveStudyMode } from '@/components/player/ImmersiveStudyMode';
+import { SubtitleSettingsMenu } from '@/components/player/SubtitleSettingsMenu';
 import { AccountButton } from '@/components/auth/AccountButton';
 import { toast } from 'sonner';
 
@@ -319,6 +320,7 @@ const Player = () => {
                 <section className="space-y-4 px-3 sm:px-0 pb-6 sm:pb-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold mr-auto">Subtitles</h2>
+                    <SubtitleSettingsMenu />
                     <Button
                       size="sm"
                       variant={showReview ? 'default' : 'outline'}

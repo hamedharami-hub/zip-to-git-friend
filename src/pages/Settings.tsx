@@ -290,72 +290,7 @@ const Settings = () => {
         </section>
 
         <section className="space-y-3">
-          <h2 className="text-lg font-semibold">Subtitles</h2>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">Auto-show analysis</p>
-              <p className="text-sm text-muted-foreground">
-                Automatically run AI analysis on the current subtitle (uses cached results when available).
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoShowAnalysis}
-              onCheckedChange={(v) => update({ autoShowAnalysis: !!v })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">Blind listen mode</p>
-              <p className="text-sm text-muted-foreground">
-                Hide the subtitle text and auto-pause at the end of every sentence.
-                Tap “Reveal” to see it or “Next” to advance.
-              </p>
-            </div>
-            <Switch
-              checked={settings.blindListen}
-              onCheckedChange={(v) => update({ blindListen: !!v })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">Auto-pause at end of every cue</p>
-              <p className="text-sm text-muted-foreground">
-                The video pauses after each subtitle line so you can think or repeat
-                before pressing play to continue. Toggle quickly from the player too.
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoPauseAtCueEnd}
-              onCheckedChange={(v) => update({ autoPauseAtCueEnd: !!v })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">Auto-fullscreen on landscape</p>
-              <p className="text-sm text-muted-foreground">
-                وقتی گوشی را افقی می‌چرخانی، پخش‌کننده خودش وارد حالت تمام‌صفحه شود.
-                به‌صورت پیش‌فرض خاموش است؛ اگر روشن کنی، چرخاندن گوشی به landscape
-                باعث ورود خودکار به immersive می‌شود.
-              </p>
-            </div>
-            <Switch
-              checked={settings.autoImmersiveOnLandscape ?? false}
-              onCheckedChange={(v) => update({ autoImmersiveOnLandscape: !!v })}
-            />
-          </div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-4">
-            <div>
-              <p className="font-medium">Show inline translation (dual subtitles)</p>
-              <p className="text-sm text-muted-foreground">
-                When no second subtitle track is loaded, show the cached AI translation
-                under the source line. Run “Analyze” to populate translations.
-              </p>
-            </div>
-            <Switch
-              checked={settings.showInlineTranslation}
-              onCheckedChange={(v) => update({ showInlineTranslation: !!v })}
-            />
-          </div>
+          <h2 className="text-lg font-semibold">ساده‌سازی متن</h2>
           <div className="rounded-lg border border-border p-4 space-y-3">
             <div>
               <p className="font-medium">ساده‌سازی متن انگلیسی (روزمره)</p>

@@ -601,18 +601,21 @@ const Settings = () => {
               options={chatModelOptions(settings)}
               onChange={(v) => update({ analyzeModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">تحلیل جمله‌ی فعلی زیرنویس فیلم.</p>
             <ModelPicker
               label="Quick translation (word / sentence)"
               value={choiceToValue(settings.translateModel)}
               options={chatModelOptions(settings)}
               onChange={(v) => update({ translateModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">ترجمه‌ی سریع جمله/کلمه — فقط در زیرنویس فیلم استفاده می‌شود (کتاب و خبر مدل جداگانه دارند).</p>
             <ModelPicker
               label="Batch analyze"
               value={choiceToValue(settings.batchModel)}
               options={chatModelOptions(settings)}
               onChange={(v) => update({ batchModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">تحلیل گروهی همه‌ی جمله‌های یک زیرنویس فیلم.</p>
             <ModelPicker
               label="Transcription (Groq Whisper)"
               value={settings.transcribeModel}
@@ -620,7 +623,7 @@ const Settings = () => {
               onChange={(v) => update({ transcribeModel: v as typeof settings.transcribeModel })}
             />
             <div className="space-y-1.5">
-              <Label>Default Gemini model (legacy fallback)</Label>
+              <Label>مدل تست Gemini (فقط برای تست کلید)</Label>
               <Select
                 value={settings.geminiModel}
                 onValueChange={(v) => update({ geminiModel: v as typeof settings.geminiModel })}
@@ -636,6 +639,9 @@ const Settings = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                این مدل فقط برای دکمه‌ی «تست کلید Gemini» در همین صفحه استفاده می‌شود. هر بخش (زیرنویس، کتاب، خبر) مدل اختصاصی خودش را در پایین دارد.
+              </p>
             </div>
           </div>
         </section>

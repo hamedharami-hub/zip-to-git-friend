@@ -170,7 +170,7 @@ function buildBilingualHtml(
       const anx = buildAnalysisHtml(p.analysis);
       const hasAnx = anx ? ' data-anx="1"' : '';
       const fa = p.fa
-        ? `<p class="fa${anx ? ' has-anx' : ''}" dir="rtl"${hasAnx}>${esc(p.fa)}${anx ? '<span class="anx-tag">📚</span>' : ''}</p>`
+        ? `<p class="fa${anx ? ' has-anx' : ''}" dir="rtl"${hasAnx}>${esc(p.fa)}</p>`
         : '';
       return `<div class="para">${en}${fa}${anx}</div>`;
     })

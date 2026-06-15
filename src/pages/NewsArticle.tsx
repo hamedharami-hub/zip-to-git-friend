@@ -38,7 +38,14 @@ import {
 } from '@/lib/news';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
+import { coerceBookModel, getAvailableBookModels } from '@/lib/aiModels';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';

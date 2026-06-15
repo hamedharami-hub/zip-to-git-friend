@@ -38,7 +38,14 @@ import {
 } from '@/lib/news';
 import { supabase } from '@/integrations/supabase/client';
 import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
+import { coerceBookModel, getAvailableBookModels } from '@/lib/aiModels';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
@@ -110,15 +117,20 @@ const NewsArticleReader = () => {
   usePinchFontStep(pinchScrollRef);
 
   const settings = useSettingsStore((s) => s.settings);
-  // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph
-  // analysis" setting so the user can pick e.g. Groq from Settings → AI, and
-  // the same choice applies to both News and Books.
+  const update = useSettingsStore((s) => s.update);
+  // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
-    settings.paragraphBatchModelRef
+    settings.newsBatchAnalysisModelRef
+      ?? settings.paragraphBatchModelRef
       ?? settings.bookBatchAnalysisModelRef
-      ?? settings.newsRewriteModelRef
-      ?? settings.bookRewriteModelRef
       ?? 'google/gemini-3.1-flash-lite-preview',
+  );
+  // Rewrite model (the "بازنویسی AI" tabs). Persisted globally so the next
+  // article opens with the same choice.
+  const newsRewriteRef = coerceBookModel(
+    settings.newsRewriteModelRef
+      ?? settings.bookRewriteModelRef
+      ?? 'google/gemini-3-flash-preview',
   );
 
   // Load existing rewrites for this article from news_digests (scope='source', single article).
@@ -404,7 +416,7 @@ const NewsArticleReader = () => {
         sourceId: article.sourceId,
         topic: `article:${article.id}`,
         windowHours: 24,
-        model: newsModelRef.model,
+        model: newsRewriteRef.model,
         simplifyLevel: length === 'simple' ? (settings.simplifyLevel ?? 'a2-b1') : undefined,
       });
       setRewrites((m) => {
@@ -661,9 +673,41 @@ const NewsArticleReader = () => {
                     <Sparkles className="h-4 w-4 text-primary" />
                     <h3 className="text-base font-semibold">بازنویسی این خبر با هوش مصنوعی</h3>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    AI: {newsModelRef.model} · تنظیمات → AI
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">مدل بازنویسی:</span>
+                    <Select
+                      value={`${newsRewriteRef.provider}:${newsRewriteRef.model}`}
+                      onValueChange={(v) => {
+                        const idx = v.indexOf(':');
+                        const provider = v.slice(0, idx) as 'gateway' | 'gemini' | 'groq';
+                        const model = v.slice(idx + 1);
+                        void update({ newsRewriteModelRef: { provider, model } });
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-[11px] min-w-[180px] max-w-[240px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(() => {
+                          const opts = getAvailableBookModels(settings);
+                          const groups: Record<string, typeof opts> = {};
+                          for (const o of opts) (groups[o.group] ??= []).push(o);
+                          return Object.entries(groups).map(([group, items]) => (
+                            <div key={group}>
+                              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                {group}
+                              </div>
+                              {items.map((o) => (
+                                <SelectItem key={o.value} value={o.value}>
+                                  {o.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </header>
 
                 <Tabs value={activeRewrite} onValueChange={(v) => setActiveRewrite(v as RewriteLength)}>

@@ -601,18 +601,21 @@ const Settings = () => {
               options={chatModelOptions(settings)}
               onChange={(v) => update({ analyzeModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">تحلیل جمله‌ی فعلی زیرنویس فیلم.</p>
             <ModelPicker
               label="Quick translation (word / sentence)"
               value={choiceToValue(settings.translateModel)}
               options={chatModelOptions(settings)}
               onChange={(v) => update({ translateModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">ترجمه‌ی سریع جمله/کلمه — فقط در زیرنویس فیلم استفاده می‌شود (کتاب و خبر مدل جداگانه دارند).</p>
             <ModelPicker
               label="Batch analyze"
               value={choiceToValue(settings.batchModel)}
               options={chatModelOptions(settings)}
               onChange={(v) => update({ batchModel: valueToChoice(v) })}
             />
+            <p className="text-[11px] text-muted-foreground -mt-2">تحلیل گروهی همه‌ی جمله‌های یک زیرنویس فیلم.</p>
             <ModelPicker
               label="Transcription (Groq Whisper)"
               value={settings.transcribeModel}
@@ -620,7 +623,7 @@ const Settings = () => {
               onChange={(v) => update({ transcribeModel: v as typeof settings.transcribeModel })}
             />
             <div className="space-y-1.5">
-              <Label>Default Gemini model (legacy fallback)</Label>
+              <Label>مدل تست Gemini (فقط برای تست کلید)</Label>
               <Select
                 value={settings.geminiModel}
                 onValueChange={(v) => update({ geminiModel: v as typeof settings.geminiModel })}
@@ -636,6 +639,9 @@ const Settings = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[11px] text-muted-foreground">
+                این مدل فقط برای دکمه‌ی «تست کلید Gemini» در همین صفحه استفاده می‌شود. هر بخش (زیرنویس، کتاب، خبر) مدل اختصاصی خودش را در پایین دارد.
+              </p>
             </div>
           </div>
         </section>
@@ -651,7 +657,7 @@ const Settings = () => {
           <div className="space-y-4 rounded-lg border border-border p-4">
             <BookModelPicker
               label="Single paragraph analysis"
-              hint="Used when you tap ✨ Analyze under one paragraph."
+              hint="تحلیل یک پاراگراف کتاب — وقتی روی ✨ زیر یک پاراگراف بزنی."
               value={coerceBookModel(settings.bookSingleAnalysisModelRef ?? settings.bookSingleAnalysisModel)}
               onChange={(ref) =>
                 update({
@@ -667,7 +673,7 @@ const Settings = () => {
             />
             <BookModelPicker
               label="Whole-chapter batch analysis"
-              hint="Used by the ✨ icon in the reader header (analyze every paragraph at once). Pick a faster/cheaper model here."
+              hint="تحلیل گروهی همه‌ی پاراگراف‌های یک فصل کتاب (دکمه ✨ بالای فصل). مدل سریع‌تر/ارزان‌تر بهتر است."
               value={coerceBookModel(settings.bookBatchAnalysisModelRef ?? settings.bookBatchAnalysisModel)}
               onChange={(ref) =>
                 update({
@@ -681,7 +687,7 @@ const Settings = () => {
             />
             <BookModelPicker
               label="Chapter rewrite (summary, key points, simplified…)"
-              hint="Used by the wand 🪄 button. Stronger reasoning models give better summaries."
+              hint="بازنویسی فصل کتاب به سبک‌های مختلف (خلاصه، نکات کلیدی، ساده‌سازی…). مدل قوی‌تر، خلاصه‌ی بهتر."
               value={coerceBookModel(settings.bookRewriteModelRef ?? settings.bookRewriteModel)}
               onChange={(ref) =>
                 update({
@@ -705,27 +711,35 @@ const Settings = () => {
           <div className="space-y-4 rounded-lg border border-border p-4">
             <BookModelPicker
               label="News rewrite (long & maximum article digest)"
-              hint="Used by the AI digest button on the News page and the per-article rewrite tabs."
+              hint="بازنویسی خبر (خلاصه، ساده، طولانی، حداکثری). همین مدل را داخل خود صفحه‌ی خبر هم می‌توانی عوض کنی."
               value={coerceBookModel(settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? 'google/gemini-3-flash-preview')}
               onChange={(ref) => update({ newsRewriteModelRef: ref })}
               options={getAvailableBookModels(settings)}
             />
             <BookModelPicker
+              label="News paragraph batch analysis"
+              hint="تحلیل گروهی پاراگراف‌های یک خبر (دکمه ✨ بالای خبر). مدل سریع‌تر/ارزان‌تر کافی است."
+              value={coerceBookModel(settings.newsBatchAnalysisModelRef ?? settings.paragraphBatchModelRef ?? settings.bookBatchAnalysisModelRef ?? 'google/gemini-3.1-flash-lite-preview')}
+              onChange={(ref) => update({ newsBatchAnalysisModelRef: ref })}
+              options={getAvailableBookModels(settings)}
+            />
+            <BookModelPicker
               label="News topic search summaries"
-              hint="Used when fetching headlines for a topic / site source."
+              hint="خلاصه‌ی تیترها هنگام جست‌وجو یا مرور یک موضوع/سایت."
               value={coerceBookModel(settings.newsSearchModelRef ?? 'google/gemini-3.1-flash-lite-preview')}
               onChange={(ref) => update({ newsSearchModelRef: ref })}
               options={getAvailableBookModels(settings)}
             />
             <BookModelPicker
               label="Sentence Lab (planner, roleplay, examples)"
-              hint="Used by the planner and roleplay generators in Sentence Lab."
+              hint="برنامه‌ریز و نقش‌بازی و مثال‌سازی در Sentence Lab."
               value={coerceBookModel(settings.sentenceLabModelRef ?? 'google/gemini-3-flash-preview')}
               onChange={(ref) => update({ sentenceLabModelRef: ref })}
               options={getAvailableBookModels(settings)}
             />
           </div>
         </section>
+
 
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">حرکات لمسی روی پاراگراف‌ها</h2>

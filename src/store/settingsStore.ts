@@ -45,6 +45,8 @@ const DEFAULTS: AppSettings = {
   rewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   bookSingleAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   bookBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
+  newsBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
+  newsRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   bookRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   paragraphGestures: false,
   paragraphTextAlign: 'start',

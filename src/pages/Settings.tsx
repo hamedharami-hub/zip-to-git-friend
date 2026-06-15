@@ -464,6 +464,8 @@ const Settings = () => {
                 value={elevenLabs}
                 onChange={setElevenLabs}
                 placeholder="sk_... (optional — premium narration)"
+                onTest={testEleven}
+                testing={testingEleven}
               />
               <p className="text-xs text-muted-foreground">
                 صدای حرفه‌ای برای روایت متن خبر و کتاب با ElevenLabs.

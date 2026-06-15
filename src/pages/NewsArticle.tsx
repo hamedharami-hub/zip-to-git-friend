@@ -409,7 +409,7 @@ const NewsArticleReader = () => {
         sourceId: article.sourceId,
         topic: `article:${article.id}`,
         windowHours: 24,
-        model: newsModelRef.model,
+        model: newsRewriteRef.model,
         simplifyLevel: length === 'simple' ? (settings.simplifyLevel ?? 'a2-b1') : undefined,
       });
       setRewrites((m) => {

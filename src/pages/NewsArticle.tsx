@@ -110,15 +110,20 @@ const NewsArticleReader = () => {
   usePinchFontStep(pinchScrollRef);
 
   const settings = useSettingsStore((s) => s.settings);
-  // Per-paragraph translation/analysis model. Uses the shared "Batch paragraph
-  // analysis" setting so the user can pick e.g. Groq from Settings → AI, and
-  // the same choice applies to both News and Books.
+  const update = useSettingsStore((s) => s.update);
+  // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
-    settings.paragraphBatchModelRef
+    settings.newsBatchAnalysisModelRef
+      ?? settings.paragraphBatchModelRef
       ?? settings.bookBatchAnalysisModelRef
-      ?? settings.newsRewriteModelRef
-      ?? settings.bookRewriteModelRef
       ?? 'google/gemini-3.1-flash-lite-preview',
+  );
+  // Rewrite model (the "بازنویسی AI" tabs). Persisted globally so the next
+  // article opens with the same choice.
+  const newsRewriteRef = coerceBookModel(
+    settings.newsRewriteModelRef
+      ?? settings.bookRewriteModelRef
+      ?? 'google/gemini-3-flash-preview',
   );
 
   // Load existing rewrites for this article from news_digests (scope='source', single article).

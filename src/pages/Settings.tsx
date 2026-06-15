@@ -479,6 +479,8 @@ const Settings = () => {
                 value={azureKey}
                 onChange={setAzureKey}
                 placeholder="32-char key (اختیاری — صدای فارسی طبیعی)"
+                onTest={testAzure}
+                testing={testingAzure}
               />
               <div className="flex items-center gap-2">
                 <label className="text-xs text-muted-foreground w-20">Region</label>

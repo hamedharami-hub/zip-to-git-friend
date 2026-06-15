@@ -20,6 +20,7 @@ import { ReviewMode } from '@/components/leitner/ReviewMode';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { CueListWithAnalysis } from '@/components/subtitles/CueListWithAnalysis';
 import { ImmersiveStudyMode } from '@/components/player/ImmersiveStudyMode';
+import { SubtitleSettingsMenu } from '@/components/player/SubtitleSettingsMenu';
 import { AccountButton } from '@/components/auth/AccountButton';
 import { toast } from 'sonner';
 

@@ -130,6 +130,11 @@ const Settings = () => {
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingGroq, setTestingGroq] = useState(false);
   const [testingTts, setTestingTts] = useState(false);
+  const [testingEleven, setTestingEleven] = useState(false);
+  const [testingAzure, setTestingAzure] = useState(false);
+  const [testingHf, setTestingHf] = useState(false);
+  const [testingPlayHt, setTestingPlayHt] = useState(false);
+  const [testingOpenTts, setTestingOpenTts] = useState(false);
   const [refreshingModels, setRefreshingModels] = useState(false);
 
   useEffect(() => {

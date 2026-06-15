@@ -222,6 +222,89 @@ const Settings = () => {
     }
   };
 
+  const testEleven = async () => {
+    setTestingEleven(true);
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/user', {
+        headers: { 'xi-api-key': elevenLabs },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('ElevenLabs rejected the key.');
+      else if (!res.ok) toast.error(`ElevenLabs test failed (${res.status}).`);
+      else toast.success('ElevenLabs key works.');
+    } catch {
+      toast.error('ElevenLabs test failed.');
+    } finally {
+      setTestingEleven(false);
+    }
+  };
+
+  const testAzure = async () => {
+    setTestingAzure(true);
+    try {
+      const region = (azureRegion || 'westeurope').trim();
+      const res = await fetch(
+        `https://${region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken`,
+        { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': azureKey } },
+      );
+      if (res.status === 401 || res.status === 403) toast.error('Azure rejected the key.');
+      else if (!res.ok) toast.error(`Azure test failed (${res.status}).`);
+      else toast.success('Azure Speech key works.');
+    } catch {
+      toast.error('Azure test failed (network/region).');
+    } finally {
+      setTestingAzure(false);
+    }
+  };
+
+  const testHf = async () => {
+    setTestingHf(true);
+    try {
+      const res = await fetch('https://huggingface.co/api/whoami-v2', {
+        headers: { Authorization: `Bearer ${hfKey}` },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('Hugging Face rejected the token.');
+      else if (!res.ok) toast.error(`Hugging Face test failed (${res.status}).`);
+      else toast.success('Hugging Face token works.');
+    } catch {
+      toast.error('Hugging Face test failed.');
+    } finally {
+      setTestingHf(false);
+    }
+  };
+
+  const testPlayHt = async () => {
+    setTestingPlayHt(true);
+    try {
+      const res = await fetch('https://api.play.ht/api/v2/voices', {
+        headers: {
+          Authorization: `Bearer ${playHtKey}`,
+          'X-User-ID': playHtUser,
+        },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('Play.ht rejected the credentials.');
+      else if (!res.ok) toast.error(`Play.ht test failed (${res.status}).`);
+      else toast.success('Play.ht credentials work.');
+    } catch {
+      toast.error('Play.ht test failed.');
+    } finally {
+      setTestingPlayHt(false);
+    }
+  };
+
+  const testOpenTts = async () => {
+    setTestingOpenTts(true);
+    try {
+      const url = openTtsUrl.replace(/\/+$/, '');
+      const res = await fetch(`${url}/api/voices`);
+      if (!res.ok) toast.error(`OpenTTS test failed (${res.status}).`);
+      else toast.success('OpenTTS server reachable.');
+    } catch {
+      toast.error('OpenTTS unreachable.');
+    } finally {
+      setTestingOpenTts(false);
+    }
+  };
+
   const refreshModels = async () => {
     if (gemini !== settings.geminiApiKey || groq !== settings.groqApiKey) {
       await update({ geminiApiKey: gemini, groqApiKey: groq });

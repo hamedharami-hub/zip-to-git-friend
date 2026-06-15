@@ -1,46 +1,40 @@
-# کشف خبر زنده با Google Search Grounding
+## Plan: Clarify AI model settings & add per-feature model pickers
 
-## این خاصیت چیست؟
-مدل‌های Gemini (از جمله `google/gemini-3.5-flash`) یک ابزار داخلی به نام **Google Search Grounding** دارند. وقتی این ابزار در درخواست فعال شود، مدل قبل از پاسخ، خودش در گوگل جستجوی زنده انجام می‌دهد و نتایج تازه را همراه با لیست منابع (`groundingMetadata.groundingChunks` با `web.uri` و `web.title`) برمی‌گرداند. این یعنی محدود به دانش قدیمی مدل نیستیم و می‌توانیم خبرهای امروز را پیدا کنیم.
+### 1. Settings page — clarify "Default Gemini model"
+- Rename label from "مدل پیش‌فرض Gemini" to "مدل تست Gemini (فقط برای تست کلید)"
+- Add Persian helper text: "این مدل فقط برای دکمه تست کلید Gemini استفاده می‌شود. هر بخش (زیرنویس، کتاب، خبر) مدل اختصاصی خودش را در پایین دارد."
 
-## آنچه ساخته می‌شود
+### 2. News rewrite — add inline model picker
+- In `src/pages/NewsArticle.tsx` (or the news rewrite component), add a compact model selector next to the rewrite button — same UX as `ChapterRewriteTabs` shows ("AI: <model> · change in Settings")
+- Also add a small dropdown to switch model on the fly (writes back to `settings.newsRewriteModelRef` via `useSettingsStore.update`)
+- The selected model persists in settings
 
-### ۱. Edge Function جدید: `news-discover-live`
-یک تابع جدید در `supabase/functions/news-discover-live/index.ts` که:
-- ورودی: `{ topic: string, windowHours?: number, maxResults?: number }`
-- مدل: `google/gemini-3.5-flash` از طریق Lovable AI Gateway
-- در body درخواست، فیلد `tools: [{ google_search: {} }]` اضافه می‌شود تا گراندینگ فعال شود.
-- system prompt: «جدیدترین خبرهای مرتبط با موضوع را در بازهٔ زمانی مشخص از وب پیدا کن. خروجی را با ابزار `emit_news` بفرست.»
-- از tool-calling (مثل `news-digest`) برای دریافت خروجی ساخت‌یافته استفاده می‌کنیم:
-  ```
-  emit_news({
-    items: [{ title, url, source, publishedAt?, summary }],
-    combinedArticle?: { title, markdown }   // مقالهٔ ترکیبی
-  })
-  ```
-- منابع را از `groundingMetadata` پاسخ هم استخراج می‌کنیم و با لیست مدل تلفیق می‌کنیم (برای اطمینان از لینک واقعی).
-- خروجی: `{ items: [...], combinedArticle: {...}, model }`
+### 3. Separate batch analyze models
+- Confirm current state: subtitles batch uses `batchModel`; books batch uses `paragraphBatchModelRef`/`bookBatchAnalysisModelRef`; news batch currently reuses the book one
+- Add a dedicated `newsBatchAnalysisModelRef` in `settingsStore` defaults and `AppSettings` type
+- Add its picker in Settings under the News section
+- Wire news batch analysis call to use the new ref (fallback to book ref if unset)
 
-### ۲. کلاینت: تابع `discoverLiveNews` در `src/lib/news.ts`
-wrapper سادهٔ `supabase.functions.invoke('news-discover-live', { body })`.
+### 4. Persian explanations under each model picker in Settings
+For each model selector in `src/pages/Settings.tsx`, add a one-line Persian description below it:
+- **مدل تست Gemini** — "فقط برای تست کلید Gemini"
+- **Analyze (subtitle)** — "تحلیل جمله‌ی فعلی زیرنویس فیلم"
+- **Quick translation** — "ترجمه‌ی سریع جمله/کلمه در زیرنویس فیلم (فقط فیلم)"
+- **Word meaning** — "معنی کلمه با ضربه روی کلمه در زیرنویس"
+- **Batch analyze (subtitle)** — "تحلیل گروهی همه‌ی جمله‌های یک زیرنویس"
+- **Book single analysis** — "تحلیل یک پاراگراف کتاب"
+- **Book batch analysis** — "تحلیل گروهی همه‌ی پاراگراف‌های یک فصل کتاب"
+- **Book rewrite** — "بازنویسی فصل کتاب به سبک‌های مختلف"
+- **News rewrite** — "بازنویسی خبر (خلاصه، ساده، طولانی، …)"
+- **News batch analysis** (new) — "تحلیل گروهی پاراگراف‌های یک خبر"
 
-### ۳. UI: دکمهٔ «کشف خبر» در صفحهٔ `src/pages/News.tsx`
-- یک دکمهٔ جدید کنار جستجو/Discovery فعلی با آیکون Sparkles و متن «کشف خبر زنده».
-- زدن دکمه → دیالوگ کوچک با ورودی موضوع (پیش‌فرض از topic فعلی) + اسلایدر windowHours.
-- بعد از پاسخ، دو بخش نمایش داده می‌شود:
-  - **لیست منابع**: کارت‌های قابل کلیک — هر آیتم با کلیک روی آن، مثل سایر اخبار به `NewsArticle` با URL منبع می‌رود (از مسیر import موجود استفاده می‌کنیم).
-  - **دکمهٔ «ساخت مقالهٔ ترکیبی»**: مقالهٔ تلفیقی بازگشتی از مدل را در یک view (مثل `NewsDigest`) نشان می‌دهد، با لیست منابع پاورقی.
+### Files to edit
+- `src/pages/Settings.tsx` — relabel test model, add Persian helpers, add news batch picker
+- `src/store/settingsStore.ts` — add `newsBatchAnalysisModelRef` default
+- `src/types/index.ts` — add `newsBatchAnalysisModelRef` field
+- `src/pages/NewsArticle.tsx` (or wherever news rewrite UI lives) — add inline model picker
+- News batch analysis call site — read from `newsBatchAnalysisModelRef` with book fallback
 
-### ۴. تنظیمات
-هیچ تنظیم جدیدی لازم نیست؛ مدل ثابت `google/gemini-3.5-flash` در edge function تنظیم می‌شود.
-
-## ملاحظات فنی
-- اگر Lovable AI Gateway فیلد `tools: [{ google_search: {} }]` را به‌صورت native پاس‌ترو نکند، fallback: استفاده از prompt-only و واکشی URLها از پاسخ متنی — اما اول تست می‌کنیم. (برای Gemini روی Gateway، ابزار `google_search` پشتیبانی می‌شود.)
-- خطاهای ۴۲۹ و ۴۰۲ مانند سایر توابع به UI گزارش می‌شوند (toast).
-- نتیجه در حافظهٔ مرورگر cache می‌شود (مثل `getCachedDiscovery`) تا بار اضافه نزند.
-
-## فایل‌های تغییر یافته
-- `supabase/functions/news-discover-live/index.ts` (جدید)
-- `src/lib/news.ts` (افزودن `discoverLiveNews`)
-- `src/pages/News.tsx` (افزودن دکمه + دیالوگ + نمایش نتایج)
-- `supabase/config.toml` (ثبت تابع جدید در صورت نیاز)
+### Out of scope
+- No changes to subtitles/books behavior — only labeling and a single new news-batch setting
+- Doesn't remove the legacy `geminiModel` field (kept for backward compat with the test button)

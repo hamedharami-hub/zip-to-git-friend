@@ -673,9 +673,44 @@ const NewsArticleReader = () => {
                     <Sparkles className="h-4 w-4 text-primary" />
                     <h3 className="text-base font-semibold">بازنویسی این خبر با هوش مصنوعی</h3>
                   </div>
-                  <span className="text-[11px] text-muted-foreground">
-                    AI: {newsModelRef.model} · تنظیمات → AI
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">مدل بازنویسی:</span>
+                    <Select
+                      value={`${newsRewriteRef.provider}:${newsRewriteRef.model}`}
+                      onValueChange={(v) => {
+                        const idx = v.indexOf(':');
+                        const provider = v.slice(0, idx) as 'gateway' | 'gemini' | 'groq';
+                        const model = v.slice(idx + 1);
+                        void update({ newsRewriteModelRef: { provider, model } });
+                      }}
+                    >
+                      <SelectTrigger className="h-7 text-[11px] min-w-[180px] max-w-[240px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(
+                          getAvailableBookModels(settings).reduce<Record<string, typeof getAvailableBookModels extends (s: any) => infer R ? R : never>>(
+                            (acc, o) => {
+                              (acc[o.group] ??= [] as any).push(o);
+                              return acc;
+                            },
+                            {},
+                          ),
+                        ).map(([group, items]) => (
+                          <div key={group}>
+                            <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              {group}
+                            </div>
+                            {(items as any[]).map((o) => (
+                              <SelectItem key={o.value} value={o.value}>
+                                {o.label}
+                              </SelectItem>
+                            ))}
+                          </div>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </header>
 
                 <Tabs value={activeRewrite} onValueChange={(v) => setActiveRewrite(v as RewriteLength)}>

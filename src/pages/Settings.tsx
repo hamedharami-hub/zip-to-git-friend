@@ -503,6 +503,8 @@ const Settings = () => {
                 value={hfKey}
                 onChange={setHfKey}
                 placeholder="hf_... (اختیاری — MMS-TTS رایگان)"
+                onTest={testHf}
+                testing={testingHf}
               />
               <p className="text-xs text-muted-foreground">
                 مدل‌های facebook/mms-tts-fas و mms-tts-eng. توکن از

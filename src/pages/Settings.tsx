@@ -525,6 +525,8 @@ const Settings = () => {
                   value={playHtKey}
                   onChange={setPlayHtKey}
                   placeholder="Secret key"
+                  onTest={testPlayHt}
+                  testing={testingPlayHt}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -534,12 +536,22 @@ const Settings = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium">OpenTTS server URL</label>
-              <input
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                value={openTtsUrl}
-                onChange={(e) => setOpenTtsUrl(e.target.value)}
-                placeholder="http://localhost:5500 (اختیاری — self-hosted رایگان)"
-              />
+              <div className="flex gap-2">
+                <input
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={openTtsUrl}
+                  onChange={(e) => setOpenTtsUrl(e.target.value)}
+                  placeholder="http://localhost:5500 (اختیاری — self-hosted رایگان)"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={testOpenTts}
+                  disabled={testingOpenTts || !openTtsUrl}
+                >
+                  {testingOpenTts ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test'}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 OpenTTS رایگان و self-hosted — راه‌اندازی با docker از
                 <span className="font-mono"> github.com/synesthesiam/opentts</span>.

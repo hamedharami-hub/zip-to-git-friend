@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookStore } from '@/store/bookStore';
+import { useSettingsStore } from '@/store/settingsStore';
 
 interface AuthState {
   user: User | null;
@@ -32,6 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (s?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
         setTimeout(() => {
           void useBookStore.getState().syncWithCloud();
+          void useSettingsStore.getState().syncWithCloud();
         }, 0);
       }
     });
@@ -42,6 +44,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data.session?.user) {
         setTimeout(() => {
           void useBookStore.getState().syncWithCloud();
+          void useSettingsStore.getState().syncWithCloud();
         }, 0);
       }
     });

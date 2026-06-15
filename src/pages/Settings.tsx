@@ -130,6 +130,11 @@ const Settings = () => {
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingGroq, setTestingGroq] = useState(false);
   const [testingTts, setTestingTts] = useState(false);
+  const [testingEleven, setTestingEleven] = useState(false);
+  const [testingAzure, setTestingAzure] = useState(false);
+  const [testingHf, setTestingHf] = useState(false);
+  const [testingPlayHt, setTestingPlayHt] = useState(false);
+  const [testingOpenTts, setTestingOpenTts] = useState(false);
   const [refreshingModels, setRefreshingModels] = useState(false);
 
   useEffect(() => {
@@ -214,6 +219,89 @@ const Settings = () => {
       toast.error('TTS key test failed.');
     } finally {
       setTestingTts(false);
+    }
+  };
+
+  const testEleven = async () => {
+    setTestingEleven(true);
+    try {
+      const res = await fetch('https://api.elevenlabs.io/v1/user', {
+        headers: { 'xi-api-key': elevenLabs },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('ElevenLabs rejected the key.');
+      else if (!res.ok) toast.error(`ElevenLabs test failed (${res.status}).`);
+      else toast.success('ElevenLabs key works.');
+    } catch {
+      toast.error('ElevenLabs test failed.');
+    } finally {
+      setTestingEleven(false);
+    }
+  };
+
+  const testAzure = async () => {
+    setTestingAzure(true);
+    try {
+      const region = (azureRegion || 'westeurope').trim();
+      const res = await fetch(
+        `https://${region}.api.cognitive.microsoft.com/sts/v1.0/issuetoken`,
+        { method: 'POST', headers: { 'Ocp-Apim-Subscription-Key': azureKey } },
+      );
+      if (res.status === 401 || res.status === 403) toast.error('Azure rejected the key.');
+      else if (!res.ok) toast.error(`Azure test failed (${res.status}).`);
+      else toast.success('Azure Speech key works.');
+    } catch {
+      toast.error('Azure test failed (network/region).');
+    } finally {
+      setTestingAzure(false);
+    }
+  };
+
+  const testHf = async () => {
+    setTestingHf(true);
+    try {
+      const res = await fetch('https://huggingface.co/api/whoami-v2', {
+        headers: { Authorization: `Bearer ${hfKey}` },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('Hugging Face rejected the token.');
+      else if (!res.ok) toast.error(`Hugging Face test failed (${res.status}).`);
+      else toast.success('Hugging Face token works.');
+    } catch {
+      toast.error('Hugging Face test failed.');
+    } finally {
+      setTestingHf(false);
+    }
+  };
+
+  const testPlayHt = async () => {
+    setTestingPlayHt(true);
+    try {
+      const res = await fetch('https://api.play.ht/api/v2/voices', {
+        headers: {
+          Authorization: `Bearer ${playHtKey}`,
+          'X-User-ID': playHtUser,
+        },
+      });
+      if (res.status === 401 || res.status === 403) toast.error('Play.ht rejected the credentials.');
+      else if (!res.ok) toast.error(`Play.ht test failed (${res.status}).`);
+      else toast.success('Play.ht credentials work.');
+    } catch {
+      toast.error('Play.ht test failed.');
+    } finally {
+      setTestingPlayHt(false);
+    }
+  };
+
+  const testOpenTts = async () => {
+    setTestingOpenTts(true);
+    try {
+      const url = openTtsUrl.replace(/\/+$/, '');
+      const res = await fetch(`${url}/api/voices`);
+      if (!res.ok) toast.error(`OpenTTS test failed (${res.status}).`);
+      else toast.success('OpenTTS server reachable.');
+    } catch {
+      toast.error('OpenTTS unreachable.');
+    } finally {
+      setTestingOpenTts(false);
     }
   };
 
@@ -376,6 +464,8 @@ const Settings = () => {
                 value={elevenLabs}
                 onChange={setElevenLabs}
                 placeholder="sk_... (optional — premium narration)"
+                onTest={testEleven}
+                testing={testingEleven}
               />
               <p className="text-xs text-muted-foreground">
                 صدای حرفه‌ای برای روایت متن خبر و کتاب با ElevenLabs.
@@ -389,6 +479,8 @@ const Settings = () => {
                 value={azureKey}
                 onChange={setAzureKey}
                 placeholder="32-char key (اختیاری — صدای فارسی طبیعی)"
+                onTest={testAzure}
+                testing={testingAzure}
               />
               <div className="flex items-center gap-2">
                 <label className="text-xs text-muted-foreground w-20">Region</label>
@@ -411,6 +503,8 @@ const Settings = () => {
                 value={hfKey}
                 onChange={setHfKey}
                 placeholder="hf_... (اختیاری — MMS-TTS رایگان)"
+                onTest={testHf}
+                testing={testingHf}
               />
               <p className="text-xs text-muted-foreground">
                 مدل‌های facebook/mms-tts-fas و mms-tts-eng. توکن از
@@ -431,6 +525,8 @@ const Settings = () => {
                   value={playHtKey}
                   onChange={setPlayHtKey}
                   placeholder="Secret key"
+                  onTest={testPlayHt}
+                  testing={testingPlayHt}
                 />
               </div>
               <p className="text-xs text-muted-foreground">
@@ -440,12 +536,22 @@ const Settings = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-medium">OpenTTS server URL</label>
-              <input
-                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
-                value={openTtsUrl}
-                onChange={(e) => setOpenTtsUrl(e.target.value)}
-                placeholder="http://localhost:5500 (اختیاری — self-hosted رایگان)"
-              />
+              <div className="flex gap-2">
+                <input
+                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  value={openTtsUrl}
+                  onChange={(e) => setOpenTtsUrl(e.target.value)}
+                  placeholder="http://localhost:5500 (اختیاری — self-hosted رایگان)"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={testOpenTts}
+                  disabled={testingOpenTts || !openTtsUrl}
+                >
+                  {testingOpenTts ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test'}
+                </Button>
+              </div>
               <p className="text-xs text-muted-foreground">
                 OpenTTS رایگان و self-hosted — راه‌اندازی با docker از
                 <span className="font-mono"> github.com/synesthesiam/opentts</span>.

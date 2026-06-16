@@ -768,6 +768,24 @@ const News = () => {
                 </Button>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => { setAllMode(true); setActiveFolderId(null); setActiveSourceId(null); }}
+              className={
+                'mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors ' +
+                (allMode
+                  ? 'border-primary/30 bg-primary/10 text-foreground shadow-sm'
+                  : 'border-border/60 bg-card/60 hover:bg-accent text-foreground/90')
+              }
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
+                <Globe2 className="h-3.5 w-3.5 text-primary" />
+              </span>
+              <span className="truncate flex-1 text-start font-medium">همه‌ی اخبار</span>
+              <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {sources.length}
+              </span>
+            </button>
             {sources.length === 0 ? (
               <p className="text-xs text-muted-foreground px-1">
                 هنوز منبعی اضافه نکرده‌ای. روی «افزودن» بزن.

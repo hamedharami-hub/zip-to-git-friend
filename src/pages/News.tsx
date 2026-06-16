@@ -114,6 +114,9 @@ const News = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [folderFeed, setFolderFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [folderLoading, setFolderLoading] = useState(false);
+  const [allMode, setAllMode] = useState(false);
+  const [allFeed, setAllFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
+  const [allLoading, setAllLoading] = useState(false);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [windowHours, setWindowHours] = useState<string>('24');

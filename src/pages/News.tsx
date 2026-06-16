@@ -114,6 +114,9 @@ const News = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [folderFeed, setFolderFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [folderLoading, setFolderLoading] = useState(false);
+  const [allMode, setAllMode] = useState(false);
+  const [allFeed, setAllFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
+  const [allLoading, setAllLoading] = useState(false);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
   const [windowHours, setWindowHours] = useState<string>('24');
@@ -434,6 +437,100 @@ const News = () => {
     if (activeFolderId) loadFolderFromCache(activeFolderId);
   }, [activeFolderId, loadFolderFromCache]);
 
+  // ───── All-news aggregated view (across every source / folder) ─────
+  const loadAllFromCache = useCallback(() => {
+    const blockedList = blocked.map((b) => b.domain);
+    const isBlockedUrl = (url: string) => {
+      try {
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+        return blockedList.some((b) => host === b || host.endsWith('.' + b));
+      } catch { return false; }
+    };
+    const all: Array<FeedItem & { _sourceName?: string }> = [];
+    const seenUrls = new Set<string>();
+    for (const s of sources) {
+      const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
+      for (const it of cached) {
+        if (seenUrls.has(it.url)) continue;
+        seenUrls.add(it.url);
+        all.push({ ...it, _sourceName: s.name });
+      }
+    }
+    all.sort((a, b) => {
+      const aT = Date.parse(a.publishedAt ?? '') || 0;
+      const bT = Date.parse(b.publishedAt ?? '') || 0;
+      return bT - aT;
+    });
+    setAllFeed(all);
+  }, [sources, blocked]);
+
+  const refreshAllFeed = useCallback(async () => {
+    if (sources.length === 0) { setAllFeed([]); return; }
+    setAllLoading(true);
+    const blockedList = blocked.map((b) => b.domain);
+    const isBlockedUrl = (url: string) => {
+      try {
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+        return blockedList.some((b) => host === b || host.endsWith('.' + b));
+      } catch { return false; }
+    };
+    try {
+      let totalFetched = 0;
+      let failed = 0;
+      await Promise.all(sources.map(async (src) => {
+        try {
+          let items: FeedItem[] = [];
+          const searchModel = settings.newsSearchModelRef?.model;
+          if (src.kind === 'rss' && src.url) {
+            const r = await fetchRss(src.url, 30);
+            items = r.items.filter((it) => !isBlockedUrl(it.url));
+          } else if (src.kind === 'topic') {
+            items = await searchNews({
+              query: src.topic ?? src.name,
+              hours: Number(windowHours),
+              limit: 15,
+              language: src.language ?? undefined,
+              blockedDomains: blockedList,
+              model: searchModel,
+            });
+          } else if (src.kind === 'site' && src.url) {
+            items = await searchNews({
+              query: src.topic ?? '',
+              site: src.url,
+              hours: Number(windowHours),
+              limit: 15,
+              blockedDomains: blockedList,
+              model: searchModel,
+            });
+          }
+          totalFetched += items.length;
+          mergeIntoCache(src.id, items);
+        } catch (err) {
+          failed += 1;
+          console.error('[all refresh] source failed', src.name, err);
+        }
+      }));
+      loadAllFromCache();
+      if (failed === sources.length) {
+        toast.error(`به‌روزرسانی همه‌ی ${failed} منبع شکست خورد.`);
+      } else if (totalFetched === 0) {
+        toast.info('خبر جدیدی پیدا نشد.');
+      } else {
+        toast.success(`${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ''}.`);
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? 'به‌روزرسانی شکست خورد.');
+    } finally {
+      setAllLoading(false);
+    }
+  }, [sources, blocked, windowHours, loadAllFromCache, settings.newsSearchModelRef]);
+
+  useEffect(() => {
+    if (allMode) loadAllFromCache();
+  }, [allMode, loadAllFromCache]);
+
+
+
 
   const handleTrending = useCallback(async () => {
     setTrendingBusy(true);
@@ -671,6 +768,24 @@ const News = () => {
                 </Button>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => { setAllMode(true); setActiveFolderId(null); setActiveSourceId(null); }}
+              className={
+                'mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors ' +
+                (allMode
+                  ? 'border-primary/30 bg-primary/10 text-foreground shadow-sm'
+                  : 'border-border/60 bg-card/60 hover:bg-accent text-foreground/90')
+              }
+            >
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
+                <Globe2 className="h-3.5 w-3.5 text-primary" />
+              </span>
+              <span className="truncate flex-1 text-start font-medium">همه‌ی اخبار</span>
+              <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                {sources.length}
+              </span>
+            </button>
             {sources.length === 0 ? (
               <p className="text-xs text-muted-foreground px-1">
                 هنوز منبعی اضافه نکرده‌ای. روی «افزودن» بزن.
@@ -683,8 +798,8 @@ const News = () => {
                 activeFolderId={activeFolderId}
                 collapsed={expandedFolders}
                 onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
-                onPickFolder={(id) => { setActiveFolderId(id); setActiveSourceId(null); }}
-                onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); }}
+                onPickFolder={(id) => { setActiveFolderId(id); setActiveSourceId(null); setAllMode(false); }}
+                onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); setAllMode(false); }}
                 onDeleteSource={handleDeleteSource}
                 onMoveSource={async (sourceId, folderId) => {
                   await updateSource(sourceId, { folderId });
@@ -767,7 +882,15 @@ const News = () => {
         </aside>
 
         <section className="min-w-0 space-y-4">
-          {activeFolderId ? (
+          {allMode ? (
+            <AllAggregatedView
+              items={allFeed}
+              loading={allLoading}
+              onRefresh={refreshAllFeed}
+              onOpenItem={handleOpenArticle}
+              sourceCount={sources.length}
+            />
+          ) : activeFolderId ? (
             <FolderAggregatedView
               folder={folders.find((f) => f.id === activeFolderId) ?? null}
               items={folderFeed}
@@ -1514,6 +1637,114 @@ function FolderAggregatedView({
           icon={<Newspaper className="h-7 w-7" />}
           title="هنوز خبری در کش این پوشه نیست"
           description="روی «بروزرسانی همه» بزن تا تازه‌ترین اخبار همه‌ی منابع این پوشه آورده شوند."
+        />
+      ) : (
+        <ul className="space-y-3">
+          {items.map((item) => {
+            const seen = isSeen(item.url);
+            return (
+              <li key={item.url} id={`news-item-${encodeURIComponent(item.url)}`} className="scroll-mt-24 rounded-xl transition-shadow">
+                <button
+                  type="button"
+                  onClick={() => onOpenItem(item)}
+                  className={
+                    'group block w-full text-start rounded-xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
+                    (seen ? 'opacity-60' : '')
+                  }
+                >
+                  <div className="flex gap-3">
+                    {item.imageUrl && (
+                      <img src={item.imageUrl} alt="" loading="lazy"
+                        className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
+                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        dir={isRtlText(item.title) ? 'rtl' : 'ltr'}
+                        lang={isRtlText(item.title) ? 'fa' : undefined}
+                        className={
+                          'font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors ' +
+                          (isRtlText(item.title) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start ' : '') +
+                          (seen ? 'font-normal text-muted-foreground' : '')
+                        }>
+                        {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
+                        {item.title}
+                      </h3>
+                      {item.excerpt && (
+                        <p
+                          dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}
+                          lang={isRtlText(item.excerpt) ? 'fa' : undefined}
+                          className={
+                            'text-sm text-muted-foreground mt-1 line-clamp-2 ' +
+                            (isRtlText(item.excerpt) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start' : '')
+                          }>
+                          {item.excerpt}
+                        </p>
+                      )}
+                      <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                        {item._sourceName && (
+                          <span className="inline-flex max-w-full items-center rounded-full border border-primary/20 bg-primary/10 px-2 py-0.5 font-medium text-primary">
+                            <Folder className="me-1 h-3 w-3 shrink-0" />
+                            <span className="truncate">{item._sourceName}</span>
+                          </span>
+                        )}
+                        {(item.siteName || siteFromUrl(item.url)) && (
+                          <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
+                            <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
+                            <span className="truncate">{item.siteName ?? siteFromUrl(item.url)}</span>
+                          </span>
+                        )}
+                        {item.publishedAt && (
+                          <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
+                            <Clock className="me-1 h-3 w-3" />
+                            {formatTime(item.publishedAt)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </>
+  );
+}
+
+function AllAggregatedView({
+  items, loading, onRefresh, onOpenItem, sourceCount,
+}: {
+  items: Array<FeedItem & { _sourceName?: string }>;
+  loading: boolean;
+  onRefresh: () => void;
+  onOpenItem: (item: FeedItem) => void;
+  sourceCount: number;
+}) {
+  return (
+    <>
+      <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <Globe2 className="h-4 w-4 text-primary shrink-0" />
+            <h2 className="font-semibold truncate">همه‌ی اخبار</h2>
+            <span className="text-[11px] text-muted-foreground">
+              {sourceCount} منبع · {items.length} خبر
+            </span>
+          </div>
+          <Button variant="ghost" size="sm" onClick={onRefresh} disabled={loading} className="gap-1">
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+            بروزرسانی همه
+          </Button>
+        </div>
+      </div>
+
+      {items.length === 0 ? (
+        <EmptyState
+          icon={<Newspaper className="h-7 w-7" />}
+          title="هنوز خبری در کش نیست"
+          description="روی «بروزرسانی همه» بزن تا تازه‌ترین اخبار همه‌ی منابع آورده شوند."
         />
       ) : (
         <ul className="space-y-3">

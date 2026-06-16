@@ -882,7 +882,15 @@ const News = () => {
         </aside>
 
         <section className="min-w-0 space-y-4">
-          {activeFolderId ? (
+          {allMode ? (
+            <AllAggregatedView
+              items={allFeed}
+              loading={allLoading}
+              onRefresh={refreshAllFeed}
+              onOpenItem={handleOpenArticle}
+              sourceCount={sources.length}
+            />
+          ) : activeFolderId ? (
             <FolderAggregatedView
               folder={folders.find((f) => f.id === activeFolderId) ?? null}
               items={folderFeed}

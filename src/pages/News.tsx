@@ -437,6 +437,100 @@ const News = () => {
     if (activeFolderId) loadFolderFromCache(activeFolderId);
   }, [activeFolderId, loadFolderFromCache]);
 
+  // ───── All-news aggregated view (across every source / folder) ─────
+  const loadAllFromCache = useCallback(() => {
+    const blockedList = blocked.map((b) => b.domain);
+    const isBlockedUrl = (url: string) => {
+      try {
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+        return blockedList.some((b) => host === b || host.endsWith('.' + b));
+      } catch { return false; }
+    };
+    const all: Array<FeedItem & { _sourceName?: string }> = [];
+    const seenUrls = new Set<string>();
+    for (const s of sources) {
+      const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
+      for (const it of cached) {
+        if (seenUrls.has(it.url)) continue;
+        seenUrls.add(it.url);
+        all.push({ ...it, _sourceName: s.name });
+      }
+    }
+    all.sort((a, b) => {
+      const aT = Date.parse(a.publishedAt ?? '') || 0;
+      const bT = Date.parse(b.publishedAt ?? '') || 0;
+      return bT - aT;
+    });
+    setAllFeed(all);
+  }, [sources, blocked]);
+
+  const refreshAllFeed = useCallback(async () => {
+    if (sources.length === 0) { setAllFeed([]); return; }
+    setAllLoading(true);
+    const blockedList = blocked.map((b) => b.domain);
+    const isBlockedUrl = (url: string) => {
+      try {
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
+        return blockedList.some((b) => host === b || host.endsWith('.' + b));
+      } catch { return false; }
+    };
+    try {
+      let totalFetched = 0;
+      let failed = 0;
+      await Promise.all(sources.map(async (src) => {
+        try {
+          let items: FeedItem[] = [];
+          const searchModel = settings.newsSearchModelRef?.model;
+          if (src.kind === 'rss' && src.url) {
+            const r = await fetchRss(src.url, 30);
+            items = r.items.filter((it) => !isBlockedUrl(it.url));
+          } else if (src.kind === 'topic') {
+            items = await searchNews({
+              query: src.topic ?? src.name,
+              hours: Number(windowHours),
+              limit: 15,
+              language: src.language ?? undefined,
+              blockedDomains: blockedList,
+              model: searchModel,
+            });
+          } else if (src.kind === 'site' && src.url) {
+            items = await searchNews({
+              query: src.topic ?? '',
+              site: src.url,
+              hours: Number(windowHours),
+              limit: 15,
+              blockedDomains: blockedList,
+              model: searchModel,
+            });
+          }
+          totalFetched += items.length;
+          mergeIntoCache(src.id, items);
+        } catch (err) {
+          failed += 1;
+          console.error('[all refresh] source failed', src.name, err);
+        }
+      }));
+      loadAllFromCache();
+      if (failed === sources.length) {
+        toast.error(`به‌روزرسانی همه‌ی ${failed} منبع شکست خورد.`);
+      } else if (totalFetched === 0) {
+        toast.info('خبر جدیدی پیدا نشد.');
+      } else {
+        toast.success(`${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ''}.`);
+      }
+    } catch (e: any) {
+      toast.error(e.message ?? 'به‌روزرسانی شکست خورد.');
+    } finally {
+      setAllLoading(false);
+    }
+  }, [sources, blocked, windowHours, loadAllFromCache, settings.newsSearchModelRef]);
+
+  useEffect(() => {
+    if (allMode) loadAllFromCache();
+  }, [allMode, loadAllFromCache]);
+
+
+
 
   const handleTrending = useCallback(async () => {
     setTrendingBusy(true);

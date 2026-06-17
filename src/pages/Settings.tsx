@@ -225,18 +225,37 @@ const Settings = () => {
   const testEleven = async () => {
     setTestingEleven(true);
     try {
+      if (!elevenLabs.trim()) {
+        toast.error('ابتدا کلید ElevenLabs را وارد کنید.');
+        return;
+      }
       const res = await fetch('https://api.elevenlabs.io/v1/user', {
-        headers: { 'xi-api-key': elevenLabs },
+        headers: { 'xi-api-key': elevenLabs.trim() },
       });
-      if (res.status === 401 || res.status === 403) toast.error('ElevenLabs rejected the key.');
-      else if (!res.ok) toast.error(`ElevenLabs test failed (${res.status}).`);
-      else toast.success('ElevenLabs key works.');
-    } catch {
-      toast.error('ElevenLabs test failed.');
+      let detail = '';
+      try {
+        const j = await res.clone().json();
+        detail = j?.detail?.message || j?.detail?.status || j?.detail || j?.message || '';
+        if (typeof detail !== 'string') detail = JSON.stringify(detail);
+      } catch { /* not json */ }
+      if (res.ok) {
+        toast.success('ElevenLabs key works.');
+      } else if (res.status === 401 || res.status === 403) {
+        // Common cases: invalid_api_key, detected_unusual_activity (free tier + VPN/proxy),
+        // missing_permissions (key has no text_to_speech scope).
+        toast.error(`ElevenLabs ${res.status}: ${detail || 'کلید رد شد'} — اگر detected_unusual_activity است، VPN را خاموش کن یا حساب را به Starter ارتقا بده. اگر missing_permissions است، یک کلید جدید با دسترسی text_to_speech بساز.`, { duration: 9000 });
+      } else if (res.status === 429) {
+        toast.error('ElevenLabs: سقف اعتبار/درخواست پر شده (۴۲۹).');
+      } else {
+        toast.error(`ElevenLabs ${res.status}: ${detail || 'خطا'}`);
+      }
+    } catch (e) {
+      toast.error(`ElevenLabs test failed: ${e instanceof Error ? e.message : 'network'}`);
     } finally {
       setTestingEleven(false);
     }
   };
+
 
   const testAzure = async () => {
     setTestingAzure(true);
@@ -482,15 +501,63 @@ const Settings = () => {
                 onTest={testAzure}
                 testing={testingAzure}
               />
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <label className="text-xs text-muted-foreground w-20">Region</label>
+                <select
+                  className="flex h-9 rounded-md border border-input bg-background px-2 py-1 text-sm flex-1 min-w-[180px]"
+                  value={[
+                    'australiaeast','australiasoutheast','southeastasia','eastasia','japaneast','japanwest','koreacentral','centralindia','uaenorth',
+                    'westeurope','northeurope','uksouth','francecentral','germanywestcentral','switzerlandnorth',
+                    'eastus','eastus2','westus','westus2','westus3','centralus','southcentralus','canadacentral','brazilsouth','southafricanorth',
+                  ].includes(azureRegion) ? azureRegion : '__custom'}
+                  onChange={(e) => { if (e.target.value !== '__custom') setAzureRegion(e.target.value); }}
+                >
+                  <optgroup label="Asia / Pacific">
+                    <option value="australiaeast">Australia East — سیدنی (توصیه‌شده)</option>
+                    <option value="australiasoutheast">Australia Southeast — ملبورن</option>
+                    <option value="southeastasia">Southeast Asia — سنگاپور</option>
+                    <option value="eastasia">East Asia — هنگ‌کنگ</option>
+                    <option value="japaneast">Japan East — توکیو</option>
+                    <option value="japanwest">Japan West — اوزاکا</option>
+                    <option value="koreacentral">Korea Central — سئول</option>
+                    <option value="centralindia">Central India — پونه</option>
+                    <option value="uaenorth">UAE North — دبی</option>
+                  </optgroup>
+                  <optgroup label="Europe">
+                    <option value="westeurope">West Europe — آمستردام</option>
+                    <option value="northeurope">North Europe — دوبلین</option>
+                    <option value="uksouth">UK South — لندن</option>
+                    <option value="francecentral">France Central — پاریس</option>
+                    <option value="germanywestcentral">Germany West Central</option>
+                    <option value="switzerlandnorth">Switzerland North</option>
+                  </optgroup>
+                  <optgroup label="Americas">
+                    <option value="eastus">East US</option>
+                    <option value="eastus2">East US 2</option>
+                    <option value="westus">West US</option>
+                    <option value="westus2">West US 2</option>
+                    <option value="westus3">West US 3</option>
+                    <option value="centralus">Central US</option>
+                    <option value="southcentralus">South Central US</option>
+                    <option value="canadacentral">Canada Central</option>
+                    <option value="brazilsouth">Brazil South</option>
+                  </optgroup>
+                  <optgroup label="Africa">
+                    <option value="southafricanorth">South Africa North</option>
+                  </optgroup>
+                  <option value="__custom">سفارشی…</option>
+                </select>
                 <input
-                  className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm"
+                  className="flex h-9 w-36 rounded-md border border-input bg-background px-2 py-1 text-xs font-mono"
                   value={azureRegion}
                   onChange={(e) => setAzureRegion(e.target.value)}
-                  placeholder="westeurope / eastus / ..."
+                  placeholder="region id"
+                  title="شناسهٔ دقیق region (مثلاً australiaeast). باید با منطقه‌ای که Speech resource را در آن ساخته‌اید یکی باشد."
                 />
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                ⚠️ Region باید دقیقاً همان منطقه‌ای باشد که Speech resource شما در آن ساخته شده؛ در غیر این صورت کلید ۴۰۱/۴۰۳ می‌گیرد.
+              </p>
               <p className="text-xs text-muted-foreground">
                 Microsoft Azure Cognitive Services — صدای fa-IR-DilaraNeural و FaridNeural.
                 از <span className="font-mono">portal.azure.com</span> → Speech service.

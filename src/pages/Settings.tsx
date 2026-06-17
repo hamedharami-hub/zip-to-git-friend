@@ -225,18 +225,37 @@ const Settings = () => {
   const testEleven = async () => {
     setTestingEleven(true);
     try {
+      if (!elevenLabs.trim()) {
+        toast.error('ابتدا کلید ElevenLabs را وارد کنید.');
+        return;
+      }
       const res = await fetch('https://api.elevenlabs.io/v1/user', {
-        headers: { 'xi-api-key': elevenLabs },
+        headers: { 'xi-api-key': elevenLabs.trim() },
       });
-      if (res.status === 401 || res.status === 403) toast.error('ElevenLabs rejected the key.');
-      else if (!res.ok) toast.error(`ElevenLabs test failed (${res.status}).`);
-      else toast.success('ElevenLabs key works.');
-    } catch {
-      toast.error('ElevenLabs test failed.');
+      let detail = '';
+      try {
+        const j = await res.clone().json();
+        detail = j?.detail?.message || j?.detail?.status || j?.detail || j?.message || '';
+        if (typeof detail !== 'string') detail = JSON.stringify(detail);
+      } catch { /* not json */ }
+      if (res.ok) {
+        toast.success('ElevenLabs key works.');
+      } else if (res.status === 401 || res.status === 403) {
+        // Common cases: invalid_api_key, detected_unusual_activity (free tier + VPN/proxy),
+        // missing_permissions (key has no text_to_speech scope).
+        toast.error(`ElevenLabs ${res.status}: ${detail || 'کلید رد شد'} — اگر detected_unusual_activity است، VPN را خاموش کن یا حساب را به Starter ارتقا بده. اگر missing_permissions است، یک کلید جدید با دسترسی text_to_speech بساز.`, { duration: 9000 });
+      } else if (res.status === 429) {
+        toast.error('ElevenLabs: سقف اعتبار/درخواست پر شده (۴۲۹).');
+      } else {
+        toast.error(`ElevenLabs ${res.status}: ${detail || 'خطا'}`);
+      }
+    } catch (e) {
+      toast.error(`ElevenLabs test failed: ${e instanceof Error ? e.message : 'network'}`);
     } finally {
       setTestingEleven(false);
     }
   };
+
 
   const testAzure = async () => {
     setTestingAzure(true);

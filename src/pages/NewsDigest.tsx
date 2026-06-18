@@ -47,6 +47,9 @@ const NewsDigestReader = () => {
   const [displayLang, setDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
   const [translationCount, setTranslationCount] = useState(0);
   const [faTtsText, setFaTtsText] = useState<string>('');
+  const [trProgress, setTrProgress] = useState<{ done: number; total: number; failed: number; running: boolean }>(
+    { done: 0, total: 0, failed: 0, running: false },
+  );
   const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(
     { sizeClass: 'text-base', familyClass: 'font-sans' },
   );
@@ -80,10 +83,10 @@ const NewsDigestReader = () => {
   }, [digestId]);
 
   // Auto-translate paragraphs (cache-aware) and assemble FA TTS script.
-  useEffect(() => {
+  // Re-runs when the digest html changes; safe to call repeatedly because
+  // batchAnalyzeChapter skips paragraphs that already have a cached analysis.
+  const runTranslate = useCallback(async (signal?: AbortSignal) => {
     if (!digest?.contentHtml) return;
-    let cancelled = false;
-    const controller = new AbortController();
     const bookId = `digest-${digest.id}`;
     const chapter: BookChapter = {
       id: `${bookId}:0`,
@@ -94,34 +97,54 @@ const NewsDigestReader = () => {
       text: '',
       wordCount: 0,
     };
+    const items = extractAnalysableParagraphs(chapter);
+    console.log('[NewsDigest] translate start', { bookId, paragraphs: items.length, model: newsModelRef });
+    setTrProgress({ done: 0, total: items.length, failed: 0, running: items.length > 0 });
+
     const buildFaText = async () => {
-      const items = extractAnalysableParagraphs(chapter);
       const out: string[] = [];
       for (const it of items) {
         const cached = await getCachedParagraphAnalysis(bookId, 0, it.text);
         const fa = cached?.translation?.trim();
         if (fa) out.push(fa);
       }
-      if (!cancelled) setFaTtsText(out.join('\n\n'));
+      if (!signal?.aborted) setFaTtsText(out.join('\n\n'));
     };
-    void (async () => {
-      try {
-        const final = await batchAnalyzeChapter(bookId, chapter, {
-          concurrency: 5,
-          signal: controller.signal,
-          modelRef: newsModelRef,
-          onProgress: (snap) => emitChapterAnalyses(bookId, 0, snap.results),
-        });
-        if (cancelled) return;
-        emitChapterAnalyses(bookId, 0, final.results);
-        await buildFaText();
-      } catch {
-        await buildFaText();
+
+    try {
+      const final = await batchAnalyzeChapter(bookId, chapter, {
+        concurrency: 5,
+        signal,
+        modelRef: newsModelRef,
+        onProgress: (snap) => {
+          emitChapterAnalyses(bookId, 0, snap.results);
+          if (!signal?.aborted) {
+            setTrProgress({ done: snap.completed, total: snap.total, failed: snap.failed, running: !snap.done });
+          }
+        },
+      });
+      if (signal?.aborted) return;
+      emitChapterAnalyses(bookId, 0, final.results);
+      setTrProgress({ done: final.completed, total: final.total, failed: final.failed, running: false });
+      if (final.failed > 0 && final.lastError) {
+        toast.error(`ترجمه برخی پاراگراف‌ها ناموفق بود: ${final.lastError}`);
       }
-    })();
-    return () => { cancelled = true; controller.abort(); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [digest?.id, digest?.contentHtml]);
+      await buildFaText();
+      console.log('[NewsDigest] translate done', { completed: final.completed, failed: final.failed, total: final.total });
+    } catch (e: any) {
+      console.error('[NewsDigest] translate error', e);
+      toast.error(`ترجمه با خطا مواجه شد: ${e?.message ?? 'unknown'}`);
+      setTrProgress((p) => ({ ...p, running: false }));
+      await buildFaText();
+    }
+  }, [digest?.id, digest?.contentHtml, digest?.title, newsModelRef]);
+
+  useEffect(() => {
+    if (!digest?.contentHtml) return;
+    const controller = new AbortController();
+    void runTranslate(controller.signal);
+    return () => controller.abort();
+  }, [digest?.id, digest?.contentHtml, runTranslate]);
 
   const handleDelete = async () => {
     if (!digest) return;
@@ -219,13 +242,30 @@ const NewsDigestReader = () => {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                onClick={() => void runTranslate()}
+                disabled={trProgress.running}
+              >
+                <Sparkles className="h-4 w-4 me-2" />
+                {trProgress.running
+                  ? `ترجمه ${trProgress.done}/${trProgress.total}…`
+                  : trProgress.total > 0
+                    ? 'ترجمه دوباره پاراگراف‌ها'
+                    : 'ترجمه پاراگراف‌ها'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="h-4 w-4 me-2" /> حذف خلاصه
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {trProgress.running && trProgress.total > 0 && (
+          <div className="px-3 pb-1 text-[11px] text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>در حال ترجمه پاراگراف‌ها… {trProgress.done}/{trProgress.total}</span>
+          </div>
+        )}
       </header>
 
       {ttsText && (

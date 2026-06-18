@@ -1794,6 +1794,7 @@ function AllAggregatedView({
   onOpenItem: (item: FeedItem) => void;
   sourceCount: number;
 }) {
+  const titleTr = useTitleTranslations();
   return (
     <>
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">

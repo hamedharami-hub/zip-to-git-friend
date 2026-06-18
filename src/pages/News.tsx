@@ -133,6 +133,10 @@ const News = () => {
   // Re-render tick when the seen-articles set changes (cross-tab too).
   const [, setSeenTick] = useState(0);
   useEffect(() => subscribeSeen(() => setSeenTick((n) => n + 1)), []);
+  // Persian title translations (per-URL, persisted in localStorage).
+  const titleTr = useTitleTranslations();
+  const [trBusy, setTrBusy] = useState(false);
+  const [trProgress, setTrProgress] = useState<{ done: number; total: number } | null>(null);
   // After a back-navigation, scroll the previously opened headline into view once.
   const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
   

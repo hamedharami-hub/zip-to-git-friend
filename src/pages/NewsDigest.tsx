@@ -242,13 +242,30 @@ const NewsDigestReader = () => {
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                onClick={() => void runTranslate()}
+                disabled={trProgress.running}
+              >
+                <Sparkles className="h-4 w-4 me-2" />
+                {trProgress.running
+                  ? `ترجمه ${trProgress.done}/${trProgress.total}…`
+                  : trProgress.total > 0
+                    ? 'ترجمه دوباره پاراگراف‌ها'
+                    : 'ترجمه پاراگراف‌ها'}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
                 <Trash2 className="h-4 w-4 me-2" /> حذف خلاصه
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {trProgress.running && trProgress.total > 0 && (
+          <div className="px-3 pb-1 text-[11px] text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>در حال ترجمه پاراگراف‌ها… {trProgress.done}/{trProgress.total}</span>
+          </div>
+        )}
       </header>
 
       {ttsText && (

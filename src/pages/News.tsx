@@ -7,8 +7,13 @@ import {
   ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
   Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,
   FolderPlus, Folder, Ban, Bookmark, BookmarkCheck, Settings as SettingsIcon,
-  X,
+  X, Languages,
 } from 'lucide-react';
+import {
+  useTitleTranslations,
+  translateTitlesBatch,
+  type TranslatableItem,
+} from '@/lib/newsTitleTranslations';
 import { ImportUrlDialog } from '@/components/news/ImportUrlDialog';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { loadCachedFeed, mergeIntoCache } from '@/lib/newsFeedCache';

@@ -1677,6 +1677,7 @@ function FolderAggregatedView({
   onPickSource: (id: string) => void;
   sources: NewsSource[];
 }) {
+  const titleTr = useTitleTranslations();
   if (!folder) return null;
   const sourcesInFolder = sources.filter((s) => s.folderId === folder.id);
   return (

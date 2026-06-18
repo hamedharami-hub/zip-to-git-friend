@@ -7,8 +7,13 @@ import {
   ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
   Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,
   FolderPlus, Folder, Ban, Bookmark, BookmarkCheck, Settings as SettingsIcon,
-  X,
+  X, Languages,
 } from 'lucide-react';
+import {
+  useTitleTranslations,
+  translateTitlesBatch,
+  type TranslatableItem,
+} from '@/lib/newsTitleTranslations';
 import { ImportUrlDialog } from '@/components/news/ImportUrlDialog';
 import { InstallButton } from '@/components/pwa/InstallButton';
 import { loadCachedFeed, mergeIntoCache } from '@/lib/newsFeedCache';
@@ -128,6 +133,10 @@ const News = () => {
   // Re-render tick when the seen-articles set changes (cross-tab too).
   const [, setSeenTick] = useState(0);
   useEffect(() => subscribeSeen(() => setSeenTick((n) => n + 1)), []);
+  // Persian title translations (per-URL, persisted in localStorage).
+  const titleTr = useTitleTranslations();
+  const [trBusy, setTrBusy] = useState(false);
+  const [trProgress, setTrProgress] = useState<{ done: number; total: number } | null>(null);
   // After a back-navigation, scroll the previously opened headline into view once.
   const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
   
@@ -680,6 +689,42 @@ const News = () => {
     [activeSourceId],
   );
 
+  // Translate every English title currently visible (whichever list is active),
+  // in cost-aware batches via the news-translate-titles edge function.
+  const handleTranslateVisibleTitles = useCallback(async () => {
+    const active = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
+    const items: TranslatableItem[] = active.map((it) => ({
+      url: it.url,
+      title: it.title,
+      excerpt: it.excerpt,
+    }));
+    if (items.length === 0) {
+      toast.info('خبری برای ترجمه نیست. اول فید را بارگذاری کن.');
+      return;
+    }
+    setTrBusy(true);
+    setTrProgress({ done: 0, total: 0 });
+    try {
+      const res = await translateTitlesBatch(items, {
+        model: newsModelRef.model,
+        onProgress: (snap) => setTrProgress({ done: snap.done, total: snap.total }),
+      });
+      if (res.translated === 0 && res.failed === 0) {
+        toast.info('همه‌ی عنوان‌ها از قبل ترجمه شده‌اند یا فارسی هستند.');
+      } else if (res.failed > 0) {
+        toast.error(`${res.translated} عنوان ترجمه شد · ${res.failed} ناموفق`);
+      } else {
+        toast.success(`${res.translated} عنوان ترجمه شد.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'ترجمه با خطا مواجه شد.');
+    } finally {
+      setTrBusy(false);
+      setTimeout(() => setTrProgress(null), 1500);
+    }
+  }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, newsModelRef.model]);
+
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background text-foreground">
@@ -762,12 +807,26 @@ const News = () => {
               </h2>
               <div className="flex items-center gap-1">
                 <span className="text-[11px] text-muted-foreground">{sources.length}</span>
+                <Button
+                  size="icon" variant="ghost" className="h-6 w-6"
+                  onClick={handleTranslateVisibleTitles}
+                  disabled={trBusy}
+                  title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
+                >
+                  {trBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
+                </Button>
                 <Button size="icon" variant="ghost" className="h-6 w-6"
                   onClick={() => setManageOpen(true)} title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده">
                   <SettingsIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
+            {trProgress && trProgress.total > 0 && (
+              <p className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => { setAllMode(true); setActiveFolderId(null); setActiveSourceId(null); }}
@@ -1076,6 +1135,12 @@ const News = () => {
                               {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
                               {item.title}
                             </h3>
+                            {titleTr[item.url]?.titleFa && (
+                              <p dir="rtl" lang="fa"
+                                className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90">
+                                {titleTr[item.url].titleFa}
+                              </p>
+                            )}
                             {item.excerpt && (
                               <p
                                 dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}
@@ -1612,6 +1677,7 @@ function FolderAggregatedView({
   onPickSource: (id: string) => void;
   sources: NewsSource[];
 }) {
+  const titleTr = useTitleTranslations();
   if (!folder) return null;
   const sourcesInFolder = sources.filter((s) => s.folderId === folder.id);
   return (
@@ -1670,6 +1736,12 @@ function FolderAggregatedView({
                         {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
                         {item.title}
                       </h3>
+                      {titleTr[item.url]?.titleFa && (
+                        <p dir="rtl" lang="fa"
+                          className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90">
+                          {titleTr[item.url].titleFa}
+                        </p>
+                      )}
                       {item.excerpt && (
                         <p
                           dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}
@@ -1722,6 +1794,7 @@ function AllAggregatedView({
   onOpenItem: (item: FeedItem) => void;
   sourceCount: number;
 }) {
+  const titleTr = useTitleTranslations();
   return (
     <>
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
@@ -1778,6 +1851,12 @@ function AllAggregatedView({
                         {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
                         {item.title}
                       </h3>
+                      {titleTr[item.url]?.titleFa && (
+                        <p dir="rtl" lang="fa"
+                          className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90">
+                          {titleTr[item.url].titleFa}
+                        </p>
+                      )}
                       {item.excerpt && (
                         <p
                           dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}

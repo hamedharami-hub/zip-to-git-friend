@@ -807,12 +807,26 @@ const News = () => {
               </h2>
               <div className="flex items-center gap-1">
                 <span className="text-[11px] text-muted-foreground">{sources.length}</span>
+                <Button
+                  size="icon" variant="ghost" className="h-6 w-6"
+                  onClick={handleTranslateVisibleTitles}
+                  disabled={trBusy}
+                  title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
+                >
+                  {trBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
+                </Button>
                 <Button size="icon" variant="ghost" className="h-6 w-6"
                   onClick={() => setManageOpen(true)} title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده">
                   <SettingsIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
+            {trProgress && trProgress.total > 0 && (
+              <p className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
+              </p>
+            )}
             <button
               type="button"
               onClick={() => { setAllMode(true); setActiveFolderId(null); setActiveSourceId(null); }}

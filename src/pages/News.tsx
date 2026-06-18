@@ -689,6 +689,42 @@ const News = () => {
     [activeSourceId],
   );
 
+  // Translate every English title currently visible (whichever list is active),
+  // in cost-aware batches via the news-translate-titles edge function.
+  const handleTranslateVisibleTitles = useCallback(async () => {
+    const active = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
+    const items: TranslatableItem[] = active.map((it) => ({
+      url: it.url,
+      title: it.title,
+      excerpt: it.excerpt,
+    }));
+    if (items.length === 0) {
+      toast.info('خبری برای ترجمه نیست. اول فید را بارگذاری کن.');
+      return;
+    }
+    setTrBusy(true);
+    setTrProgress({ done: 0, total: 0 });
+    try {
+      const res = await translateTitlesBatch(items, {
+        model: newsModelRef.model,
+        onProgress: (snap) => setTrProgress({ done: snap.done, total: snap.total }),
+      });
+      if (res.translated === 0 && res.failed === 0) {
+        toast.info('همه‌ی عنوان‌ها از قبل ترجمه شده‌اند یا فارسی هستند.');
+      } else if (res.failed > 0) {
+        toast.error(`${res.translated} عنوان ترجمه شد · ${res.failed} ناموفق`);
+      } else {
+        toast.success(`${res.translated} عنوان ترجمه شد.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'ترجمه با خطا مواجه شد.');
+    } finally {
+      setTrBusy(false);
+      setTimeout(() => setTrProgress(null), 1500);
+    }
+  }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, newsModelRef.model]);
+
+
   if (!user) {
     return (
       <div className="min-h-screen bg-background text-foreground">

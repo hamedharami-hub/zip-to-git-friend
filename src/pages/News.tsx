@@ -1851,6 +1851,12 @@ function AllAggregatedView({
                         {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
                         {item.title}
                       </h3>
+                      {titleTr[item.url]?.titleFa && (
+                        <p dir="rtl" lang="fa"
+                          className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90">
+                          {titleTr[item.url].titleFa}
+                        </p>
+                      )}
                       {item.excerpt && (
                         <p
                           dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}

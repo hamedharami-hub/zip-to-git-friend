@@ -922,6 +922,49 @@ const News = () => {
                 >
                   {trBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-6 w-6"
+                      disabled={dlBusy}
+                      title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)">
+                      {dlBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last10')}>
+                      ۱۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last50')}>
+                      ۵۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last100')}>
+                      ۱۰۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('all')}>
+                      همه‌ی این لیست
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => { setSelectMode((v) => !v); if (selectMode) setSelectedUrls(new Set()); }}
+                    >
+                      {selectMode ? (
+                        <><Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب</>
+                      ) : (
+                        <><CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…</>
+                      )}
+                    </DropdownMenuItem>
+                    {selectMode && (
+                      <DropdownMenuItem
+                        onClick={() => handlePrefetchOffline('selected')}
+                        disabled={selectedUrls.size === 0}
+                      >
+                        <Download className="h-3.5 w-3.5 me-2" />
+                        دانلود {selectedUrls.size} انتخاب‌شده
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="icon" variant="ghost" className="h-6 w-6"
                   onClick={() => setManageOpen(true)} title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده">
                   <SettingsIcon className="h-3.5 w-3.5" />
@@ -933,6 +976,26 @@ const News = () => {
                 <Loader2 className="h-3 w-3 animate-spin" />
                 ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
               </p>
+            )}
+            {dlProgress && dlProgress.total > 0 && (
+              <div className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                <span className="truncate flex-1">
+                  دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
+                  {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ''}
+                </span>
+                {dlBusy && (
+                  <button onClick={cancelPrefetch} className="text-destructive hover:underline">
+                    لغو
+                  </button>
+                )}
+              </div>
+            )}
+            {selectMode && (
+              <div className="px-1 mb-2 text-[11px] text-primary flex items-center gap-1">
+                <CheckSquare className="h-3 w-3" />
+                حالت انتخاب فعال — روی خبرها بزن • {selectedUrls.size} انتخاب‌شده
+              </div>
             )}
             <button
               type="button"

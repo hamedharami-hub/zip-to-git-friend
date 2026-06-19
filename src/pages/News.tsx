@@ -142,6 +142,16 @@ const News = () => {
   const titleTr = useTitleTranslations();
   const [trBusy, setTrBusy] = useState(false);
   const [trProgress, setTrProgress] = useState<{ done: number; total: number } | null>(null);
+  // Offline prefetch (download articles for offline reading).
+  const [dlBusy, setDlBusy] = useState(false);
+  const [dlProgress, setDlProgress] = useState<{ done: number; total: number; failed: number; current?: string } | null>(null);
+  const dlAbortRef = useRef<AbortController | null>(null);
+  // Multi-select mode for choosing specific articles to prefetch.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+  // Re-render whenever the offline cache changes so badges refresh.
+  const [, setOfflineTick] = useState(0);
+  const bumpOffline = useCallback(() => setOfflineTick((n) => n + 1), []);
   // After a back-navigation, scroll the previously opened headline into view once.
   const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
   

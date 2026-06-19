@@ -739,6 +739,82 @@ const News = () => {
     }
   }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, newsModelRef.model]);
 
+  // Pre-download articles so the English processed text can be read offline.
+  // `mode`: 'last10' | 'last50' | 'last100' | 'all' | 'selected'.
+  const handlePrefetchOffline = useCallback(async (
+    mode: 'last10' | 'last50' | 'last100' | 'all' | 'selected',
+  ) => {
+    const activeList = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
+    let pool: Array<FeedItem & { _sourceName?: string }> = activeList;
+    if (mode === 'selected') {
+      if (selectedUrls.size === 0) {
+        toast.info('هیچ خبری انتخاب نشده. اول چند خبر را تیک بزن.');
+        return;
+      }
+      pool = activeList.filter((it) => selectedUrls.has(it.url));
+    } else if (mode === 'last10') pool = activeList.slice(0, 10);
+    else if (mode === 'last50') pool = activeList.slice(0, 50);
+    else if (mode === 'last100') pool = activeList.slice(0, 100);
+
+    if (pool.length === 0) {
+      toast.info('خبری برای دانلود نیست. اول فید را بارگذاری کن.');
+      return;
+    }
+    // Skip items already cached so re-runs are cheap.
+    const todo = pool.filter((it) => !isUrlCached(it.url));
+    if (todo.length === 0) {
+      toast.success(`همه‌ی ${pool.length} خبر از قبل دانلود شده‌اند.`);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    dlAbortRef.current = ctrl;
+    setDlBusy(true);
+    setDlProgress({ done: 0, total: todo.length, failed: 0 });
+    try {
+      const sourceIdByUrl = (url: string) => {
+        if (activeSourceId) return activeSourceId;
+        // For folder/all views we just upsert with no source (item.url has the source domain).
+        return null;
+      };
+      const res = await prefetchManyForOffline(todo, {
+        sourceIdByUrl,
+        concurrency: 2,
+        signal: ctrl.signal,
+        onProgress: (p) => setDlProgress(p),
+      });
+      bumpOffline();
+      if (res.failed > 0) {
+        toast.error(`${res.done - res.failed} خبر دانلود شد · ${res.failed} ناموفق`);
+      } else {
+        toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'دانلود آفلاین با خطا مواجه شد.');
+    } finally {
+      setDlBusy(false);
+      dlAbortRef.current = null;
+      setTimeout(() => setDlProgress(null), 1500);
+      if (mode === 'selected') {
+        setSelectedUrls(new Set());
+        setSelectMode(false);
+      }
+    }
+  }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, selectedUrls, activeSourceId, bumpOffline]);
+
+  const cancelPrefetch = useCallback(() => {
+    dlAbortRef.current?.abort();
+  }, []);
+
+  const toggleSelectUrl = useCallback((url: string) => {
+    setSelectedUrls((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url); else next.add(url);
+      return next;
+    });
+  }, []);
+
+
 
   if (!user) {
     return (

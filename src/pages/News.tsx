@@ -7,8 +7,13 @@ import {
   ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
   Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,
   FolderPlus, Folder, Ban, Bookmark, BookmarkCheck, Settings as SettingsIcon,
-  X, Languages,
+  X, Languages, Download, CheckSquare, Square,
 } from 'lucide-react';
+import {
+  prefetchManyForOffline,
+  isUrlCached,
+  getCachedIdForUrl,
+} from '@/lib/newsOfflineCache';
 import {
   useTitleTranslations,
   translateTitlesBatch,

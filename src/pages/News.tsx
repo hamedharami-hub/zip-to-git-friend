@@ -1269,6 +1269,8 @@ const News = () => {
                 <ul className="space-y-3">
                   {feedItems.map((item) => {
                     const seen = isSeen(item.url);
+                    const cached = isUrlCached(item.url);
+                    const picked = selectedUrls.has(item.url);
                     return (
                     <li key={item.url} id={`news-item-${encodeURIComponent(item.url)}`} className="scroll-mt-24 rounded-xl transition-shadow">
 
@@ -1277,11 +1279,24 @@ const News = () => {
                         onClick={() => handleOpenArticle(item)}
                         disabled={openArticle === item.url}
                         className={
-                          'group block w-full text-start rounded-xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
+                          'group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
+                          (picked ? 'border-primary ring-2 ring-primary/30 ' : 'border-border ') +
                           (seen ? 'opacity-60' : '')
                         }
                       >
                         <div className="flex gap-3">
+                          {selectMode && (
+                            <div className="shrink-0 self-start mt-1" aria-hidden>
+                              {picked
+                                ? <CheckSquare className="h-5 w-5 text-primary" />
+                                : <Square className="h-5 w-5 text-muted-foreground" />}
+                            </div>
+                          )}
+                          {cached && !selectMode && (
+                            <div className="shrink-0 self-start mt-1" title="برای حالت آفلاین ذخیره شده">
+                              <Download className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                          )}
                           {item.imageUrl && (
                             <img
                               src={item.imageUrl}

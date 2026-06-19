@@ -623,7 +623,7 @@ const News = () => {
       }
 
     },
-    [activeSource, activeSourceId, activeFolderId, navigate],
+    [activeSource, activeSourceId, activeFolderId, navigate, selectMode, toggleSelectUrl],
   );
 
   const handleGenerateDigest = useCallback(async () => {

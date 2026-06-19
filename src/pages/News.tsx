@@ -584,7 +584,11 @@ const News = () => {
     async (item: FeedItem) => {
       // In selection mode, taps toggle selection instead of opening.
       if (selectMode) {
-        toggleSelectUrl(item.url);
+        setSelectedUrls((prev) => {
+          const next = new Set(prev);
+          if (next.has(item.url)) next.delete(item.url); else next.add(item.url);
+          return next;
+        });
         return;
       }
       setOpenArticle(item.url);

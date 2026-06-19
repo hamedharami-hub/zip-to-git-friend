@@ -7,8 +7,13 @@ import {
   ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
   Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,
   FolderPlus, Folder, Ban, Bookmark, BookmarkCheck, Settings as SettingsIcon,
-  X, Languages,
+  X, Languages, Download, CheckSquare, Square,
 } from 'lucide-react';
+import {
+  prefetchManyForOffline,
+  isUrlCached,
+  getCachedIdForUrl,
+} from '@/lib/newsOfflineCache';
 import {
   useTitleTranslations,
   translateTitlesBatch,
@@ -137,6 +142,16 @@ const News = () => {
   const titleTr = useTitleTranslations();
   const [trBusy, setTrBusy] = useState(false);
   const [trProgress, setTrProgress] = useState<{ done: number; total: number } | null>(null);
+  // Offline prefetch (download articles for offline reading).
+  const [dlBusy, setDlBusy] = useState(false);
+  const [dlProgress, setDlProgress] = useState<{ done: number; total: number; failed: number; current?: string } | null>(null);
+  const dlAbortRef = useRef<AbortController | null>(null);
+  // Multi-select mode for choosing specific articles to prefetch.
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedUrls, setSelectedUrls] = useState<Set<string>>(new Set());
+  // Re-render whenever the offline cache changes so badges refresh.
+  const [, setOfflineTick] = useState(0);
+  const bumpOffline = useCallback(() => setOfflineTick((n) => n + 1), []);
   // After a back-navigation, scroll the previously opened headline into view once.
   const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
   
@@ -567,6 +582,15 @@ const News = () => {
 
   const handleOpenArticle = useCallback(
     async (item: FeedItem) => {
+      // In selection mode, taps toggle selection instead of opening.
+      if (selectMode) {
+        setSelectedUrls((prev) => {
+          const next = new Set(prev);
+          if (next.has(item.url)) next.delete(item.url); else next.add(item.url);
+          return next;
+        });
+        return;
+      }
       setOpenArticle(item.url);
       // Remember where the user was so the back button lands on the same headline.
       try {
@@ -591,12 +615,19 @@ const News = () => {
         });
         navigate(`/news/article/${article.id}`);
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to open article.');
+        // Offline fallback: open the prefetched cached article if we have one.
+        const cachedId = getCachedIdForUrl(item.url);
+        if (cachedId) {
+          navigate(`/news/article/${cachedId}`);
+        } else {
+          toast.error(e.message ?? 'Failed to open article.');
+        }
       } finally {
         setOpenArticle(null);
       }
+
     },
-    [activeSource, activeSourceId, activeFolderId, navigate],
+    [activeSource, activeSourceId, activeFolderId, navigate, selectMode],
   );
 
   const handleGenerateDigest = useCallback(async () => {
@@ -724,6 +755,82 @@ const News = () => {
     }
   }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, newsModelRef.model]);
 
+  // Pre-download articles so the English processed text can be read offline.
+  // `mode`: 'last10' | 'last50' | 'last100' | 'all' | 'selected'.
+  const handlePrefetchOffline = useCallback(async (
+    mode: 'last10' | 'last50' | 'last100' | 'all' | 'selected',
+  ) => {
+    const activeList = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
+    let pool: Array<FeedItem & { _sourceName?: string }> = activeList;
+    if (mode === 'selected') {
+      if (selectedUrls.size === 0) {
+        toast.info('هیچ خبری انتخاب نشده. اول چند خبر را تیک بزن.');
+        return;
+      }
+      pool = activeList.filter((it) => selectedUrls.has(it.url));
+    } else if (mode === 'last10') pool = activeList.slice(0, 10);
+    else if (mode === 'last50') pool = activeList.slice(0, 50);
+    else if (mode === 'last100') pool = activeList.slice(0, 100);
+
+    if (pool.length === 0) {
+      toast.info('خبری برای دانلود نیست. اول فید را بارگذاری کن.');
+      return;
+    }
+    // Skip items already cached so re-runs are cheap.
+    const todo = pool.filter((it) => !isUrlCached(it.url));
+    if (todo.length === 0) {
+      toast.success(`همه‌ی ${pool.length} خبر از قبل دانلود شده‌اند.`);
+      return;
+    }
+
+    const ctrl = new AbortController();
+    dlAbortRef.current = ctrl;
+    setDlBusy(true);
+    setDlProgress({ done: 0, total: todo.length, failed: 0 });
+    try {
+      const sourceIdByUrl = (url: string) => {
+        if (activeSourceId) return activeSourceId;
+        // For folder/all views we just upsert with no source (item.url has the source domain).
+        return null;
+      };
+      const res = await prefetchManyForOffline(todo, {
+        sourceIdByUrl,
+        concurrency: 2,
+        signal: ctrl.signal,
+        onProgress: (p) => setDlProgress(p),
+      });
+      bumpOffline();
+      if (res.failed > 0) {
+        toast.error(`${res.done - res.failed} خبر دانلود شد · ${res.failed} ناموفق`);
+      } else {
+        toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
+      }
+    } catch (e: any) {
+      toast.error(e?.message ?? 'دانلود آفلاین با خطا مواجه شد.');
+    } finally {
+      setDlBusy(false);
+      dlAbortRef.current = null;
+      setTimeout(() => setDlProgress(null), 1500);
+      if (mode === 'selected') {
+        setSelectedUrls(new Set());
+        setSelectMode(false);
+      }
+    }
+  }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, selectedUrls, activeSourceId, bumpOffline]);
+
+  const cancelPrefetch = useCallback(() => {
+    dlAbortRef.current?.abort();
+  }, []);
+
+  const toggleSelectUrl = useCallback((url: string) => {
+    setSelectedUrls((prev) => {
+      const next = new Set(prev);
+      if (next.has(url)) next.delete(url); else next.add(url);
+      return next;
+    });
+  }, []);
+
+
 
   if (!user) {
     return (
@@ -815,6 +922,49 @@ const News = () => {
                 >
                   {trBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
                 </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="icon" variant="ghost" className="h-6 w-6"
+                      disabled={dlBusy}
+                      title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)">
+                      {dlBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last10')}>
+                      ۱۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last50')}>
+                      ۵۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last100')}>
+                      ۱۰۰ خبر آخر
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline('all')}>
+                      همه‌ی این لیست
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => { setSelectMode((v) => !v); if (selectMode) setSelectedUrls(new Set()); }}
+                    >
+                      {selectMode ? (
+                        <><Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب</>
+                      ) : (
+                        <><CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…</>
+                      )}
+                    </DropdownMenuItem>
+                    {selectMode && (
+                      <DropdownMenuItem
+                        onClick={() => handlePrefetchOffline('selected')}
+                        disabled={selectedUrls.size === 0}
+                      >
+                        <Download className="h-3.5 w-3.5 me-2" />
+                        دانلود {selectedUrls.size} انتخاب‌شده
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Button size="icon" variant="ghost" className="h-6 w-6"
                   onClick={() => setManageOpen(true)} title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده">
                   <SettingsIcon className="h-3.5 w-3.5" />
@@ -826,6 +976,26 @@ const News = () => {
                 <Loader2 className="h-3 w-3 animate-spin" />
                 ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
               </p>
+            )}
+            {dlProgress && dlProgress.total > 0 && (
+              <div className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                <span className="truncate flex-1">
+                  دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
+                  {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ''}
+                </span>
+                {dlBusy && (
+                  <button onClick={cancelPrefetch} className="text-destructive hover:underline">
+                    لغو
+                  </button>
+                )}
+              </div>
+            )}
+            {selectMode && (
+              <div className="px-1 mb-2 text-[11px] text-primary flex items-center gap-1">
+                <CheckSquare className="h-3 w-3" />
+                حالت انتخاب فعال — روی خبرها بزن • {selectedUrls.size} انتخاب‌شده
+              </div>
             )}
             <button
               type="button"
@@ -1099,6 +1269,8 @@ const News = () => {
                 <ul className="space-y-3">
                   {feedItems.map((item) => {
                     const seen = isSeen(item.url);
+                    const cached = isUrlCached(item.url);
+                    const picked = selectedUrls.has(item.url);
                     return (
                     <li key={item.url} id={`news-item-${encodeURIComponent(item.url)}`} className="scroll-mt-24 rounded-xl transition-shadow">
 
@@ -1107,11 +1279,24 @@ const News = () => {
                         onClick={() => handleOpenArticle(item)}
                         disabled={openArticle === item.url}
                         className={
-                          'group block w-full text-start rounded-xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
+                          'group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
+                          (picked ? 'border-primary ring-2 ring-primary/30 ' : 'border-border ') +
                           (seen ? 'opacity-60' : '')
                         }
                       >
                         <div className="flex gap-3">
+                          {selectMode && (
+                            <div className="shrink-0 self-start mt-1" aria-hidden>
+                              {picked
+                                ? <CheckSquare className="h-5 w-5 text-primary" />
+                                : <Square className="h-5 w-5 text-muted-foreground" />}
+                            </div>
+                          )}
+                          {cached && !selectMode && (
+                            <div className="shrink-0 self-start mt-1" title="برای حالت آفلاین ذخیره شده">
+                              <Download className="h-3.5 w-3.5 text-primary" />
+                            </div>
+                          )}
                           {item.imageUrl && (
                             <img
                               src={item.imageUrl}

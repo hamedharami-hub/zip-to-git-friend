@@ -582,6 +582,11 @@ const News = () => {
 
   const handleOpenArticle = useCallback(
     async (item: FeedItem) => {
+      // In selection mode, taps toggle selection instead of opening.
+      if (selectMode) {
+        toggleSelectUrl(item.url);
+        return;
+      }
       setOpenArticle(item.url);
       // Remember where the user was so the back button lands on the same headline.
       try {
@@ -606,10 +611,17 @@ const News = () => {
         });
         navigate(`/news/article/${article.id}`);
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to open article.');
+        // Offline fallback: open the prefetched cached article if we have one.
+        const cachedId = getCachedIdForUrl(item.url);
+        if (cachedId) {
+          navigate(`/news/article/${cachedId}`);
+        } else {
+          toast.error(e.message ?? 'Failed to open article.');
+        }
       } finally {
         setOpenArticle(null);
       }
+
     },
     [activeSource, activeSourceId, activeFolderId, navigate],
   );

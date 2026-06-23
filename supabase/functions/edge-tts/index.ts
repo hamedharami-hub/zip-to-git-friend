@@ -112,7 +112,11 @@ async function synthChunk(text: string, voice: string, rate: string, pitch: stri
     try {
       ws = new WebSocket(url, {
         headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache',
           'Origin': 'chrome-extension://jdiccldimpdaibmpdkjnbmckianbfold',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Accept-Language': 'en-US,en;q=0.9',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0',
         },
       });

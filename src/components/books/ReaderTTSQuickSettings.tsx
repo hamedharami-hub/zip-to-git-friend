@@ -69,13 +69,19 @@ export function ReaderTTSQuickSettings({ faAvailable = true }: Props) {
       <PopoverContent align="end" className="w-72 space-y-4">
         <div className="space-y-2">
           <Label className="text-xs text-muted-foreground">موتور پخش</Label>
-          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border bg-muted/40 p-0.5">
+          <div className="grid grid-cols-2 gap-1 rounded-lg border border-border bg-muted/40 p-0.5">
             <EngineBtn
               active={engine === 'browser'}
               disabled={!browserSupported}
               onClick={() => setEngine('browser')}
               icon={<Mic className="h-3 w-3" />}
               label="آفلاین"
+            />
+            <EngineBtn
+              active={engine === 'edgetts'}
+              onClick={() => setEngine('edgetts')}
+              icon={<Globe className="h-3 w-3" />}
+              label="Edge TTS"
             />
             <EngineBtn
               active={engine === 'gemini'}

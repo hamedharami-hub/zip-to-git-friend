@@ -1,7 +1,7 @@
 // deno-lint-ignore-file no-explicit-any
 // Microsoft Edge "Read Aloud" TTS proxy.
 // Free, no API key. Uses the same WebSocket endpoint Edge browser uses.
-// Returns audio/mpeg (MP3, 24kHz mono 48kbps).
+import WebSocket from 'npm:ws@8.18.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

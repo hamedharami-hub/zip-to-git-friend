@@ -203,18 +203,20 @@ function voiceToGoogleLang(voice: string): string {
 async function lovableAiSynth(text: string, voice: string): Promise<Uint8Array> {
   const apiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
-  // Map Microsoft-style voice id to a Gemini TTS voice name.
+  // Map Microsoft-style voice id to an OpenAI gpt-4o-mini-tts voice.
+  // gpt-4o-mini-tts is multilingual and handles Persian well.
   const v = voice.toLowerCase();
-  let gem = 'Kore';
-  if (v.includes('farid') || v.includes('guy') || v.includes('ryan')) gem = 'Puck';
-  else if (v.includes('dilara') || v.includes('aria') || v.includes('jenny') || v.includes('sonia') || v.includes('natasha')) gem = 'Kore';
+  let oa = 'alloy';
+  if (v.includes('farid') || v.includes('guy') || v.includes('ryan')) oa = 'onyx';
+  else if (v.includes('dilara') || v.includes('sonia') || v.includes('natasha')) oa = 'nova';
+  else if (v.includes('aria') || v.includes('jenny')) oa = 'shimmer';
   const res = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
     method: 'POST',
     headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'google/gemini-2.5-flash-preview-tts',
+      model: 'openai/gpt-4o-mini-tts',
       input: text,
-      voice: gem,
+      voice: oa,
       response_format: 'mp3',
     }),
   });

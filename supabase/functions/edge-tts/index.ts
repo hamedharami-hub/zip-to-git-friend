@@ -10,7 +10,18 @@ const corsHeaders = {
 };
 
 const TRUSTED_TOKEN = '6A5AA1D4EAFF4E9FB37E23D68491D6F4';
-const WSS_URL = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=${TRUSTED_TOKEN}`;
+const WSS_BASE = `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=${TRUSTED_TOKEN}`;
+const SEC_MS_GEC_VERSION = '1-130.0.2849.68';
+
+async function generateSecMsGec(): Promise<string> {
+  // Windows FILETIME ticks (100ns since 1601-01-01), rounded down to the nearest 5 minutes.
+  const ticks = (Date.now() / 1000 + 11644473600) * 1e7;
+  const rounded = Math.floor(ticks / 3_000_000_000) * 3_000_000_000;
+  const str = `${rounded.toFixed(0)}${TRUSTED_TOKEN}`;
+  const buf = new TextEncoder().encode(str);
+  const hash = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+}
 const MAX_TEXT = 5000;
 const CHUNK_CHARS = 1500;
 

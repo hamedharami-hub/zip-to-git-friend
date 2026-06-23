@@ -220,7 +220,8 @@ async function lovableAiSynth(text: string, voice: string): Promise<Uint8Array> 
   });
   if (!res.ok) {
     const t = await res.text().catch(() => '');
-    throw new Error(`Lovable AI TTS ${res.status}: ${t.slice(0, 200)}`);
+    console.error('[edge-tts] Lovable AI full body:', t);
+    throw new Error(`Lovable AI TTS ${res.status}: ${t.slice(0, 500)}`);
   }
   const ab = await res.arrayBuffer();
   return new Uint8Array(ab);

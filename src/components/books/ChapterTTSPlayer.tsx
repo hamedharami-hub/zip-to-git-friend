@@ -1109,9 +1109,14 @@ export function ChapterTTSPlayer({
             />
           )}
 
-          {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
-          {(engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
+          {/* Body — Edge TTS / Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
+          {(engine === 'edgetts' || engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
             <div className="space-y-3">
+              {engine === 'edgetts' && (
+                <div className="text-xs text-muted-foreground">
+                  Microsoft Edge TTS — رایگان، بدون نیاز به کلید. صداهای فارسی Dilara/Farid.
+                </div>
+              )}
               {engine === 'azure' && !azureKey && (
                 <div className="text-sm text-muted-foreground">
                   Azure نیاز به key + region دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
@@ -1133,6 +1138,12 @@ export function ChapterTTSPlayer({
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
+                {engine === 'edgetts' && (
+                  <Select value={edgeTtsVoice} onValueChange={setEdgeTtsVoice}>
+                    <SelectTrigger className="h-9 w-[240px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>
+                    <SelectContent>{edgeTtsVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                  </Select>
+                )}
                 {engine === 'azure' && (
                   <Select value={azureVoice} onValueChange={setAzureVoice}>
                     <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>

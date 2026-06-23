@@ -268,7 +268,8 @@ export function ChapterTTSPlayer({
   const playHtKey = settings.playHtApiKey?.trim() ?? '';
   const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
   const {
-    azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
+    edgeTtsVoiceOpts, azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
+    edgeTtsVoice, setEdgeTtsVoice,
     azureVoice, setAzureVoice,
     hfVoice, setHfVoice,
     playHtVoice, setPlayHtVoice,
@@ -282,8 +283,9 @@ export function ChapterTTSPlayer({
     setOtherLoading(true);
     try {
       const blob = await synthesizeOther({
-        engine: engine as 'azure' | 'huggingface' | 'playht' | 'opentts',
+        engine: engine as 'edgetts' | 'azure' | 'huggingface' | 'playht' | 'opentts',
         text, rate, ttsLang,
+        edgeTtsVoice,
         azureKey, azureRegion, azureVoice,
         hfKey, hfVoice,
         playHtUser, playHtKey, playHtVoice,

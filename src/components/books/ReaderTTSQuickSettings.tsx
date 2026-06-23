@@ -7,14 +7,14 @@
  * `ChapterTTSPlayer` so the bottom player picks them up automatically.
  */
 import { useEffect, useState } from 'react';
-import { Settings2, Mic, Sparkles, Volume2 } from 'lucide-react';
+import { Settings2, Mic, Sparkles, Volume2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { isBrowserTtsSupported } from '@/lib/browserTts';
 
-type Engine = 'browser' | 'gemini' | 'elevenlabs';
+type Engine = 'browser' | 'gemini' | 'elevenlabs' | 'edgetts';
 type Lang = 'en' | 'fa';
 
 const ENGINE_KEY = 'llvp-tts-engine';
@@ -23,9 +23,9 @@ const TTS_LANG_KEY = 'llvp-tts-lang';
 function readEngine(): Engine {
   try {
     const v = localStorage.getItem(ENGINE_KEY);
-    if (v === 'gemini' || v === 'browser' || v === 'elevenlabs') return v;
+    if (v === 'gemini' || v === 'browser' || v === 'elevenlabs' || v === 'edgetts') return v;
   } catch { /* noop */ }
-  return isBrowserTtsSupported() ? 'browser' : 'gemini';
+  return isBrowserTtsSupported() ? 'browser' : 'edgetts';
 }
 
 function readLang(): Lang {

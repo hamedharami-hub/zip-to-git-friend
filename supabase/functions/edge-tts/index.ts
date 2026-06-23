@@ -200,15 +200,13 @@ function voiceToGoogleLang(voice: string): string {
   return 'en-US';
 }
 
-async function googleSynthChunk(text: string, lang: string, speed = 1): Promise<Uint8Array> {
+async function googleSynthChunk(text: string, lang: string, _speed = 1): Promise<Uint8Array> {
   const url =
-    `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}` +
-    `&tl=${encodeURIComponent(lang)}&client=tw-ob&total=1&idx=0&textlen=${text.length}` +
-    `&ttsspeed=${speed}`;
+    `https://translate.google.com/translate_tts?ie=UTF-8` +
+    `&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
   const res = await fetch(url, {
     headers: {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-      'Referer': 'https://translate.google.com/',
+      'User-Agent': 'Mozilla/5.0',
     },
   });
   if (!res.ok) throw new Error(`Google TTS ${res.status}`);

@@ -200,16 +200,28 @@ function voiceToGoogleLang(voice: string): string {
   return 'en-US';
 }
 
-async function googleSynthChunk(text: string, lang: string, _speed = 1): Promise<Uint8Array> {
-  const url =
-    `https://translate.google.com/translate_tts?ie=UTF-8` +
-    `&q=${encodeURIComponent(text)}&tl=${encodeURIComponent(lang)}&client=tw-ob`;
-  const res = await fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0',
-    },
+async function lovableAiSynth(text: string, voice: string): Promise<Uint8Array> {
+  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
+  // Map Microsoft-style voice id to a Gemini TTS voice name.
+  const v = voice.toLowerCase();
+  let gem = 'Kore';
+  if (v.includes('farid') || v.includes('guy') || v.includes('ryan')) gem = 'Puck';
+  else if (v.includes('dilara') || v.includes('aria') || v.includes('jenny') || v.includes('sonia') || v.includes('natasha')) gem = 'Kore';
+  const res = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'google/gemini-2.5-flash-preview-tts',
+      input: text,
+      voice: gem,
+      response_format: 'mp3',
+    }),
   });
-  if (!res.ok) throw new Error(`Google TTS ${res.status}`);
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error(`Lovable AI TTS ${res.status}: ${t.slice(0, 200)}`);
+  }
   const ab = await res.arrayBuffer();
   return new Uint8Array(ab);
 }

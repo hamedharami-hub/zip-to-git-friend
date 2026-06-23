@@ -277,27 +277,17 @@ Deno.serve(async (req: Request) => {
       headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-TTS-Provider': 'edge' },
     });
   } catch (edgeErr) {
-    console.warn('[edge-tts] Microsoft path failed, falling back to Google:', (edgeErr as Error).message);
+    console.warn('[edge-tts] Microsoft path failed, falling back to Lovable AI:', (edgeErr as Error).message);
   }
 
-  // Fallback: Google Translate TTS.
+  // Fallback: Lovable AI Gateway TTS (uses managed LOVABLE_API_KEY).
   try {
-    const gLang = voiceToGoogleLang(voice);
-    const speed = rate.endsWith('%') ? (1 + Number(rate.replace('%', '')) / 100) : 1;
-    const parts = chunkText(text, GOOGLE_CHUNK_CHARS);
-    const audios: Uint8Array[] = [];
-    for (const part of parts) {
-      audios.push(await googleSynthChunk(part, gLang, Math.max(0.5, Math.min(2, speed))));
-    }
-    const total = audios.reduce((a, b) => a + b.length, 0);
-    const out = new Uint8Array(total);
-    let off = 0;
-    for (const a of audios) { out.set(a, off); off += a.length; }
+    const out = await lovableAiSynth(text, voice);
     return new Response(out, {
       status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-TTS-Provider': 'google' },
+      headers: { ...corsHeaders, 'Content-Type': 'audio/mpeg', 'Cache-Control': 'no-store', 'X-TTS-Provider': 'lovable-ai' },
     });
-  } catch (gErr) {
-    return jsonError(`همه‌ی موتورها ناموفق بودند: ${(gErr as Error).message}`, 502);
+  } catch (aiErr) {
+    return jsonError(`همه‌ی موتورها ناموفق بودند: ${(aiErr as Error).message}`, 502);
   }
 });

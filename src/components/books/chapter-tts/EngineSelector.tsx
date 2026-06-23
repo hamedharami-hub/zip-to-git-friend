@@ -13,6 +13,7 @@ import type { Engine } from './constants';
 
 const OPTIONS: ReadonlyArray<{ id: Engine; label: string }> = [
   { id: 'browser', label: 'Browser' },
+  { id: 'edgetts', label: 'Edge TTS (رایگان)' },
   { id: 'gemini', label: 'Gemini' },
   { id: 'elevenlabs', label: 'ElevenLabs' },
   { id: 'azure', label: 'Azure' },

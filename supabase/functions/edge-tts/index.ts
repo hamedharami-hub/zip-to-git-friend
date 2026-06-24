@@ -48,7 +48,7 @@ async function lovableAiSynth(text: string, voice: string, rate: unknown): Promi
     method: 'POST',
     headers: {
       'Lovable-API-Key': apiKey,
-      'X-Lovable-AIG-SDK': 'direct-fetch',
+      'X-Lovable-AIG-SDK': 'vercel-ai-sdk',
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({

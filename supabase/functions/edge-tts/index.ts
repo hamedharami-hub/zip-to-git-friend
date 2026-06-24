@@ -19,9 +19,9 @@ const MAX_TEXT = 5000;
 // Map a Microsoft-style voice id (kept for UI back-compat) to an OpenAI voice.
 function pickOpenAiVoice(voice: string): string {
   const v = voice.toLowerCase();
-  if (v.includes('farid') || v.includes('guy') || v.includes('ryan')) return 'onyx';
-  if (v.includes('dilara') || v.includes('sonia') || v.includes('natasha')) return 'nova';
-  if (v.includes('aria') || v.includes('jenny')) return 'shimmer';
+  if (v.includes('farid') || v.includes('guy') || v.includes('ryan')) return 'echo';
+  if (v.includes('dilara') || v.includes('sonia') || v.includes('natasha')) return 'shimmer';
+  if (v.includes('aria') || v.includes('jenny')) return 'alloy';
   return 'alloy';
 }
 

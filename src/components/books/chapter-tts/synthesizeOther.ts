@@ -16,6 +16,7 @@ export interface SynthesizeOtherParams {
   rate: number;
   ttsLang: 'en' | 'fa';
   edgeTtsVoice: string;
+  force?: boolean;
   azureKey: string;
   azureRegion: string;
   azureVoice: string;
@@ -30,7 +31,7 @@ export interface SynthesizeOtherParams {
 
 export async function synthesizeOther(p: SynthesizeOtherParams): Promise<Blob> {
   if (p.engine === 'edgetts') {
-    return synthesizeWithEdgeTts({ text: p.text, voice: p.edgeTtsVoice, rate: p.rate });
+    return synthesizeWithEdgeTts({ text: p.text, voice: p.edgeTtsVoice, rate: p.rate, force: p.force });
   }
   if (p.engine === 'azure') {
     return synthesizeWithAzure({

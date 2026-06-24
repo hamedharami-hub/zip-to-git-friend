@@ -25,17 +25,39 @@ function pickOpenAiVoice(voice: string): string {
   return 'alloy';
 }
 
-async function lovableAiSynth(text: string, voice: string): Promise<Uint8Array> {
+function normalizeSpeed(rate: unknown): number {
+  if (typeof rate === 'number' && Number.isFinite(rate)) {
+    return Math.max(0.5, Math.min(2, rate));
+  }
+  if (typeof rate === 'string') {
+    const trimmed = rate.trim();
+    const percent = /^([+-]?\d+)%$/.exec(trimmed);
+    if (percent) {
+      return Math.max(0.5, Math.min(2, 1 + Number(percent[1]) / 100));
+    }
+    const numeric = Number(trimmed.replace(/×|x$/i, ''));
+    if (Number.isFinite(numeric)) return Math.max(0.5, Math.min(2, numeric));
+  }
+  return 1;
+}
+
+async function lovableAiSynth(text: string, voice: string, rate: unknown): Promise<Uint8Array> {
   const apiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!apiKey) throw new Error('LOVABLE_API_KEY not configured');
   const res = await fetch('https://ai.gateway.lovable.dev/v1/audio/speech', {
     method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    headers: {
+      'Lovable-API-Key': apiKey,
+      'X-Lovable-AIG-SDK': 'direct-fetch',
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       model: 'openai/gpt-4o-mini-tts',
       input: text,
       voice: pickOpenAiVoice(voice),
+      speed: normalizeSpeed(rate),
       response_format: 'mp3',
+      stream_format: 'audio',
     }),
   });
   if (!res.ok) {
@@ -77,17 +99,18 @@ Deno.serve(async (req: Request) => {
   try { body = await req.json(); } catch { return jsonError('invalid JSON', 400); }
   const text = String(body?.text ?? '').trim();
   const voice = String(body?.voice ?? 'fa-IR-DilaraNeural');
+  const rate = body?.rate ?? 1;
   if (!text) return jsonError('text is required');
   if (text.length > MAX_TEXT) return jsonError(`text too long (max ${MAX_TEXT})`);
 
   try {
-    const out = await lovableAiSynth(text, voice);
+    const out = await lovableAiSynth(text, voice, rate);
     return new Response(out, {
       status: 200,
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
-        'Cache-Control': 'no-store',
+        'Cache-Control': 'public, max-age=31536000, immutable',
         'X-TTS-Provider': 'lovable-ai',
       },
     });

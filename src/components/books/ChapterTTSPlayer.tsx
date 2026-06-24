@@ -278,7 +278,7 @@ export function ChapterTTSPlayer({
   const [otherLoading, setOtherLoading] = useState(false);
 
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
-  const loadOther = async () => {
+  const loadOther = async (force = false) => {
     if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
     setOtherLoading(true);
     try {
@@ -286,6 +286,7 @@ export function ChapterTTSPlayer({
         engine: engine as 'edgetts' | 'azure' | 'huggingface' | 'playht' | 'opentts',
         text, rate, ttsLang,
         edgeTtsVoice,
+        force,
         azureKey, azureRegion, azureVoice,
         hfKey, hfVoice,
         playHtUser, playHtKey, playHtVoice,
@@ -295,7 +296,7 @@ export function ChapterTTSPlayer({
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success('روایت آماده شد.');
+      toast.success(engine === 'edgetts' && !force ? 'روایت آماده شد؛ اگر قبلاً ساخته شده بود از کش MP3 خوانده شد.' : 'روایت آماده شد.');
     } catch (e) {
       toast.error(otherEngineErrorMessage(e));
     } finally { setOtherLoading(false); }
@@ -1114,7 +1115,7 @@ export function ChapterTTSPlayer({
             <div className="space-y-3">
               {engine === 'edgetts' && (
                 <div className="text-xs text-muted-foreground">
-                  Microsoft Edge TTS — رایگان، بدون نیاز به کلید. صداهای فارسی Dilara/Farid.
+                  صدای فارسی پایدار — MP3 ساخته‌شده روی همین دستگاه کش می‌شود و دفعات بعد آفلاین پخش می‌شود.
                 </div>
               )}
               {engine === 'azure' && !azureKey && (
@@ -1171,10 +1172,33 @@ export function ChapterTTSPlayer({
                     className="h-9 px-2 rounded-md border border-border bg-background text-sm w-[260px]"
                   />
                 )}
-                <Button onClick={loadOther} disabled={otherLoading}>
+                <Button onClick={() => loadOther(false)} disabled={otherLoading}>
                   {otherLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
                   {otherLoading ? 'در حال ساخت…' : 'Listen'}
                 </Button>
+                {engine === 'edgetts' && audioUrl && (
+                  <>
+                    <Button variant="ghost" size="icon" onClick={() => loadOther(true)} disabled={otherLoading} title="ساخت دوباره MP3">
+                      {otherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      title="دانلود MP3"
+                      onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = audioUrl;
+                        const safeTitle = chapterTitle.replace(/[^\w\s.-]+/g, '').slice(0, 60).trim() || 'narration';
+                        a.download = `${safeTitle} (${ttsLang}).mp3`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
               {audioUrl && (
                 <audio

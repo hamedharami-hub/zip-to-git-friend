@@ -798,6 +798,13 @@ const Settings = () => {
               options={getAvailableBookModels(settings)}
             />
             <BookModelPicker
+              label="Smart HTML filename"
+              hint="پیشنهاد نام فارسی کوتاه برای فایل HTML خروجی خبر/متن. مدل سبک و سریع کافی است."
+              value={coerceBookModel(settings.htmlFilenameModelRef ?? 'google/gemini-3.1-flash-lite-preview')}
+              onChange={(ref) => update({ htmlFilenameModelRef: ref })}
+              options={getAvailableBookModels(settings)}
+            />
+            <BookModelPicker
               label="Sentence Lab (planner, roleplay, examples)"
               hint="برنامه‌ریز و نقش‌بازی و مثال‌سازی در Sentence Lab."
               value={coerceBookModel(settings.sentenceLabModelRef ?? 'google/gemini-3-flash-preview')}

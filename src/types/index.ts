@@ -258,6 +258,8 @@ export interface AppSettings {
   newsSummaryModelRef?: BookAIModelRef;
   /** AI model used by the news search / topic engine when summarising headlines. */
   newsSearchModelRef?: BookAIModelRef;
+  /** AI model used to suggest Persian filenames for exported HTML files. */
+  htmlFilenameModelRef?: BookAIModelRef;
   /** When true, paragraphs respond to swipe / double-tap / long-press gestures. */
   paragraphGestures?: boolean;
   /** Text alignment used by the reader and exported HTML. */

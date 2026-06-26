@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { splitIntoShortChunks } from '@/lib/paragraphSplit';
 import { formatForTelegram } from '@/lib/news';
+import { suggestPersianHtmlFilename } from '@/lib/htmlFilename';
 import type { BookParagraphAnalysis } from '@/types';
 
 interface Props {
@@ -123,6 +124,18 @@ function safeFilename(name: string): string {
       .trim()
       .slice(0, 120) || 'article'
   );
+}
+
+function plainSnippetFromHtml(html: string): string {
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return (doc.body?.textContent ?? '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 2500);
+  } catch {
+    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2500);
+  }
 }
 
 function buildAnalysisHtml(a: BookParagraphAnalysis | null | undefined): string {
@@ -406,6 +419,7 @@ export function NewsShareMenu({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [prefs, setPrefs] = useState<ExportPrefs>(() => loadExportPrefs());
   const [filename, setFilename] = useState<string>(() => safeFilename(title));
+  const [namingBusy, setNamingBusy] = useState(false);
 
   // Re-seed filename when the article (title) changes.
   useEffect(() => { setFilename(safeFilename(title)); }, [title]);
@@ -417,6 +431,24 @@ export function NewsShareMenu({
       return next;
     });
   }
+
+  const suggestFilename = async () => {
+    setNamingBusy(true);
+    try {
+      const name = await suggestPersianHtmlFilename({
+        title,
+        excerpt: plainSnippetFromHtml(contentHtml),
+        siteName,
+        url,
+      });
+      setFilename(safeFilename(name));
+      toast.success('نام فارسی پیشنهاد شد.');
+    } catch (e: any) {
+      toast.error(e?.message ?? 'پیشنهاد نام فایل شکست خورد.');
+    } finally {
+      setNamingBusy(false);
+    }
+  };
 
   const runDownload = async () => {
     setBusy('html');
@@ -581,6 +613,17 @@ export function NewsShareMenu({
               <p className="text-[11px] text-muted-foreground">
                 پسوند <code>.html</code> به‌صورت خودکار اضافه می‌شود.
               </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={suggestFilename}
+                disabled={namingBusy}
+              >
+                {namingBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                پیشنهاد اسم فارسی با AI
+              </Button>
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer select-none">

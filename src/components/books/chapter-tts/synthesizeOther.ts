@@ -1,21 +1,19 @@
 /**
- * Dispatcher for the "other" TTS engines (Edge TTS / Azure / HuggingFace /
+ * Dispatcher for the "other" TTS engines (Azure / HuggingFace /
  * Play.ht / OpenTTS). Returns a Blob ready to be turned into an object URL.
  */
 import { AzureTtsError, synthesizeWithAzure } from '@/lib/azureTts';
-import { EdgeTtsError, synthesizeWithEdgeTts } from '@/lib/edgeTts';
 import { HuggingFaceTtsError, synthesizeWithHuggingFace } from '@/lib/huggingFaceTts';
 import { PlayHtTtsError, synthesizeWithPlayHt } from '@/lib/playHtTts';
 import { OpenTtsError, synthesizeWithOpenTts } from '@/lib/openTts';
 
-export type OtherEngine = 'edgetts' | 'azure' | 'huggingface' | 'playht' | 'opentts';
+export type OtherEngine = 'azure' | 'huggingface' | 'playht' | 'opentts';
 
 export interface SynthesizeOtherParams {
   engine: OtherEngine;
   text: string;
   rate: number;
   ttsLang: 'en' | 'fa';
-  edgeTtsVoice: string;
   force?: boolean;
   azureKey: string;
   azureRegion: string;
@@ -30,9 +28,6 @@ export interface SynthesizeOtherParams {
 }
 
 export async function synthesizeOther(p: SynthesizeOtherParams): Promise<Blob> {
-  if (p.engine === 'edgetts') {
-    return synthesizeWithEdgeTts({ text: p.text, voice: p.edgeTtsVoice, rate: p.rate, force: p.force });
-  }
   if (p.engine === 'azure') {
     return synthesizeWithAzure({
       apiKey: p.azureKey, region: p.azureRegion, text: p.text,
@@ -54,7 +49,6 @@ export async function synthesizeOther(p: SynthesizeOtherParams): Promise<Blob> {
 /** Convert any thrown error from the "other" engines into a user-facing string. */
 export function otherEngineErrorMessage(e: unknown): string {
   if (
-    e instanceof EdgeTtsError ||
     e instanceof AzureTtsError ||
     e instanceof HuggingFaceTtsError ||
     e instanceof PlayHtTtsError ||

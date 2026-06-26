@@ -34,7 +34,8 @@ export const GEMINI_TTS_VOICES = [
 export type GeminiTtsVoice = (typeof GEMINI_TTS_VOICES)[number]['id'];
 
 /** Hard cap on a single TTS request (Gemini limit is roughly 32k tokens). */
-const MAX_CHARS_PER_REQUEST = 4500;
+const MAX_CHARS_PER_REQUEST = 2200;
+const MAX_PARALLEL_TTS = 2;
 
 const TTS_MODEL = 'gemini-2.5-flash-preview-tts';
 const ENDPOINT = (model: string, key: string) =>
@@ -281,36 +282,41 @@ export async function synthesizeChapter(
     }
   }
 
-  // Synthesize any missing index.
-  for (let i = 0; i < allChunks.length; i++) {
-    if (pcmParts[i]) {
-      onChunkProgress?.(i + 1, allChunks.length);
-      continue;
+  // Synthesize missing chunks with a tiny concurrency limit. This makes long
+  // Persian narration noticeably faster while keeping requests gentle enough
+  // to avoid most rate-limit spikes. Each chunk is still saved immediately.
+  let completed = pcmParts.filter(Boolean).length;
+  const missing = allChunks.map((_, i) => i).filter((i) => !pcmParts[i]);
+  let cursor = 0;
+  async function worker() {
+    while (cursor < missing.length) {
+      const i = missing[cursor++];
+      if (signal?.aborted) throw new GeminiTtsError('unknown', 'Cancelled.');
+      const { pcm, sampleRate: sr } = await generateChunkPcm(apiKey, allChunks[i], voice);
+      pcmParts[i] = pcm;
+      sampleRate = sr;
+      const chunkWav = pcmToWav(pcm, sr, 1, 16);
+      const chunkBlob = new Blob([chunkWav.buffer as ArrayBuffer], { type: 'audio/wav' });
+      try {
+        await saveTTSChunk({
+          id: ttsChunkKey(bookId, chapterIndex, voice, i),
+          bookId,
+          chapterIndex,
+          voice,
+          chunkIndex: i,
+          total: allChunks.length,
+          text: allChunks[i],
+          blob: chunkBlob,
+          mimeType: 'audio/wav',
+          createdAt: Date.now(),
+        });
+      } catch { /* non-fatal */ }
+      onChunkReady?.({ index: i + 1, total: allChunks.length, text: allChunks[i], blob: chunkBlob, cached: false });
+      completed += 1;
+      onChunkProgress?.(completed, allChunks.length);
     }
-    if (signal?.aborted) throw new GeminiTtsError('unknown', 'Cancelled.');
-    const { pcm, sampleRate: sr } = await generateChunkPcm(apiKey, allChunks[i], voice);
-    pcmParts[i] = pcm;
-    sampleRate = sr;
-    const chunkWav = pcmToWav(pcm, sr, 1, 16);
-    const chunkBlob = new Blob([chunkWav.buffer as ArrayBuffer], { type: 'audio/wav' });
-    // Persist immediately so a refresh keeps it offline.
-    try {
-      await saveTTSChunk({
-        id: ttsChunkKey(bookId, chapterIndex, voice, i),
-        bookId,
-        chapterIndex,
-        voice,
-        chunkIndex: i,
-        total: allChunks.length,
-        text: allChunks[i],
-        blob: chunkBlob,
-        mimeType: 'audio/wav',
-        createdAt: Date.now(),
-      });
-    } catch { /* non-fatal */ }
-    onChunkReady?.({ index: i + 1, total: allChunks.length, text: allChunks[i], blob: chunkBlob, cached: false });
-    onChunkProgress?.(i + 1, allChunks.length);
   }
+  await Promise.all(Array.from({ length: Math.min(MAX_PARALLEL_TTS, missing.length) }, () => worker()));
 
   const merged = concatBytes(pcmParts.filter(Boolean) as Uint8Array[]);
   const wav = pcmToWav(merged, sampleRate, 1, 16);

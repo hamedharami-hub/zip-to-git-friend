@@ -15,7 +15,6 @@ export type Engine =
   | 'browser'
   | 'gemini'
   | 'elevenlabs'
-  | 'edgetts'
   | 'azure'
   | 'huggingface'
   | 'playht'
@@ -25,7 +24,6 @@ export const ENGINES: readonly Engine[] = [
   'browser',
   'gemini',
   'elevenlabs',
-  'edgetts',
   'azure',
   'huggingface',
   'playht',

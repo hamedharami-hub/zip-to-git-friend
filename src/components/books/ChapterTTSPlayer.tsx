@@ -27,8 +27,6 @@ import {
   Download,
   Trash2,
   RefreshCw,
-  Sparkles,
-  Mic,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -268,8 +266,7 @@ export function ChapterTTSPlayer({
   const playHtKey = settings.playHtApiKey?.trim() ?? '';
   const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
   const {
-    edgeTtsVoiceOpts, azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
-    edgeTtsVoice, setEdgeTtsVoice,
+    azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
     azureVoice, setAzureVoice,
     hfVoice, setHfVoice,
     playHtVoice, setPlayHtVoice,
@@ -279,13 +276,13 @@ export function ChapterTTSPlayer({
 
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
   const loadOther = async (force = false) => {
+    if (ttsLang === 'fa' && !textFa?.trim()) { toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.'); return; }
     if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
     setOtherLoading(true);
     try {
       const blob = await synthesizeOther({
-        engine: engine as 'edgetts' | 'azure' | 'huggingface' | 'playht' | 'opentts',
+        engine: engine as 'azure' | 'huggingface' | 'playht' | 'opentts',
         text, rate, ttsLang,
-        edgeTtsVoice,
         force,
         azureKey, azureRegion, azureVoice,
         hfKey, hfVoice,
@@ -296,7 +293,7 @@ export function ChapterTTSPlayer({
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success(engine === 'edgetts' && !force ? 'روایت آماده شد؛ اگر قبلاً ساخته شده بود از کش MP3 خوانده شد.' : 'روایت آماده شد.');
+      toast.success('روایت آماده شد.');
     } catch (e) {
       toast.error(otherEngineErrorMessage(e));
     } finally { setOtherLoading(false); }
@@ -363,15 +360,18 @@ export function ChapterTTSPlayer({
       if (cancelled) return;
       setBrowserVoices(v);
       if (!browserVoiceId && v.length > 0) {
-        // Prefer the engine's default English voice if any, otherwise the first.
-        const def = v.find((vv) => vv.default && vv.lang.startsWith('en')) ?? v[0];
+        const prefix = ttsLang === 'fa' ? 'fa' : 'en';
+        const def =
+          v.find((vv) => vv.lang.toLowerCase().startsWith(prefix) && vv.default) ??
+          v.find((vv) => vv.lang.toLowerCase().startsWith(prefix)) ??
+          v[0];
         setBrowserVoiceId(def.id);
       }
     });
     return () => {
       cancelled = true;
     };
-  }, [open, browserVoices.length, browserVoiceId]);
+  }, [open, browserVoices.length, browserVoiceId, ttsLang]);
 
   useEffect(() => {
     if (browserVoiceId) {
@@ -462,6 +462,10 @@ export function ChapterTTSPlayer({
 
   // ───────── Gemini path ─────────
   const loadOrSynthesize = async (force = false) => {
+    if (ttsLang === 'fa' && !textFa?.trim()) {
+      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+      return;
+    }
     if (!apiKey) {
       toast.error('Add your Gemini API key in Settings → AI first.');
       return;
@@ -598,6 +602,10 @@ export function ChapterTTSPlayer({
 
   // ───────── ElevenLabs path ─────────
   const loadElevenLabs = async () => {
+    if (ttsLang === 'fa' && !textFa?.trim()) {
+      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+      return;
+    }
     if (!elevenKey) {
       toast.error('کلید ElevenLabs را در تنظیمات وارد کنید.');
       return;
@@ -643,13 +651,24 @@ export function ChapterTTSPlayer({
       toast.error('Your browser does not support speech synthesis.');
       return;
     }
+    if (ttsLang === 'fa' && !textFa?.trim()) {
+      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+      return;
+    }
     if (!text.trim()) {
       toast.error('This chapter has no text to narrate.');
       return;
     }
+    const langPrefix = ttsLang === 'fa' ? 'fa' : 'en';
+    const matchingVoices = browserVoices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
+    const selected = browserVoices.find((v) => v.id === browserVoiceId);
+    const voiceIdForRun = selected?.lang.toLowerCase().startsWith(langPrefix)
+      ? browserVoiceId
+      : matchingVoices[0]?.id ?? null;
+    if (voiceIdForRun && voiceIdForRun !== browserVoiceId) setBrowserVoiceId(voiceIdForRun);
     browserCtrlRef.current?.stop();
     const ctl = new BrowserTtsController(text, {
-      voiceId: browserVoiceId,
+      voiceId: voiceIdForRun,
       lang: ttsLang === 'fa' ? 'fa-IR' : 'en-US',
       rate,
       onChunkStart: (idx, total) => {
@@ -801,7 +820,7 @@ export function ChapterTTSPlayer({
             />
 
 
-            {textFa && <LangToggle value={ttsLang} onChange={setTtsLang} />}
+            <LangToggle value={ttsLang} onChange={setTtsLang} />
 
             <div className="flex-1" />
 
@@ -844,6 +863,12 @@ export function ChapterTTSPlayer({
                               {v.name} <span className="opacity-60">({v.lang})</span>
                             </SelectItem>
                           ))}
+                        {browserVoices.length > 0 &&
+                          browserVoices.filter((v) => v.lang.toLowerCase().startsWith(ttsLang === 'fa' ? 'fa' : 'en')).length === 0 && (
+                            <SelectItem value="__no_voice__" disabled>
+                              {ttsLang === 'fa' ? 'صدای فارسی روی این مرورگر پیدا نشد' : 'No English voice found'}
+                            </SelectItem>
+                          )}
                       </SelectContent>
                     </Select>
                     <Select value={String(rate)} onValueChange={(v) => onRate(Number(v))}>
@@ -916,6 +941,12 @@ export function ChapterTTSPlayer({
                       </p>
                     </div>
                   )}
+                  {ttsLang === 'fa' && browserVoices.length > 0 &&
+                    browserVoices.filter((v) => v.lang.toLowerCase().startsWith('fa')).length === 0 && (
+                      <p className="text-[11px] text-destructive/90 leading-relaxed">
+                        این مرورگر فعلاً صدای fa-IR را به Web Speech API نداده است؛ اگر روی گوشی صدای فارسی نصب است، یک‌بار مرورگر/اپ را کامل ببند و باز کن، یا از Azure/ElevenLabs استفاده کن.
+                      </p>
+                    )}
                 </>
               )}
             </div>
@@ -1110,14 +1141,9 @@ export function ChapterTTSPlayer({
             />
           )}
 
-          {/* Body — Edge TTS / Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
-          {(engine === 'edgetts' || engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
+          {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
+          {(engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
             <div className="space-y-3">
-              {engine === 'edgetts' && (
-                <div className="text-xs text-muted-foreground">
-                  صدای فارسی پایدار — MP3 ساخته‌شده روی همین دستگاه کش می‌شود و دفعات بعد آفلاین پخش می‌شود.
-                </div>
-              )}
               {engine === 'azure' && !azureKey && (
                 <div className="text-sm text-muted-foreground">
                   Azure نیاز به key + region دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
@@ -1139,12 +1165,6 @@ export function ChapterTTSPlayer({
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
-                {engine === 'edgetts' && (
-                  <Select value={edgeTtsVoice} onValueChange={setEdgeTtsVoice}>
-                    <SelectTrigger className="h-9 w-[240px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>
-                    <SelectContent>{edgeTtsVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
-                  </Select>
-                )}
                 {engine === 'azure' && (
                   <Select value={azureVoice} onValueChange={setAzureVoice}>
                     <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>
@@ -1176,29 +1196,6 @@ export function ChapterTTSPlayer({
                   {otherLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
                   {otherLoading ? 'در حال ساخت…' : 'Listen'}
                 </Button>
-                {engine === 'edgetts' && audioUrl && (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={() => loadOther(true)} disabled={otherLoading} title="ساخت دوباره MP3">
-                      {otherLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="دانلود MP3"
-                      onClick={() => {
-                        const a = document.createElement('a');
-                        a.href = audioUrl;
-                        const safeTitle = chapterTitle.replace(/[^\w\s.-]+/g, '').slice(0, 60).trim() || 'narration';
-                        a.download = `${safeTitle} (${ttsLang}).mp3`;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                      }}
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
               </div>
               {audioUrl && (
                 <audio

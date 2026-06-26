@@ -84,11 +84,32 @@ function chunkText(text: string, maxLen = 250): string[] {
       out.push(block);
       continue;
     }
-    const sentences = block.match(/[^.!?]+[.!?]+|[^.!?]+$/g) ?? [block];
+    const sentences = block.match(/[^.!?؟。]+[.!?؟。]+|[^.!?؟。]+$/g) ?? [block];
     let buf = '';
+    const pushLong = (text: string) => {
+      const words = text.match(/\S+/g) ?? [];
+      let part = '';
+      for (const w of words) {
+        if ((part + ' ' + w).trim().length > maxLen && part) {
+          out.push(part.trim());
+          part = w;
+        } else {
+          part = part ? `${part} ${w}` : w;
+        }
+      }
+      if (part) out.push(part.trim());
+    };
     for (const s of sentences) {
       const trimmed = s.trim();
       if (!trimmed) continue;
+      if (trimmed.length > maxLen) {
+        if (buf) {
+          out.push(buf.trim());
+          buf = '';
+        }
+        pushLong(trimmed);
+        continue;
+      }
       if ((buf + ' ' + trimmed).trim().length > maxLen && buf) {
         out.push(buf.trim());
         buf = trimmed;

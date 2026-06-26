@@ -258,6 +258,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   paragraphAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   paragraphBatchModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
   rewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
+  htmlFilenameModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
 };
 
 function migrateLegacyModel(m: string | undefined): AppSettings['geminiModel'] {
@@ -288,6 +289,7 @@ export async function getSettings(): Promise<AppSettings> {
       rest.paragraphBatchModelRef ?? rest.bookBatchAnalysisModelRef ?? DEFAULT_SETTINGS.paragraphBatchModelRef,
     rewriteModelRef:
       rest.rewriteModelRef ?? rest.bookRewriteModelRef ?? rest.newsRewriteModelRef ?? DEFAULT_SETTINGS.rewriteModelRef,
+    htmlFilenameModelRef: rest.htmlFilenameModelRef ?? DEFAULT_SETTINGS.htmlFilenameModelRef,
     bookSingleAnalysisModel:
       rest.bookSingleAnalysisModel ?? rest.bookAnalysisModel ?? DEFAULT_SETTINGS.bookSingleAnalysisModel,
     bookBatchAnalysisModel:

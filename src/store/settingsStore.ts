@@ -50,6 +50,7 @@ const DEFAULTS: AppSettings = {
   bookBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
   newsBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
   newsRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
+  htmlFilenameModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
   bookRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
   paragraphGestures: false,
   paragraphTextAlign: 'start',

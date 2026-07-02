@@ -1,9 +1,9 @@
 /**
- * Auto-scroll controller: while enabled, scrolls the nearest scrollable
- * ancestor of `containerSelector` at a rate derived from WPM. Also renders
- * an optional fixed horizontal "ruler" line in the middle of the viewport.
+ * Auto-scroll controller + centered ruler. The ruler is portalled to
+ * document.body so ancestor transforms don't break `position: fixed`.
  */
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useReadingMode } from '@/hooks/useReadingMode';
 
 function findScrollParent(el: HTMLElement | null): HTMLElement | Window {
@@ -30,8 +30,6 @@ export function AutoScrollController({ containerSelector }: Props) {
     const el = document.querySelector<HTMLElement>(containerSelector);
     if (!el) return;
     const parent = findScrollParent(el);
-    // Estimate: avg word ~ 8px wide × X chars per line — use line height as proxy.
-    // Roughly 12 words per line at typical widths → pxPerSec = wpm/60 * lineHeight / 12
     const lh = parseFloat(getComputedStyle(el).lineHeight) || 26;
     const pxPerSec = (autoScrollWpm / 60) * (lh / 10);
 
@@ -52,7 +50,6 @@ export function AutoScrollController({ containerSelector }: Props) {
     raf = requestAnimationFrame(step);
 
     const toggle = (e: Event) => {
-      // Ignore taps on buttons/links.
       const target = e.target as HTMLElement;
       if (target.closest('button,a,input,select,textarea')) return;
       paused = !paused;
@@ -65,13 +62,31 @@ export function AutoScrollController({ containerSelector }: Props) {
     };
   }, [autoScrollEnabled, autoScrollWpm, containerSelector]);
 
-  if (!rulerEnabled) return null;
-  return (
+  if (!rulerEnabled || typeof document === 'undefined') return null;
+  return createPortal(
     <div
       aria-hidden
-      className="pointer-events-none fixed left-0 right-0 top-1/2 -translate-y-1/2 z-40"
+      style={{
+        position: 'fixed',
+        left: 0,
+        right: 0,
+        top: '50vh',
+        transform: 'translateY(-50%)',
+        pointerEvents: 'none',
+        zIndex: 40,
+      }}
     >
-      <div className="mx-auto max-w-4xl h-[3px] bg-primary/40 rounded-full shadow-[0_0_12px_rgba(59,130,246,0.6)]" />
-    </div>
+      <div
+        style={{
+          margin: '0 auto',
+          maxWidth: '56rem',
+          height: '3px',
+          background: 'hsl(var(--primary) / 0.45)',
+          borderRadius: '999px',
+          boxShadow: '0 0 12px hsl(var(--primary) / 0.6)',
+        }}
+      />
+    </div>,
+    document.body,
   );
 }

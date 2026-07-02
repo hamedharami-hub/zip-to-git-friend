@@ -37,7 +37,6 @@ import { cn } from '@/lib/utils';
 import { extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
-import { extractTextFromElement } from '@/lib/readingText';
 
 const SCROLL_SAVE_DEBOUNCE = 600;
 /** Read-time accrual: ping every 15 s while the tab is visible & scrolled. */
@@ -530,10 +529,7 @@ const BookReader = () => {
             lineHeight={lineHeight}
             onLineHeight={setLineHeight}
           />
-          <ReadingModeControls
-            containerSelector="#book-reading-root"
-            getText={() => extractTextFromElement(document.querySelector<HTMLElement>('#book-reading-root'))}
-          />
+          <ReadingModeControls containerSelector="#book-reading-root" />
         </div>
         <Progress value={overallProgress} className="h-0.5 rounded-none" />
         {/* Sticky Original / Rewrite toggle — only when a rewrite exists for this chapter. */}

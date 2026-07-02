@@ -58,7 +58,6 @@ import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
 import { LangCycleButton } from '@/components/news/LangCycleButton';
 import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
-import { extractTextFromElement } from '@/lib/readingText';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -552,10 +551,7 @@ const NewsArticleReader = () => {
           <NewsTypographyMenu onChange={handleTypoChange} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
-          <ReadingModeControls
-            containerSelector="#news-reading-root"
-            getText={() => extractTextFromElement(document.querySelector<HTMLElement>('#news-reading-root'))}
-          />
+          <ReadingModeControls containerSelector="#news-reading-root" />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <NewsShareMenu
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}

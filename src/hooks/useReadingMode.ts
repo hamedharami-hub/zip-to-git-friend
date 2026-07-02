@@ -67,8 +67,9 @@ export const useReadingMode = create<ReadingModeState>((set) => ({
     save(persistable as typeof DEFAULTS);
     return next;
   }),
-  reset: () => set(() => {
+  reset: () => set((s) => {
     save(DEFAULTS);
-    return { ...DEFAULTS, set: (useReadingMode.getState() as any).set, reset: (useReadingMode.getState() as any).reset };
+    return { ...s, ...DEFAULTS };
   }),
+
 }));

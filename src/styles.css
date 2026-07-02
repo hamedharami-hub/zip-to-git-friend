@@ -353,3 +353,52 @@
     animation: editorial-fade-up 0.5s ease-out both;
   }
 }
+
+/* ─────────────── Reading Mode (Bionic / Focus / Eye Comfort) ─────────────── */
+
+/* Bionic bolding. Kept subtle so it doesn't shout. */
+b.rm-bionic {
+  font-weight: 700;
+}
+.dark b.rm-bionic {
+  color: hsl(var(--foreground));
+}
+
+/* Focus mode — dim non-active paragraphs. */
+.rm-focus-dim .rm-para { transition: opacity 0.25s ease, filter 0.25s ease; }
+.rm-focus-dim .rm-para { opacity: 0.35; }
+.rm-focus-dim .rm-para.rm-focused { opacity: 1; }
+
+/* Focus mode — blur non-active paragraphs. */
+.rm-focus-blur .rm-para { transition: filter 0.25s ease, opacity 0.25s ease; }
+.rm-focus-blur .rm-para { filter: blur(2.5px); opacity: 0.55; }
+.rm-focus-blur .rm-para.rm-focused { filter: none; opacity: 1; }
+
+/* Eye Comfort presets — applied on <html>. */
+html.rm-comfort body {
+  --_rm-extra-lh: var(--rm-extra-line-height, 0);
+}
+html.rm-comfort [data-reading-root] {
+  line-height: calc(1.7 + var(--rm-extra-line-height, 0));
+  letter-spacing: 0.01em;
+}
+html.rm-sepia {
+  filter: sepia(0.25) contrast(0.95) brightness(0.96);
+}
+html.rm-sepia body { background: #f5eddc; color: #3a2f22; }
+html.rm-night {
+  filter: brightness(0.85) contrast(0.92);
+}
+html.rm-night body { background: #0a0d12 !important; }
+html.rm-contrast [data-reading-root] {
+  color: hsl(var(--foreground));
+  font-weight: 500;
+}
+html.rm-contrast [data-reading-root] p,
+html.rm-contrast [data-reading-root] li {
+  line-height: calc(1.9 + var(--rm-extra-line-height, 0));
+}
+[data-reading-root] {
+  line-height: calc(1.7 + var(--rm-extra-line-height, 0));
+}
+

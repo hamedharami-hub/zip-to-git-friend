@@ -356,13 +356,17 @@
 
 /* ─────────────── Reading Mode (Bionic / Focus / Eye Comfort) ─────────────── */
 
-/* Bionic bolding. Kept subtle so it doesn't shout. */
+/* Bionic bolding — visible in both light and dark modes. */
 b.rm-bionic {
-  font-weight: 700;
+  font-weight: 800 !important;
+  color: hsl(var(--foreground)) !important;
 }
 .dark b.rm-bionic {
-  color: hsl(var(--foreground));
+  font-weight: 800 !important;
+  color: hsl(var(--foreground)) !important;
 }
+.rm-bionic-word { font-weight: inherit; }
+
 
 /* Focus mode — dim non-active paragraphs. */
 .rm-focus-dim .rm-para { transition: opacity 0.25s ease, filter 0.25s ease; }

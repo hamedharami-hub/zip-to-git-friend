@@ -36,6 +36,8 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
+import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
+import { extractTextFromElement } from '@/lib/readingText';
 
 const SCROLL_SAVE_DEBOUNCE = 600;
 /** Read-time accrual: ping every 15 s while the tab is visible & scrolled. */
@@ -528,6 +530,10 @@ const BookReader = () => {
             lineHeight={lineHeight}
             onLineHeight={setLineHeight}
           />
+          <ReadingModeControls
+            containerSelector="#book-reading-root"
+            getText={() => extractTextFromElement(document.querySelector<HTMLElement>('#book-reading-root'))}
+          />
         </div>
         <Progress value={overallProgress} className="h-0.5 rounded-none" />
         {/* Sticky Original / Rewrite toggle — only when a rewrite exists for this chapter. */}
@@ -611,6 +617,8 @@ const BookReader = () => {
         className="flex-1 overflow-y-auto overscroll-contain"
       >
         <main
+          id="book-reading-root"
+          data-reading-root
           className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12"
           style={{ fontSize: `${fontScale}rem`, lineHeight, fontFamily: fontFamilyStack }}
         >

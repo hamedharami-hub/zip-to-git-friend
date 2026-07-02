@@ -57,6 +57,8 @@ import { NewsTocMenu } from '@/components/news/NewsTocMenu';
 import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
 import { LangCycleButton } from '@/components/news/LangCycleButton';
+import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
+import { extractTextFromElement } from '@/lib/readingText';
 
 function isYoutubeUrl(url: string): boolean {
   try {
@@ -550,6 +552,10 @@ const NewsArticleReader = () => {
           <NewsTypographyMenu onChange={handleTypoChange} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+          <ReadingModeControls
+            containerSelector="#news-reading-root"
+            getText={() => extractTextFromElement(document.querySelector<HTMLElement>('#news-reading-root'))}
+          />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <NewsShareMenu
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
@@ -605,7 +611,7 @@ const NewsArticleReader = () => {
 
 
       <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef} style={{ touchAction: 'pan-y' }}>
-        <main className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
+        <main id="news-reading-root" data-reading-root className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />

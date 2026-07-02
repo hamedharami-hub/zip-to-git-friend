@@ -1,78 +1,72 @@
-# Stable Persian TTS via Microsoft Edge TTS
+# Speed-Reading & Eye-Comfort Modes
 
-Microsoft's Edge browser "Read Aloud" service offers high‑quality neural voices (including `fa-IR-DilaraNeural` and `fa-IR-FaridNeural`) for free, no API key required. It uses a WebSocket endpoint with a well‑known `TrustedClientToken`. This is the most reliable free Persian TTS available today — far more stable than Hugging Face Spaces.
+اضافه کردن یک لایه‌ی مشترک «Reading Mode» به `NewsArticle` و `BookReader` که شامل ۸ تکنیک انتخاب‌شده می‌شه. همه از یک کامپوننت مشترک تغذیه می‌کنن.
 
-We'll wrap it in a Supabase Edge Function (server‑side WebSocket, returns MP3) and expose it as a new engine in the existing TTS UI.
+## What the user gets
 
-## 1. New Edge Function — `supabase/functions/edge-tts/index.ts`
+یک دکمه‌ی جدید ⚡ **«حالت مطالعه»** کنار دکمه‌های موجود (تنظیمات/TOC/TTS) در هدر مقاله و کتاب. با زدنش یک پنل باز می‌شه با ۴ تب:
 
-- Public (no JWT, `verify_jwt = false`) — Edge TTS itself has no auth, and we don't want to expose user tokens.
-- Input JSON: `{ text: string, voice?: string, rate?: string, pitch?: string }`
-  - Defaults: `voice="fa-IR-DilaraNeural"`, `rate="+0%"`, `pitch="+0Hz"`.
-  - Hard limits: text ≤ 5000 chars; reject empty.
-- Splits text into sentence‑aligned chunks (~1500 chars, same helper style as `elevenlabs-tts`).
-- For each chunk:
-  1. Open WebSocket to
-     `wss://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1?TrustedClientToken=6A5AA1D4EAFF4E9FB37E23D68491D6F4`.
-  2. Send the `speech.config` JSON message (audio output format `audio-24khz-48kbitrate-mono-mp3`).
-  3. Send an SSML message with the chosen voice, rate, pitch (XML‑escaped text).
-  4. Collect binary audio frames (skip the 2‑byte header offset framing) until the `Path:turn.end` text frame arrives, then close.
-- Concatenate all chunk MP3 bytes and return `Content-Type: audio/mpeg` with CORS headers (`Access-Control-Allow-Origin: *`, OPTIONS preflight).
-- Errors: return JSON `{ error }` with 4xx/5xx and CORS headers; include a clear message when the WS closes unexpectedly so the client can show it.
-- No secrets needed — nothing to add via `add_secret`.
+**۱. Flash (فلش کلمات)**
+- RSVP تک‌کلمه‌ای وسط صفحه با ORP (نقطه‌ی قرمز روی حرف بهینه).
+- سوییچ Chunk Mode: ۱ / ۳ / ۵ کلمه‌ای.
+- اسلایدر سرعت ۱۵۰–۹۰۰ WPM.
+- Play/Pause، ±۱۰ کلمه، ری‌استارت، پروگرس‌بار.
+- مکث خودکار روی نقطه/ویرگول.
+- Fullscreen تیره برای تمرکز کامل.
 
-Rate limiting: a simple in‑memory per‑IP token bucket (best‑effort) to avoid abuse; 30 req/min.
+**۲. Bionic**
+- بولد کردن ابتدای هر کلمه (۴۰–۶۰٪ حروف، قابل تنظیم با اسلایدر «شدت»).
+- پشتیبانی فارسی و انگلیسی (برای فارسی بر اساس مرز کلمات یونی‌کد).
+- ترکیب‌شدنی با بقیه‌ی حالت‌های نمایشی.
 
-## 2. Frontend wiring
+**۳. Auto-Scroll + Ruler**
+- اسکرول خودکار متن با WPM تنظیمی.
+- خط راهنمای افقی نیمه‌شفاف وسط صفحه (Ruler).
+- Pacer نقطه‌ای اختیاری روی خط فعلی.
+- تپ برای Pause/Resume، اسلایدر سرعت زنده.
 
-Add a new engine id `edgetts` everywhere the other engines live:
+**۴. Focus**
+- **Guided Highlight**: جمله‌ی فعلی رنگ پررنگ، بقیه کم‌رنگ (opacity 0.35). با تپ یا تایمر جلو می‌ره.
+- **Focus Blur**: فقط پاراگراف فعلی واضح، بقیه blur(3px). سوییچ جدا.
 
-- `src/components/books/chapter-tts/constants.ts`
-  - Extend `Engine` union and `ENGINES` with `'edgetts'`.
-- `src/components/books/chapter-tts/EngineSelector.tsx`
-  - Add `{ id: 'edgetts', label: 'Edge TTS' }` (place near top, before Azure — it's the recommended Persian option).
-- `src/lib/edgeTts.ts` (new)
-  - `EDGE_TTS_VOICES` list:
-    - Persian: `fa-IR-DilaraNeural` (female), `fa-IR-FaridNeural` (male)
-    - English: `en-US-AriaNeural`, `en-US-GuyNeural`, `en-GB-SoniaNeural`, `en-AU-NatashaNeural`
-  - `EdgeTtsError` class.
-  - `synthesizeWithEdgeTts({ text, voice, rate })` — calls the Supabase function via `supabase.functions.invoke('edge-tts', { body })` and returns a `Blob`. Converts rate (0.5–2.0) to `"+NN%" / "-NN%"`.
-- `src/components/books/chapter-tts/synthesizeOther.ts`
-  - Add `'edgetts'` to `OtherEngine`, route to `synthesizeWithEdgeTts`. Include `EdgeTtsError` in `otherEngineErrorMessage`.
-- `src/components/books/chapter-tts/useOtherEngineVoices.ts`
-  - Add `edgeTtsVoiceOpts` filtered by `ttsLang`, persisted under `llvp-tts-edge-voice` (default first Persian voice when `ttsLang==='fa'`).
-- `src/components/books/ChapterTTSPlayer.tsx` (already wires the other engines through `synthesizeOther` + the voices hook) — add the new voice picker `<Select>` next to the Azure/HF ones, gated on `engine === 'edgetts'`, and pass `edgeTtsVoice` into the synth call.
-- `src/components/books/ReaderTTSQuickSettings.tsx`
-  - Add an "Edge TTS" button in the engine row (alongside browser/gemini/elevenlabs). When selected with Persian, no key is needed — Edge TTS works out of the box.
+**۵. Eye Comfort (همیشه در دسترس، حتی بدون حالت مطالعه)**
+- پریست‌های آماده: Comfort / Sepia / Night / High-Contrast.
+- کنترل جداگانه: اندازه فونت، فاصله خطوط (۱.۴–۲.۴)، عرض ستون (۴۵–۹۰ch)، فاصله حروف، فیلتر نور آبی (warm overlay).
+- ذخیره در `settingsStore` و سینک ابری.
 
-## 3. UX details
+## Files
 
-- When the user picks Edge TTS + Persian and Edge TTS is online, no settings are required → show a small "بدون نیاز به کلید" hint under the voice picker.
-- Surface backend errors via the existing `toast.error` flow used by the other engines.
-- Keep ElevenLabs/Azure/HF as alternatives; do not remove the HF code (still useful for offline / self‑hosted users).
+**New — مشترک بین news/book:**
+- `src/components/reader/ReadingModeButton.tsx` — دکمه‌ی ورودی.
+- `src/components/reader/ReadingModeSheet.tsx` — پنل با ۴ تب.
+- `src/components/reader/modes/RsvpPlayer.tsx` — RSVP + Chunk، fullscreen، ORP.
+- `src/components/reader/modes/BionicText.tsx` — رندر مجدد متن با `<b>` روی ابتدای کلمات.
+- `src/components/reader/modes/AutoScrollRuler.tsx` — اسکرول خودکار + خط راهنما + pacer.
+- `src/components/reader/modes/FocusOverlay.tsx` — Guided Highlight + Blur.
+- `src/components/reader/EyeComfortPresets.tsx` — پریست‌ها + فیلتر نور آبی (overlay CSS).
+- `src/lib/readingText.ts` — کمکی: استخراج متن plain از HTML/پاراگراف‌ها، توکنایز کلمات (fa+en)، محاسبه‌ی ORP index، chunk splitter.
+- `src/lib/bionic.ts` — منطق بولد کردن ابتدای کلمات با شدت متغیر.
+- `src/hooks/useReadingMode.ts` — state مشترک (mode، wpm، chunkSize، bionicIntensity، isFullscreen، currentIndex).
+
+**Edit:**
+- `src/pages/NewsArticle.tsx` — اضافه کردن `<ReadingModeButton>` در هدر؛ wrap کردن متن مقاله در `<ReadingModeHost>` تا Bionic/Focus/AutoScroll روی همون DOM اعمال بشه.
+- `src/pages/BookReader.tsx` — همون کار برای متن فصل.
+- `src/store/settingsStore.ts` + `src/lib/db.ts` — فیلدهای جدید: `reading.wpm`, `reading.chunkSize`, `reading.bionicEnabled`, `reading.bionicIntensity`, `reading.eyeComfortPreset`, `reading.lineHeight`, `reading.columnWidth`, `reading.blueLightFilter`.
 
 ## Technical notes
 
-- WebSocket from Deno: `new WebSocket(url)` is supported in Supabase Edge Functions (Deno runtime).
-- Edge TTS binary frame format: the first 2 bytes are the header length; the rest is MP3 — when concatenating, strip the header per frame and stitch the MP3 payloads.
-- SSML template:
-  ```xml
-  <speak version='1.0' xml:lang='fa-IR'>
-    <voice name='fa-IR-DilaraNeural'>
-      <prosody rate='+0%' pitch='+0Hz'>...escaped text...</prosody>
-    </voice>
-  </speak>
-  ```
-- No DB migrations, no secrets, no schema changes.
+- RSVP از `requestAnimationFrame` با accumulator زمان استفاده می‌کنه تا در WPM بالا هم دقیق باشه. مکث اضافه روی توکن‌های پایان جمله (نقطه/؟/!/؟) × ۱.۵ و ویرگول × ۱.۲.
+- ORP: برای کلمه‌ی طول n، ایندکس ≈ `Math.max(1, Math.floor(n * 0.35))`. حرف در اون ایندکس با رنگ قرمز و بقیه‌ی حروف چپ/راست‌چین با padding ثابت تا کلمه «نلغزه».
+- Bionic روی TextNodes رندر می‌شه (نه innerHTML) تا HTML موجود (لینک/بولد/تصویر) نشکنه. با یک `MutationObserver` سبک روی تغییرات ترجمه.
+- Guided Highlight: تقسیم پاراگراف‌ها با `paragraphSplit`، سپس جمله‌ها با regex مشترک (`.!?؟`)؛ span-wrap و کلاس `.rm-active` روی جمله‌ی فعلی.
+- Auto-Scroll: `scrollBy` روی container مقاله با نرخ px/s محاسبه‌شده از WPM × میانگین ارتفاع خط.
+- Blue-light: overlay ثابت `fixed inset-0 pointer-events-none bg-[#ffb066]/[opacity]` با mix-blend-multiply؛ شدت اسلایدر ۰–۴۰٪.
+- Fullscreen RSVP از Fullscreen API + fallback CSS position:fixed.
+- همه‌ی state ها در `settingsStore` ذخیره می‌شن → سینک ابری فعلی خودکار کار می‌کنه.
+- بدون تغییر در business logic؛ فقط لایه‌ی presentation.
 
-## Files touched
+## Out of scope
 
-- `supabase/functions/edge-tts/index.ts` (new)
-- `supabase/config.toml` (add `[functions.edge-tts] verify_jwt = false`)
-- `src/lib/edgeTts.ts` (new)
-- `src/components/books/chapter-tts/constants.ts`
-- `src/components/books/chapter-tts/EngineSelector.tsx`
-- `src/components/books/chapter-tts/synthesizeOther.ts`
-- `src/components/books/chapter-tts/useOtherEngineVoices.ts`
-- `src/components/books/ChapterTTSPlayer.tsx`
-- `src/components/books/ReaderTTSQuickSettings.tsx`
+- تغییر TTS یا ترجمه.
+- تغییر layout هدر بجز اضافه‌کردن یک آیکن.
+- ML-based sentence importance / eye-tracking.

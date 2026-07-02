@@ -1,11 +1,11 @@
 /**
- * Applies / removes Bionic Reading formatting on the reading container
- * when the toggle is on. Uses MutationObserver to re-apply after content
- * changes (e.g. after "Translate all" or rewrite view swap).
+ * Applies / removes Bionic Reading formatting on the reading container.
+ * Uses MutationObserver to re-apply after external content changes, but
+ * disconnects while we ourselves are mutating the DOM to avoid loops.
  */
 import { useEffect } from 'react';
 import { useReadingMode } from '@/hooks/useReadingMode';
-import { applyBionic, removeBionic, isBionicActive } from '@/lib/bionic';
+import { applyBionic, removeBionic } from '@/lib/bionic';
 
 interface Props {
   containerSelector: string;
@@ -15,38 +15,52 @@ export function BionicApplier({ containerSelector }: Props) {
   const { bionicEnabled, bionicIntensity } = useReadingMode();
 
   useEffect(() => {
-    const root = document.querySelector<HTMLElement>(containerSelector);
-    if (!root) return;
-
-    if (!bionicEnabled) {
-      removeBionic(root);
-      return;
-    }
-
+    // Poll briefly for the container (content may mount async).
+    let cancelled = false;
+    let mo: MutationObserver | null = null;
     let debounce: ReturnType<typeof setTimeout> | null = null;
-    const reapply = () => {
-      if (debounce) clearTimeout(debounce);
-      debounce = setTimeout(() => applyBionic(root, bionicIntensity), 80);
-    };
-    reapply();
+    let root: HTMLElement | null = null;
 
-    const mo = new MutationObserver((muts) => {
-      // Ignore mutations caused by our own bionic wrapping.
-      const externallyChanged = muts.some((m) =>
-        Array.from(m.addedNodes).some(
-          (n) => !(n instanceof HTMLElement) || !n.classList.contains('rm-bionic-word'),
-        ),
-      );
-      if (!externallyChanged) return;
-      if (isBionicActive(root)) removeBionic(root);
-      reapply();
-    });
-    mo.observe(root, { childList: true, subtree: true, characterData: true });
+    const doApply = () => {
+      if (!root) return;
+      mo?.disconnect();
+      applyBionic(root, bionicIntensity);
+      if (mo) mo.observe(root, { childList: true, subtree: true, characterData: true });
+    };
+    const doRemove = () => {
+      if (!root) return;
+      mo?.disconnect();
+      removeBionic(root);
+      if (mo) mo.observe(root, { childList: true, subtree: true, characterData: true });
+    };
+
+    const attach = (el: HTMLElement) => {
+      root = el;
+      if (!bionicEnabled) {
+        doRemove();
+        return;
+      }
+      doApply();
+      mo = new MutationObserver(() => {
+        if (debounce) clearTimeout(debounce);
+        debounce = setTimeout(doApply, 120);
+      });
+      mo.observe(root, { childList: true, subtree: true, characterData: true });
+    };
+
+    const tryFind = () => {
+      if (cancelled) return;
+      const el = document.querySelector<HTMLElement>(containerSelector);
+      if (el) attach(el);
+      else setTimeout(tryFind, 150);
+    };
+    tryFind();
 
     return () => {
-      mo.disconnect();
+      cancelled = true;
       if (debounce) clearTimeout(debounce);
-      removeBionic(root);
+      mo?.disconnect();
+      if (root) removeBionic(root);
     };
   }, [bionicEnabled, bionicIntensity, containerSelector]);
 

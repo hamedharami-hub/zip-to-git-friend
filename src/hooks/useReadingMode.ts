@@ -7,9 +7,6 @@ import { create } from 'zustand';
 export type EyeComfortPreset = 'off' | 'comfort' | 'sepia' | 'night' | 'contrast';
 
 interface ReadingModeState {
-  // Flash / RSVP
-  wpm: number;
-  chunkSize: 1 | 2 | 3 | 5;
   // Bionic
   bionicEnabled: boolean;
   bionicIntensity: number; // 0.3..0.7
@@ -28,11 +25,9 @@ interface ReadingModeState {
   reset: () => void;
 }
 
-const KEY = 'llvp-reading-mode.v1';
+const KEY = 'llvp-reading-mode.v2';
 
 const DEFAULTS = {
-  wpm: 350,
-  chunkSize: 1 as 1,
   bionicEnabled: false,
   bionicIntensity: 0.5,
   autoScrollEnabled: false,
@@ -71,5 +66,4 @@ export const useReadingMode = create<ReadingModeState>((set) => ({
     save(DEFAULTS);
     return { ...s, ...DEFAULTS };
   }),
-
 }));

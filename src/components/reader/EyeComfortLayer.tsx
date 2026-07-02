@@ -1,35 +1,44 @@
 /**
- * Eye-comfort layer. Applies a preset (typography + warm color overlay)
- * to the entire page via CSS variables + a fixed overlay div. Cheap and
- * removable.
+ * Eye-comfort layer. Applies a preset by setting a CSS filter on <body>
+ * (more reliable than <html> filter, which can be overridden by other
+ * page-level styles), plus a global overlay for blue-light warmth.
  */
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useReadingMode } from '@/hooks/useReadingMode';
+
+const CLASSES = ['rm-comfort', 'rm-sepia', 'rm-night', 'rm-contrast'] as const;
 
 export function EyeComfortLayer() {
   const { eyeComfortPreset, blueLightFilter, extraLineHeight } = useReadingMode();
 
   useEffect(() => {
-    const root = document.documentElement;
-    // Reset any prior classes
-    root.classList.remove('rm-comfort', 'rm-sepia', 'rm-night', 'rm-contrast');
-    if (eyeComfortPreset === 'comfort') root.classList.add('rm-comfort');
-    else if (eyeComfortPreset === 'sepia') root.classList.add('rm-sepia');
-    else if (eyeComfortPreset === 'night') root.classList.add('rm-night');
-    else if (eyeComfortPreset === 'contrast') root.classList.add('rm-contrast');
-    root.style.setProperty('--rm-extra-line-height', String(extraLineHeight));
+    const html = document.documentElement;
+    CLASSES.forEach((c) => html.classList.remove(c));
+    if (eyeComfortPreset !== 'off') html.classList.add(`rm-${eyeComfortPreset}` as typeof CLASSES[number]);
+    html.style.setProperty('--rm-extra-line-height', String(extraLineHeight));
+    return () => {
+      CLASSES.forEach((c) => html.classList.remove(c));
+    };
   }, [eyeComfortPreset, extraLineHeight]);
 
+  if (typeof document === 'undefined') return null;
   if (blueLightFilter <= 0) return null;
-  return (
+
+  // Simple warm tint overlay — reliable across browsers (no mix-blend which
+  // can be broken by fixed-position stacking contexts).
+  return createPortal(
     <div
       aria-hidden
-      className="pointer-events-none fixed inset-0 z-[9998]"
       style={{
-        background: '#ffb066',
-        mixBlendMode: 'multiply',
+        position: 'fixed',
+        inset: 0,
+        pointerEvents: 'none',
+        background: '#ff9a3c',
         opacity: Math.min(0.4, blueLightFilter),
+        zIndex: 2147483000,
       }}
-    />
+    />,
+    document.body,
   );
 }

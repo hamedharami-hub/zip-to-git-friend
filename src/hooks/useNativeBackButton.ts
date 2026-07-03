@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useBookStore } from '@/store/bookStore';
+import { isLanguageBook } from '@/lib/languageBook';
 
 /**
  * Wires the Android hardware back button (via Capacitor) and the browser

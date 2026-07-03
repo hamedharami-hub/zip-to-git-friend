@@ -25,14 +25,10 @@ export function useNativeBackButton() {
     const parentFor = (path: string): string | null => {
       if (path.startsWith('/news/article/') || path.startsWith('/news/digest/')) return '/news';
       if (path.startsWith('/books/')) {
-        // Try to detect a language book so we return to /language-books.
         try {
-          // Lazy import to avoid a hard dependency cycle.
           const bookId = path.split('/')[2];
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const store = (window as any).__llvp_bookStore__;
-          const book = store?.getState?.().books?.find?.((b: { id: string }) => b.id === bookId);
-          if (book && (book.kind === 'language' || book.isLanguageBook)) return '/language-books';
+          const book = useBookStore.getState().books.find((b) => b.id === bookId);
+          if (book && isLanguageBook(book)) return '/language-books';
         } catch { /* ignore */ }
         return '/books';
       }

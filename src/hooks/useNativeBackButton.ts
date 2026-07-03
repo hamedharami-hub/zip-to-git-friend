@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useBookStore } from '@/store/bookStore';
+import { isLanguageBook } from '@/lib/languageBook';
 
 /**
  * Wires the Android hardware back button (via Capacitor) and the browser
@@ -18,12 +20,42 @@ export function useNativeBackButton() {
     let cleanup: (() => void) | undefined;
     let mounted = true;
 
+    // Map a deep route to a sensible parent so pressing back on a cold-loaded
+     // article/book/etc. returns to its list instead of exiting the app.
+    const parentFor = (path: string): string | null => {
+      if (path.startsWith('/news/article/') || path.startsWith('/news/digest/')) return '/news';
+      if (path.startsWith('/books/')) {
+        try {
+          const bookId = path.split('/')[2];
+          const book = useBookStore.getState().books.find((b) => b.id === bookId);
+          if (book && isLanguageBook(book)) return '/language-books';
+        } catch { /* ignore */ }
+        return '/books';
+      }
+      if (path.startsWith('/sentence-lab/')) return '/sentence-lab';
+      if (path.startsWith('/leitner')) return '/';
+      if (path === '/videos' || path === '/audio' || path === '/books' ||
+          path === '/language-books' || path === '/news' || path === '/settings' ||
+          path === '/stats' || path === '/sentence-lab' || path === '/leitner') return '/';
+      return null;
+    };
+
     (async () => {
       try {
         const { App } = await import('@capacitor/app');
         const handle = await App.addListener('backButton', ({ canGoBack }) => {
-          if (location.pathname !== '/' && (canGoBack || window.history.length > 1)) {
+          const path = location.pathname;
+          if (path === '/') {
+            App.exitApp();
+            return;
+          }
+          if (canGoBack || window.history.length > 1) {
             navigate(-1);
+            return;
+          }
+          const parent = parentFor(path);
+          if (parent && parent !== path) {
+            navigate(parent);
           } else {
             App.exitApp();
           }

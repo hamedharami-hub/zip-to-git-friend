@@ -57,6 +57,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "epubjs": "^0.3.93",
+    "firebase": "^12.15.0",
     "idb": "^8.0.3",
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",
@@ -82,7 +83,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "2.6.4",
+    "@lovable.dev/vite-tanstack-config": "2.7.0",
     "@types/node": "^22.16.5",
     "@types/react": "^18.3.23",
     "@types/react-dom": "^18.3.7",

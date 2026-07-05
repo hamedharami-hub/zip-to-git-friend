@@ -57,6 +57,7 @@
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.6.0",
     "epubjs": "^0.3.93",
+    "firebase": "^12.15.0",
     "idb": "^8.0.3",
     "input-otp": "^1.4.2",
     "jszip": "^3.10.1",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, LogIn, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,10 @@ import { toast } from 'sonner';
 const Auth = () => {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rawNext = searchParams.get('next') ?? '';
+  // Only accept same-origin relative paths for the post-auth redirect.
+  const nextPath = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,8 +26,8 @@ const Auth = () => {
   }, []);
 
   useEffect(() => {
-    if (!loading && user) navigate('/', { replace: true });
-  }, [user, loading, navigate]);
+    if (!loading && user) navigate(nextPath, { replace: true });
+  }, [user, loading, navigate, nextPath]);
 
   const handleEmail = async (mode: 'signin' | 'signup') => {
     if (!email || !password) {
@@ -36,7 +40,7 @@ const Auth = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/` },
+          options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
         });
         if (error) throw error;
         toast.success('Account created. Check your email to confirm (if required).');
@@ -57,12 +61,12 @@ const Auth = () => {
     setSubmitting(true);
     try {
       const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
+        redirect_uri: `${window.location.origin}${nextPath}`,
       });
       if (result.error) throw result.error;
       if (result.redirected) return; // browser will redirect
-      // Tokens received → session set, navigate home.
-      navigate('/', { replace: true });
+      // Tokens received → session set, navigate to intended target.
+      navigate(nextPath, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Google sign-in failed.';
       toast.error(msg);

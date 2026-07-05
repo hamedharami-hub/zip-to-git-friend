@@ -1,5 +1,7 @@
 import { initializeApp, type FirebaseApp } from "firebase/app";
 import { getAnalytics, isSupported, type Analytics } from "firebase/analytics";
+import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 import { getFirebaseApiKey } from "./firebaseConfig.functions";
 
 const baseConfig = {
@@ -11,13 +13,21 @@ const baseConfig = {
   measurementId: "G-0F4LSKV5H0",
 };
 
-let appPromise: Promise<FirebaseApp> | null = null;
+export interface FirebaseServices {
+  app: FirebaseApp;
+  auth: Auth;
+  db: Firestore;
+}
+
+let servicesPromise: Promise<FirebaseServices> | null = null;
 export let firebaseAnalytics: Analytics | null = null;
 
-export function getFirebaseApp(): Promise<FirebaseApp> {
-  if (!appPromise) {
-    appPromise = getFirebaseApiKey().then(({ apiKey }) => {
+export function getFirebase(): Promise<FirebaseServices> {
+  if (!servicesPromise) {
+    servicesPromise = getFirebaseApiKey().then(({ apiKey }) => {
       const app = initializeApp({ ...baseConfig, apiKey });
+      const auth = getAuth(app);
+      const db = getFirestore(app);
       if (typeof window !== "undefined") {
         isSupported()
           .then((ok) => {
@@ -25,8 +35,13 @@ export function getFirebaseApp(): Promise<FirebaseApp> {
           })
           .catch(() => {});
       }
-      return app;
+      return { app, auth, db };
     });
   }
-  return appPromise;
+  return servicesPromise;
+}
+
+// Back-compat alias.
+export function getFirebaseApp(): Promise<FirebaseApp> {
+  return getFirebase().then((s) => s.app);
 }

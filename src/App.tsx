@@ -11,6 +11,7 @@ import { useLeitnerStore } from './store/leitnerStore';
 import { useLeitnerFolderStore } from './store/leitnerFolderStore';
 import { useOnline } from './hooks/useOnline';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { FirebaseAuthProvider } from './contexts/FirebaseAuthContext';
 import { startSync, stopSync } from './lib/leitnerSync';
 import { useNativeBackButton } from './hooks/useNativeBackButton';
 import { useEdgeSwipeBack } from './hooks/useEdgeSwipeBack';
@@ -44,6 +45,7 @@ const SentenceAdmin = lazy(() => import('./pages/SentenceLab/Admin'));
 const NewsArticle = lazy(() => import('./pages/NewsArticle'));
 const NewsDigest = lazy(() => import('./pages/NewsDigest'));
 const NotFound = lazy(() => import('./pages/NotFound.tsx'));
+const FirebaseAuthPage = lazy(() => import('./pages/FirebaseAuth'));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -131,6 +133,7 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
+        <FirebaseAuthProvider>
         <SettingsBootstrap>
           <SyncBridge />
           <BrowserRouter
@@ -141,6 +144,7 @@ const App = () => (
               <Route path="/" element={wrap('Home', <Home />)} />
               <Route path="/videos" element={wrap('Videos', <Videos />)} />
               <Route path="/auth" element={wrap('Auth', <Auth />)} />
+              <Route path="/firebase-auth" element={wrap('FirebaseAuth', <FirebaseAuthPage />)} />
               <Route path="/player/:videoId" element={wrap('Player', <Player />, <PlayerSkeleton />)} />
               <Route path="/leitner" element={wrap('Leitner', <Leitner />)} />
               <Route path="/stats" element={wrap('Stats', <Stats />)} />
@@ -169,6 +173,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </SettingsBootstrap>
+        </FirebaseAuthProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

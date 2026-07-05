@@ -37,7 +37,7 @@ export default defineConfig({
         workbox: {
           globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
           navigateFallback: "/",
-          navigateFallbackDenylist: [/^\/api\//, /^\/~oauth/, /^\/auth/],
+          navigateFallbackDenylist: [/^\/api\//, /^\/~oauth/, /^\/auth/, /^\/mcp/, /^\/\.mcp/, /^\/\.well-known/, /^\/\.lovable/],
           runtimeCaching: [
             {
               urlPattern: ({ request }) => request.mode === "navigate",

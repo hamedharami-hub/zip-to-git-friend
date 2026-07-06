@@ -49,6 +49,7 @@ import {
 import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
+import { injectArticleImages } from '@/lib/injectArticleImages';
 import { toast } from 'sonner';
 import { cacheArticle, getCachedArticle, cacheRewrites, getCachedRewrites } from '@/lib/newsOfflineCache';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';

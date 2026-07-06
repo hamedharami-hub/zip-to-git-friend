@@ -559,7 +559,7 @@ const NewsArticleReader = () => {
           />
           <NewsTypographyMenu onChange={handleTypoChange} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+          <NewsTocMenu html={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')} />
           <ReadingModeControls containerSelector="#news-reading-root" />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <NewsShareMenu

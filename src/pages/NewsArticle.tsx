@@ -566,7 +566,7 @@ const NewsArticleReader = () => {
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
               chapterIndex={0}
               title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+              contentHtml={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')}
               contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
               url={article.url}
               siteName={article.siteName}

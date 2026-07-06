@@ -49,6 +49,7 @@ import {
 import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
 import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
 import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
+import { injectArticleImages } from '@/lib/injectArticleImages';
 import { toast } from 'sonner';
 import { cacheArticle, getCachedArticle, cacheRewrites, getCachedRewrites } from '@/lib/newsOfflineCache';
 import { NewsShareMenu } from '@/components/news/NewsShareMenu';
@@ -478,6 +479,14 @@ const NewsArticleReader = () => {
   const activeRewriteDoc = rewrites[activeRewrite];
   const hasAnyRewrite = !!rewrites.long || !!rewrites.max || !!rewrites['auto-max'];
 
+  // Inject inline images from the original article into the rewritten HTML so
+  // shorter/AI rewrites still show the photos at roughly the same positions.
+  const rewriteHtmlWithImages = activeRewriteDoc?.contentHtml
+    ? injectArticleImages(activeRewriteDoc.contentHtml, article.contentHtml, {
+        skipUrl: article.imageUrl,
+      })
+    : activeRewriteDoc?.contentHtml;
+
   // Build pseudo-chapters so TranslateChapterButton (which expects a BookChapter)
   // can drive whole-text translation against the same `analyze-paragraph` cache.
   const origChapter: BookChapter | undefined = article.contentHtml
@@ -491,15 +500,15 @@ const NewsArticleReader = () => {
         wordCount: article.wordCount,
       }
     : undefined;
-  const rwChapter: BookChapter | undefined = activeRewriteDoc?.contentHtml
+  const rwChapter: BookChapter | undefined = rewriteHtmlWithImages
     ? {
         id: `news-rw-${article.id}-${activeRewrite}:0`,
         bookId: `news-rw-${article.id}-${activeRewrite}`,
         index: 0,
-        title: activeRewriteDoc.title || article.title,
-        html: activeRewriteDoc.contentHtml,
-        text: activeRewriteDoc.contentMd,
-        wordCount: activeRewriteDoc.wordCount,
+        title: activeRewriteDoc!.title || article.title,
+        html: rewriteHtmlWithImages,
+        text: activeRewriteDoc!.contentMd,
+        wordCount: activeRewriteDoc!.wordCount,
       }
     : undefined;
 
@@ -550,14 +559,14 @@ const NewsArticleReader = () => {
           />
           <NewsTypographyMenu onChange={handleTypoChange} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTocMenu html={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')} />
+          <NewsTocMenu html={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')} />
           <ReadingModeControls containerSelector="#news-reading-root" />
           {(view === 'rewrite' ? rwChapter : origChapter) && (
             <NewsShareMenu
               bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
               chapterIndex={0}
               title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-              contentHtml={view === 'rewrite' && activeRewriteDoc?.contentHtml ? activeRewriteDoc.contentHtml : (article.contentHtml ?? '')}
+              contentHtml={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')}
               contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
               url={article.url}
               siteName={article.siteName}

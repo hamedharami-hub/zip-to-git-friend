@@ -413,4 +413,154 @@ html.rm-contrast [data-reading-root] li {
   line-height: calc(1.7 + var(--rm-extra-line-height, 0));
 }
 
+/* ---------------------------------------------------------------- */
+/* Glassmorphism tokens + utilities                                  */
+/* ---------------------------------------------------------------- */
+:root {
+  --glass-bg: color-mix(in oklab, hsl(var(--background)) 55%, transparent);
+  --glass-bg-strong: color-mix(in oklab, hsl(var(--background)) 78%, transparent);
+  --glass-border: color-mix(in oklab, hsl(var(--foreground)) 12%, transparent);
+  --glass-highlight: color-mix(in oklab, white 24%, transparent);
+  --glass-shadow: 0 12px 40px -12px color-mix(in oklab, black 55%, transparent),
+                  inset 0 1px 0 var(--glass-highlight);
+  --glass-blur: 22px;
+  --glass-saturate: 160%;
+}
+.dark {
+  --glass-bg: color-mix(in oklab, hsl(var(--background)) 45%, transparent);
+  --glass-bg-strong: color-mix(in oklab, hsl(var(--background)) 72%, transparent);
+  --glass-border: color-mix(in oklab, white 10%, transparent);
+  --glass-highlight: color-mix(in oklab, white 14%, transparent);
+  --glass-shadow: 0 18px 60px -20px color-mix(in oklab, black 75%, transparent),
+                  inset 0 1px 0 var(--glass-highlight);
+}
+
+@utility glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  position: relative;
+  isolation: isolate;
+}
+@utility glass-strong {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+/* Diagonal specular reflection strip that catches light on hover / by default. */
+@utility glass-reflect {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      115deg,
+      transparent 0%,
+      transparent 35%,
+      color-mix(in oklab, white 18%, transparent) 50%,
+      transparent 65%,
+      transparent 100%
+    );
+    mix-blend-mode: overlay;
+    opacity: 0.55;
+    z-index: 0;
+  }
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 40%;
+    pointer-events: none;
+    background: linear-gradient(
+      to bottom,
+      color-mix(in oklab, white 14%, transparent),
+      transparent
+    );
+    border-top-left-radius: inherit;
+    border-top-right-radius: inherit;
+    z-index: 0;
+  }
+  > * { position: relative; z-index: 1; }
+}
+
+/* Apply glass finish globally to core surfaces so the whole app feels glassy. */
+:root:not(.no-glass) [data-slot="card"],
+:root:not(.no-glass) [data-slot="dialog-content"],
+:root:not(.no-glass) [data-slot="popover-content"],
+:root:not(.no-glass) [data-slot="dropdown-menu-content"],
+:root:not(.no-glass) [data-slot="sheet-content"],
+:root:not(.no-glass) [data-slot="drawer-content"],
+:root:not(.no-glass) [data-slot="hover-card-content"],
+:root:not(.no-glass) [data-slot="tooltip-content"],
+:root:not(.no-glass) [data-slot="context-menu-content"],
+:root:not(.no-glass) [data-slot="menubar-content"] {
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border-color: var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Inline images injected into rewritten articles. */
+figure.inline-article-image {
+  margin: 1.5rem auto;
+  max-width: 100%;
+}
+figure.inline-article-image img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+}
+figure.inline-article-image figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.85em;
+  color: hsl(var(--muted-foreground));
+  text-align: center;
+}
+
+/* ---------------------------------------------------------------- */
+/* Windows / fullscreen desktop polish                               */
+/* ---------------------------------------------------------------- */
+@media (min-width: 1440px) {
+  .container, main.max-w-4xl, main.max-w-3xl {
+    max-width: min(1200px, 92vw);
+  }
+}
+:fullscreen, :fullscreen body {
+  background: hsl(var(--background));
+}
+:fullscreen [data-reading-root] {
+  max-width: min(1100px, 78vw);
+  margin-inline: auto;
+}
+
+/* Thin, glassy scrollbars on desktop (WebKit/Chromium — the Windows PWA runtime). */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, hsl(var(--foreground)) 35%, transparent) transparent;
+  }
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, hsl(var(--foreground)) 22%, transparent);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, hsl(var(--foreground)) 40%, transparent);
+    background-clip: padding-box;
+    border: 2px solid transparent;
+  }
+}
+
+
 

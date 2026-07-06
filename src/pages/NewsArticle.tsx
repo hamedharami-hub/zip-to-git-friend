@@ -479,6 +479,14 @@ const NewsArticleReader = () => {
   const activeRewriteDoc = rewrites[activeRewrite];
   const hasAnyRewrite = !!rewrites.long || !!rewrites.max || !!rewrites['auto-max'];
 
+  // Inject inline images from the original article into the rewritten HTML so
+  // shorter/AI rewrites still show the photos at roughly the same positions.
+  const rewriteHtmlWithImages = activeRewriteDoc?.contentHtml
+    ? injectArticleImages(activeRewriteDoc.contentHtml, article.contentHtml, {
+        skipUrl: article.imageUrl,
+      })
+    : activeRewriteDoc?.contentHtml;
+
   // Build pseudo-chapters so TranslateChapterButton (which expects a BookChapter)
   // can drive whole-text translation against the same `analyze-paragraph` cache.
   const origChapter: BookChapter | undefined = article.contentHtml
@@ -492,15 +500,15 @@ const NewsArticleReader = () => {
         wordCount: article.wordCount,
       }
     : undefined;
-  const rwChapter: BookChapter | undefined = activeRewriteDoc?.contentHtml
+  const rwChapter: BookChapter | undefined = rewriteHtmlWithImages
     ? {
         id: `news-rw-${article.id}-${activeRewrite}:0`,
         bookId: `news-rw-${article.id}-${activeRewrite}`,
         index: 0,
-        title: activeRewriteDoc.title || article.title,
-        html: activeRewriteDoc.contentHtml,
-        text: activeRewriteDoc.contentMd,
-        wordCount: activeRewriteDoc.wordCount,
+        title: activeRewriteDoc!.title || article.title,
+        html: rewriteHtmlWithImages,
+        text: activeRewriteDoc!.contentMd,
+        wordCount: activeRewriteDoc!.wordCount,
       }
     : undefined;
 

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import { loadNewsDisplayLang, saveNewsDisplayLang } from '@/lib/newsDisplayLang';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -70,14 +71,8 @@ function isYoutubeUrl(url: string): boolean {
 
 type RewriteLength = 'long' | 'max' | 'auto-max' | 'simple';
 
-const DISPLAY_LANG_KEY = 'news.displayLang.v1';
-function loadDisplayLang(): DisplayLang {
-  try {
-    const v = localStorage.getItem(DISPLAY_LANG_KEY);
-    if (v === 'en' || v === 'fa' || v === 'both') return v;
-  } catch { /* ignore */ }
-  return 'both';
-}
+
+
 
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -106,13 +101,13 @@ const NewsArticleReader = () => {
   const [activeRewrite, setActiveRewrite] = useState<RewriteLength>('auto-max');
   const [rewriteBusy, setRewriteBusy] = useState<RewriteLength | null>(null);
   const [view, setView] = useState<'original' | 'rewrite'>('original');
-  const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
+  const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [origTranslationCount, setOrigTranslationCount] = useState(0);
-  const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
+  const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [rwTranslationCount, setRwTranslationCount] = useState(0);
   // Persist language choice globally so re-opens / back navigation keep it.
-  useEffect(() => { try { localStorage.setItem('news.displayLang.v1', origDisplayLang); } catch { /* */ } }, [origDisplayLang]);
-  useEffect(() => { try { localStorage.setItem('news.displayLang.v1', rwDisplayLang); } catch { /* */ } }, [rwDisplayLang]);
+  useEffect(() => { saveNewsDisplayLang(origDisplayLang); }, [origDisplayLang]);
+  useEffect(() => { saveNewsDisplayLang(rwDisplayLang); }, [rwDisplayLang]);
   const [faTtsText, setFaTtsText] = useState<string>('');
   // Reader typography (font size + family) — persisted via NewsTypographyMenu.
   const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(

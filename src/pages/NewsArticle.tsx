@@ -90,6 +90,12 @@ const NewsArticleReader = () => {
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
+  usePageMeta({
+    title: article?.title ? `${article.title} — خبر` : 'خبر — Lingua',
+    description: article?.summary || article?.title || 'خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.',
+    ogType: 'article',
+    image: article?.imageUrl || undefined,
+  });
   
 
   // Rewrites cached per (article, length) in news_digests via source_articles.

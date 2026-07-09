@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSettingsStore } from '@/store/settingsStore';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -25,6 +26,7 @@ import { AccountButton } from '@/components/auth/AccountButton';
 import { toast } from 'sonner';
 
 const Player = () => {
+  usePageMeta({ title: 'Player — Language Learning Player', description: 'پخش‌کننده‌ی ویدیو — شادویینگ، ترجمه، زیرنویس و تمرین گفتاری.' });
   const { videoId } = useParams<{ videoId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -57,7 +59,6 @@ const Player = () => {
 
   useEffect(() => {
     if (!videoId) return;
-    document.title = 'Player — Language Learning Player';
     let cancelled = false;
     let createdObjectUrl: string | null = null;
     (async () => {

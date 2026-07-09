@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
@@ -18,8 +19,8 @@ import { getAllReadingSessions, getAllBooks } from '@/lib/bookDb';
 import type { ListeningSession, ReadingSession, WordStatusValue, Book } from '@/types';
 
 const Stats = () => {
+  usePageMeta({ title: 'Stats — Language Learning Player', description: 'آمار یادگیری — پیشرفت روزانه، واژگان و زمان مطالعه.' });
   useEffect(() => {
-    document.title = 'Stats — Language Learning Player';
   }, []);
 
   const cards = useLeitnerStore((s) => s.cards);

@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Eye, EyeOff, Moon, Sun, Loader2, RefreshCw } from 'lucide-react';
@@ -117,6 +118,7 @@ function ApiKeyInput({
 }
 
 const Settings = () => {
+  usePageMeta({ title: 'Settings — Language Learning Player', description: 'تنظیمات برنامه — کلیدهای API، مدل‌های AI، ظاهر و خواندن.' });
   const { settings, update } = useSettingsStore();
   const [gemini, setGemini] = useState(settings.geminiApiKey);
   const [groq, setGroq] = useState(settings.groqApiKey);
@@ -139,7 +141,6 @@ const Settings = () => {
   const [refreshingModels, setRefreshingModels] = useState(false);
 
   useEffect(() => {
-    document.title = 'Settings — Language Learning Player';
   }, []);
 
   useEffect(() => {

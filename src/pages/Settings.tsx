@@ -667,7 +667,9 @@ const Settings = () => {
             )}
           </div>
         </section>
+          </TabsContent>
 
+          <TabsContent value="models" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Models per task</h2>
           <p className="text-sm text-muted-foreground">

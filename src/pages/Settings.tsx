@@ -453,7 +453,9 @@ const Settings = () => {
             </div>
           </div>
         </section>
+          </TabsContent>
 
+          <TabsContent value="keys" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">AI</h2>
           <div className="space-y-4 rounded-lg border border-border p-4">

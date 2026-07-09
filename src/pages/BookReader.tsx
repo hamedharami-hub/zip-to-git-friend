@@ -78,7 +78,7 @@ const BookReader = () => {
       ? `مطالعه‌ی «${currentBook.title}» با ترجمه، تحلیل و خواندن صوتی هوش مصنوعی.`
       : 'خواندن تعاملی کتاب با ترجمه و TTS.',
     ogType: 'book',
-    image: currentBook?.coverUrl || undefined,
+    image: currentBook?.coverDataUrl || undefined,
   });
 
   const [chapterIndex, setChapterIndex] = useState(0);

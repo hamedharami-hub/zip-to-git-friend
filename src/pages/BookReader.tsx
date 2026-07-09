@@ -341,7 +341,7 @@ const BookReader = () => {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-2">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
             <Link to="/books">
               <Button variant="ghost" size="icon" aria-label="Back to books">
                 <ArrowLeft className="h-5 w-5" />
@@ -368,7 +368,7 @@ const BookReader = () => {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-2">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
             <Link to={isLang ? '/language-books' : '/books'}>
               <Button variant="ghost" size="icon" aria-label="Back">
                 <ArrowLeft className="h-5 w-5" />
@@ -426,7 +426,7 @@ const BookReader = () => {
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
       {/* ─────────── Header ─────────── */}
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 z-10">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 py-3 flex items-center gap-1 sm:gap-2">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-3 flex items-center gap-1 sm:gap-2">
           <Link to={isLanguageBook(currentBook) ? '/language-books' : '/books'}>
             <Button variant="ghost" size="icon" aria-label="Back to books">
               <ArrowLeft className="h-5 w-5" />

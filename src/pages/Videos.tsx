@@ -141,7 +141,7 @@ const Videos = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <Link to="/" aria-label="Back to home">
               <Button variant="ghost" size="icon">
@@ -175,7 +175,7 @@ const Videos = () => {
 
       <PullToRefreshIndicator progress={ptr.progress} refreshing={ptr.refreshing} />
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
         <section className="flex items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">Your video library</h2>

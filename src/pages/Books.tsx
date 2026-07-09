@@ -44,7 +44,7 @@ const Books = () => {
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground pb-32">
       <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
             <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
@@ -60,7 +60,7 @@ const Books = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-10">
         {books.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}

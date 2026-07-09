@@ -170,7 +170,7 @@ const NewsDigestReader = () => {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-2">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
             <Link to="/news"><Button variant="ghost" size="icon"><ArrowLeft className="h-5 w-5" /></Button></Link>
             <h1 className="text-lg font-semibold">Digest</h1>
           </div>

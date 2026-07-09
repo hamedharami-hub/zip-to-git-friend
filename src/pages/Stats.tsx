@@ -156,7 +156,7 @@ const Stats = () => {
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
       <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
             <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
               <ArrowLeft className="h-4 w-4" /> Home
@@ -172,7 +172,7 @@ const Stats = () => {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 space-y-8">
         <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--tertiary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8">
           <div aria-hidden className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl" />
           <div className="relative">

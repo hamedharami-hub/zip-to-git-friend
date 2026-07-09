@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
 import {

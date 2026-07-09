@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { forwardRef, memo, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Settings as SettingsIcon,
@@ -103,32 +103,36 @@ const TILES: Tile[] = [
   },
 ];
 
-function TileCard({ item }: { item: Tile }) {
-  const Icon = item.icon;
-  return (
-    <Link
-      to={item.to}
-      className={`group relative flex flex-col justify-between rounded-[28px] p-4 sm:p-5 overflow-hidden border border-white/10 transition-all duration-300 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-xl ${item.span ?? ''} ${item.gradient} ${item.text} ${item.glow}`}
-    >
-      {/* Decorative light blob */}
-      <div className={`pointer-events-none absolute inset-0 ${item.blob} opacity-90 transition-opacity duration-500 group-hover:opacity-100`} />
-      {/* Subtle inner sheen */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent" />
+const TileCard = memo(
+  forwardRef<HTMLAnchorElement, { item: Tile }>(function TileCard({ item }, ref) {
+    const Icon = item.icon;
+    return (
+      <Link
+        ref={ref}
+        to={item.to}
+        aria-label={`${item.title} — ${item.fa}`}
+        className={`group relative flex flex-col justify-between rounded-[28px] p-4 sm:p-5 overflow-hidden border border-white/10 transition-all duration-300 active:scale-[0.97] hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${item.span ?? ''} ${item.gradient} ${item.text} ${item.glow}`}
+      >
+        {/* Decorative light blob */}
+        <div className={`pointer-events-none absolute inset-0 ${item.blob} opacity-90 transition-opacity duration-500 group-hover:opacity-100`} />
+        {/* Subtle inner sheen */}
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/15 to-transparent" />
 
-      <div className="relative z-10 flex items-center justify-between">
-        <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md ring-1 ring-white/25 shadow-sm">
-          <Icon className="h-[18px] w-[18px]" />
-        </span>
-      </div>
-      <div className="relative z-10 mt-3">
-        <h3 className="font-serif text-2xl sm:text-3xl leading-none tracking-tight drop-shadow-sm">
-          {item.title}
-        </h3>
-        <p className="text-[11px] opacity-80 mt-1.5 font-medium">{item.fa}</p>
-      </div>
-    </Link>
-  );
-}
+        <div className="relative z-10 flex items-center justify-between">
+          <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-md ring-1 ring-white/25 shadow-sm">
+            <Icon className="h-[18px] w-[18px]" />
+          </span>
+        </div>
+        <div className="relative z-10 mt-3">
+          <h3 className="font-serif text-2xl sm:text-3xl leading-none tracking-tight drop-shadow-sm">
+            {item.title}
+          </h3>
+          <p className="text-[11px] opacity-80 mt-1.5 font-medium">{item.fa}</p>
+        </div>
+      </Link>
+    );
+  }),
+);
 
 const Home = () => {
   const [scrolled, setScrolled] = useState(false);

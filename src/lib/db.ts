@@ -77,56 +77,61 @@ export function getDb() {
   if (!dbPromise) {
     dbPromise = openDB<LLVPSchema>('LLVPDatabase', 7, {
       upgrade(db, oldVersion, _newVersion, transaction) {
-        if (oldVersion < 1) {
+        // Wrap each version step in try/catch — a partial upgrade on a device
+        // with a corrupt store used to leave the whole app unable to open.
+        const safe = (fn: () => void, label: string) => {
+          try { fn(); } catch (e) { console.warn(`[db] upgrade step ${label} failed`, e); }
+        };
+        if (oldVersion < 1) safe(() => {
           const videos = db.createObjectStore('videos', { keyPath: 'id' });
           videos.createIndex('createdAt', 'createdAt');
-
           const tracks = db.createObjectStore('subtitleTracks', { keyPath: 'id' });
           tracks.createIndex('videoId', 'videoId');
           tracks.createIndex('videoId+role', ['videoId', 'role']);
-
           const cards = db.createObjectStore('leitnerCards', { keyPath: 'id' });
           cards.createIndex('box', 'box');
           cards.createIndex('nextReview', 'nextReview');
-
           db.createObjectStore('settings', { keyPath: 'key' });
-
-          const analysis = db.createObjectStore('analysisCache', {
-            keyPath: ['videoId', 'cueId'],
-          });
+          const analysis = db.createObjectStore('analysisCache', { keyPath: ['videoId', 'cueId'] });
           analysis.createIndex('videoId', 'videoId');
-        }
-        if (oldVersion < 2) {
+        }, 'v1');
+        if (oldVersion < 2) safe(() => {
           db.createObjectStore('wordTranslations', { keyPath: 'word' });
-        }
-        if (oldVersion < 3) {
+        }, 'v2');
+        if (oldVersion < 3) safe(() => {
           db.createObjectStore('videoBlobs', { keyPath: 'id' });
           db.createObjectStore('appState', { keyPath: 'key' });
-        }
-        if (oldVersion < 4) {
-          // Add sourceVideoId index on leitnerCards for per-video filtering.
+        }, 'v3');
+        if (oldVersion < 4) safe(() => {
           const cardsStore = transaction.objectStore('leitnerCards');
           if (!cardsStore.indexNames.contains('sourceVideoId')) {
             cardsStore.createIndex('sourceVideoId', 'sourceVideoId');
           }
-        }
-        if (oldVersion < 5) {
-          // Word knowledge tracking + per-day listening stats.
+        }, 'v4');
+        if (oldVersion < 5) safe(() => {
           const ws = db.createObjectStore('wordStatus', { keyPath: 'word' });
           ws.createIndex('status', 'status');
           db.createObjectStore('listeningSessions', { keyPath: 'date' });
-        }
-        if (oldVersion < 6) {
-          // Shadowing takes (recorded user attempts per cue).
+        }, 'v5');
+        if (oldVersion < 6) safe(() => {
           const st = db.createObjectStore('shadowingTakes', { keyPath: 'id' });
           st.createIndex('videoId+cueId', ['videoId', 'cueId']);
           st.createIndex('videoId', 'videoId');
-        }
-        if (oldVersion < 7) {
+        }, 'v6');
+        if (oldVersion < 7) safe(() => {
           const folders = db.createObjectStore('leitnerFolders', { keyPath: 'id' });
           folders.createIndex('kind', 'kind');
           folders.createIndex('parentId', 'parentId');
-        }
+        }, 'v7');
+      },
+      blocked() { console.warn('[db] upgrade blocked by another tab'); },
+      blocking() {
+        // Another tab wants to upgrade — close this connection so it can.
+        try { dbPromise = null; } catch { /* ignore */ }
+      },
+      terminated() {
+        console.warn('[db] connection terminated');
+        dbPromise = null;
       },
     });
   }

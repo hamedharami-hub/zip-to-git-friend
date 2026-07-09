@@ -26,15 +26,8 @@ import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import type { BookChapter } from '@/types';
 import { deleteDigest, getDigestById, type NewsDigest } from '@/lib/news';
 import { toast } from 'sonner';
+import { loadNewsDisplayLang, saveNewsDisplayLang } from '@/lib/newsDisplayLang';
 
-const DISPLAY_LANG_KEY = 'news.displayLang.v1';
-function loadDisplayLang(): DisplayLang {
-  try {
-    const v = localStorage.getItem(DISPLAY_LANG_KEY);
-    if (v === 'en' || v === 'fa' || v === 'both') return v;
-  } catch { /* ignore */ }
-  return 'both';
-}
 
 const NewsDigestReader = () => {
   const { digestId } = useParams<{ digestId: string }>();
@@ -50,7 +43,7 @@ const NewsDigestReader = () => {
     description: digest?.title || 'خلاصه‌ی خبری چندمنبعی با ترجمه و خواندن صوتی.',
     ogType: 'article',
   });
-  const [displayLang, setDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
+  const [displayLang, setDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [translationCount, setTranslationCount] = useState(0);
   const [faTtsText, setFaTtsText] = useState<string>('');
   const [trProgress, setTrProgress] = useState<{ done: number; total: number; failed: number; running: boolean }>(
@@ -66,7 +59,7 @@ const NewsDigestReader = () => {
   const pinchScrollRef = useRef<HTMLDivElement | null>(null);
   usePinchFontStep(pinchScrollRef);
 
-  useEffect(() => { try { localStorage.setItem(DISPLAY_LANG_KEY, displayLang); } catch { /* */ } }, [displayLang]);
+  useEffect(() => { saveNewsDisplayLang(displayLang); }, [displayLang]);
 
   const settings = useSettingsStore((s) => s.settings);
   const newsModelRef = coerceBookModel(

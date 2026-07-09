@@ -6,6 +6,7 @@ import { saveVideo, saveVideoBlob, setAppState } from '@/lib/db';
 import type { Video } from '@/types';
 import { importLLP } from '@/lib/llpPack';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 function uuid() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -47,6 +48,10 @@ async function durationOf(file: Blob, mediaType: 'video' | 'audio'): Promise<num
 const SharePage = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  usePageMeta({
+    title: 'ورود اشتراک — Lingua',
+    description: 'دریافت لینک یا فایل به‌اشتراک‌گذاشته‌شده و افزودن به کتابخانه/اخبار.',
+  });
   const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'fallback'>('idle');
   const [message, setMessage] = useState<string>('');
   const [stage, setStage] = useState<string>('');

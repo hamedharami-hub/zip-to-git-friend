@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Loader2, Newspaper, Sparkles, Trash2, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,11 @@ const NewsDigestReader = () => {
   };
   const [digest, setDigest] = useState<NewsDigest | null>(null);
   const [loading, setLoading] = useState(true);
+  usePageMeta({
+    title: digest?.title ? `${digest.title} — خلاصه` : 'خلاصه‌ی هوش مصنوعی — Lingua',
+    description: digest?.title || 'خلاصه‌ی خبری چندمنبعی با ترجمه و خواندن صوتی.',
+    ogType: 'article',
+  });
   const [displayLang, setDisplayLang] = useState<DisplayLang>(() => loadDisplayLang());
   const [translationCount, setTranslationCount] = useState(0);
   const [faTtsText, setFaTtsText] = useState<string>('');

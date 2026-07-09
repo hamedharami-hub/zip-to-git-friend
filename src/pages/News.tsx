@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 
-const RETURN_KEY = 'news.return.v1';
-type ReturnState = { sourceId: string | null; folderId: string | null; url: string; scrollY: number };
+import {
+  RETURN_KEY, WINDOW_OPTIONS, formatTime, siteFromUrl, isRtlText,
+  type ReturnState,
+} from '@/lib/newsPageHelpers';
 import {
   ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
   Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,

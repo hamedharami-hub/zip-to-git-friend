@@ -836,7 +836,7 @@ const News = () => {
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center gap-2">
+          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
             <Link to="/">
               <Button variant="ghost" size="icon" aria-label="Back to home">
                 <ArrowLeft className="h-5 w-5" />
@@ -864,7 +864,7 @@ const News = () => {
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground overflow-x-hidden">
       <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 h-16 flex items-center gap-2">
+        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-16 flex items-center gap-2">
           <Link to="/">
             <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
               <ArrowLeft className="h-5 w-5" />
@@ -905,7 +905,7 @@ const News = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-6 py-6 grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6 min-w-0">
+      <main className="max-w-[1400px] mx-auto px-3 sm:px-6 py-6 grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6 min-w-0">
         <aside className="space-y-6 min-w-0">
           <section>
             <div className="flex items-center justify-between mb-2 px-1">

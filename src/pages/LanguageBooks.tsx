@@ -41,7 +41,7 @@ const LanguageBooks = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
       <header className="border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
           <Link to="/">
             <Button variant="ghost" size="icon" aria-label="Back to home">
               <ArrowLeft className="h-5 w-5" />
@@ -55,7 +55,7 @@ const LanguageBooks = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
         {sorted.length === 0 ? (
           <EmptyState
             icon={<Sparkles className="h-10 w-10 text-muted-foreground" />}

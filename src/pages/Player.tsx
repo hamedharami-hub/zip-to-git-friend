@@ -240,7 +240,7 @@ const Player = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between gap-3">
+        <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
           <Link to="/">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" /> Library
@@ -288,7 +288,7 @@ const Player = () => {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto sm:px-6 sm:py-6 px-0 py-0 sm:space-y-6">
+      <main className="max-w-[1400px] mx-auto sm:px-6 sm:py-6 px-0 py-0 sm:space-y-6">
         {needReattach ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center space-y-3">
             <h2 className="text-lg font-medium">Re-attach video file</h2>

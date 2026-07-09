@@ -149,7 +149,7 @@ const Home = () => {
   return (
     <div className="min-h-[100dvh] bg-[hsl(var(--background))] text-foreground flex flex-col">
       <header className={`m3-top-app-bar sticky top-0 z-30 ${scrolled ? 'scrolled' : ''}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
           <Link to="/" className="font-serif italic text-base tracking-tight">
             Lingua<span className="text-[hsl(var(--primary))]">.</span>
           </Link>
@@ -165,7 +165,7 @@ const Home = () => {
         </div>
       </header>
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col">
         <PWAInstallBanner />
 
         <div className="flex items-center justify-between px-1 mb-3">

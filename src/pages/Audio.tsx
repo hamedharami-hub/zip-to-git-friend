@@ -149,7 +149,7 @@ const Audio = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between gap-2">
+        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-2">
           <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0">
             <Link to="/" className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-5 w-5" aria-label="Back to library" />
@@ -176,7 +176,7 @@ const Audio = () => {
 
       <PullToRefreshIndicator progress={ptr.progress} refreshing={ptr.refreshing} />
 
-      <main className="max-w-6xl mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
         <PWAInstallBanner />
         <PodcastHeroDecor />
         <section className="flex items-center justify-between gap-4 flex-wrap">

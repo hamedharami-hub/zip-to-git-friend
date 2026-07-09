@@ -92,7 +92,7 @@ const NewsArticleReader = () => {
   const [scraping, setScraping] = useState(false);
   usePageMeta({
     title: article?.title ? `${article.title} — خبر` : 'خبر — Lingua',
-    description: article?.summary || article?.title || 'خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.',
+    description: article?.excerpt || article?.title || 'خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.',
     ogType: 'article',
     image: article?.imageUrl || undefined,
   });

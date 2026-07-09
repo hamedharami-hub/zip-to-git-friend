@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { usePageMeta } from '@/hooks/usePageMeta';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Trash2, Plus } from 'lucide-react';
@@ -21,8 +21,11 @@ const Books = () => {
     title: 'Library — Language Learning Player',
     description: 'کتابخانه‌ی شخصی شما — افزودن، مطالعه، ترجمه و تحلیل کتاب‌ها با هوش مصنوعی.',
   });
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    load();
+    let alive = true;
+    load().finally(() => { if (alive) setHydrated(true); });
+    return () => { alive = false; };
   }, [load]);
 
   const handleDelete = async (id: string, title: string) => {
@@ -65,7 +68,19 @@ const Books = () => {
       </header>
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-10">
-        {books.length === 0 ? (
+        {!hydrated ? (
+          <ul className="grid gap-x-5 gap-y-8 sm:gap-x-7 sm:gap-y-10 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <li key={i} className="animate-pulse">
+                <div className="aspect-[2/3] rounded-md bg-muted/70" />
+                <div className="pt-3 space-y-2">
+                  <div className="h-3 rounded bg-muted/70 w-4/5" />
+                  <div className="h-2.5 rounded bg-muted/60 w-2/5" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : books.length === 0 ? (
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
             title="Your shelf is empty"

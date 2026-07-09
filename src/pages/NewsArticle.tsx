@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,

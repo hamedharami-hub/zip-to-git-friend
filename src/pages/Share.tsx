@@ -48,6 +48,10 @@ async function durationOf(file: Blob, mediaType: 'video' | 'audio'): Promise<num
 const SharePage = () => {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  usePageMeta({
+    title: 'ورود اشتراک — Lingua',
+    description: 'دریافت لینک یا فایل به‌اشتراک‌گذاشته‌شده و افزودن به کتابخانه/اخبار.',
+  });
   const [status, setStatus] = useState<'idle' | 'loading' | 'error' | 'fallback'>('idle');
   const [message, setMessage] = useState<string>('');
   const [stage, setStage] = useState<string>('');

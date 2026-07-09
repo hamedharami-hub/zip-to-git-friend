@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsStore } from '@/store/settingsStore';
 import { toast } from 'sonner';
 import { pingGemini, GeminiError } from '@/lib/gemini';
@@ -373,6 +374,15 @@ const Settings = () => {
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">تنظیمات</h2>
         </div>
 
+        <Tabs defaultValue="appearance" dir="rtl" className="space-y-6">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1 bg-[hsl(var(--surface-container-low))] p-1 rounded-2xl">
+            <TabsTrigger value="appearance" className="rounded-xl">ظاهر و برنامه</TabsTrigger>
+            <TabsTrigger value="keys" className="rounded-xl">کلیدهای API</TabsTrigger>
+            <TabsTrigger value="models" className="rounded-xl">مدل‌های AI</TabsTrigger>
+            <TabsTrigger value="reading" className="rounded-xl">خواندن</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="appearance" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-xs font-semibold text-[hsl(var(--on-surface-variant))] uppercase tracking-wider">Appearance</h2>
           <div className="flex items-center justify-between rounded-[20px] border border-outline-variant bg-[hsl(var(--surface-container-low))] p-5">
@@ -443,7 +453,9 @@ const Settings = () => {
             </div>
           </div>
         </section>
+          </TabsContent>
 
+          <TabsContent value="keys" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">AI</h2>
           <div className="space-y-4 rounded-lg border border-border p-4">
@@ -655,7 +667,9 @@ const Settings = () => {
             )}
           </div>
         </section>
+          </TabsContent>
 
+          <TabsContent value="models" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">Models per task</h2>
           <p className="text-sm text-muted-foreground">
@@ -813,8 +827,9 @@ const Settings = () => {
             />
           </div>
         </section>
+          </TabsContent>
 
-
+          <TabsContent value="reading" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-lg font-semibold">حرکات لمسی روی پاراگراف‌ها</h2>
           <p className="text-sm text-muted-foreground">
@@ -873,6 +888,8 @@ const Settings = () => {
             </div>
           </div>
         </section>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

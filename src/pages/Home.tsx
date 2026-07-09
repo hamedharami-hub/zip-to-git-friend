@@ -137,8 +137,11 @@ const TileCard = memo(
 const Home = () => {
   const [scrolled, setScrolled] = useState(false);
 
+  usePageMeta({
+    title: 'Lingua — Language Learning Player',
+    description: 'پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، فیلم، شادویینگ و کارت‌های لایتنر — همه در یک اپ.',
+  });
   useEffect(() => {
-    document.title = 'Lingua — Language Learning Player';
     const onScroll = () => setScrolled(window.scrollY > 8);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);

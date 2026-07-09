@@ -128,9 +128,10 @@ const News = () => {
   // If we arrived from /share?import_url=…, open the importer prefilled.
   const sharedUrl = params.get('import_url');
 
-  useEffect(() => {
-    document.title = 'News reader — Language learning';
-  }, []);
+  usePageMeta({
+    title: 'News reader — Language learning',
+    description: 'خواندن، ترجمه و خلاصه‌سازی خبر با هوش مصنوعی — فیدهای RSS، جستجو موضوعی و حالت آفلاین.',
+  });
 
   useEffect(() => {
     if (sharedUrl) {

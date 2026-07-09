@@ -16,8 +16,11 @@ const Books = () => {
   const load = useBookStore((s) => s.load);
   const remove = useBookStore((s) => s.remove);
 
+  usePageMeta({
+    title: 'Library — Language Learning Player',
+    description: 'کتابخانه‌ی شخصی شما — افزودن، مطالعه، ترجمه و تحلیل کتاب‌ها با هوش مصنوعی.',
+  });
   useEffect(() => {
-    document.title = 'Library — Language Learning Player';
     load();
   }, [load]);
 

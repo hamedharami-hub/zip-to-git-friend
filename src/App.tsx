@@ -4,7 +4,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { Loader2 } from 'lucide-react';
+
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSettingsStore } from './store/settingsStore';
 import { useLeitnerStore } from './store/leitnerStore';
@@ -116,10 +116,21 @@ const SettingsBootstrap = ({ children }: { children: React.ReactNode }) => {
 };
 
 const RouteFallback = () => (
-  <div className="min-h-[60vh] flex items-center justify-center">
-    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" aria-label="Loading" />
+  <div
+    role="status"
+    aria-live="polite"
+    className="min-h-[60vh] flex flex-col items-center justify-center gap-3 p-6"
+  >
+    <div className="relative">
+      <div className="h-10 w-10 rounded-full border-2 border-primary/20" />
+      <div className="absolute inset-0 h-10 w-10 rounded-full border-2 border-transparent border-t-primary animate-spin" />
+    </div>
+    <p className="text-xs text-muted-foreground font-serif italic tracking-wide">
+      در حال بارگذاری…
+    </p>
   </div>
 );
+
 
 const wrap = (name: string, node: React.ReactNode, fallback?: React.ReactNode) => (
   <ErrorBoundary routeName={name}>

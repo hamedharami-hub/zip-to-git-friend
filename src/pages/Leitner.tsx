@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Brain, Layers, LineChart, Zap, Headphones, Star, Repeat } from 'lucide-react';
@@ -29,6 +30,7 @@ const BOX_META: Array<{ box: 1 | 2 | 3 | 4 | 5; label: string; interval: string 
 ];
 
 const Leitner = () => {
+  usePageMeta({ title: 'Leitner — Language Learning Player', description: 'مرور واژگان با روش لایتنر — تمرین هوشمند برای حفظ ماندگار.' });
   const cards = useLeitnerStore((s) => s.cards);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [tab, setTab] = useState<'browse' | 'review' | 'stats'>('browse');
@@ -59,7 +61,6 @@ const Leitner = () => {
   }, [cards, editing]);
 
   useEffect(() => {
-    document.title = 'Leitner — Language Learning Player';
   }, []);
 
   return (

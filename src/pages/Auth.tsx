@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Loader2, LogIn, Mail } from 'lucide-react';
@@ -11,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
 const Auth = () => {
+  usePageMeta({ title: 'Sign in — Language Learning Player', description: 'ورود / ثبت‌نام — دسترسی به پروفایل و همگام‌سازی ابری.' });
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -22,7 +24,6 @@ const Auth = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    document.title = 'Sign in — Language Learning Player';
   }, []);
 
   useEffect(() => {

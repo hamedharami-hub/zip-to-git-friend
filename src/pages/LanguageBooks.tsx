@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Sparkles, Trash2, Plus } from 'lucide-react';
@@ -13,12 +14,12 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 const LanguageBooks = () => {
+  usePageMeta({ title: 'Language Books — Language Learning Player', description: 'کتاب‌های زبان — مرور و مطالعه‌ی دوره‌های زبانی.' });
   const books = useBookStore((s) => s.books);
   const load = useBookStore((s) => s.load);
   const remove = useBookStore((s) => s.remove);
 
   useEffect(() => {
-    document.title = 'Language Books — Language Learning Player';
     load();
   }, [load]);
 

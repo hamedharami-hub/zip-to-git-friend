@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Upload, Settings as SettingsIcon, Film, Trash2, Brain, Trophy, WifiOff, Play, Package, ArrowLeft } from 'lucide-react';
@@ -23,6 +24,7 @@ function uuid() {
 }
 
 const Videos = () => {
+  usePageMeta({ title: 'Videos — Language Learning Player', description: 'کتابخانه‌ی ویدیو — مدیریت فیلم‌ها و اپیزودهای شما.' });
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastVideoId, setLastVideoId] = useState<string | null>(null);
@@ -78,7 +80,6 @@ const Videos = () => {
   });
 
   useEffect(() => {
-    document.title = 'Videos — Language Learning Player';
     refresh();
   }, []);
 

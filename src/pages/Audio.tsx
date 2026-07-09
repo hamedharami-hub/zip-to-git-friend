@@ -1,3 +1,4 @@
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
@@ -40,6 +41,7 @@ function uuid() {
 }
 
 const Audio = () => {
+  usePageMeta({ title: 'Audio Library — Language Learning Player', description: 'کتابخانه‌ی صوتی — پخش پادکست، آهنگ و فایل‌های صوتی برای شادویینگ و تمرین شنیداری.' });
   const [items, setItems] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastId, setLastId] = useState<string | null>(null);
@@ -85,7 +87,6 @@ const Audio = () => {
   };
 
   useEffect(() => {
-    document.title = 'Audio Library — Language Learning Player';
     refresh();
   }, []);
 

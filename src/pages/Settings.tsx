@@ -354,7 +354,7 @@ const Settings = () => {
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
       <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
           <Link to="/">
             <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
               <ArrowLeft className="h-4 w-4" /> Home
@@ -365,7 +365,7 @@ const Settings = () => {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-8 space-y-10">
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-10">
         <div className="space-y-1">
           <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
             Preferences

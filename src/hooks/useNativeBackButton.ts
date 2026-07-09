@@ -24,6 +24,7 @@ export function useNativeBackButton() {
      // article/book/etc. returns to its list instead of exiting the app.
     const parentFor = (path: string): string | null => {
       if (path.startsWith('/news/article/') || path.startsWith('/news/digest/')) return '/news';
+      if (path.startsWith('/news')) return '/';
       if (path.startsWith('/books/')) {
         try {
           const bookId = path.split('/')[2];
@@ -34,6 +35,10 @@ export function useNativeBackButton() {
       }
       if (path.startsWith('/sentence-lab/')) return '/sentence-lab';
       if (path.startsWith('/leitner')) return '/';
+      if (path.startsWith('/share')) return '/news';
+      if (path.startsWith('/firebase-auth') || path.startsWith('/auth')) return '/';
+      if (path.startsWith('/player/') || path.startsWith('/videos/')) return '/videos';
+      if (path.startsWith('/audio/')) return '/audio';
       if (path === '/videos' || path === '/audio' || path === '/books' ||
           path === '/language-books' || path === '/news' || path === '/settings' ||
           path === '/stats' || path === '/sentence-lab' || path === '/leitner') return '/';

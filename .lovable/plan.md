@@ -1,72 +1,152 @@
-# Speed-Reading & Eye-Comfort Modes
+# پلن جامع حرفه‌ای‌سازی برنامه
 
-اضافه کردن یک لایه‌ی مشترک «Reading Mode» به `NewsArticle` و `BookReader` که شامل ۸ تکنیک انتخاب‌شده می‌شه. همه از یک کامپوننت مشترک تغذیه می‌کنن.
+بعد از ممیزی کامل کد، لاگ‌های Console، Auth، Linter دیتابیس و اسکن امنیت، این لیست نهایی و اجرایی است. همه در یک ترن انجام می‌شود.
 
-## What the user gets
+---
 
-یک دکمه‌ی جدید ⚡ **«حالت مطالعه»** کنار دکمه‌های موجود (تنظیمات/TOC/TTS) در هدر مقاله و کتاب. با زدنش یک پنل باز می‌شه با ۴ تب:
+## بخش A — رفع باگ‌ها و پایداری (اولویت ۱)
 
-**۱. Flash (فلش کلمات)**
-- RSVP تک‌کلمه‌ای وسط صفحه با ORP (نقطه‌ی قرمز روی حرف بهینه).
-- سوییچ Chunk Mode: ۱ / ۳ / ۵ کلمه‌ای.
-- اسلایدر سرعت ۱۵۰–۹۰۰ WPM.
-- Play/Pause، ±۱۰ کلمه، ری‌استارت، پروگرس‌بار.
-- مکث خودکار روی نقطه/ویرگول.
-- Fullscreen تیره برای تمرکز کامل.
+### A1. باگ‌های تأییدشده از Console
+- **`Home.tsx` → `TileCard`**: هشدار «Function components cannot be given refs». `Link` از TanStack به کامپوننت `ref` می‌دهد و `TileCard` آن را forward نمی‌کند. → تبدیل به `React.forwardRef`.
+- **`Home.tsx`**: با ۱۹۵ خط، تمام Tile ها هر بار re-render می‌شوند → `React.memo` روی `TileCard`.
 
-**۲. Bionic**
-- بولد کردن ابتدای هر کلمه (۴۰–۶۰٪ حروف، قابل تنظیم با اسلایدر «شدت»).
-- پشتیبانی فارسی و انگلیسی (برای فارسی بر اساس مرز کلمات یونی‌کد).
-- ترکیب‌شدنی با بقیه‌ی حالت‌های نمایشی.
+### A2. خطای «missing OAuth secret» (ثابت‌شده در ترن قبل)
+- در کد چیزی نیست. یادداشت هشدار به کاربر در همان پنل Auth + راهنمای غیرفعال‌سازی provider اضافی.
 
-**۳. Auto-Scroll + Ruler**
-- اسکرول خودکار متن با WPM تنظیمی.
-- خط راهنمای افقی نیمه‌شفاف وسط صفحه (Ruler).
-- Pacer نقطه‌ای اختیاری روی خط فعلی.
-- تپ برای Pause/Resume، اسلایدر سرعت زنده.
+### A3. Navigation و Back-button
+- بازبینی `useNativeBackButton` برای همه صفحات (Digest، Share، Firebase-auth، SentenceLab پاث‌ها) که فعلاً در نقشه‌ی `parentFor` نیستند.
+- افزودن `notFoundComponent` به route های مهمی که هنوز ندارند (طبق قانون TanStack).
 
-**۴. Focus**
-- **Guided Highlight**: جمله‌ی فعلی رنگ پررنگ، بقیه کم‌رنگ (opacity 0.35). با تپ یا تایمر جلو می‌ره.
-- **Focus Blur**: فقط پاراگراف فعلی واضح، بقیه blur(3px). سوییچ جدا.
+### A4. Boundary ها و Error handling
+- بررسی `ErrorBoundary` روی route های سنگین (`News`, `NewsArticle`, `BookReader`, `Player`) — اضافه‌شدن fallback واحد با دکمه «تلاش دوباره».
+- افزودن `defaultErrorComponent` و `defaultNotFoundComponent` در `router.tsx` اگر ست نشده.
 
-**۵. Eye Comfort (همیشه در دسترس، حتی بدون حالت مطالعه)**
-- پریست‌های آماده: Comfort / Sepia / Night / High-Contrast.
-- کنترل جداگانه: اندازه فونت، فاصله خطوط (۱.۴–۲.۴)، عرض ستون (۴۵–۹۰ch)، فاصله حروف، فیلتر نور آبی (warm overlay).
-- ذخیره در `settingsStore` و سینک ابری.
+### A5. Firestore/Firebase Sync
+- `FirebaseAuthContext` هم‌زمان با `AuthContext` sync می‌کند → احتمال race و double-write.
+- افزودن debounce (۵۰۰ms) روی `settingsStore.subscribe` قبل از push به Firestore.
+- Fallback در نبود شبکه (offline).
 
-## Files
+### A6. IndexedDB / db.ts
+- migration v7 → افزودن `try/catch` حول upgrade تا در دستگاه‌های با DB خراب، برنامه crash نکند.
+- افزودن util `purgeOldAnalysisCache()` برای پاک‌سازی خودکار کش قدیمی‌تر از ۹۰ روز (جلوگیری از پر شدن دیسک).
 
-**New — مشترک بین news/book:**
-- `src/components/reader/ReadingModeButton.tsx` — دکمه‌ی ورودی.
-- `src/components/reader/ReadingModeSheet.tsx` — پنل با ۴ تب.
-- `src/components/reader/modes/RsvpPlayer.tsx` — RSVP + Chunk، fullscreen، ORP.
-- `src/components/reader/modes/BionicText.tsx` — رندر مجدد متن با `<b>` روی ابتدای کلمات.
-- `src/components/reader/modes/AutoScrollRuler.tsx` — اسکرول خودکار + خط راهنما + pacer.
-- `src/components/reader/modes/FocusOverlay.tsx` — Guided Highlight + Blur.
-- `src/components/reader/EyeComfortPresets.tsx` — پریست‌ها + فیلتر نور آبی (overlay CSS).
-- `src/lib/readingText.ts` — کمکی: استخراج متن plain از HTML/پاراگراف‌ها، توکنایز کلمات (fa+en)، محاسبه‌ی ORP index، chunk splitter.
-- `src/lib/bionic.ts` — منطق بولد کردن ابتدای کلمات با شدت متغیر.
-- `src/hooks/useReadingMode.ts` — state مشترک (mode، wpm، chunkSize، bionicIntensity، isFullscreen، currentIndex).
+### A7. Supabase Linter (۴ هشدار SECURITY DEFINER)
+- تابع‌های `gamif_*` و `grant_achievement` قابل EXECUTE توسط `authenticated`. → migration: `REVOKE EXECUTE ... FROM public; GRANT EXECUTE ... TO authenticated;` صریح (فعلاً به هر signed-in باز است — این هدف طراحی است، پس فقط لینت را با GRANT صریح ساکت می‌کنیم).
 
-**Edit:**
-- `src/pages/NewsArticle.tsx` — اضافه کردن `<ReadingModeButton>` در هدر؛ wrap کردن متن مقاله در `<ReadingModeHost>` تا Bionic/Focus/AutoScroll روی همون DOM اعمال بشه.
-- `src/pages/BookReader.tsx` — همون کار برای متن فصل.
-- `src/store/settingsStore.ts` + `src/lib/db.ts` — فیلدهای جدید: `reading.wpm`, `reading.chunkSize`, `reading.bionicEnabled`, `reading.bionicIntensity`, `reading.eyeComfortPreset`, `reading.lineHeight`, `reading.columnWidth`, `reading.blueLightFilter`.
+### A8. RLS spot-check
+- بازبینی جدول‌های `user_settings`, `profiles`, `user_gamification`, `daily_quests`, `user_achievements`, `sentence_lab` برای وجود policy های SELECT/INSERT/UPDATE/DELETE مبتنی بر `auth.uid()`.
 
-## Technical notes
+### A9. Edge Functions پایدارسازی
+- افزودن `try/catch` و JSON error سازگار به همه‌ی توابع `news-*` و `analyze-*` (چند تا فعلاً بدون shape واحد fail می‌شوند).
+- افزودن rate-limit ساده (in-memory per-user) برای `news-scrape-article` و `news-search`.
 
-- RSVP از `requestAnimationFrame` با accumulator زمان استفاده می‌کنه تا در WPM بالا هم دقیق باشه. مکث اضافه روی توکن‌های پایان جمله (نقطه/؟/!/؟) × ۱.۵ و ویرگول × ۱.۲.
-- ORP: برای کلمه‌ی طول n، ایندکس ≈ `Math.max(1, Math.floor(n * 0.35))`. حرف در اون ایندکس با رنگ قرمز و بقیه‌ی حروف چپ/راست‌چین با padding ثابت تا کلمه «نلغزه».
-- Bionic روی TextNodes رندر می‌شه (نه innerHTML) تا HTML موجود (لینک/بولد/تصویر) نشکنه. با یک `MutationObserver` سبک روی تغییرات ترجمه.
-- Guided Highlight: تقسیم پاراگراف‌ها با `paragraphSplit`، سپس جمله‌ها با regex مشترک (`.!?؟`)؛ span-wrap و کلاس `.rm-active` روی جمله‌ی فعلی.
-- Auto-Scroll: `scrollBy` روی container مقاله با نرخ px/s محاسبه‌شده از WPM × میانگین ارتفاع خط.
-- Blue-light: overlay ثابت `fixed inset-0 pointer-events-none bg-[#ffb066]/[opacity]` با mix-blend-multiply؛ شدت اسلایدر ۰–۴۰٪.
-- Fullscreen RSVP از Fullscreen API + fallback CSS position:fixed.
-- همه‌ی state ها در `settingsStore` ذخیره می‌شن → سینک ابری فعلی خودکار کار می‌کنه.
-- بدون تغییر در business logic؛ فقط لایه‌ی presentation.
+---
 
-## Out of scope
+## بخش B — UI/UX و دسکتاپ (اولویت ۲)
 
-- تغییر TTS یا ترجمه.
-- تغییر layout هدر بجز اضافه‌کردن یک آیکن.
-- ML-based sentence importance / eye-tracking.
+### B1. Layout سراسری
+- `News.tsx` (۲۳۲۹ خط!) → استخراج بخش‌های Discovery، AllNews، Sidebar به کامپوننت‌های جدا در `src/components/news/` (کاهش re-render و maintainability).
+- سازگاری Grid روی صفحات ≥1440px با استفاده از الگوی `grid-cols-[minmax(0,1fr)_auto]` (طبق responsive-layout-patterns).
+
+### B2. Glassmorphism یکپارچه
+- بازبینی مصرف `.glass-reflect` روی همه‌ی Card/Dialog؛ حذف مواردی که با تم Night تضاد ندارند.
+- افزودن fallback برای مرورگرهای بدون `backdrop-filter`.
+
+### B3. Home.tsx
+- Bento grid فعلی زیبا است ولی روی موبایل دو ستون خیلی فشرده است — تنظیم breakpoint ها.
+- افزودن skeleton برای بارگذاری اولیه.
+
+### B4. Settings.tsx (۹۲۹ خط)
+- تقسیم به Tabs (AI / TTS / Reading / Cloud / Advanced) — فعلاً یک صفحه‌ی طولانی است.
+
+### B5. NewsArticle.tsx و BookReader.tsx
+- Header چسبان (sticky) با blur در حالت اسکرول.
+- Toolbar شناور در پایین موبایل برای اکشن‌های سریع (Share/TOC/TTS/Reading Mode).
+
+### B6. Accessibility
+- افزودن `aria-label` و `focus-visible` روی همه‌ی دکمه‌های آیکنی (News toolbar، Reader controls).
+- کنتراست متن روی حالت Sepia بازبینی.
+
+### B7. RTL / فارسی
+- بازبینی `dir="rtl"` روی dialog های ExportDialog و ReaderSettings.
+- عدد فارسی در progress ها.
+
+---
+
+## بخش C — کارایی و سرعت (اولویت ۳)
+
+### C1. Bundle size
+- `News.tsx` ۲۳۲۹ خطی → code-split با `.lazy.tsx` روی sub-view های Digest، AllNews، Discovery.
+- بررسی `src/pages/Settings.tsx` برای lazy import پنل‌های سنگین.
+
+### C2. Query caching
+- افزودن `staleTime` مناسب به `useQuery` های News (فعلاً هر ورود refetch می‌کند).
+- Prefetch مقاله‌ی بعدی هنگام باز بودن یک مقاله.
+
+### C3. TTS و AI
+- `geminiTts` فعلاً موازی است ولی بدون concurrency limit → افزودن `p-limit` (۳ همزمان) تا rate-limit نخوریم.
+- Cache صوتی در IndexedDB با LRU (سقف ۲۰۰MB).
+- افزودن گزینه‌ی «مدل سریع‌تر» به‌عنوان default در ReaderTTSQuickSettings.
+
+### C4. Images
+- افزودن `loading="lazy"` و `decoding="async"` روی همه‌ی `<img>` در News/Books.
+- Placeholder blur برای تصاویر مقاله.
+
+### C5. Service Worker
+- تأیید pre-cache نکردن پاسخ‌های `/api/` و Supabase.
+- به‌روزرسانی manifest cache size limit به ۵۰MB.
+
+### C6. Rendering
+- `React.memo` روی `NewsCard`, `BookCard`, `ParagraphAnalysisCard`.
+- Virtualization (`@tanstack/react-virtual`) روی لیست‌های بلند News و Leitner Cards.
+
+### C7. Startup
+- Deferred load برای Firebase (فقط وقتی کاربر `/firebase-auth` می‌رود).
+- Deferred load برای MCP و OAuth consent route.
+
+---
+
+## بخش D — کیفیت کد و DX
+
+- افزودن ESLint rule برای منع `console.log` در production.
+- افزودن `README.md` توسعه‌دهنده.
+- تایپ صریح روی همه‌ی edge function response ها (`z.infer`).
+
+---
+
+## فایل‌ها/مسیرهایی که تغییر می‌کنند (خلاصه)
+
+```
+src/pages/Home.tsx                — forwardRef + memo + skeleton
+src/pages/News.tsx                — استخراج ساب‌ویوها + lazy
+src/pages/Settings.tsx            — Tabs بندی
+src/pages/NewsArticle.tsx         — sticky header + toolbar
+src/pages/BookReader.tsx          — sticky header + toolbar
+src/router.tsx                    — default error/notFound
+src/routes/__root.tsx             — notFoundComponent
+src/contexts/FirebaseAuthContext.tsx — debounce sync + offline guard
+src/hooks/useNativeBackButton.ts  — parentFor گسترش
+src/lib/db.ts                     — safe upgrade + purge helper
+src/lib/geminiTts.ts              — p-limit + LRU
+src/components/news/*             — کامپوننت‌های استخراج‌شده
+src/components/reader/*           — memo + a11y
+supabase/migrations/*.sql         — GRANT صریح روی SECURITY DEFINER
+supabase/functions/*              — try/catch + rate-limit
+```
+
+## ترتیب اجرا در ترن build
+
+1. باگ‌های سریع (Home ref، DB safe upgrade، Firebase debounce)
+2. Layout و لینتر SQL
+3. استخراج News.tsx به کامپوننت‌ها + lazy
+4. Settings Tabs
+5. Sticky headers + toolbar
+6. Perf: memo، virtualization، p-limit
+7. تست بصری با Playwright روی Home/News/Reader
+
+---
+
+## چیزهایی که در این پلن نیست (نیاز به تأیید جدا)
+- تغییر معماری Auth (Firebase vs Supabase — الان هر دو هست)
+- تغییر مدل‌های AI پیش‌فرض
+- طراحی مجدد کامل (redesign) — فقط پالایش تم فعلی

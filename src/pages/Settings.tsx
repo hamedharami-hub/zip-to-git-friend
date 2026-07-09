@@ -374,6 +374,15 @@ const Settings = () => {
           <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">تنظیمات</h2>
         </div>
 
+        <Tabs defaultValue="appearance" dir="rtl" className="space-y-6">
+          <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1 bg-[hsl(var(--surface-container-low))] p-1 rounded-2xl">
+            <TabsTrigger value="appearance" className="rounded-xl">ظاهر و برنامه</TabsTrigger>
+            <TabsTrigger value="keys" className="rounded-xl">کلیدهای API</TabsTrigger>
+            <TabsTrigger value="models" className="rounded-xl">مدل‌های AI</TabsTrigger>
+            <TabsTrigger value="reading" className="rounded-xl">خواندن</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="appearance" className="space-y-10 mt-6">
         <section className="space-y-3">
           <h2 className="text-xs font-semibold text-[hsl(var(--on-surface-variant))] uppercase tracking-wider">Appearance</h2>
           <div className="flex items-center justify-between rounded-[20px] border border-outline-variant bg-[hsl(var(--surface-container-low))] p-5">

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { usePageMeta } from '@/hooks/usePageMeta';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -71,6 +72,14 @@ const BookReader = () => {
   const openBook = useBookStore((s) => s.openBook);
   const closeBook = useBookStore((s) => s.closeBook);
   const upsert = useBookStore((s) => s.upsert);
+  usePageMeta({
+    title: currentBook?.title ? `${currentBook.title} — کتاب` : 'خواندن کتاب — Lingua',
+    description: currentBook?.title
+      ? `مطالعه‌ی «${currentBook.title}» با ترجمه، تحلیل و خواندن صوتی هوش مصنوعی.`
+      : 'خواندن تعاملی کتاب با ترجمه و TTS.',
+    ogType: 'book',
+    image: currentBook?.coverUrl || undefined,
+  });
 
   const [chapterIndex, setChapterIndex] = useState(0);
   const [fontScale, setFontScale] = useState<number>(() => loadLocalNumber(SCALE_KEY, 1));

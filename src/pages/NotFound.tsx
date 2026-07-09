@@ -2,12 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, ArrowLeft, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 const NotFound = () => {
   const location = useLocation();
+  usePageMeta({
+    title: 'صفحه پیدا نشد — ۴۰۴ | Lingua',
+    description: 'این صفحه وجود ندارد یا جابه‌جا شده است.',
+  });
 
   useEffect(() => {
-    document.title = 'صفحه پیدا نشد — ۴۰۴';
     console.warn("[404]", location.pathname);
   }, [location.pathname]);
 

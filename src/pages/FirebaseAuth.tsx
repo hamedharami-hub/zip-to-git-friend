@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
+import { usePageMeta } from "@/hooks/usePageMeta";
 
 export default function FirebaseAuthPage() {
   const { user, loading, ready, signIn, signUp, signOut, syncSettingsUp, syncSettingsDown } = useFirebaseAuth();
@@ -15,10 +16,10 @@ export default function FirebaseAuthPage() {
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    document.title = "حساب فایربیس";
-  }, []);
+  usePageMeta({
+    title: 'حساب فایربیس — Lingua',
+    description: 'ورود/ثبت‌نام و همگام‌سازی ابری تنظیمات با Firebase.',
+  });
 
   const guard = async (fn: () => Promise<void>, okMsg: string) => {
     setBusy(true);

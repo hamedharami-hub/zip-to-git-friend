@@ -6,6 +6,7 @@ import { saveVideo, saveVideoBlob, setAppState } from '@/lib/db';
 import type { Video } from '@/types';
 import { importLLP } from '@/lib/llpPack';
 import { toast } from 'sonner';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 function uuid() {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();

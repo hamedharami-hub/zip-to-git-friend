@@ -888,6 +888,8 @@ const Settings = () => {
             </div>
           </div>
         </section>
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );

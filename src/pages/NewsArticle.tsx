@@ -10,8 +10,6 @@ import {
   RefreshCw,
   Bookmark,
   BookmarkCheck,
-  Sparkles,
-  Trash2,
   MoreVertical,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';

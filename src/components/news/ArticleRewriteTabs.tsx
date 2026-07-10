@@ -14,9 +14,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
-import { getAvailableBookModels, type BookModelRef } from '@/lib/aiModels';
+import { getAvailableBookModels } from '@/lib/aiModels';
+import type { BookAIModelRef, AppSettings } from '@/types';
 import type { NewsDigest } from '@/lib/news';
-import type { SettingsShape } from '@/store/settingsStore';
 
 export type RewriteLength = 'long' | 'max' | 'auto-max' | 'simple';
 

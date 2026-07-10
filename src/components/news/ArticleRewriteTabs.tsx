@@ -36,9 +36,9 @@ interface Props {
   typo: { sizeClass: string; familyClass: string };
   rwDisplayLang: DisplayLang;
   onRwTranslationCountChange: (n: number) => void;
-  modelRef: BookModelRef;
-  onModelChange: (ref: BookModelRef) => void;
-  settings: SettingsShape;
+  modelRef: BookAIModelRef;
+  onModelChange: (ref: BookAIModelRef) => void;
+  settings: AppSettings;
 }
 
 function labelFor(len: RewriteLength): string {

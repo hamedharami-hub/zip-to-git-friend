@@ -695,7 +695,7 @@ const NewsArticleReader = () => {
                 rwDisplayLang={rwDisplayLang}
                 onRwTranslationCountChange={setRwTranslationCount}
                 modelRef={newsRewriteRef}
-                onModelChange={(ref) => void update({ newsRewriteModelRef: ref })}
+                onModelChange={(ref: BookAIModelRef) => void update({ newsRewriteModelRef: ref })}
                 settings={settings}
               />
 

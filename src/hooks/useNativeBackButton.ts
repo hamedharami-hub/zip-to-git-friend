@@ -54,13 +54,20 @@ export function useNativeBackButton() {
             App.exitApp();
             return;
           }
+          // For article/digest pages, always jump straight to the news list —
+          // in-page navigations (tab switches, hash changes) inflate history and
+          // make navigate(-1) land on the same article again.
+          const forceParent = parentFor(path);
+          if (forceParent && (path.startsWith('/news/article/') || path.startsWith('/news/digest/'))) {
+            navigate(forceParent);
+            return;
+          }
           if (canGoBack || window.history.length > 1) {
             navigate(-1);
             return;
           }
-          const parent = parentFor(path);
-          if (parent && parent !== path) {
-            navigate(parent);
+          if (forceParent && forceParent !== path) {
+            navigate(forceParent);
           } else {
             App.exitApp();
           }

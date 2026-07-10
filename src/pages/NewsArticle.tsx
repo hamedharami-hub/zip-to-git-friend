@@ -679,126 +679,24 @@ const NewsArticleReader = () => {
                 />
               )}
 
-              {/* Rewrite tabs section */}
-              <section className="mt-12 pt-8 border-t border-border/50">
-                <header className="mb-4 flex items-center justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <h3 className="text-base font-semibold">بازنویسی این خبر با هوش مصنوعی</h3>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">مدل بازنویسی:</span>
-                    <Select
-                      value={`${newsRewriteRef.provider}:${newsRewriteRef.model}`}
-                      onValueChange={(v) => {
-                        const idx = v.indexOf(':');
-                        const provider = v.slice(0, idx) as 'gateway' | 'gemini' | 'groq';
-                        const model = v.slice(idx + 1);
-                        void update({ newsRewriteModelRef: { provider, model } });
-                      }}
-                    >
-                      <SelectTrigger className="h-7 text-[11px] min-w-[180px] max-w-[240px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(() => {
-                          const opts = getAvailableBookModels(settings);
-                          const groups: Record<string, typeof opts> = {};
-                          for (const o of opts) (groups[o.group] ??= []).push(o);
-                          return Object.entries(groups).map(([group, items]) => (
-                            <div key={group}>
-                              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                {group}
-                              </div>
-                              {items.map((o) => (
-                                <SelectItem key={o.value} value={o.value}>
-                                  {o.label}
-                                </SelectItem>
-                              ))}
-                            </div>
-                          ));
-                        })()}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </header>
+              <ArticleRewriteTabs
+                articleId={article.id}
+                articleTitle={article.title}
+                rewrites={rewrites}
+                activeRewrite={activeRewrite}
+                onActiveRewriteChange={setActiveRewrite}
+                rewriteBusy={rewriteBusy}
+                onRewrite={handleRewrite}
+                onDeleteRewrite={deleteRewrite}
+                rewriteHtmlWithImages={rewriteHtmlWithImages ?? undefined}
+                typo={typo}
+                rwDisplayLang={rwDisplayLang}
+                onRwTranslationCountChange={setRwTranslationCount}
+                modelRef={newsRewriteRef}
+                onModelChange={(ref) => void update({ newsRewriteModelRef: ref })}
+                settings={settings}
+              />
 
-                <Tabs value={activeRewrite} onValueChange={(v) => setActiveRewrite(v as RewriteLength)}>
-                  <TabsList className="bg-muted/50 flex-wrap h-auto">
-                    <TabsTrigger value="simple" className="text-xs">
-                      ساده روزمره
-                      {rewrites.simple && <span className="ms-1.5 text-primary">●</span>}
-                    </TabsTrigger>
-                    <TabsTrigger value="auto-max" className="text-xs">
-                      نسخه کامل ساده
-                      {rewrites['auto-max'] && <span className="ms-1.5 text-primary">●</span>}
-                    </TabsTrigger>
-                    <TabsTrigger value="long" className="text-xs">
-                      خلاصه بلند
-                      {rewrites.long && <span className="ms-1.5 text-primary">●</span>}
-                    </TabsTrigger>
-                    <TabsTrigger value="max" className="text-xs">
-                      خلاصه حداکثری
-                      {rewrites.max && <span className="ms-1.5 text-primary">●</span>}
-                    </TabsTrigger>
-                  </TabsList>
-                  {(['simple', 'auto-max', 'long', 'max'] as RewriteLength[]).map((len) => {
-                    const r = rewrites[len];
-                    const busy = rewriteBusy === len;
-                    const label = len === 'simple' ? 'ساده‌سازی روزمره (با تمام نکته‌ها)'
-                      : len === 'auto-max' ? 'نسخه کامل ساده'
-                      : len === 'long' ? 'خلاصه بلند'
-                      : 'خلاصه حداکثری';
-                    return (
-                      <TabsContent key={len} value={len} className="mt-4">
-                        <div className="rounded-lg border border-border bg-card/40 p-4 sm:p-6">
-                          {!r ? (
-                            <div className="py-8 text-center space-y-3">
-                              <p className="text-sm text-muted-foreground">
-                                {label} هنوز ساخته نشده.
-                              </p>
-                              <Button onClick={() => handleRewrite(len, false)} disabled={busy} size="sm">
-                                {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Sparkles className="h-4 w-4 mr-2" />}
-                                {busy ? 'در حال ساخت…' : 'ساخت بازنویسی'}
-                              </Button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center justify-between gap-2 mb-4 pb-3 border-b border-border/50">
-                                <div className="text-[11px] text-muted-foreground">
-                                  {r.wordCount.toLocaleString()} words · <span className="opacity-70">{r.model}</span>
-                                </div>
-                                <div className="flex items-center gap-1">
-                                  <Button size="sm" variant="ghost" onClick={() => handleRewrite(len, true)} disabled={busy}>
-                                    {busy ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
-                                    بازسازی
-                                  </Button>
-                                  <Button size="sm" variant="ghost" onClick={() => deleteRewrite(len)} className="text-destructive">
-                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> حذف
-                                  </Button>
-                                </div>
-                              </div>
-                              <InteractiveBookText
-                                html={r.contentHtml}
-                                bookId={`news-rw-${article.id}-${len}`}
-                                chapterIndex={0}
-                                fontSizeClass={typo.sizeClass}
-                                fontFamilyClass={typo.familyClass}
-                                displayLang={len === activeRewrite ? rwDisplayLang : 'en'}
-                                onTranslationCountChange={
-                                  len === activeRewrite ? setRwTranslationCount : undefined
-                                }
-                                sourceKind="news"
-                                sourceTitle={article.title}
-                              />
-                            </>
-                          )}
-                        </div>
-                      </TabsContent>
-                    );
-                  })}
-                </Tabs>
-              </section>
             </>
 
           ) : (

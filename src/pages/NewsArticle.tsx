@@ -61,6 +61,8 @@ import { usePinchFontStep } from '@/hooks/usePinchZoom';
 import { isSeen, markSeen } from '@/lib/seenArticles';
 import { LangCycleButton } from '@/components/news/LangCycleButton';
 import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
+import { ArticleRewriteTabs } from '@/components/news/ArticleRewriteTabs';
+import type { BookAIModelRef } from '@/types';
 
 function isYoutubeUrl(url: string): boolean {
   try {

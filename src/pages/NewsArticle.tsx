@@ -19,7 +19,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/EmptyState';
 import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
 import { ChapterTTSPlayer } from '@/components/books/ChapterTTSPlayer';

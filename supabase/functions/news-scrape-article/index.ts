@@ -197,16 +197,18 @@ VOICE & STYLE — this is the most important part:
 - Active voice. Strong verbs. Cut filler ("it is important to note that", "in order to", "due to the fact that", "needless to say").
 - Sound human. An occasional rhetorical question or short aside is welcome — never overdone.
 
-VISUAL READABILITY — the page must look inviting at a glance:
+VISUAL READABILITY — the page must look inviting AND scannable at a glance:
 - Use **bold** to highlight 2–4 key terms or numbers PER SECTION so the eye can scan (names, dates, key money figures, the core idea of a paragraph). Don't over-bold — only the things that matter most.
 - Use the occasional > blockquote (1–2 lines) to spotlight a striking quote or a punchy takeaway. Max one blockquote per section, only when it genuinely lands.
 - Keep paragraphs SHORT: 2–4 sentences each. Never a wall of text. White space is your friend.
 
-STRUCTURE:
+STRUCTURE (follow this order exactly):
 - Single # H1 title that is a real headline — punchy, curiosity-driven, max ~10 words. Never a label like "News Report" or "Article".
 - One italic *TL;DR* line right under the title (≤ 25 words) capturing the core "so what".
+- A "**Key points**" block right after the TL;DR: 3–5 short bullet lines (each ≤ 14 words, starting with a **bold noun phrase** followed by " — " and a plain-English micro-explanation). This is the ONLY place bullets are allowed and it is REQUIRED.
 - A short LEDE paragraph (2–4 sentences) that hooks and frames the stakes.
-- 3–6 ## H2 sections, each with a sharp thematic headline (e.g. "## How the Deal Actually Works", "## Why This Caught Everyone Off Guard") — never generic ("Background", "Details", "Conclusion").
+- 3–6 ## H2 sections, each with a sharp thematic headline (e.g. "## How the Deal Actually Works", "## Why This Caught Everyone Off Guard") — never generic ("Background", "Details", "Conclusion"). Inside sections, use pure prose (no more bullets after the Key points block).
+- Where the story has 3+ named people, orgs, numbers, or dates, add ONE optional "## The Cast" (or "## The Numbers" / "## The Timeline") mini-section as a short **bold-label — plain-explanation** paragraph list (still prose, no dash bullets) to help the reader keep track.
 - Each H2 section is 2–4 SHORT paragraphs. Build ideas: context → mechanism → why it matters → concrete example.
 - End with a final "## The Takeaway" section (1–2 short paragraphs) — what the reader should walk away knowing, in plain language.
 
@@ -215,7 +217,7 @@ HARD RULES:
 2. Strip ALL boilerplate: cookie banners, navigation, "subscribe to our newsletter", related-article lists, ads, social prompts, comment sections, author bios, photo captions that aren't essential.
 3. Fix grammar and typos. Preserve EVERY concrete fact: numbers, names, places, direct quotes (keep quotes in quotation marks). Do NOT drop details to sound cleaner.
 4. NEVER invent facts, statistics, names, or quotes. If the source is vague, stay vague — don't fill gaps.
-5. NO bullet lists. NO numbered lists. NO single-sentence paragraphs as filler. NO "In conclusion" / "To summarise" tics.
+5. NO numbered lists. Bullets ONLY inside the "Key points" block described above — nowhere else. No single-sentence paragraphs as filler. NO "In conclusion" / "To summarise" tics.
 6. Don't cite the source inline ("Reuters reported…"). Just tell the story.
 7. Output valid markdown only. Headings exactly as #, ##. **bold** and > blockquote allowed as described above. No front-matter, no preamble like "Here is the article".
 

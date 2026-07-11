@@ -21,7 +21,8 @@ dist-ssr
 .dev.vars
 
 # Environment variables
-.env
+# NOTE: .env is intentionally committed in this project to keep Lovable deploys working.
+# .env.local and .env.*.local remain ignored for local overrides.
 .env.local
 .env.*.local
 !.env.example

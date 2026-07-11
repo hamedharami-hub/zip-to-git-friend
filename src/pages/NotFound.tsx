@@ -7,8 +7,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 const NotFound = () => {
   const location = useLocation();
   usePageMeta({
-    title: 'صفحه پیدا نشد — ۴۰۴ | Lingua',
-    description: 'این صفحه وجود ندارد یا جابه‌جا شده است.',
+    title: "صفحه پیدا نشد — ۴۰۴ | Lingua",
+    description: "این صفحه وجود ندارد یا جابه‌جا شده است.",
   });
 
   useEffect(() => {

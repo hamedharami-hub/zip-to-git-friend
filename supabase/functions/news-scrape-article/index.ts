@@ -115,10 +115,14 @@ async function resolveViaBatchExecute(articleId: string): Promise<string | null>
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 8000);
     const body = new URLSearchParams({
-      "f.req": JSON.stringify([[[
-        "Fbv4je",
-        `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${articleId}",${Math.floor(Date.now() / 1000)},"0"]`,
-      ]]]),
+      "f.req": JSON.stringify([
+        [
+          [
+            "Fbv4je",
+            `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${articleId}",${Math.floor(Date.now() / 1000)},"0"]`,
+          ],
+        ],
+      ]),
     });
     const res = await fetch(
       "https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je",
@@ -174,7 +178,9 @@ async function resolveFinalUrl(url: string): Promise<string> {
           html.match(/data-n-au=["']([^"']+)["']/i)?.[1] ??
           html.match(/href=["'](https?:\/\/(?!news\.google\.com)[^"']+)["']/i)?.[1];
         if (meta) finalUrl = meta;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
     return finalUrl;
   } catch {
@@ -233,7 +239,9 @@ Always respond by calling the provided tool.`;
     "```",
     raw.markdown.slice(0, 60_000),
     "```",
-  ].filter(Boolean).join("\n");
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const aiRes = await fetch(AI_GATEWAY, {
     method: "POST",
@@ -289,7 +297,11 @@ function buildFallback(opts: {
   const { finalUrl, fallbackExcerpt, fallbackImageUrl, fallbackSiteName, reason } = opts;
   let siteName = fallbackSiteName ?? null;
   if (!siteName) {
-    try { siteName = new URL(finalUrl).hostname.replace(/^www\./, ""); } catch { /* ignore */ }
+    try {
+      siteName = new URL(finalUrl).hostname.replace(/^www\./, "");
+    } catch {
+      /* ignore */
+    }
   }
   const excerpt = (fallbackExcerpt ?? "").trim();
   const md = excerpt
@@ -328,7 +340,8 @@ serve(async (req) => {
 
     if (!url || typeof url !== "string") {
       return new Response(JSON.stringify({ error: "url is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -338,10 +351,16 @@ serve(async (req) => {
     if (!apiKey) {
       // No Firecrawl key configured — return graceful fallback rather than 500.
       return new Response(
-        JSON.stringify(buildFallback({
-          url, finalUrl, fallbackExcerpt, fallbackImageUrl, fallbackSiteName,
-          reason: "Firecrawl is not configured.",
-        })),
+        JSON.stringify(
+          buildFallback({
+            url,
+            finalUrl,
+            fallbackExcerpt,
+            fallbackImageUrl,
+            fallbackSiteName,
+            reason: "Firecrawl is not configured.",
+          }),
+        ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -357,10 +376,16 @@ serve(async (req) => {
     } catch (e) {
       console.error("Firecrawl network error", e);
       return new Response(
-        JSON.stringify(buildFallback({
-          url, finalUrl, fallbackExcerpt, fallbackImageUrl, fallbackSiteName,
-          reason: "Network error contacting Firecrawl.",
-        })),
+        JSON.stringify(
+          buildFallback({
+            url,
+            finalUrl,
+            fallbackExcerpt,
+            fallbackImageUrl,
+            fallbackSiteName,
+            reason: "Network error contacting Firecrawl.",
+          }),
+        ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -371,10 +396,16 @@ serve(async (req) => {
       // Graceful fallback for blocked/forbidden/payment errors so the UI
       // can render the RSS excerpt + image instead of an error screen.
       return new Response(
-        JSON.stringify(buildFallback({
-          url, finalUrl, fallbackExcerpt, fallbackImageUrl, fallbackSiteName,
-          reason: data?.error ?? `Firecrawl ${fcRes.status}`,
-        })),
+        JSON.stringify(
+          buildFallback({
+            url,
+            finalUrl,
+            fallbackExcerpt,
+            fallbackImageUrl,
+            fallbackSiteName,
+            reason: data?.error ?? `Firecrawl ${fcRes.status}`,
+          }),
+        ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -386,10 +417,16 @@ serve(async (req) => {
     // If Firecrawl returned essentially no content, fallback gracefully.
     if (!md || md.trim().length < 80) {
       return new Response(
-        JSON.stringify(buildFallback({
-          url, finalUrl, fallbackExcerpt, fallbackImageUrl, fallbackSiteName,
-          reason: "Publisher returned no readable content.",
-        })),
+        JSON.stringify(
+          buildFallback({
+            url,
+            finalUrl,
+            fallbackExcerpt,
+            fallbackImageUrl,
+            fallbackSiteName,
+            reason: "Publisher returned no readable content.",
+          }),
+        ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -423,7 +460,10 @@ serve(async (req) => {
       }
     }
 
-    const text = finalMd.replace(/[#>*_`-]+/g, " ").replace(/\s+/g, " ").trim();
+    const text = finalMd
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
     const result = {
       blocked: false,
@@ -441,7 +481,8 @@ serve(async (req) => {
     };
 
     return new Response(JSON.stringify(result), {
-      status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("news-scrape-article error", e);

@@ -1,9 +1,9 @@
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { List, Check } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { BookChapter } from '@/types';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { List, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { BookChapter } from "@/types";
 
 interface Props {
   chapters: BookChapter[];
@@ -15,7 +15,12 @@ export function ChapterTOC({ chapters, currentIndex, onSelect }: Props) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Table of contents" title="Table of contents">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Table of contents"
+          title="Table of contents"
+        >
           <List className="h-5 w-5" />
         </Button>
       </SheetTrigger>
@@ -33,8 +38,8 @@ export function ChapterTOC({ chapters, currentIndex, onSelect }: Props) {
                     type="button"
                     onClick={() => onSelect(c.index)}
                     className={cn(
-                      'w-full text-left px-6 py-2.5 text-sm flex items-start gap-3 hover:bg-accent/60 transition-colors',
-                      active && 'bg-accent text-accent-foreground font-medium',
+                      "w-full text-left px-6 py-2.5 text-sm flex items-start gap-3 hover:bg-accent/60 transition-colors",
+                      active && "bg-accent text-accent-foreground font-medium",
                     )}
                   >
                     <span className="text-xs text-muted-foreground tabular-nums shrink-0 w-6 pt-0.5">

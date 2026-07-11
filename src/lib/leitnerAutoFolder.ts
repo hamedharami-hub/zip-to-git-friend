@@ -5,8 +5,8 @@
  *
  * Returns the leaf folderId (or undefined if the store/folder lookup fails).
  */
-import { useLeitnerFolderStore } from '@/store/leitnerFolderStore';
-import type { LeitnerSourceKind } from '@/types';
+import { useLeitnerFolderStore } from "@/store/leitnerFolderStore";
+import type { LeitnerSourceKind } from "@/types";
 
 interface AutoFolderInput {
   kind: LeitnerSourceKind;
@@ -18,30 +18,25 @@ interface AutoFolderInput {
 
 /** Top-level folder name for each source kind. */
 const PARENT_NAMES: Record<LeitnerSourceKind, string> = {
-  video: 'Movies & Subtitles',
-  audio: 'Podcasts',
-  book: 'Books',
-  language_book: 'Language Books',
-  news: 'News',
-  manual: 'Manual',
+  video: "Movies & Subtitles",
+  audio: "Podcasts",
+  book: "Books",
+  language_book: "Language Books",
+  news: "News",
+  manual: "Manual",
 };
 
 /** Kinds that get a child folder per individual source item. */
-const SUBFOLDER_KINDS: ReadonlySet<LeitnerSourceKind> = new Set([
-  'book',
-  'language_book',
-]);
+const SUBFOLDER_KINDS: ReadonlySet<LeitnerSourceKind> = new Set(["book", "language_book"]);
 
-export async function ensureAutoFolder(
-  input: AutoFolderInput,
-): Promise<string | undefined> {
+export async function ensureAutoFolder(input: AutoFolderInput): Promise<string | undefined> {
   try {
     const store = useLeitnerFolderStore.getState();
     if (!store.loaded) await store.load();
 
-    const parentName = PARENT_NAMES[input.kind] ?? 'Custom';
+    const parentName = PARENT_NAMES[input.kind] ?? "Custom";
     // Parent folder is keyed by `kind` + a sentinel sourceRef so it's unique.
-    const PARENT_REF = '__auto_parent__';
+    const PARENT_REF = "__auto_parent__";
     const parent = await store.ensureFolder({
       name: parentName,
       kind: input.kind,
@@ -61,7 +56,7 @@ export async function ensureAutoFolder(
     });
     return child.id;
   } catch (e) {
-    console.warn('[leitnerAutoFolder] failed', e);
+    console.warn("[leitnerAutoFolder] failed", e);
     return undefined;
   }
 }

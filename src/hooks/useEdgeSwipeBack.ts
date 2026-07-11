@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * iOS-style edge swipe to go back.
@@ -41,11 +41,11 @@ export function useEdgeSwipeBack({
       }
     };
 
-    window.addEventListener('touchstart', onStart, { passive: true });
-    window.addEventListener('touchend', onEnd, { passive: true });
+    window.addEventListener("touchstart", onStart, { passive: true });
+    window.addEventListener("touchend", onEnd, { passive: true });
     return () => {
-      window.removeEventListener('touchstart', onStart);
-      window.removeEventListener('touchend', onEnd);
+      window.removeEventListener("touchstart", onStart);
+      window.removeEventListener("touchend", onEnd);
     };
   }, [navigate, edgeSize, threshold, enabled]);
 }

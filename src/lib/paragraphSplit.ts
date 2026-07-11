@@ -20,7 +20,7 @@ export function splitIntoShortChunks(text: string, maxChars = 220): string[] {
 
   // 2. Pack 1–2 sentences per chunk, respecting maxChars.
   const out: string[] = [];
-  let buf = '';
+  let buf = "";
   let sentencesInBuf = 0;
   for (const s of sentences) {
     const candidate = buf ? `${buf} ${s}` : s;
@@ -43,7 +43,7 @@ export function splitIntoShortChunks(text: string, maxChars = 220): string[] {
       continue;
     }
     const parts = c.split(/(?<=[,;:،؛])\s+/);
-    let sub = '';
+    let sub = "";
     for (const p of parts) {
       const candidate = sub ? `${sub} ${p}` : p;
       if (sub && candidate.length > maxChars) {

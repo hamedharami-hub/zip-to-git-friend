@@ -9,14 +9,11 @@
  *  - `selectionchange` fires very often, so we render inside a portal-less
  *    fixed div and update its style imperatively to avoid React thrash.
  */
-import { useEffect, useRef, useState } from 'react';
-import { Highlighter, StickyNote, Copy, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import {
-  HIGHLIGHT_SWATCHES,
-  type HighlightColor,
-} from '@/hooks/useBookAnnotations';
+import { useEffect, useRef, useState } from "react";
+import { Highlighter, StickyNote, Copy, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { HIGHLIGHT_SWATCHES, type HighlightColor } from "@/hooks/useBookAnnotations";
 
 interface Props {
   /** The scrollable container we live inside (used to detect inside-selection). */
@@ -25,11 +22,11 @@ interface Props {
   onAddNote: (text: string) => void;
 }
 
-const COLORS: HighlightColor[] = ['yellow', 'green', 'pink'];
+const COLORS: HighlightColor[] = ["yellow", "green", "pink"];
 
 export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }: Props) {
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,7 +46,7 @@ export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }:
         setPos(null);
         return;
       }
-      const txt = sel.toString().replace(/\s+/g, ' ').trim();
+      const txt = sel.toString().replace(/\s+/g, " ").trim();
       if (txt.length < 2 || txt.length > 600) {
         setPos(null);
         return;
@@ -65,8 +62,8 @@ export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }:
       setPos({ top, left });
       setText(txt);
     };
-    document.addEventListener('selectionchange', onSelect);
-    return () => document.removeEventListener('selectionchange', onSelect);
+    document.addEventListener("selectionchange", onSelect);
+    return () => document.removeEventListener("selectionchange", onSelect);
   }, [containerRef]);
 
   const dismiss = () => {
@@ -80,8 +77,8 @@ export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }:
     <div
       ref={toolbarRef}
       className={cn(
-        'fixed z-50 flex items-center gap-1 rounded-full border border-border',
-        'bg-popover shadow-lg px-1.5 py-1 backdrop-blur-md animate-in fade-in zoom-in-95',
+        "fixed z-50 flex items-center gap-1 rounded-full border border-border",
+        "bg-popover shadow-lg px-1.5 py-1 backdrop-blur-md animate-in fade-in zoom-in-95",
       )}
       style={{ top: pos.top, left: pos.left }}
       role="toolbar"
@@ -98,7 +95,7 @@ export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }:
             dismiss();
           }}
           className={cn(
-            'h-7 w-7 rounded-full flex items-center justify-center transition hover:scale-110',
+            "h-7 w-7 rounded-full flex items-center justify-center transition hover:scale-110",
             HIGHLIGHT_SWATCHES[c],
           )}
           aria-label={`Highlight in ${c}`}

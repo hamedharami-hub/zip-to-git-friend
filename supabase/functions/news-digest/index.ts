@@ -67,7 +67,6 @@ const MAX_INSTRUCTIONS =
 const AUTO_MAX_INSTRUCTIONS =
   "Write the LONGEST and DEEPEST possible first-person magazine feature the source material can support, aiming for ~3200–5000 words. Cover every fact, sub-point, example, number, name, place and quote in the sources. Do NOT trim — expand. Stop earlier only if the source genuinely lacks material. Follow the article-shape rules: bold # title, italic TL;DR, 3-paragraph lede that frames the central question and stakes, 8–14 thematic H2 sections each with 4–6 paragraphs of 6–9 sentences, ### sub-headings inside sections wherever there's a natural sub-point, and a closing ## Where I Land section of 3 paragraphs. DEPTH REQUIREMENTS: (a) every abstract claim must be paired with at least one concrete example, number, or named person/place; (b) explain MECHANISM — show step by step how things actually work, not just outcomes; (c) explain IMPLICATIONS — short term, long term, who wins, who loses, what comes next; (d) explain BACKGROUND — historical, technical or cultural context the reader needs to grasp the topic; (e) for each major idea, briefly note the strongest counter-argument or limitation; (f) draw at least one ANALOGY or comparison that helps the reader visualise the idea. Each H2 must introduce a distinct angle (mechanism, history, players, money, risks, reactions, what's next, etc.) — never repeat. Pure prose, clear B1–B2 English, no bullet lists, no filler, no 'the author says' framings.";
 
-
 // Legacy short fallback (kept so old clients don't 500).
 const SHORT_INSTRUCTIONS =
   "Write a concise first-person article of ~320–450 words. Follow the article-shape rules at small scale: bold # title, italic TL;DR, a 1-paragraph lede, then 2–3 short thematic H2 sections of 1–2 paragraphs each, and a tight final ## Where I Land paragraph.";
@@ -151,12 +150,19 @@ serve(async (req) => {
   try {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    const { articles, length = "long", topic, windowHours = 24, model: requestedModel, simplifyLevel } = await req.json();
+    const {
+      articles,
+      length = "long",
+      topic,
+      windowHours = 24,
+      model: requestedModel,
+      simplifyLevel,
+    } = await req.json();
     if (!Array.isArray(articles) || articles.length === 0) {
       return new Response(JSON.stringify({ error: "articles array is required" }), {
         status: 400,
@@ -164,9 +170,8 @@ serve(async (req) => {
       });
     }
 
-    const model = (requestedModel && ALLOWED_MODELS.has(requestedModel))
-      ? requestedModel
-      : DEFAULT_MODEL;
+    const model =
+      requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
     // Cap inputs so we stay within model context. For 'max'/'auto-max' allow more per article.
     // Tightened defaults to cut token cost: we only need title + first 1–2 paragraphs
@@ -183,11 +188,17 @@ serve(async (req) => {
     }));
 
     const instructions =
-      length === "auto-max" ? AUTO_MAX_INSTRUCTIONS :
-      length === "max" ? MAX_INSTRUCTIONS :
-      length === "short" ? SHORT_INSTRUCTIONS :
-      length === "simple" ? (simplifyLevel === "b1-b2" ? SIMPLE_INSTRUCTIONS_B2 : SIMPLE_INSTRUCTIONS_A2) :
-      LONG_INSTRUCTIONS;
+      length === "auto-max"
+        ? AUTO_MAX_INSTRUCTIONS
+        : length === "max"
+          ? MAX_INSTRUCTIONS
+          : length === "short"
+            ? SHORT_INSTRUCTIONS
+            : length === "simple"
+              ? simplifyLevel === "b1-b2"
+                ? SIMPLE_INSTRUCTIONS_B2
+                : SIMPLE_INSTRUCTIONS_A2
+              : LONG_INSTRUCTIONS;
 
     const userPrompt = [
       instructions,
@@ -205,52 +216,54 @@ serve(async (req) => {
     // long features halfway through — symptom: headings appear but bodies are missing.
     const maxTokensFor = (l: string): number => {
       switch (l) {
-        case "auto-max": return 16000;
-        case "max":      return 12000;
-        case "simple":   return 12000;
-        case "short":    return 1500;
-        default:         return 8000; // long
+        case "auto-max":
+          return 16000;
+        case "max":
+          return 12000;
+        case "simple":
+          return 12000;
+        case "short":
+          return 1500;
+        default:
+          return 8000; // long
       }
     };
 
     async function callAi(): Promise<Response> {
-      return await fetch(
-        "https://ai.gateway.lovable.dev/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model,
-            max_tokens: maxTokensFor(length),
-            messages: [
-              { role: "system", content: SYSTEM_PROMPT },
-              { role: "user", content: userPrompt },
-            ],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "emit_digest",
-                  description: "Return the final digest.",
-                  parameters: {
-                    type: "object",
-                    properties: {
-                      title: { type: "string", description: "Concise digest title (≤ 12 words)." },
-                      markdown: { type: "string", description: "The full digest body in markdown." },
-                    },
-                    required: ["title", "markdown"],
-                    additionalProperties: false,
+      return await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: maxTokensFor(length),
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userPrompt },
+          ],
+          tools: [
+            {
+              type: "function",
+              function: {
+                name: "emit_digest",
+                description: "Return the final digest.",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string", description: "Concise digest title (≤ 12 words)." },
+                    markdown: { type: "string", description: "The full digest body in markdown." },
                   },
+                  required: ["title", "markdown"],
+                  additionalProperties: false,
                 },
               },
-            ],
-            tool_choice: { type: "function", function: { name: "emit_digest" } },
-          }),
-        },
-      );
+            },
+          ],
+          tool_choice: { type: "function", function: { name: "emit_digest" } },
+        }),
+      });
     }
 
     let aiRes = await callAi();
@@ -270,15 +283,14 @@ serve(async (req) => {
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${aiRes.status})` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status})` }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let aiData = await aiRes.json();
-    let call =
-      aiData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
+    let call = aiData?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     let finishReason: string | undefined = aiData?.choices?.[0]?.finish_reason;
 
     /** Heuristic: detect a truncated digest (headings emitted but bodies missing). */
@@ -295,7 +307,11 @@ serve(async (req) => {
 
     let parsed: { title: string; markdown: string } | null = null;
     if (call) {
-      try { parsed = JSON.parse(call); } catch { parsed = null; }
+      try {
+        parsed = JSON.parse(call);
+      } catch {
+        parsed = null;
+      }
     }
 
     // Auto-retry once if truncated by token cap or visibly incomplete.
@@ -312,7 +328,9 @@ serve(async (req) => {
             if (retry?.markdown && (!parsed || retry.markdown.length > parsed.markdown.length)) {
               parsed = retry;
             }
-          } catch { /* keep previous */ }
+          } catch {
+            /* keep previous */
+          }
         }
       }
     }
@@ -326,7 +344,10 @@ serve(async (req) => {
     }
 
     const html = mdToHtml(parsed.markdown);
-    const text = parsed.markdown.replace(/[#>*_`-]+/g, " ").replace(/\s+/g, " ").trim();
+    const text = parsed.markdown
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
     return new Response(
       JSON.stringify({

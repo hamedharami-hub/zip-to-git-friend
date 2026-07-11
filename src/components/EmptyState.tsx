@@ -1,5 +1,5 @@
-import { ReactNode } from 'react';
-import { Sparkles } from 'lucide-react';
+import { ReactNode } from "react";
+import { Sparkles } from "lucide-react";
 
 interface Props {
   /** Lucide icon (or any node) shown in the hero. */
@@ -11,7 +11,7 @@ interface Props {
   /** Secondary action (e.g., import). */
   secondaryAction?: ReactNode;
   /** Tone variant. Default 'media'. */
-  tone?: 'media' | 'audio';
+  tone?: "media" | "audio";
 }
 
 /**
@@ -24,15 +24,15 @@ export function EmptyState({
   description,
   action,
   secondaryAction,
-  tone = 'media',
+  tone = "media",
 }: Props) {
   return (
     <div
       className={
-        'relative overflow-hidden rounded-2xl border border-dashed border-border p-10 sm:p-14 text-center ' +
-        (tone === 'audio'
-          ? 'bg-gradient-to-br from-primary/10 via-card to-card'
-          : 'bg-gradient-to-br from-primary/5 via-card to-card')
+        "relative overflow-hidden rounded-2xl border border-dashed border-border p-10 sm:p-14 text-center " +
+        (tone === "audio"
+          ? "bg-gradient-to-br from-primary/10 via-card to-card"
+          : "bg-gradient-to-br from-primary/5 via-card to-card")
       }
     >
       {/* Decorative blobs */}
@@ -51,9 +51,7 @@ export function EmptyState({
         </div>
         <div className="space-y-1">
           <p className="text-lg font-semibold">{title}</p>
-          {description && (
-            <p className="text-sm text-muted-foreground">{description}</p>
-          )}
+          {description && <p className="text-sm text-muted-foreground">{description}</p>}
         </div>
         {(action || secondaryAction) && (
           <div className="flex flex-wrap items-center justify-center gap-2 pt-2">

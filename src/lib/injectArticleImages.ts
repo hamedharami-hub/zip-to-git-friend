@@ -15,34 +15,34 @@ export function injectArticleImages(
 ): string {
   if (!rewriteHtml) return rewriteHtml;
   if (!originalHtml) return rewriteHtml;
-  if (typeof window === 'undefined' || typeof DOMParser === 'undefined') {
+  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
     return rewriteHtml;
   }
 
   try {
     const parser = new DOMParser();
-    const origDoc = parser.parseFromString(originalHtml, 'text/html');
-    const skip = (opts.skipUrl ?? '').trim();
+    const origDoc = parser.parseFromString(originalHtml, "text/html");
+    const skip = (opts.skipUrl ?? "").trim();
 
     // Collect distinct figure/img blocks in source order.
     const seen = new Set<string>();
     const media: string[] = [];
-    const nodes = origDoc.body.querySelectorAll('figure, img');
+    const nodes = origDoc.body.querySelectorAll("figure, img");
     nodes.forEach((node) => {
-      let figureHtml = '';
-      let src = '';
-      if (node.tagName === 'FIGURE') {
+      let figureHtml = "";
+      let src = "";
+      if (node.tagName === "FIGURE") {
         // Skip figures whose only content is a nested img already collected.
-        const img = node.querySelector('img');
+        const img = node.querySelector("img");
         if (!img) return;
-        src = img.getAttribute('src') || '';
+        src = img.getAttribute("src") || "";
         figureHtml = node.outerHTML;
       } else {
         // Skip <img> that's inside a <figure> — the figure handler took it.
-        if ((node as HTMLElement).closest('figure')) return;
-        src = (node as HTMLImageElement).getAttribute('src') || '';
+        if ((node as HTMLElement).closest("figure")) return;
+        src = (node as HTMLImageElement).getAttribute("src") || "";
         if (!src) return;
-        const alt = (node as HTMLImageElement).getAttribute('alt') || '';
+        const alt = (node as HTMLImageElement).getAttribute("alt") || "";
         figureHtml = `<figure><img src="${escapeAttr(src)}" alt="${escapeAttr(alt)}" loading="lazy" /></figure>`;
       }
       if (!src || seen.has(src)) return;
@@ -53,11 +53,11 @@ export function injectArticleImages(
 
     if (media.length === 0) return rewriteHtml;
 
-    const rwDoc = parser.parseFromString(rewriteHtml, 'text/html');
+    const rwDoc = parser.parseFromString(rewriteHtml, "text/html");
     const blocks = Array.from(rwDoc.body.children);
     if (blocks.length < 2) {
       // Not enough structure to interleave; append at the end.
-      return rewriteHtml + '\n' + media.join('\n');
+      return rewriteHtml + "\n" + media.join("\n");
     }
 
     // Compute insertion positions: evenly spaced between blocks (never at very top or very bottom).
@@ -73,11 +73,11 @@ export function injectArticleImages(
     for (let i = count - 1; i >= 0; i--) {
       const pos = positions[i];
       const anchor = blocks[pos];
-      const fragment = parser.parseFromString(media[i], 'text/html').body.firstChild;
+      const fragment = parser.parseFromString(media[i], "text/html").body.firstChild;
       if (!fragment) continue;
       // Add a marker class so styles can target injected images.
       if (fragment.nodeType === 1) {
-        (fragment as HTMLElement).classList.add('inline-article-image');
+        (fragment as HTMLElement).classList.add("inline-article-image");
       }
       anchor.parentNode?.insertBefore(fragment, anchor);
     }
@@ -90,8 +90,8 @@ export function injectArticleImages(
 
 function escapeAttr(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }

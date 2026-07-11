@@ -5,11 +5,13 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-interface TargetSentence { id: string; english: string }
+interface TargetSentence {
+  id: string;
+  english: string;
+}
 
 interface ReqBody {
   scenario: {
@@ -56,8 +58,14 @@ const TOOL_DEF = {
     parameters: {
       type: "object",
       properties: {
-        ai_audio_response: { type: "string", description: "Your spoken reply, 1–3 sentences. Plain text for TTS." },
-        grammar_corrections: { type: "string", description: "Short summary of grammar issues. Empty if clean." },
+        ai_audio_response: {
+          type: "string",
+          description: "Your spoken reply, 1–3 sentences. Plain text for TTS.",
+        },
+        grammar_corrections: {
+          type: "string",
+          description: "Short summary of grammar issues. Empty if clean.",
+        },
         grammar_markers: {
           type: "array",
           items: {
@@ -75,7 +83,8 @@ const TOOL_DEF = {
         },
         target_usage: {
           type: "array",
-          description: "For EACH target sentence id, whether the user's latest transcript used it (or close paraphrase).",
+          description:
+            "For EACH target sentence id, whether the user's latest transcript used it (or close paraphrase).",
           items: {
             type: "object",
             properties: {
@@ -91,7 +100,8 @@ const TOOL_DEF = {
         completion_reason: { type: "string", description: "If complete, one short sentence why." },
         suggestion_for_user: {
           type: "string",
-          description: "Optional gentle nudge to the user IF they keep ignoring target sentences. Empty otherwise.",
+          description:
+            "Optional gentle nudge to the user IF they keep ignoring target sentences. Empty otherwise.",
         },
       },
       required: ["ai_audio_response", "grammar_markers", "target_usage", "scenario_complete"],
@@ -101,9 +111,7 @@ const TOOL_DEF = {
 } as const;
 
 function buildUserPrompt(b: ReqBody): string {
-  const remaining = b.target_sentences.filter(
-    (t) => !(b.already_used_ids ?? []).includes(t.id),
-  );
+  const remaining = b.target_sentences.filter((t) => !(b.already_used_ids ?? []).includes(t.id));
   const lines = [
     `SCENARIO TITLE: ${b.scenario.title_en}`,
     `USER plays: ${b.scenario.user_role}`,
@@ -140,7 +148,11 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
-  if (!body?.scenario || !Array.isArray(body.target_sentences) || typeof body.transcript !== "string") {
+  if (
+    !body?.scenario ||
+    !Array.isArray(body.target_sentences) ||
+    typeof body.transcript !== "string"
+  ) {
     return new Response(JSON.stringify({ error: "Missing fields" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -192,16 +204,22 @@ Deno.serve(async (req) => {
   }
 
   if (aiRes.status === 429) {
-    return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
-      status: 429,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
   if (aiRes.status === 402) {
-    return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
-      status: 402,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }),
+      {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
   if (!aiRes.ok) {
     const t = await aiRes.text();
@@ -248,7 +266,7 @@ Deno.serve(async (req) => {
         .map((u: any) => ({
           id: String(u?.id ?? ""),
           used: !!u?.used,
-          similarity: typeof u?.similarity === "number" ? u.similarity : (u?.used ? 1 : 0),
+          similarity: typeof u?.similarity === "number" ? u.similarity : u?.used ? 1 : 0,
         }))
         .filter((u: any) => u.id)
     : [];

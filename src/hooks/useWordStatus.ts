@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { WordStatus, WordStatusValue } from '@/types';
-import { getAllWordStatus, setWordStatus } from '@/lib/db';
+import { useCallback, useEffect, useState } from "react";
+import type { WordStatus, WordStatusValue } from "@/types";
+import { getAllWordStatus, setWordStatus } from "@/lib/db";
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
@@ -27,7 +27,7 @@ export async function setWordStatusGlobal(word: string, status: WordStatusValue)
   const key = normalize(word);
   if (!key) return;
   await ensureLoaded();
-  if (status === 'new') {
+  if (status === "new") {
     delete cache[key];
   } else {
     cache[key] = status;
@@ -38,7 +38,7 @@ export async function setWordStatusGlobal(word: string, status: WordStatusValue)
 
 export function getWordStatusSync(word: string): WordStatusValue {
   const key = normalize(word);
-  return cache[key] ?? 'new';
+  return cache[key] ?? "new";
 }
 
 /** Subscribe to live word-status changes; returns the current map. */
@@ -57,8 +57,8 @@ export function useAllWordStatus(): Record<string, WordStatusValue> {
 
 export function useWordStatus(word: string | undefined | null) {
   const map = useAllWordStatus();
-  const key = word ? normalize(word) : '';
-  const status: WordStatusValue = key ? map[key] ?? 'new' : 'new';
+  const key = word ? normalize(word) : "";
+  const status: WordStatusValue = key ? (map[key] ?? "new") : "new";
   const setStatus = useCallback(
     (next: WordStatusValue) => {
       if (!key) return Promise.resolve();
@@ -68,8 +68,8 @@ export function useWordStatus(word: string | undefined | null) {
   );
   /** Cycle: new → learning → known → new (skips ignored — that's manual). */
   const cycle = useCallback(() => {
-    const order: WordStatusValue[] = ['new', 'learning', 'known'];
-    const idx = order.indexOf(status === 'ignored' ? 'new' : status);
+    const order: WordStatusValue[] = ["new", "learning", "known"];
+    const idx = order.indexOf(status === "ignored" ? "new" : status);
     const next = order[(idx + 1) % order.length];
     return setStatus(next);
   }, [status, setStatus]);
@@ -78,26 +78,26 @@ export function useWordStatus(word: string | undefined | null) {
 
 export function statusColorClass(status: WordStatusValue): string {
   switch (status) {
-    case 'learning':
-      return 'bg-yellow-500/20 text-yellow-200 border-b-2 border-yellow-400/70';
-    case 'known':
-      return 'opacity-60';
-    case 'ignored':
-      return 'opacity-40';
+    case "learning":
+      return "bg-yellow-500/20 text-yellow-200 border-b-2 border-yellow-400/70";
+    case "known":
+      return "opacity-60";
+    case "ignored":
+      return "opacity-40";
     default:
-      return '';
+      return "";
   }
 }
 
 export function statusLabel(status: WordStatusValue): string {
   switch (status) {
-    case 'learning':
-      return 'Learning';
-    case 'known':
-      return 'Known';
-    case 'ignored':
-      return 'Ignored';
+    case "learning":
+      return "Learning";
+    case "known":
+      return "Known";
+    case "ignored":
+      return "Ignored";
     default:
-      return 'New';
+      return "New";
   }
 }

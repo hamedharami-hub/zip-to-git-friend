@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
 /**
  * Long-press hook that fires `onLongPress` after `delay` ms of touch/mouse

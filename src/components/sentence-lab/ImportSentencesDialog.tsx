@@ -1,18 +1,26 @@
-import { useMemo, useState } from 'react';
-import { Loader2, Upload } from 'lucide-react';
+import { useMemo, useState } from "react";
+import { Loader2, Upload } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { importSentences, type ImportSentence } from '@/lib/sentenceCategories';
-import type { CategoryWithStats } from '@/lib/sentenceCategories';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { importSentences, type ImportSentence } from "@/lib/sentenceCategories";
+import type { CategoryWithStats } from "@/lib/sentenceCategories";
 
 interface Props {
   open: boolean;
@@ -36,11 +44,11 @@ function parseInput(raw: string): ImportSentence[] {
   const trimmed = raw.trim();
   if (!trimmed) return [];
   // Try JSON first
-  if (trimmed.startsWith('[') || trimmed.startsWith('{')) {
+  if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
     const parsed = JSON.parse(trimmed);
     const arr = Array.isArray(parsed) ? parsed : [parsed];
     return arr
-      .filter((x) => x && typeof x.english === 'string' && x.english.trim())
+      .filter((x) => x && typeof x.english === "string" && x.english.trim())
       .map((x) => ({
         english: String(x.english).trim(),
         persian: x.persian ? String(x.persian) : undefined,
@@ -56,22 +64,26 @@ function parseInput(raw: string): ImportSentence[] {
   }
   // Fallback: each line is "english | persian"
   return trimmed
-    .split('\n')
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
     .map((line) => {
-      const [en, fa] = line.split('|').map((s) => s?.trim() ?? '');
+      const [en, fa] = line.split("|").map((s) => s?.trim() ?? "");
       return { english: en, persian: fa || undefined };
     })
     .filter((s) => s.english);
 }
 
 export function ImportSentencesDialog({
-  open, onOpenChange, categorySlug, subcategories, onImported,
+  open,
+  onOpenChange,
+  categorySlug,
+  subcategories,
+  onImported,
 }: Props) {
   const { toast } = useToast();
-  const [text, setText] = useState('');
-  const [subSlug, setSubSlug] = useState<string>('__none__');
+  const [text, setText] = useState("");
+  const [subSlug, setSubSlug] = useState<string>("__none__");
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -86,28 +98,28 @@ export function ImportSentencesDialog({
   function handleFile(file: File) {
     setFileName(file.name);
     const reader = new FileReader();
-    reader.onload = () => setText(String(reader.result ?? ''));
+    reader.onload = () => setText(String(reader.result ?? ""));
     reader.readAsText(file);
   }
 
   async function handleImport() {
     if (preview.length === 0) {
-      toast({ title: 'Nothing to import', description: 'Paste JSON or use the sample.' });
+      toast({ title: "Nothing to import", description: "Paste JSON or use the sample." });
       return;
     }
     setBusy(true);
     try {
-      const sub = subSlug === '__none__' ? null : subSlug;
+      const sub = subSlug === "__none__" ? null : subSlug;
       const n = await importSentences(categorySlug, sub, preview);
-      toast({ title: 'Imported', description: `${n} sentences added` });
-      setText('');
+      toast({ title: "Imported", description: `${n} sentences added` });
+      setText("");
       setFileName(null);
       onImported?.();
     } catch (e: any) {
       toast({
-        title: 'Import failed',
-        description: e?.message ?? 'Unknown error',
-        variant: 'destructive',
+        title: "Import failed",
+        description: e?.message ?? "Unknown error",
+        variant: "destructive",
       });
     } finally {
       setBusy(false);
@@ -135,7 +147,9 @@ export function ImportSentencesDialog({
               <SelectContent>
                 <SelectItem value="__none__">None (category root)</SelectItem>
                 {subcategories.map((s) => (
-                  <SelectItem key={s.id} value={s.slug}>{s.name}</SelectItem>
+                  <SelectItem key={s.id} value={s.slug}>
+                    {s.name}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -155,9 +169,7 @@ export function ImportSentencesDialog({
                 />
               </label>
             </Label>
-            {fileName && (
-              <p className="text-[11px] text-muted-foreground">📎 {fileName}</p>
-            )}
+            {fileName && <p className="text-[11px] text-muted-foreground">📎 {fileName}</p>}
             <Textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -168,7 +180,8 @@ export function ImportSentencesDialog({
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Preview: <strong>{preview.length}</strong> valid sentence{preview.length === 1 ? '' : 's'} detected
+            Preview: <strong>{preview.length}</strong> valid sentence
+            {preview.length === 1 ? "" : "s"} detected
           </p>
         </div>
 

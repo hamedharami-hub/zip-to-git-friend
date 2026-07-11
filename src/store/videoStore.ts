@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import type { Video } from '@/types';
-import { saveVideo as dbSaveVideo } from '@/lib/db';
+import { create } from "zustand";
+import type { Video } from "@/types";
+import { saveVideo as dbSaveVideo } from "@/lib/db";
 
 interface SeekRequest {
   /** Time in seconds. */

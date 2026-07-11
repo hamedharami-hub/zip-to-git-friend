@@ -9,9 +9,9 @@
  *   - Sort by publishedAt desc (fallback: insertion order).
  *   - Cap at MAX_ITEMS to keep storage bounded.
  */
-import type { FeedItem } from './news';
+import type { FeedItem } from "./news";
 
-const PREFIX = 'news.feed.';
+const PREFIX = "news.feed.";
 const MAX_ITEMS = 300;
 
 interface StoredItem extends FeedItem {
@@ -53,8 +53,8 @@ export function mergeIntoCache(sourceId: string, fresh: FeedItem[]): FeedItem[] 
   }
   const merged = Array.from(map.values());
   merged.sort((a, b) => {
-    const aT = Date.parse(a.publishedAt ?? a.cachedAt ?? '') || 0;
-    const bT = Date.parse(b.publishedAt ?? b.cachedAt ?? '') || 0;
+    const aT = Date.parse(a.publishedAt ?? a.cachedAt ?? "") || 0;
+    const bT = Date.parse(b.publishedAt ?? b.cachedAt ?? "") || 0;
     return bT - aT;
   });
   const capped = merged.slice(0, MAX_ITEMS);
@@ -63,7 +63,10 @@ export function mergeIntoCache(sourceId: string, fresh: FeedItem[]): FeedItem[] 
   } catch {
     // Quota — drop half and retry once.
     try {
-      localStorage.setItem(key(sourceId), JSON.stringify(capped.slice(0, Math.floor(MAX_ITEMS / 2))));
+      localStorage.setItem(
+        key(sourceId),
+        JSON.stringify(capped.slice(0, Math.floor(MAX_ITEMS / 2))),
+      );
     } catch {
       /* ignore */
     }

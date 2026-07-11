@@ -1,26 +1,26 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, LogIn } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, LogIn } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { toast } from "sonner";
 
 const safePath = (value: string | null | undefined) => {
-  if (!value) return '/';
-  return value.startsWith('/') && !value.startsWith('//') ? value : '/';
+  if (!value) return "/";
+  return value.startsWith("/") && !value.startsWith("//") ? value : "/";
 };
 
 const readStoredNextPath = () => {
   try {
-    return safePath(window.localStorage.getItem('llp-post-auth-path'));
+    return safePath(window.localStorage.getItem("llp-post-auth-path"));
   } catch {
-    return '/';
+    return "/";
   }
 };
 
 const cleanupStoredNextPath = () => {
   try {
-    window.localStorage.removeItem('llp-post-auth-path');
+    window.localStorage.removeItem("llp-post-auth-path");
   } catch {
     // Ignore storage failures.
   }
@@ -28,17 +28,17 @@ const cleanupStoredNextPath = () => {
 
 export default function AuthCallback() {
   usePageMeta({
-    title: 'Completing sign in — Language Learning Player',
-    description: 'در حال تکمیل ورود امن به حساب کاربری.',
+    title: "Completing sign in — Language Learning Player",
+    description: "در حال تکمیل ورود امن به حساب کاربری.",
   });
   const navigate = useNavigate();
-  const [message, setMessage] = useState('در حال تکمیل ورود با گوگل…');
+  const [message, setMessage] = useState("در حال تکمیل ورود با گوگل…");
 
   useEffect(() => {
     let cancelled = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const url = new URL(window.location.href);
-    const nextPath = safePath(url.searchParams.get('next') || readStoredNextPath());
+    const nextPath = safePath(url.searchParams.get("next") || readStoredNextPath());
 
     const finish = () => {
       if (cancelled) return;
@@ -48,23 +48,23 @@ export default function AuthCallback() {
 
     const fail = (error: unknown) => {
       if (cancelled) return;
-      const msg = error instanceof Error ? error.message : 'Google sign-in failed.';
-      setMessage('ورود کامل نشد. دوباره تلاش کن.');
+      const msg = error instanceof Error ? error.message : "Google sign-in failed.";
+      setMessage("ورود کامل نشد. دوباره تلاش کن.");
       toast.error(msg);
-      timeoutId = setTimeout(() => navigate('/auth', { replace: true }), 1600);
+      timeoutId = setTimeout(() => navigate("/auth", { replace: true }), 1600);
     };
 
     const complete = async () => {
       try {
-        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
-        const accessToken = hash.get('access_token') || url.searchParams.get('access_token');
-        const refreshToken = hash.get('refresh_token') || url.searchParams.get('refresh_token');
-        const code = url.searchParams.get('code');
+        const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+        const accessToken = hash.get("access_token") || url.searchParams.get("access_token");
+        const refreshToken = hash.get("refresh_token") || url.searchParams.get("refresh_token");
+        const code = url.searchParams.get("code");
         const errorDescription =
-          hash.get('error_description') ||
-          url.searchParams.get('error_description') ||
-          hash.get('error') ||
-          url.searchParams.get('error');
+          hash.get("error_description") ||
+          url.searchParams.get("error_description") ||
+          hash.get("error") ||
+          url.searchParams.get("error");
 
         if (errorDescription) throw new Error(errorDescription);
 
@@ -86,11 +86,11 @@ export default function AuthCallback() {
           return;
         }
 
-        setMessage('منتظر ثبت نشست ورود…');
+        setMessage("منتظر ثبت نشست ورود…");
         timeoutId = setTimeout(async () => {
           const { data: retry } = await supabase.auth.getSession();
           if (retry.session) finish();
-          else fail(new Error('No sign-in session was received from Google.'));
+          else fail(new Error("No sign-in session was received from Google."));
         }, 2500);
       } catch (error) {
         fail(error);
@@ -111,7 +111,10 @@ export default function AuthCallback() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-6" dir="rtl">
+    <div
+      className="min-h-screen bg-background text-foreground flex items-center justify-center p-6"
+      dir="rtl"
+    >
       <main className="w-full max-w-sm text-center space-y-4">
         <div className="mx-auto h-12 w-12 rounded-full border border-border flex items-center justify-center">
           <LogIn className="h-5 w-5 text-primary" />

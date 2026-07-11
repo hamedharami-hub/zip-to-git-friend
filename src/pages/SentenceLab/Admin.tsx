@@ -3,16 +3,16 @@
  * Calls the `sentence-batch-complete` edge function which uses Lovable AI
  * to fill `english_aussie`, `expected_intent`, `ai_counter_prompt`.
  */
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader2, Wand2, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, Wand2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface MissingStat {
   total: number;
@@ -27,17 +27,32 @@ export default function SentenceAdminPage() {
   const [loading, setLoading] = useState(false);
   const [running, setRunning] = useState(false);
   const [batchSize, setBatchSize] = useState(25);
-  const [category, setCategory] = useState('');
+  const [category, setCategory] = useState("");
   const [log, setLog] = useState<string[]>([]);
   const [doneRuns, setDoneRuns] = useState(0);
 
   async function loadStats() {
     setLoading(true);
     const [t, a, i, c] = await Promise.all([
-      supabase.from('sentence_lab').select('*', { count: 'exact', head: true }).eq('status', 'published'),
-      supabase.from('sentence_lab').select('*', { count: 'exact', head: true }).eq('status', 'published').is('english_aussie', null),
-      supabase.from('sentence_lab').select('*', { count: 'exact', head: true }).eq('status', 'published').is('expected_intent', null),
-      supabase.from('sentence_lab').select('*', { count: 'exact', head: true }).eq('status', 'published').is('ai_counter_prompt', null),
+      supabase
+        .from("sentence_lab")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "published"),
+      supabase
+        .from("sentence_lab")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "published")
+        .is("english_aussie", null),
+      supabase
+        .from("sentence_lab")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "published")
+        .is("expected_intent", null),
+      supabase
+        .from("sentence_lab")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "published")
+        .is("ai_counter_prompt", null),
     ]);
     setStat({
       total: t.count ?? 0,
@@ -55,7 +70,7 @@ export default function SentenceAdminPage() {
   async function runBatch() {
     setRunning(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sentence-batch-complete', {
+      const { data, error } = await supabase.functions.invoke("sentence-batch-complete", {
         body: { limit: batchSize, category: category || undefined },
       });
       if (error) throw error;
@@ -85,21 +100,22 @@ export default function SentenceAdminPage() {
     }
   }
 
-  const totalMissing = stat ? Math.max(stat.missingAussie, stat.missingIntent, stat.missingCounter) : 0;
-  const completePct = stat && stat.total > 0 ? Math.round(((stat.total - totalMissing) / stat.total) * 100) : 0;
+  const totalMissing = stat
+    ? Math.max(stat.missingAussie, stat.missingIntent, stat.missingCounter)
+    : 0;
+  const completePct =
+    stat && stat.total > 0 ? Math.round(((stat.total - totalMissing) / stat.total) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sentence-lab')}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/sentence-lab")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-base font-semibold leading-none">Sentence Admin</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              تکمیل خودکار جمله‌های ناقص با AI
-            </p>
+            <p className="mt-0.5 text-xs text-muted-foreground">تکمیل خودکار جمله‌های ناقص با AI</p>
           </div>
         </div>
       </header>
@@ -143,7 +159,9 @@ export default function SentenceAdminPage() {
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="batch" className="text-xs">تعداد در هر اجرا</Label>
+                <Label htmlFor="batch" className="text-xs">
+                  تعداد در هر اجرا
+                </Label>
                 <Input
                   id="batch"
                   type="number"
@@ -155,7 +173,9 @@ export default function SentenceAdminPage() {
                 />
               </div>
               <div>
-                <Label htmlFor="cat" className="text-xs">فقط دسته (اختیاری)</Label>
+                <Label htmlFor="cat" className="text-xs">
+                  فقط دسته (اختیاری)
+                </Label>
                 <Input
                   id="cat"
                   placeholder="general / aussie_life / ..."
@@ -167,16 +187,26 @@ export default function SentenceAdminPage() {
             </div>
             <div className="flex gap-2">
               <Button onClick={runBatch} disabled={running} size="sm" className="flex-1">
-                {running ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+                {running ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Wand2 className="h-4 w-4" />
+                )}
                 یک دسته اجرا کن
               </Button>
-              <Button onClick={runUntilDone} disabled={running} variant="secondary" size="sm" className="flex-1">
+              <Button
+                onClick={runUntilDone}
+                disabled={running}
+                variant="secondary"
+                size="sm"
+                className="flex-1"
+              >
                 تا تکمیل کامل
               </Button>
             </div>
             <p className="text-[10px] text-muted-foreground">
-              هر دسته ~{batchSize * 0.5}s طول می‌کشه. جمله‌ها کم‌کم با Australian English،
-              Intent و Counter-Prompt برای Roleplay پر میشن.
+              هر دسته ~{batchSize * 0.5}s طول می‌کشه. جمله‌ها کم‌کم با Australian English، Intent و
+              Counter-Prompt برای Roleplay پر میشن.
             </p>
           </CardContent>
         </Card>
@@ -190,7 +220,7 @@ export default function SentenceAdminPage() {
               <ul className="space-y-1 text-xs font-mono">
                 {log.map((l, i) => (
                   <li key={i} className="flex items-start gap-1.5">
-                    {l.startsWith('✗') ? (
+                    {l.startsWith("✗") ? (
                       <AlertCircle className="h-3 w-3 text-destructive mt-0.5 shrink-0" />
                     ) : (
                       <CheckCircle2 className="h-3 w-3 text-emerald-500 mt-0.5 shrink-0" />
@@ -209,7 +239,9 @@ export default function SentenceAdminPage() {
 
 function Stat({ label, value, warn }: { label: string; value: number; warn?: boolean }) {
   return (
-    <div className={`rounded-md border p-2 ${warn && value > 0 ? 'border-amber-500/40 bg-amber-500/5' : 'bg-muted/30'}`}>
+    <div
+      className={`rounded-md border p-2 ${warn && value > 0 ? "border-amber-500/40 bg-amber-500/5" : "bg-muted/30"}`}
+    >
       <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="text-lg font-semibold tabular-nums">{value.toLocaleString()}</p>
     </div>

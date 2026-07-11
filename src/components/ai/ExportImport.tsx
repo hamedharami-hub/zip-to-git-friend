@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { Download, Upload, FileDown } from 'lucide-react';
+import { useRef } from "react";
+import { Download, Upload, FileDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,16 +7,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import {
-  exportBundleToFile,
-  exportTrackSRT,
-  importBundleFromFile,
-} from '@/lib/srtExporter';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useVideoStore } from '@/store/videoStore';
-import { toast } from 'sonner';
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { exportBundleToFile, exportTrackSRT, importBundleFromFile } from "@/lib/srtExporter";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useVideoStore } from "@/store/videoStore";
+import { toast } from "sonner";
 
 interface Props {
   videoId: string;
@@ -28,7 +24,7 @@ export function ExportImport({ videoId, onImported }: Props) {
   const primary = useSubtitleStore((s) => s.primary);
   const secondary = useSubtitleStore((s) => s.secondary);
   const current = useVideoStore((s) => s.current);
-  const baseName = (current?.title || 'subtitles').replace(/[^\w\-]+/g, '_');
+  const baseName = (current?.title || "subtitles").replace(/[^\w\-]+/g, "_");
 
   const handleImport = async (file: File) => {
     try {
@@ -39,7 +35,7 @@ export function ExportImport({ videoId, onImported }: Props) {
       onImported?.();
     } catch (e) {
       console.error(e);
-      toast.error('Import failed: invalid file.');
+      toast.error("Import failed: invalid file.");
     }
   };
 
@@ -53,7 +49,7 @@ export function ExportImport({ videoId, onImported }: Props) {
         onChange={(e) => {
           const f = e.target.files?.[0];
           if (f) handleImport(f);
-          e.target.value = '';
+          e.target.value = "";
         }}
       />
       <DropdownMenu>

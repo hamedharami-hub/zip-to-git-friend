@@ -69,25 +69,47 @@ function wc(text: string): number {
 
 function mdToHtml(md: string): string {
   // Minimal markdown → HTML (headings, bold, italic, lists, paragraphs).
-  const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const lines = md.split(/\r?\n/);
   const out: string[] = [];
   let inUl = false;
-  const flushUl = () => { if (inUl) { out.push("</ul>"); inUl = false; } };
+  const flushUl = () => {
+    if (inUl) {
+      out.push("</ul>");
+      inUl = false;
+    }
+  };
   const inline = (t: string) =>
     esc(t)
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
       .replace(/\*([^*]+)\*/g, "<em>$1</em>");
   for (const raw of lines) {
     const line = raw.trim();
-    if (!line) { flushUl(); continue; }
+    if (!line) {
+      flushUl();
+      continue;
+    }
     let m;
-    if ((m = line.match(/^#\s+(.*)$/))) { flushUl(); out.push(`<h1>${inline(m[1])}</h1>`); continue; }
-    if ((m = line.match(/^##\s+(.*)$/))) { flushUl(); out.push(`<h2>${inline(m[1])}</h2>`); continue; }
-    if ((m = line.match(/^###\s+(.*)$/))) { flushUl(); out.push(`<h3>${inline(m[1])}</h3>`); continue; }
+    if ((m = line.match(/^#\s+(.*)$/))) {
+      flushUl();
+      out.push(`<h1>${inline(m[1])}</h1>`);
+      continue;
+    }
+    if ((m = line.match(/^##\s+(.*)$/))) {
+      flushUl();
+      out.push(`<h2>${inline(m[1])}</h2>`);
+      continue;
+    }
+    if ((m = line.match(/^###\s+(.*)$/))) {
+      flushUl();
+      out.push(`<h3>${inline(m[1])}</h3>`);
+      continue;
+    }
     if ((m = line.match(/^[-*]\s+(.*)$/))) {
-      if (!inUl) { out.push("<ul>"); inUl = true; }
+      if (!inUl) {
+        out.push("<ul>");
+        inUl = true;
+      }
       out.push(`<li>${inline(m[1])}</li>`);
       continue;
     }
@@ -104,22 +126,26 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const { main, related, model: requestedModel } = await req.json();
     if (!main || typeof main.title !== "string") {
       return new Response(JSON.stringify({ error: "main { title, ... } is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (!Array.isArray(related) || related.length === 0) {
       return new Response(JSON.stringify({ error: "related[] is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const model = requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
+    const model =
+      requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
     const mainBlock = {
       title: String(main.title).slice(0, 250),
@@ -157,22 +183,24 @@ serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "emit_compare",
-            description: "Return the comparison analysis in Persian markdown.",
-            parameters: {
-              type: "object",
-              properties: {
-                title: { type: "string", description: "عنوان کوتاه (≤ ۱۲ کلمه)." },
-                markdown: { type: "string", description: "متن کامل تحلیل به markdown فارسی." },
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "emit_compare",
+              description: "Return the comparison analysis in Persian markdown.",
+              parameters: {
+                type: "object",
+                properties: {
+                  title: { type: "string", description: "عنوان کوتاه (≤ ۱۲ کلمه)." },
+                  markdown: { type: "string", description: "متن کامل تحلیل به markdown فارسی." },
+                },
+                required: ["title", "markdown"],
+                additionalProperties: false,
               },
-              required: ["title", "markdown"],
-              additionalProperties: false,
             },
           },
-        }],
+        ],
         tool_choice: { type: "function", function: { name: "emit_compare" } },
       }),
     });
@@ -181,17 +209,26 @@ serve(async (req) => {
       const errBody = await aiRes.text();
       console.error("AI gateway error", aiRes.status, errBody);
       if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Try again in a moment." }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
       if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Top up in workspace settings." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Top up in workspace settings." }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
       return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status})` }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -199,24 +236,29 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       return new Response(JSON.stringify({ error: "AI did not return a tool call" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const args = JSON.parse(toolCall.function.arguments);
     const title: string = args.title ?? "تفاوت پوشش این خبر";
     const markdown: string = args.markdown ?? "";
 
-    return new Response(JSON.stringify({
-      title,
-      contentMd: markdown,
-      contentHtml: mdToHtml(markdown),
-      wordCount: wc(markdown),
-      model,
-    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({
+        title,
+        contentMd: markdown,
+        contentHtml: mdToHtml(markdown),
+        wordCount: wc(markdown),
+        model,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e: any) {
     console.error("news-compare error", e);
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

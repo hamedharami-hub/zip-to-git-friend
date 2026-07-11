@@ -3,7 +3,7 @@
  * can dim items the user has previously opened. Cross-tab safe via the
  * `storage` event.
  */
-const KEY = 'news.seen.v1';
+const KEY = "news.seen.v1";
 const MAX = 5000;
 
 type Listener = () => void;
@@ -52,8 +52,8 @@ export function subscribeSeen(cb: Listener): () => void {
   return () => listeners.delete(cb);
 }
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('storage', (e) => {
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
     if (e.key === KEY) {
       cache = null;
       for (const l of listeners) l();

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
-import { Plus, Sparkles, Loader2, Wand2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from "react";
+import { Plus, Sparkles, Loader2, Wand2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,19 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 import {
   appendLanguageChapter,
   generateLanguageChapter,
   parseItemsList,
   type LanguageChapterAIResult,
-} from '@/lib/languageBook';
-import type { Book } from '@/types';
+} from "@/lib/languageBook";
+import type { Book } from "@/types";
 
 interface Props {
   book: Book;
@@ -31,37 +31,32 @@ interface Props {
 }
 
 /** Append a new AI-generated chapter to an existing language book. */
-export function AddLanguageChapterDialog({
-  book,
-  existingChapterCount,
-  onAdded,
-  trigger,
-}: Props) {
+export function AddLanguageChapterDialog({ book, existingChapterCount, onAdded, trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [aiResult, setAiResult] = useState<LanguageChapterAIResult | null>(null);
 
   const defaultTitle = `Chapter ${existingChapterCount + 1}`;
   const [chapterTitle, setChapterTitle] = useState(defaultTitle);
-  const [mode, setMode] = useState<'auto' | 'guided'>('auto');
-  const [itemsRaw, setItemsRaw] = useState('');
-  const [outline, setOutline] = useState('');
-  const [userNotes, setUserNotes] = useState('');
+  const [mode, setMode] = useState<"auto" | "guided">("auto");
+  const [itemsRaw, setItemsRaw] = useState("");
+  const [outline, setOutline] = useState("");
+  const [userNotes, setUserNotes] = useState("");
 
   const items = useMemo(() => parseItemsList(itemsRaw), [itemsRaw]);
 
   const reset = () => {
     setAiResult(null);
     setChapterTitle(`Chapter ${existingChapterCount + 1}`);
-    setMode('auto');
-    setItemsRaw('');
-    setOutline('');
-    setUserNotes('');
+    setMode("auto");
+    setItemsRaw("");
+    setOutline("");
+    setUserNotes("");
   };
 
   async function handleGenerate() {
     if (items.length === 0) {
-      toast.error('Add at least one word, phrase, or idiom.');
+      toast.error("Add at least one word, phrase, or idiom.");
       return;
     }
     setBusy(true);
@@ -69,16 +64,16 @@ export function AddLanguageChapterDialog({
       const result = await generateLanguageChapter({
         items,
         mode,
-        outline: mode === 'guided' ? outline.trim() || undefined : undefined,
+        outline: mode === "guided" ? outline.trim() || undefined : undefined,
       });
       setAiResult(result);
       if (chapterTitle === defaultTitle || !chapterTitle.trim()) {
         setChapterTitle(result.title);
       }
-      toast.success('Story ready ✨');
+      toast.success("Story ready ✨");
     } catch (err) {
-      console.error('[AddLanguageChapter] generate failed', err);
-      toast.error(err instanceof Error ? err.message : 'AI request failed.');
+      console.error("[AddLanguageChapter] generate failed", err);
+      toast.error(err instanceof Error ? err.message : "AI request failed.");
     } finally {
       setBusy(false);
     }
@@ -86,7 +81,7 @@ export function AddLanguageChapterDialog({
 
   async function handleAppend() {
     if (!aiResult) {
-      toast.error('Generate the story first.');
+      toast.error("Generate the story first.");
       return;
     }
     setBusy(true);
@@ -97,13 +92,13 @@ export function AddLanguageChapterDialog({
         aiResult,
         userNotes: userNotes.trim() || undefined,
       });
-      toast.success('Chapter added.');
+      toast.success("Chapter added.");
       setOpen(false);
       reset();
       onAdded?.(existingChapterCount);
     } catch (err) {
-      console.error('[AddLanguageChapter] append failed', err);
-      toast.error('Could not save the chapter.');
+      console.error("[AddLanguageChapter] append failed", err);
+      toast.error("Could not save the chapter.");
     } finally {
       setBusy(false);
     }
@@ -134,8 +129,8 @@ export function AddLanguageChapterDialog({
             Add language chapter
           </DialogTitle>
           <DialogDescription>
-            Hand AI a fresh batch of items — it weaves them into a new short
-            story for «{book.title}».
+            Hand AI a fresh batch of items — it weaves them into a new short story for «{book.title}
+            ».
           </DialogDescription>
         </DialogHeader>
 
@@ -150,7 +145,7 @@ export function AddLanguageChapterDialog({
             />
           </div>
 
-          <Tabs value={mode} onValueChange={(v) => setMode(v as 'auto' | 'guided')}>
+          <Tabs value={mode} onValueChange={(v) => setMode(v as "auto" | "guided")}>
             <TabsList className="grid grid-cols-2 w-full">
               <TabsTrigger value="auto" className="gap-1.5">
                 <Wand2 className="h-3.5 w-3.5" />
@@ -169,13 +164,11 @@ export function AddLanguageChapterDialog({
                   id="alc-items-auto"
                   value={itemsRaw}
                   onChange={(e) => setItemsRaw(e.target.value)}
-                  placeholder={'one per line, or comma-separated'}
+                  placeholder={"one per line, or comma-separated"}
                   rows={6}
                   className="resize-y font-mono text-sm"
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  {items.length}/60 items
-                </p>
+                <p className="text-[11px] text-muted-foreground">{items.length}/60 items</p>
               </div>
             </TabsContent>
 
@@ -218,7 +211,7 @@ export function AddLanguageChapterDialog({
 
           <div className="flex items-center justify-between gap-2 pt-1">
             <p className="text-[11px] text-muted-foreground">
-              {aiResult ? '✓ Story ready.' : 'Generate to preview.'}
+              {aiResult ? "✓ Story ready." : "Generate to preview."}
             </p>
             <Button
               type="button"
@@ -233,7 +226,7 @@ export function AddLanguageChapterDialog({
               ) : (
                 <Sparkles className="h-3.5 w-3.5" />
               )}
-              {aiResult ? 'Regenerate' : 'Generate'}
+              {aiResult ? "Regenerate" : "Generate"}
             </Button>
           </div>
 
@@ -245,11 +238,11 @@ export function AddLanguageChapterDialog({
               <h4 className="font-semibold text-sm">{aiResult.title}</h4>
               <p className="text-sm whitespace-pre-wrap leading-relaxed">
                 {aiResult.story.slice(0, 500)}
-                {aiResult.story.length > 500 ? '…' : ''}
+                {aiResult.story.length > 500 ? "…" : ""}
               </p>
               {aiResult.missingItems.length > 0 && (
                 <p className="text-[11px] text-destructive">
-                  Missing: {aiResult.missingItems.join(', ')}
+                  Missing: {aiResult.missingItems.join(", ")}
                 </p>
               )}
             </div>

@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
 
 /**
@@ -16,16 +16,16 @@ export function useInstallPrompt() {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState<boolean>(false);
 
-  const isBrowser = typeof window !== 'undefined';
+  const isBrowser = typeof window !== "undefined";
 
   const isStandalone =
     isBrowser &&
-    (window.matchMedia('(display-mode: standalone)').matches ||
+    (window.matchMedia("(display-mode: standalone)").matches ||
       // iOS Safari
       // @ts-expect-error - non-standard
       window.navigator.standalone === true);
 
-  const ua = isBrowser ? navigator.userAgent : '';
+  const ua = isBrowser ? navigator.userAgent : "";
   const isIOS = /iPad|iPhone|iPod/.test(ua);
   const isAndroid = /Android/.test(ua);
   // On iOS, only Safari can add to Home Screen (Chrome/Firefox/Edge on iOS cannot).
@@ -41,23 +41,23 @@ export function useInstallPrompt() {
       setInstalled(true);
       setDeferred(null);
     };
-    window.addEventListener('beforeinstallprompt', onPrompt);
-    window.addEventListener('appinstalled', onInstalled);
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    window.addEventListener("appinstalled", onInstalled);
     return () => {
-      window.removeEventListener('beforeinstallprompt', onPrompt);
-      window.removeEventListener('appinstalled', onInstalled);
+      window.removeEventListener("beforeinstallprompt", onPrompt);
+      window.removeEventListener("appinstalled", onInstalled);
     };
   }, [isBrowser]);
 
-  const promptInstall = async (): Promise<'accepted' | 'dismissed' | 'unavailable'> => {
-    if (!deferred) return 'unavailable';
+  const promptInstall = async (): Promise<"accepted" | "dismissed" | "unavailable"> => {
+    if (!deferred) return "unavailable";
     try {
       await deferred.prompt();
       const choice = await deferred.userChoice;
       setDeferred(null);
       return choice.outcome;
     } catch {
-      return 'unavailable';
+      return "unavailable";
     }
   };
 

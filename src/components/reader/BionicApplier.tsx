@@ -3,9 +3,9 @@
  * Uses MutationObserver to re-apply after external content changes, but
  * disconnects while we ourselves are mutating the DOM to avoid loops.
  */
-import { useEffect } from 'react';
-import { useReadingMode } from '@/hooks/useReadingMode';
-import { applyBionic, removeBionic } from '@/lib/bionic';
+import { useEffect } from "react";
+import { useReadingMode } from "@/hooks/useReadingMode";
+import { applyBionic, removeBionic } from "@/lib/bionic";
 
 interface Props {
   containerSelector: string;

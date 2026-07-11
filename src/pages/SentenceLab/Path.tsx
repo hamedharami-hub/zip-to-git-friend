@@ -1,30 +1,24 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import {
-  ArrowLeft, Loader2, Layers, Lock, CheckCircle2, Play, Home, Sparkles,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import {
-  fetchCategoryBySlug, type SentenceCategory,
-} from '@/lib/sentenceCategories';
-import {
-  fetchPathSteps, summarizeSteps, type PathStep,
-} from '@/lib/pathProgress';
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Loader2, Layers, Lock, CheckCircle2, Play, Home, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { fetchCategoryBySlug, type SentenceCategory } from "@/lib/sentenceCategories";
+import { fetchPathSteps, summarizeSteps, type PathStep } from "@/lib/pathProgress";
 
 const LEVEL_BLURB: Record<string, string> = {
-  A1: 'پایه — اولین قدم‌ها',
-  A2: 'مقدماتی — جمله‌های ساده',
-  B1: 'متوسط — مکالمه روزمره',
-  B2: 'متوسط بالا — روان‌تر و ظریف‌تر',
-  C1: 'پیشرفته — طبیعی و ماهرانه',
-  C2: 'تسلط — هم‌سطح بومی',
+  A1: "پایه — اولین قدم‌ها",
+  A2: "مقدماتی — جمله‌های ساده",
+  B1: "متوسط — مکالمه روزمره",
+  B2: "متوسط بالا — روان‌تر و ظریف‌تر",
+  C1: "پیشرفته — طبیعی و ماهرانه",
+  C2: "تسلط — هم‌سطح بومی",
 };
 
 export default function SentencePathPage() {
-  const { categorySlug = '', subSlug = '' } = useParams<{
+  const { categorySlug = "", subSlug = "" } = useParams<{
     categorySlug: string;
     subSlug: string;
   }>();
@@ -41,14 +35,14 @@ export default function SentencePathPage() {
     try {
       const [c, s] = await Promise.all([
         fetchCategoryBySlug(categorySlug),
-        subSlug && subSlug !== 'all' ? fetchCategoryBySlug(subSlug) : Promise.resolve(null),
+        subSlug && subSlug !== "all" ? fetchCategoryBySlug(subSlug) : Promise.resolve(null),
       ]);
       setCat(c);
       setSub(s);
       const ps = await fetchPathSteps(categorySlug, subSlug);
       setSteps(ps);
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load path');
+      setError(e?.message ?? "Failed to load path");
     } finally {
       setLoading(false);
     }
@@ -60,7 +54,7 @@ export default function SentencePathPage() {
 
   const summary = summarizeSteps(steps);
   const title = sub?.name ?? cat?.name ?? subSlug;
-  const crumb = sub ? cat?.name ?? 'Sentence Lab' : 'Sentence Lab';
+  const crumb = sub ? (cat?.name ?? "Sentence Lab") : "Sentence Lab";
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -70,7 +64,7 @@ export default function SentencePathPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               aria-label="Home"
               className="h-8 w-8 shrink-0"
             >
@@ -86,12 +80,8 @@ export default function SentencePathPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {crumb}
-              </p>
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
-                {title}
-              </h1>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{crumb}</p>
+              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">{title}</h1>
             </div>
           </div>
           <Badge variant="secondary" className="text-[10px]">
@@ -113,9 +103,7 @@ export default function SentencePathPage() {
           </div>
         ) : error ? (
           <Card>
-            <CardContent className="py-8 text-center text-sm text-destructive">
-              {error}
-            </CardContent>
+            <CardContent className="py-8 text-center text-sm text-destructive">{error}</CardContent>
           </Card>
         ) : steps.length === 0 ? (
           <Card>
@@ -155,10 +143,7 @@ export default function SentencePathPage() {
                     step={step}
                     index={idx}
                     locked={
-                      idx > 0 &&
-                      steps[idx - 1].progress < 0.4 &&
-                      !step.isActive &&
-                      step.seen === 0
+                      idx > 0 && steps[idx - 1].progress < 0.4 && !step.isActive && step.seen === 0
                     }
                     href={`/sentence-lab/${categorySlug}/${subSlug}/${step.level}`}
                   />
@@ -173,7 +158,10 @@ export default function SentencePathPage() {
 }
 
 function PathRung({
-  step, index, locked, href,
+  step,
+  index,
+  locked,
+  href,
 }: {
   step: PathStep;
   index: number;
@@ -184,18 +172,18 @@ function PathRung({
   const isComplete = step.progress >= 0.9 && step.total > 0;
 
   const dotClass = isComplete
-    ? 'bg-emerald-500 text-white border-emerald-500'
+    ? "bg-emerald-500 text-white border-emerald-500"
     : step.isActive
-      ? 'bg-primary text-primary-foreground border-primary ring-4 ring-primary/20'
+      ? "bg-primary text-primary-foreground border-primary ring-4 ring-primary/20"
       : locked
-        ? 'bg-muted text-muted-foreground border-border'
-        : 'bg-card text-foreground border-border';
+        ? "bg-muted text-muted-foreground border-border"
+        : "bg-card text-foreground border-border";
 
   const cardClass = step.isActive
-    ? 'border-primary/50 bg-primary/5 hover:bg-primary/10'
+    ? "border-primary/50 bg-primary/5 hover:bg-primary/10"
     : locked
-      ? 'opacity-60 hover:opacity-80'
-      : 'hover:border-primary/40 hover:bg-accent/40';
+      ? "opacity-60 hover:opacity-80"
+      : "hover:border-primary/40 hover:bg-accent/40";
 
   const Inner = (
     <div className="flex items-center gap-3">
@@ -215,12 +203,10 @@ function PathRung({
           <div className="min-w-0">
             <p className="flex items-center gap-1.5 text-sm font-semibold">
               مرحله {index + 1} · {step.level}
-              {step.isActive && (
-                <Badge className="text-[9px]">فعلی</Badge>
-              )}
+              {step.isActive && <Badge className="text-[9px]">فعلی</Badge>}
             </p>
             <p className="mt-0.5 text-[11px] text-muted-foreground" dir="rtl">
-              {LEVEL_BLURB[step.level] ?? ''}
+              {LEVEL_BLURB[step.level] ?? ""}
             </p>
           </div>
           <div className="text-right">
@@ -237,7 +223,7 @@ function PathRung({
         {!locked && (
           <div className="mt-2 flex items-center justify-end">
             <span className="flex items-center gap-1 text-[11px] font-medium text-primary">
-              <Play className="h-3 w-3" /> {step.seen === 0 ? 'شروع' : 'ادامه'}
+              <Play className="h-3 w-3" /> {step.seen === 0 ? "شروع" : "ادامه"}
             </span>
           </div>
         )}
@@ -250,7 +236,9 @@ function PathRung({
   }
   return (
     <li>
-      <Link to={href} className="block">{Inner}</Link>
+      <Link to={href} className="block">
+        {Inner}
+      </Link>
     </li>
   );
 }

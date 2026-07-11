@@ -1,32 +1,43 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSettingsStore } from '@/store/settingsStore';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Brain, Settings as SettingsIcon, Upload, Trash2, Package, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getVideo, saveVideo, getVideoBlob, saveVideoBlob, setAppState } from '@/lib/db';
-import { exportLLP } from '@/lib/llpPack';
-import { useVideoStore } from '@/store/videoStore';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import type { Video } from '@/types';
-import { VideoPlayer } from '@/components/player/VideoPlayer';
-import { SubtitleUpload } from '@/components/subtitles/SubtitleUpload';
-import { SyncControls } from '@/components/subtitles/SyncControls';
-import { BatchAnalyze } from '@/components/ai/BatchAnalyze';
-import { AutoTranscribe } from '@/components/ai/AutoTranscribe';
-import { ExportImport } from '@/components/ai/ExportImport';
-import { PreStudy } from '@/components/ai/PreStudy';
-import { ReviewMode } from '@/components/leitner/ReviewMode';
-import { InstallButton } from '@/components/pwa/InstallButton';
-import { CueListWithAnalysis } from '@/components/subtitles/CueListWithAnalysis';
-import { ImmersiveStudyMode } from '@/components/player/ImmersiveStudyMode';
-import { SubtitleSettingsMenu } from '@/components/player/SubtitleSettingsMenu';
-import { AccountButton } from '@/components/auth/AccountButton';
-import { toast } from 'sonner';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSettingsStore } from "@/store/settingsStore";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import {
+  ArrowLeft,
+  Brain,
+  Settings as SettingsIcon,
+  Upload,
+  Trash2,
+  Package,
+  Loader2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { getVideo, saveVideo, getVideoBlob, saveVideoBlob, setAppState } from "@/lib/db";
+import { exportLLP } from "@/lib/llpPack";
+import { useVideoStore } from "@/store/videoStore";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import type { Video } from "@/types";
+import { VideoPlayer } from "@/components/player/VideoPlayer";
+import { SubtitleUpload } from "@/components/subtitles/SubtitleUpload";
+import { SyncControls } from "@/components/subtitles/SyncControls";
+import { BatchAnalyze } from "@/components/ai/BatchAnalyze";
+import { AutoTranscribe } from "@/components/ai/AutoTranscribe";
+import { ExportImport } from "@/components/ai/ExportImport";
+import { PreStudy } from "@/components/ai/PreStudy";
+import { ReviewMode } from "@/components/leitner/ReviewMode";
+import { InstallButton } from "@/components/pwa/InstallButton";
+import { CueListWithAnalysis } from "@/components/subtitles/CueListWithAnalysis";
+import { ImmersiveStudyMode } from "@/components/player/ImmersiveStudyMode";
+import { SubtitleSettingsMenu } from "@/components/player/SubtitleSettingsMenu";
+import { AccountButton } from "@/components/auth/AccountButton";
+import { toast } from "sonner";
 
 const Player = () => {
-  usePageMeta({ title: 'Player — Language Learning Player', description: 'پخش‌کننده‌ی ویدیو — شادویینگ، ترجمه، زیرنویس و تمرین گفتاری.' });
+  usePageMeta({
+    title: "Player — Language Learning Player",
+    description: "پخش‌کننده‌ی ویدیو — شادویینگ، ترجمه، زیرنویس و تمرین گفتاری.",
+  });
   const { videoId } = useParams<{ videoId: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -49,9 +60,7 @@ const Player = () => {
   const videoCards = useMemo(
     () =>
       videoId
-        ? cards
-            .filter((c) => c.sourceVideoId === videoId)
-            .sort((a, b) => b.createdAt - a.createdAt)
+        ? cards.filter((c) => c.sourceVideoId === videoId).sort((a, b) => b.createdAt - a.createdAt)
         : [],
     [cards, videoId],
   );
@@ -65,11 +74,11 @@ const Player = () => {
       const v = await getVideo(videoId);
       if (cancelled) return;
       if (!v) {
-        navigate('/videos');
+        navigate("/videos");
         return;
       }
       // Remember as last opened.
-      setAppState('lastVideoId', videoId).catch(() => {});
+      setAppState("lastVideoId", videoId).catch(() => {});
 
       // 1) Try the existing in-memory blob URL (still alive in this tab).
       let usable = await verifyBlobUrl(v.blobUrl);
@@ -95,7 +104,7 @@ const Player = () => {
       }
       loadSubs(videoId);
       // Cinema mode: jump to ?t=<seconds> from a Leitner card.
-      const t = Number(searchParams.get('t'));
+      const t = Number(searchParams.get("t"));
       if (Number.isFinite(t) && t > 0) {
         setTimeout(() => requestSeek(t, true), 250);
       }
@@ -116,22 +125,22 @@ const Player = () => {
     (s) => s.settings.autoImmersiveOnLandscape ?? false,
   );
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     if (!autoImmersiveOnLandscape) return;
     const compute = () => {
-      const isLandscape = window.matchMedia('(orientation: landscape)').matches;
-      const isMobileSize = window.matchMedia('(max-width: 900px)').matches;
+      const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+      const isMobileSize = window.matchMedia("(max-width: 900px)").matches;
       if (isLandscape && isMobileSize) setImmersive(true);
       else setImmersive(false);
     };
     compute();
-    const mql = window.matchMedia('(orientation: landscape)');
+    const mql = window.matchMedia("(orientation: landscape)");
     const handler = () => compute();
-    mql.addEventListener?.('change', handler);
-    window.addEventListener('resize', handler);
+    mql.addEventListener?.("change", handler);
+    window.addEventListener("resize", handler);
     return () => {
-      mql.removeEventListener?.('change', handler);
-      window.removeEventListener('resize', handler);
+      mql.removeEventListener?.("change", handler);
+      window.removeEventListener("resize", handler);
     };
   }, [autoImmersiveOnLandscape]);
 
@@ -140,27 +149,30 @@ const Player = () => {
   // activation needed by Android/iOS Safari).
   // When it turns off: exit fullscreen + unlock orientation.
   useEffect(() => {
-    if (typeof document === 'undefined') return;
+    if (typeof document === "undefined") return;
     const docAny = document as Document & {
       webkitExitFullscreen?: () => Promise<void>;
       webkitFullscreenElement?: Element | null;
     };
     if (immersive) {
-      const orientation = (screen as Screen & {
-        orientation?: ScreenOrientation & { lock?: (o: string) => Promise<void> };
-      }).orientation;
+      const orientation = (
+        screen as Screen & {
+          orientation?: ScreenOrientation & { lock?: (o: string) => Promise<void> };
+        }
+      ).orientation;
       window.setTimeout(() => {
-        orientation?.lock?.('landscape').catch(() => {});
+        orientation?.lock?.("landscape").catch(() => {});
       }, 150);
     } else {
-      const orientation = (screen as Screen & {
-        orientation?: ScreenOrientation & { unlock?: () => void };
-      }).orientation;
+      const orientation = (
+        screen as Screen & {
+          orientation?: ScreenOrientation & { unlock?: () => void };
+        }
+      ).orientation;
       orientation?.unlock?.();
       if (document.fullscreenElement || docAny.webkitFullscreenElement) {
         const exit =
-          document.exitFullscreen?.bind(document) ||
-          docAny.webkitExitFullscreen?.bind(docAny);
+          document.exitFullscreen?.bind(document) || docAny.webkitExitFullscreen?.bind(docAny);
         Promise.resolve(exit?.()).catch(() => {});
       }
     }
@@ -168,7 +180,7 @@ const Player = () => {
 
   /** Enter immersive mode AND request fullscreen in the same user-gesture tick. */
   const enterImmersive = () => {
-    if (typeof document !== 'undefined') {
+    if (typeof document !== "undefined") {
       const docEl = document.documentElement as HTMLElement & {
         webkitRequestFullscreen?: () => Promise<void>;
       };
@@ -176,8 +188,7 @@ const Player = () => {
       const isFs = !!(document.fullscreenElement || docAny.webkitFullscreenElement);
       if (!isFs) {
         const req =
-          docEl.requestFullscreen?.bind(docEl) ||
-          docEl.webkitRequestFullscreen?.bind(docEl);
+          docEl.requestFullscreen?.bind(docEl) || docEl.webkitRequestFullscreen?.bind(docEl);
         try {
           Promise.resolve(req?.()).catch(() => {});
         } catch {}
@@ -195,11 +206,11 @@ const Player = () => {
       );
       if (!inFs && immersive) setImmersive(false);
     };
-    document.addEventListener('fullscreenchange', onChange);
-    document.addEventListener('webkitfullscreenchange', onChange as EventListener);
+    document.addEventListener("fullscreenchange", onChange);
+    document.addEventListener("webkitfullscreenchange", onChange as EventListener);
     return () => {
-      document.removeEventListener('fullscreenchange', onChange);
-      document.removeEventListener('webkitfullscreenchange', onChange as EventListener);
+      document.removeEventListener("fullscreenchange", onChange);
+      document.removeEventListener("webkitfullscreenchange", onChange as EventListener);
     };
   }, [immersive]);
 
@@ -207,10 +218,10 @@ const Player = () => {
   useEffect(() => {
     if (!immersive) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setImmersive(false);
+      if (e.key === "Escape") setImmersive(false);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [immersive]);
 
   const handleReattach = async (file: File) => {
@@ -220,8 +231,10 @@ const Player = () => {
     }
     // Revoke the previous blob URL (if any) before creating a new one to
     // avoid leaking memory across re-attachments.
-    if (meta.blobUrl && meta.blobUrl.startsWith('blob:')) {
-      try { URL.revokeObjectURL(meta.blobUrl); } catch {}
+    if (meta.blobUrl && meta.blobUrl.startsWith("blob:")) {
+      try {
+        URL.revokeObjectURL(meta.blobUrl);
+      } catch {}
     }
     const blobUrl = URL.createObjectURL(file);
     const next: Video = { ...meta, blobUrl, fileName: file.name };
@@ -230,13 +243,12 @@ const Player = () => {
     try {
       await saveVideoBlob(meta.id, file);
     } catch (e) {
-      console.error('Failed to cache video blob', e);
+      console.error("Failed to cache video blob", e);
     }
     setMeta(next);
     setCurrent(next);
     setNeedReattach(false);
   };
-
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -248,7 +260,7 @@ const Player = () => {
             </Button>
           </Link>
           <h1 className="text-base font-medium truncate flex-1 text-center">
-            {meta?.title ?? '...'}
+            {meta?.title ?? "..."}
           </h1>
           <div className="flex items-center gap-1">
             {videoId && (
@@ -265,7 +277,7 @@ const Player = () => {
                     const name = await exportLLP(videoId);
                     toast.success(`Exported ${name}`);
                   } catch (e) {
-                    toast.error(e instanceof Error ? e.message : 'Export failed.');
+                    toast.error(e instanceof Error ? e.message : "Export failed.");
                   } finally {
                     setExporting(false);
                   }
@@ -295,8 +307,8 @@ const Player = () => {
             <h2 className="text-lg font-medium">Re-attach video file</h2>
             <p className="text-sm text-muted-foreground">
               We couldn't find the cached video file. Pick the same file (
-              <span className="font-mono">{meta?.fileName}</span>) — we'll cache it so
-              you won't need to do this again.
+              <span className="font-mono">{meta?.fileName}</span>) — we'll cache it so you won't
+              need to do this again.
             </p>
             <input
               ref={reattachRef}
@@ -306,7 +318,7 @@ const Player = () => {
               onChange={(e) => {
                 const f = e.target.files?.[0];
                 if (f) handleReattach(f);
-                e.target.value = '';
+                e.target.value = "";
               }}
             />
             <Button onClick={() => reattachRef.current?.click()}>
@@ -314,7 +326,7 @@ const Player = () => {
             </Button>
           </div>
         ) : (
-          <div className={showReview ? 'grid gap-6 lg:grid-cols-[1fr_320px]' : ''}>
+          <div className={showReview ? "grid gap-6 lg:grid-cols-[1fr_320px]" : ""}>
             <div className="space-y-3 sm:space-y-6 min-w-0">
               <VideoPlayer videoId={videoId} onEnterImmersive={enterImmersive} />
               {videoId && (
@@ -324,7 +336,7 @@ const Player = () => {
                     <SubtitleSettingsMenu />
                     <Button
                       size="sm"
-                      variant={showReview ? 'default' : 'outline'}
+                      variant={showReview ? "default" : "outline"}
                       onClick={() => setShowReview((v) => !v)}
                       title="Toggle review sidebar"
                     >
@@ -357,8 +369,8 @@ const Player = () => {
                     <div className="p-3">
                       {videoCards.length === 0 ? (
                         <p className="text-sm text-muted-foreground text-center py-4">
-                          No cards added yet. Click any word in a subtitle or use the
-                          Analyze panel to add vocabulary and idioms here.
+                          No cards added yet. Click any word in a subtitle or use the Analyze panel
+                          to add vocabulary and idioms here.
                         </p>
                       ) : (
                         <ul className="divide-y divide-border/60">
@@ -366,17 +378,16 @@ const Player = () => {
                             const seekMs = parseSeekMsFromRef(c.sourceCueId);
                             const isSentence = seekMs !== null;
                             return (
-                              <li
-                                key={c.id}
-                                className="flex items-start gap-3 py-2 text-sm"
-                              >
+                              <li key={c.id} className="flex items-start gap-3 py-2 text-sm">
                                 <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
                                   B{c.box}
                                 </span>
                                 <button
                                   type="button"
                                   className={`flex-1 min-w-0 text-left ${
-                                    isSentence ? 'hover:text-primary transition-colors' : 'cursor-default'
+                                    isSentence
+                                      ? "hover:text-primary transition-colors"
+                                      : "cursor-default"
                                   }`}
                                   disabled={!isSentence}
                                   onClick={() => {
@@ -384,13 +395,12 @@ const Player = () => {
                                       requestSeek(seekMs / 1000, true);
                                     }
                                   }}
-                                  title={isSentence ? 'Jump to this moment in the video' : undefined}
+                                  title={
+                                    isSentence ? "Jump to this moment in the video" : undefined
+                                  }
                                 >
                                   <p className="font-medium truncate">{c.front}</p>
-                                  <p
-                                    dir="auto"
-                                    className="text-muted-foreground truncate"
-                                  >
+                                  <p dir="auto" className="text-muted-foreground truncate">
                                     {c.back}
                                   </p>
                                 </button>
@@ -421,7 +431,10 @@ const Player = () => {
                     <Brain className="h-4 w-4 text-primary" />
                     Leitner Review
                   </h3>
-                  <Link to="/leitner" className="text-xs text-muted-foreground hover:text-foreground">
+                  <Link
+                    to="/leitner"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                  >
                     Open page →
                   </Link>
                 </div>
@@ -440,9 +453,9 @@ const Player = () => {
 };
 
 async function verifyBlobUrl(url: string): Promise<boolean> {
-  if (!url || !url.startsWith('blob:')) return false;
+  if (!url || !url.startsWith("blob:")) return false;
   try {
-    const r = await fetch(url, { method: 'HEAD' });
+    const r = await fetch(url, { method: "HEAD" });
     return r.ok;
   } catch {
     return false;
@@ -452,7 +465,7 @@ async function verifyBlobUrl(url: string): Promise<boolean> {
 /** Decode the trailing `@<startMs>` from a sourceCueId, if present. */
 function parseSeekMsFromRef(ref: string | undefined | null): number | null {
   if (!ref) return null;
-  const at = ref.lastIndexOf('@');
+  const at = ref.lastIndexOf("@");
   if (at < 0) return null;
   const n = Number(ref.slice(at + 1));
   return Number.isFinite(n) && n >= 0 ? n : null;

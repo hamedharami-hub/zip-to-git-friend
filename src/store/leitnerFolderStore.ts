@@ -1,17 +1,14 @@
-import { create } from 'zustand';
-import type { LeitnerFolder, LeitnerSourceKind } from '@/types';
+import { create } from "zustand";
+import type { LeitnerFolder, LeitnerSourceKind } from "@/types";
 import {
   getAllLeitnerFolders,
   saveLeitnerFolder,
   deleteLeitnerFolder as dbDeleteFolder,
-} from '@/lib/db';
-import {
-  pushFolder,
-  deleteRemoteFolder,
-} from '@/lib/leitnerFolderSync';
+} from "@/lib/db";
+import { pushFolder, deleteRemoteFolder } from "@/lib/leitnerFolderSync";
 
 function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2);
 }
 
@@ -21,7 +18,7 @@ interface FolderState {
   load: () => Promise<void>;
   addFolder: (input: {
     name: string;
-    kind: LeitnerSourceKind | 'custom';
+    kind: LeitnerSourceKind | "custom";
     sourceRef?: string;
     parentId?: string;
     color?: string;
@@ -29,7 +26,7 @@ interface FolderState {
   /** Find or create a folder for a given source (e.g. one folder per book/video). */
   ensureFolder: (input: {
     name: string;
-    kind: LeitnerSourceKind | 'custom';
+    kind: LeitnerSourceKind | "custom";
     sourceRef?: string;
     parentId?: string;
   }) => Promise<LeitnerFolder>;
@@ -37,7 +34,7 @@ interface FolderState {
   deleteFolder: (id: string) => Promise<void>;
   getById: (id: string | undefined) => LeitnerFolder | undefined;
   getByKindRef: (
-    kind: LeitnerSourceKind | 'custom',
+    kind: LeitnerSourceKind | "custom",
     sourceRef?: string,
   ) => LeitnerFolder | undefined;
 }
@@ -52,7 +49,7 @@ export const useLeitnerFolderStore = create<FolderState>((set, get) => ({
   addFolder: async ({ name, kind, sourceRef, parentId, color }) => {
     const folder: LeitnerFolder = {
       id: uuid(),
-      name: name.trim() || 'Untitled folder',
+      name: name.trim() || "Untitled folder",
       kind,
       sourceRef,
       parentId,
@@ -66,7 +63,7 @@ export const useLeitnerFolderStore = create<FolderState>((set, get) => ({
   },
   ensureFolder: async ({ name, kind, sourceRef, parentId }) => {
     const found = get().folders.find(
-      (f) => f.kind === kind && (f.sourceRef ?? '') === (sourceRef ?? ''),
+      (f) => f.kind === kind && (f.sourceRef ?? "") === (sourceRef ?? ""),
     );
     if (found) return found;
     return get().addFolder({ name, kind, sourceRef, parentId });
@@ -86,7 +83,5 @@ export const useLeitnerFolderStore = create<FolderState>((set, get) => ({
   },
   getById: (id) => (id ? get().folders.find((f) => f.id === id) : undefined),
   getByKindRef: (kind, sourceRef) =>
-    get().folders.find(
-      (f) => f.kind === kind && (f.sourceRef ?? '') === (sourceRef ?? ''),
-    ),
+    get().folders.find((f) => f.kind === kind && (f.sourceRef ?? "") === (sourceRef ?? "")),
 }));

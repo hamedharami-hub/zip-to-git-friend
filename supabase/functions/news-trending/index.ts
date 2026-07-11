@@ -18,8 +18,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface RawItem {
@@ -34,7 +33,7 @@ interface RawItem {
 const RTL_RE = /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
 
 function shouldTranslateTitle(title: string): boolean {
-  const clean = (title ?? '').trim();
+  const clean = (title ?? "").trim();
   if (!clean) return false;
   // Keep Persian / RTL headlines in their original script.
   if (RTL_RE.test(clean)) return false;
@@ -77,7 +76,10 @@ function siteFromUrl(url: string): string | undefined {
 /**
  * Region presets → (hl, gl, ceid). Default = Australia / English.
  */
-function regionToParams(region?: string, language?: string): {
+function regionToParams(
+  region?: string,
+  language?: string,
+): {
   hl: string;
   gl: string;
   ceid: string;
@@ -111,8 +113,7 @@ function buildRssUrl(opts: { topic?: string; region?: string; language?: string 
 const BROWSER_HEADERS: Record<string, string> = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-  Accept:
-    "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
+  Accept: "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
   "Accept-Language": "en-AU,en;q=0.9",
   "Accept-Encoding": "gzip, deflate",
   "Cache-Control": "no-cache",
@@ -151,7 +152,10 @@ async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
       method: "GET",
       redirect: "follow",
       signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      },
     });
     clearTimeout(t);
     return res.url || url;
@@ -282,42 +286,48 @@ async function translateTitlesWithGemini(opts: {
     .map((it, i) => ({ id: i, title: it.title }))
     .filter((it) => shouldTranslateTitle(it.title));
   if (list.length === 0) return {};
-  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
     headers: {
       Authorization: `Bearer ${opts.apiKey}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: 'google/gemini-3.1-flash-lite-preview',
+      model: "google/gemini-3.1-flash-lite-preview",
       messages: [
-        { role: 'system', content: 'Translate non-English news headlines into concise natural English. Return JSON only via the tool.' },
-        { role: 'user', content: JSON.stringify(list) },
+        {
+          role: "system",
+          content:
+            "Translate non-English news headlines into concise natural English. Return JSON only via the tool.",
+        },
+        { role: "user", content: JSON.stringify(list) },
       ],
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'return_titles',
-          description: 'Return English titles by id.',
-          parameters: {
-            type: 'object',
-            properties: {
-              titles: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: { id: { type: 'integer' }, title: { type: 'string' } },
-                  required: ['id', 'title'],
-                  additionalProperties: false,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "return_titles",
+            description: "Return English titles by id.",
+            parameters: {
+              type: "object",
+              properties: {
+                titles: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { id: { type: "integer" }, title: { type: "string" } },
+                    required: ["id", "title"],
+                    additionalProperties: false,
+                  },
                 },
               },
+              required: ["titles"],
+              additionalProperties: false,
             },
-            required: ['titles'],
-            additionalProperties: false,
           },
         },
-      }],
-      tool_choice: { type: 'function', function: { name: 'return_titles' } },
+      ],
+      tool_choice: { type: "function", function: { name: "return_titles" } },
     }),
   });
   if (!res.ok) return {};
@@ -327,7 +337,7 @@ async function translateTitlesWithGemini(opts: {
   const parsed = JSON.parse(argsStr);
   const map: Record<string, string> = {};
   for (const row of parsed?.titles ?? []) {
-    if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+    if (typeof row?.id === "number" && typeof row?.title === "string" && row.title.trim()) {
       map[String(row.id)] = row.title.trim();
     }
   }
@@ -346,13 +356,20 @@ serve(async (req) => {
     const hours: number = Math.max(1, Math.min(720, body?.hours ?? 48));
     const blockedDomains: string[] = Array.isArray(body?.blockedDomains) ? body.blockedDomains : [];
     const blockedSet = new Set(
-      blockedDomains.map((d) => String(d ?? '').toLowerCase().replace(/^www\./, '').trim()).filter(Boolean),
+      blockedDomains
+        .map((d) =>
+          String(d ?? "")
+            .toLowerCase()
+            .replace(/^www\./, "")
+            .trim(),
+        )
+        .filter(Boolean),
     );
     const isBlocked = (url: string) => {
-      const host = siteFromUrl(url)?.toLowerCase() ?? '';
+      const host = siteFromUrl(url)?.toLowerCase() ?? "";
       if (!host) return false;
       for (const b of blockedSet) {
-        if (host === b || host.endsWith('.' + b)) return true;
+        if (host === b || host.endsWith("." + b)) return true;
       }
       return false;
     };
@@ -380,10 +397,10 @@ serve(async (req) => {
       .slice(0, limit);
 
     if (fresh.length === 0) {
-      return new Response(
-        JSON.stringify({ items: [], source: "google-news-rss" }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ items: [], source: "google-news-rss" }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // 4) Resolve redirect URLs in parallel (best-effort)
@@ -407,7 +424,7 @@ serve(async (req) => {
       try {
         translatedTitles = await translateTitlesWithGemini({ apiKey: lovableKey, items: resolved });
       } catch (e) {
-        console.warn('title translate error:', e);
+        console.warn("title translate error:", e);
       }
     }
 

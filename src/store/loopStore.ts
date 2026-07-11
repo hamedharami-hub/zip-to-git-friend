@@ -1,24 +1,24 @@
-import { create } from 'zustand';
-import type { LoopConfig, SubtitleCue } from '@/types';
+import { create } from "zustand";
+import type { LoopConfig, SubtitleCue } from "@/types";
 
-const DEFAULT_PATTERN: LoopConfig['visibilityPattern'] = ['primary', 'both', 'secondary'];
+const DEFAULT_PATTERN: LoopConfig["visibilityPattern"] = ["primary", "both", "secondary"];
 
 interface LoopState {
   config: LoopConfig;
   cue: SubtitleCue | null;
   /** Frozen visibility for the *current* iteration. */
-  visibility: 'both' | 'primary' | 'secondary' | 'none';
+  visibility: "both" | "primary" | "secondary" | "none";
   startLoop: (
     cue: SubtitleCue,
     options?: Partial<
-      Pick<LoopConfig, 'maxIterations' | 'pauseBetweenMs' | 'visibilityPattern' | 'chainNext'>
+      Pick<LoopConfig, "maxIterations" | "pauseBetweenMs" | "visibilityPattern" | "chainNext">
     >,
   ) => void;
   /** Advance to the next cue while preserving the current loop options. */
   advanceTo: (cue: SubtitleCue) => void;
   stopLoop: () => void;
   setIteration: (n: number) => void;
-  setVisibility: (v: LoopState['visibility']) => void;
+  setVisibility: (v: LoopState["visibility"]) => void;
   updateConfig: (patch: Partial<LoopConfig>) => void;
 }
 
@@ -35,7 +35,7 @@ const EMPTY: LoopConfig = {
 export const useLoopStore = create<LoopState>((set, get) => ({
   config: EMPTY,
   cue: null,
-  visibility: 'both',
+  visibility: "both",
   startLoop: (cue, options = {}) => {
     const maxIterations = options.maxIterations ?? 3;
     const pauseBetweenMs = options.pauseBetweenMs ?? 1000;
@@ -46,7 +46,7 @@ export const useLoopStore = create<LoopState>((set, get) => ({
     const chainNext = options.chainNext ?? true;
     set({
       cue,
-      visibility: visibilityPattern[0] ?? 'both',
+      visibility: visibilityPattern[0] ?? "both",
       config: {
         enabled: true,
         cueId: cue.id,
@@ -62,11 +62,11 @@ export const useLoopStore = create<LoopState>((set, get) => ({
     const cur = get().config;
     set({
       cue,
-      visibility: cur.visibilityPattern[0] ?? 'both',
+      visibility: cur.visibilityPattern[0] ?? "both",
       config: { ...cur, enabled: true, cueId: cue.id, currentIteration: 1 },
     });
   },
-  stopLoop: () => set({ config: EMPTY, cue: null, visibility: 'both' }),
+  stopLoop: () => set({ config: EMPTY, cue: null, visibility: "both" }),
   setIteration: (n) => set({ config: { ...get().config, currentIteration: n } }),
   setVisibility: (v) => set({ visibility: v }),
   updateConfig: (patch) => set({ config: { ...get().config, ...patch } }),

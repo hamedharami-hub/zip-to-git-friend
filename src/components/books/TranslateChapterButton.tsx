@@ -9,29 +9,25 @@
  * Reuses the existing `analyze-paragraph` cache, so reopening a previously
  * translated chapter is instant and free.
  */
-import { useEffect, useRef, useState } from 'react';
-import { Languages, Loader2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useEffect, useRef, useState } from "react";
+import { Languages, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   batchAnalyzeChapter,
   extractAnalysableParagraphs,
   type BatchProgress,
-} from '@/lib/batchAnalyzeChapter';
-import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
-import { useOnline } from '@/hooks/useOnline';
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
-import type { BookChapter } from '@/types';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+} from "@/lib/batchAnalyzeChapter";
+import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
+import { useOnline } from "@/hooks/useOnline";
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
+import type { BookChapter } from "@/types";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
-export type DisplayLang = 'en' | 'fa' | 'both';
+export type DisplayLang = "en" | "fa" | "both";
 
 interface Props {
   bookId: string;
@@ -59,7 +55,9 @@ export function TranslateChapterButton({
   const online = useOnline();
   const settings = useSettingsStore((s) => s.settings);
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef ?? settings.bookBatchAnalysisModelRef ?? settings.bookBatchAnalysisModel,
+    settings.paragraphBatchModelRef ??
+      settings.bookBatchAnalysisModelRef ??
+      settings.bookBatchAnalysisModel,
   );
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -69,7 +67,7 @@ export function TranslateChapterButton({
   const handleStart = async () => {
     if (!chapter) return;
     if (!online) {
-      toast.error('ترجمه نیاز به اینترنت دارد.');
+      toast.error("ترجمه نیاز به اینترنت دارد.");
       return;
     }
     if (running) return;
@@ -90,10 +88,10 @@ export function TranslateChapterButton({
       });
       emitChapterAnalyses(bookId, chapter.index, final.results);
       // Auto-switch to bilingual view when the first paragraph finishes.
-      if (Object.keys(final.results).length > 0 && displayLang === 'en') {
-        onDisplayLangChange('both');
+      if (Object.keys(final.results).length > 0 && displayLang === "en") {
+        onDisplayLangChange("both");
       }
-      if (final.cancelled) toast('ترجمه لغو شد.');
+      if (final.cancelled) toast("ترجمه لغو شد.");
       else if (final.failed > 0)
         toast.warning(
           `پایان: ${final.completed - final.skipped} ترجمه شد، ${final.skipped} از کش، ${final.failed} ناموفق.`,
@@ -111,9 +109,7 @@ export function TranslateChapterButton({
   const handleCancel = () => abortRef.current?.abort();
 
   const pct =
-    progress && progress.total > 0
-      ? Math.round((progress.completed / progress.total) * 100)
-      : 0;
+    progress && progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
   return (
     <div className="flex items-center gap-1">
@@ -124,7 +120,7 @@ export function TranslateChapterButton({
             size="icon"
             aria-label="ترجمه کامل متن"
             title="ترجمه کامل متن"
-            className={cn(hasAnyTranslation && 'text-primary')}
+            className={cn(hasAnyTranslation && "text-primary")}
           >
             {running ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -162,12 +158,7 @@ export function TranslateChapterButton({
           )}
           <div className="flex items-center gap-2 pt-1">
             {running ? (
-              <Button
-                onClick={handleCancel}
-                variant="outline"
-                className="flex-1 gap-1.5"
-                size="sm"
-              >
+              <Button onClick={handleCancel} variant="outline" className="flex-1 gap-1.5" size="sm">
                 <X className="h-4 w-4" />
                 لغو
               </Button>
@@ -179,7 +170,7 @@ export function TranslateChapterButton({
                 size="sm"
               >
                 <Languages className="h-4 w-4" />
-                {progress?.done ? 'اجرای دوباره' : `شروع ترجمه (${totalCandidates} پاراگراف)`}
+                {progress?.done ? "اجرای دوباره" : `شروع ترجمه (${totalCandidates} پاراگراف)`}
               </Button>
             )}
           </div>
@@ -192,7 +183,7 @@ export function TranslateChapterButton({
           aria-label="نمایش زبان"
           className="inline-flex max-w-full flex-wrap rounded-md border border-border bg-muted/40 p-0.5"
         >
-          {(['en', 'both', 'fa'] as DisplayLang[]).map((m) => (
+          {(["en", "both", "fa"] as DisplayLang[]).map((m) => (
             <button
               key={m}
               type="button"
@@ -200,13 +191,13 @@ export function TranslateChapterButton({
               aria-selected={displayLang === m}
               onClick={() => onDisplayLangChange(m)}
               className={cn(
-                'px-2 py-0.5 text-[11px] font-medium rounded transition-colors',
+                "px-2 py-0.5 text-[11px] font-medium rounded transition-colors",
                 displayLang === m
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground',
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {m === 'en' ? 'EN' : m === 'fa' ? 'FA' : 'EN+FA'}
+              {m === "en" ? "EN" : m === "fa" ? "FA" : "EN+FA"}
             </button>
           ))}
         </div>

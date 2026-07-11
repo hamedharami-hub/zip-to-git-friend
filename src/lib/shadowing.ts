@@ -8,24 +8,24 @@
  * their attempt was to the reference cue, not to grade pronunciation.
  */
 
-import type { ShadowingTake, ShadowingTakeRecord } from '@/types';
-import { getDb } from '@/lib/db';
+import type { ShadowingTake, ShadowingTakeRecord } from "@/types";
+import { getDb } from "@/lib/db";
 
 /** Lowercase + strip diacritics + collapse non-alphanumerics to spaces. */
 export function normalizeForCompare(s: string): string {
   return s
     .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '') // strip diacritics
-    .replace(/['’]/g, '') // collapse contractions: don't ↔ dont
-    .replace(/[^\p{L}\p{N}\s]+/gu, ' ')
-    .replace(/\s+/g, ' ')
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+    .replace(/['’]/g, "") // collapse contractions: don't ↔ dont
+    .replace(/[^\p{L}\p{N}\s]+/gu, " ")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
 export function tokenize(s: string): string[] {
   const n = normalizeForCompare(s);
-  return n ? n.split(' ') : [];
+  return n ? n.split(" ") : [];
 }
 
 /** Classic Levenshtein edit distance between two token arrays. */
@@ -64,7 +64,7 @@ export function similarityScore(reference: string, hypothesis: string): number {
   return Math.max(0, Math.min(100, Math.round(score * 100)));
 }
 
-export type DiffOpKind = 'match' | 'sub' | 'ins' | 'del';
+export type DiffOpKind = "match" | "sub" | "ins" | "del";
 export interface DiffOp {
   kind: DiffOpKind;
   /** Token from reference (if any). */
@@ -98,18 +98,18 @@ export function diffTokens(reference: string, hypothesis: string): DiffOp[] {
   let j = n;
   while (i > 0 || j > 0) {
     if (i > 0 && j > 0 && a[i - 1] === b[j - 1]) {
-      ops.push({ kind: 'match', ref: a[i - 1], hyp: b[j - 1] });
+      ops.push({ kind: "match", ref: a[i - 1], hyp: b[j - 1] });
       i--;
       j--;
     } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + 1) {
-      ops.push({ kind: 'sub', ref: a[i - 1], hyp: b[j - 1] });
+      ops.push({ kind: "sub", ref: a[i - 1], hyp: b[j - 1] });
       i--;
       j--;
     } else if (i > 0 && dp[i][j] === dp[i - 1][j] + 1) {
-      ops.push({ kind: 'del', ref: a[i - 1] });
+      ops.push({ kind: "del", ref: a[i - 1] });
       i--;
     } else {
-      ops.push({ kind: 'ins', hyp: b[j - 1] });
+      ops.push({ kind: "ins", hyp: b[j - 1] });
       j--;
     }
   }
@@ -120,7 +120,7 @@ export function diffTokens(reference: string, hypothesis: string): DiffOp[] {
 
 export async function listTakes(videoId: string, cueId: string): Promise<ShadowingTake[]> {
   const db = await getDb();
-  const rows = await db.getAllFromIndex('shadowingTakes', 'videoId+cueId', [videoId, cueId]);
+  const rows = await db.getAllFromIndex("shadowingTakes", "videoId+cueId", [videoId, cueId]);
   return rows
     .map((r) => rowToTake(r as ShadowingTakeRecord))
     .sort((a, b) => b.createdAt - a.createdAt);
@@ -142,31 +142,31 @@ export async function saveTake(input: {
     videoId: input.videoId,
     cueId: input.cueId,
     blob: input.blob,
-    mimeType: input.blob.type || 'audio/webm',
+    mimeType: input.blob.type || "audio/webm",
     durationMs: input.durationMs,
     refText: input.refText,
     hypothesis: input.hypothesis,
     score: input.score,
     createdAt: Date.now(),
   };
-  await db.put('shadowingTakes', rec);
+  await db.put("shadowingTakes", rec);
 }
 
 export async function updateTake(
   id: string,
-  patch: Partial<Pick<ShadowingTakeRecord, 'hypothesis' | 'score'>>,
+  patch: Partial<Pick<ShadowingTakeRecord, "hypothesis" | "score">>,
 ): Promise<ShadowingTake | null> {
   const db = await getDb();
-  const existing = await db.get('shadowingTakes', id);
+  const existing = await db.get("shadowingTakes", id);
   if (!existing) return null;
   const next: ShadowingTakeRecord = { ...(existing as ShadowingTakeRecord), ...patch };
-  await db.put('shadowingTakes', next);
+  await db.put("shadowingTakes", next);
   return rowToTake(next);
 }
 
 export async function deleteTake(id: string): Promise<void> {
   const db = await getDb();
-  await db.delete('shadowingTakes', id);
+  await db.delete("shadowingTakes", id);
 }
 
 function rowToTake(rec: ShadowingTakeRecord): ShadowingTake {
@@ -189,5 +189,5 @@ export function formatTakeDuration(ms: number): string {
   const totalSec = ms / 1000;
   const m = Math.floor(totalSec / 60);
   const s = totalSec - m * 60;
-  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
+  return `${m}:${s.toFixed(1).padStart(4, "0")}`;
 }

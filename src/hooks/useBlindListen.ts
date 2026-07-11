@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react';
-import type { SubtitleCue } from '@/types';
-import { useSettingsStore } from '@/store/settingsStore';
+import { useEffect, useRef, useState } from "react";
+import type { SubtitleCue } from "@/types";
+import { useSettingsStore } from "@/store/settingsStore";
 
 /**
  * Blind-listen mode controller:

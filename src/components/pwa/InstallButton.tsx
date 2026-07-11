@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Download, Share, Plus, MoreVertical, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Download, Share, Plus, MoreVertical, Info } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,9 +8,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { useInstallPrompt } from '@/hooks/useInstallPrompt';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { toast } from "sonner";
 
 /**
  * Universal "Install app" button.
@@ -32,11 +32,11 @@ export function InstallButton() {
   const onClick = async () => {
     if (canInstall) {
       const outcome = await promptInstall();
-      if (outcome === 'accepted') {
-        toast.success('برنامه نصب شد');
+      if (outcome === "accepted") {
+        toast.success("برنامه نصب شد");
         return;
       }
-      if (outcome === 'unavailable') {
+      if (outcome === "unavailable") {
         setHelpOpen(true);
       }
       return;
@@ -63,10 +63,10 @@ export function InstallButton() {
             <DialogTitle>نصب برنامه روی دستگاه</DialogTitle>
             <DialogDescription>
               {isIOS
-                ? 'در iOS فقط مرورگر Safari می‌تواند برنامه را به صفحهٔ خانه اضافه کند.'
+                ? "در iOS فقط مرورگر Safari می‌تواند برنامه را به صفحهٔ خانه اضافه کند."
                 : isAndroid
-                ? 'برای نصب روی اندروید، از منوی مرورگر گزینهٔ «Install app» را انتخاب کن.'
-                : 'برای نصب، از منوی مرورگر گزینهٔ نصب برنامه را انتخاب کن.'}
+                  ? "برای نصب روی اندروید، از منوی مرورگر گزینهٔ «Install app» را انتخاب کن."
+                  : "برای نصب، از منوی مرورگر گزینهٔ نصب برنامه را انتخاب کن."}
             </DialogDescription>
           </DialogHeader>
 
@@ -75,8 +75,8 @@ export function InstallButton() {
               {!isIOSSafari && (
                 <li className="flex items-start gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-700 dark:text-amber-400">
                   <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                  ابتدا این صفحه را در Safari باز کن (Chrome یا Firefox روی iOS از نصب
-                  پشتیبانی نمی‌کنند).
+                  ابتدا این صفحه را در Safari باز کن (Chrome یا Firefox روی iOS از نصب پشتیبانی
+                  نمی‌کنند).
                 </li>
               )}
               <li className="flex items-start gap-3">
@@ -103,8 +103,8 @@ export function InstallButton() {
                   ۱
                 </span>
                 <span className="flex items-center gap-1.5 flex-wrap">
-                  منوی مرورگر <MoreVertical className="h-4 w-4 inline" /> (سه‌نقطه) بالای صفحه
-                  را باز کن.
+                  منوی مرورگر <MoreVertical className="h-4 w-4 inline" /> (سه‌نقطه) بالای صفحه را
+                  باز کن.
                 </span>
               </li>
               <li className="flex items-start gap-3">
@@ -119,13 +119,15 @@ export function InstallButton() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs font-medium shrink-0">
                   ۳
                 </span>
-                <span>روی <b>Install</b> در پنجرهٔ تأیید بزن.</span>
+                <span>
+                  روی <b>Install</b> در پنجرهٔ تأیید بزن.
+                </span>
               </li>
               <li className="flex items-start gap-3 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
                 <Info className="h-4 w-4 shrink-0 mt-0.5" />
-                اگر گزینهٔ نصب را نمی‌بینی، یعنی این صفحه روی پیش‌نمایش ویرایشگر باز شده.
-                لینک منتشر‌شدهٔ برنامه (دامنهٔ <code>.lovable.app</code>) را در مرورگر باز کن
-                تا قابلیت نصب فعال شود.
+                اگر گزینهٔ نصب را نمی‌بینی، یعنی این صفحه روی پیش‌نمایش ویرایشگر باز شده. لینک
+                منتشر‌شدهٔ برنامه (دامنهٔ <code>.lovable.app</code>) را در مرورگر باز کن تا قابلیت
+                نصب فعال شود.
               </li>
             </ol>
           )}

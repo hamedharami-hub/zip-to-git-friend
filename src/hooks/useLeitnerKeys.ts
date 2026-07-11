@@ -7,9 +7,9 @@
  * Subscribes to the live Leitner store so it stays in sync as cards are
  * added or removed from any screen.
  */
-import { useMemo } from 'react';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { normalizeFront } from '@/lib/leitner';
+import { useMemo } from "react";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { normalizeFront } from "@/lib/leitner";
 
 export function useLeitnerKeys(): Set<string> {
   const cards = useLeitnerStore((s) => s.cards);

@@ -1,44 +1,33 @@
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
-import { Settings2, Type, AlignJustify } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Slider } from "@/components/ui/slider";
+import { Settings2, Type, AlignJustify } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 /**
  * Reader typography preferences.
  * - serif / sans / mono / dyslexic / classic / modern → mapped to font stacks below.
  */
-export type ReaderFontFamily =
-  | 'serif'
-  | 'sans'
-  | 'mono'
-  | 'dyslexic'
-  | 'classic'
-  | 'modern';
+export type ReaderFontFamily = "serif" | "sans" | "mono" | "dyslexic" | "classic" | "modern";
 
 export const FAMILY_FONT_STACKS: Record<ReaderFontFamily, string> = {
   serif:
     "'Iowan Old Style', 'Apple Garamond', 'Baskerville', 'Times New Roman', 'Droid Serif', Times, 'Source Serif Pro', serif",
-  sans:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
-  mono:
-    "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  dyslexic:
-    "'OpenDyslexic', 'Comic Sans MS', 'Verdana', sans-serif",
-  classic:
-    "'Bookerly', 'Literata', 'Georgia', 'Cambria', 'Times New Roman', serif",
-  modern:
-    "'Inter', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
+  sans: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+  mono: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
+  dyslexic: "'OpenDyslexic', 'Comic Sans MS', 'Verdana', sans-serif",
+  classic: "'Bookerly', 'Literata', 'Georgia', 'Cambria', 'Times New Roman', serif",
+  modern: "'Inter', 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif",
 };
 
 const FAMILIES: { value: ReaderFontFamily; label: string; sample: string }[] = [
-  { value: 'serif', label: 'Serif', sample: 'Aa' },
-  { value: 'sans', label: 'Sans', sample: 'Aa' },
-  { value: 'classic', label: 'Classic', sample: 'Aa' },
-  { value: 'modern', label: 'Modern', sample: 'Aa' },
-  { value: 'mono', label: 'Mono', sample: 'Aa' },
-  { value: 'dyslexic', label: 'Dyslexic', sample: 'Aa' },
+  { value: "serif", label: "Serif", sample: "Aa" },
+  { value: "sans", label: "Sans", sample: "Aa" },
+  { value: "classic", label: "Classic", sample: "Aa" },
+  { value: "modern", label: "Modern", sample: "Aa" },
+  { value: "mono", label: "Mono", sample: "Aa" },
+  { value: "dyslexic", label: "Dyslexic", sample: "Aa" },
 ];
 
 interface Props {
@@ -113,9 +102,9 @@ export function ReaderSettings({
                 <Button
                   key={f.value}
                   size="sm"
-                  variant={family === f.value ? 'default' : 'outline'}
+                  variant={family === f.value ? "default" : "outline"}
                   onClick={() => onFamily(f.value)}
-                  className={cn('h-auto py-2 flex flex-col gap-0.5')}
+                  className={cn("h-auto py-2 flex flex-col gap-0.5")}
                   style={{ fontFamily: FAMILY_FONT_STACKS[f.value] }}
                 >
                   <span className="text-base leading-none">{f.sample}</span>

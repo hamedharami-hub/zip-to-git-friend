@@ -6,7 +6,7 @@
  * (`wordStatus`) and Leitner cards stay in the main DB so progress is shared
  * across all media types (videos, audio, books).
  */
-import { openDB, type IDBPDatabase, type DBSchema } from 'idb';
+import { openDB, type IDBPDatabase, type DBSchema } from "idb";
 import type {
   Book,
   BookChapter,
@@ -18,7 +18,7 @@ import type {
   BookChapterRewrite,
   ReadingSession,
   RewriteStyle,
-} from '@/types';
+} from "@/types";
 
 interface BookSchema extends DBSchema {
   books: {
@@ -39,7 +39,7 @@ interface BookSchema extends DBSchema {
   bookHighlights: {
     key: string;
     value: BookHighlight;
-    indexes: { bookId: string; 'bookId+chapterIndex': [string, number] };
+    indexes: { bookId: string; "bookId+chapterIndex": [string, number] };
   };
   bookBookmarks: {
     key: string;
@@ -51,27 +51,27 @@ interface BookSchema extends DBSchema {
     value: BookParagraphAnalysis;
     indexes: {
       bookId: string;
-      'bookId+chapterIndex': [string, number];
+      "bookId+chapterIndex": [string, number];
     };
   };
   bookTTSAudio: {
     key: string;
     value: BookTTSAudio;
-    indexes: { bookId: string; 'bookId+chapterIndex': [string, number] };
+    indexes: { bookId: string; "bookId+chapterIndex": [string, number] };
   };
   bookTTSChunks: {
     key: string;
     value: BookTTSChunk;
     indexes: {
       bookId: string;
-      'bookId+chapterIndex': [string, number];
-      'bookId+chapterIndex+voice': [string, number, string];
+      "bookId+chapterIndex": [string, number];
+      "bookId+chapterIndex+voice": [string, number, string];
     };
   };
   bookChapterRewrites: {
     key: string;
     value: BookChapterRewrite;
-    indexes: { bookId: string; 'bookId+chapterIndex': [string, number] };
+    indexes: { bookId: string; "bookId+chapterIndex": [string, number] };
   };
   readingSessions: {
     key: string; // YYYY-MM-DD
@@ -83,45 +83,45 @@ let dbPromise: Promise<IDBPDatabase<BookSchema>> | null = null;
 
 export function getBookDb() {
   if (!dbPromise) {
-    dbPromise = openDB<BookSchema>('LLVPBookDatabase', 3, {
+    dbPromise = openDB<BookSchema>("LLVPBookDatabase", 3, {
       upgrade(db, oldVersion) {
         if (oldVersion < 1) {
-        const books = db.createObjectStore('books', { keyPath: 'id' });
-        books.createIndex('createdAt', 'createdAt');
-        books.createIndex('updatedAt', 'updatedAt');
+          const books = db.createObjectStore("books", { keyPath: "id" });
+          books.createIndex("createdAt", "createdAt");
+          books.createIndex("updatedAt", "updatedAt");
 
-        db.createObjectStore('bookBlobs', { keyPath: 'id' });
+          db.createObjectStore("bookBlobs", { keyPath: "id" });
 
-        const chapters = db.createObjectStore('bookChapters', { keyPath: 'id' });
-        chapters.createIndex('bookId', 'bookId');
+          const chapters = db.createObjectStore("bookChapters", { keyPath: "id" });
+          chapters.createIndex("bookId", "bookId");
 
-        const highlights = db.createObjectStore('bookHighlights', { keyPath: 'id' });
-        highlights.createIndex('bookId', 'bookId');
-        highlights.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          const highlights = db.createObjectStore("bookHighlights", { keyPath: "id" });
+          highlights.createIndex("bookId", "bookId");
+          highlights.createIndex("bookId+chapterIndex", ["bookId", "chapterIndex"]);
 
-        const bookmarks = db.createObjectStore('bookBookmarks', { keyPath: 'id' });
-        bookmarks.createIndex('bookId', 'bookId');
+          const bookmarks = db.createObjectStore("bookBookmarks", { keyPath: "id" });
+          bookmarks.createIndex("bookId", "bookId");
 
-        const analyses = db.createObjectStore('bookParagraphAnalyses', { keyPath: 'id' });
-        analyses.createIndex('bookId', 'bookId');
-        analyses.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          const analyses = db.createObjectStore("bookParagraphAnalyses", { keyPath: "id" });
+          analyses.createIndex("bookId", "bookId");
+          analyses.createIndex("bookId+chapterIndex", ["bookId", "chapterIndex"]);
 
-        const tts = db.createObjectStore('bookTTSAudio', { keyPath: 'id' });
-        tts.createIndex('bookId', 'bookId');
-        tts.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          const tts = db.createObjectStore("bookTTSAudio", { keyPath: "id" });
+          tts.createIndex("bookId", "bookId");
+          tts.createIndex("bookId+chapterIndex", ["bookId", "chapterIndex"]);
 
-        db.createObjectStore('readingSessions', { keyPath: 'date' });
+          db.createObjectStore("readingSessions", { keyPath: "date" });
         }
         if (oldVersion < 2) {
-          const rw = db.createObjectStore('bookChapterRewrites', { keyPath: 'id' });
-          rw.createIndex('bookId', 'bookId');
-          rw.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
+          const rw = db.createObjectStore("bookChapterRewrites", { keyPath: "id" });
+          rw.createIndex("bookId", "bookId");
+          rw.createIndex("bookId+chapterIndex", ["bookId", "chapterIndex"]);
         }
         if (oldVersion < 3) {
-          const chunks = db.createObjectStore('bookTTSChunks', { keyPath: 'id' });
-          chunks.createIndex('bookId', 'bookId');
-          chunks.createIndex('bookId+chapterIndex', ['bookId', 'chapterIndex']);
-          chunks.createIndex('bookId+chapterIndex+voice', ['bookId', 'chapterIndex', 'voice']);
+          const chunks = db.createObjectStore("bookTTSChunks", { keyPath: "id" });
+          chunks.createIndex("bookId", "bookId");
+          chunks.createIndex("bookId+chapterIndex", ["bookId", "chapterIndex"]);
+          chunks.createIndex("bookId+chapterIndex+voice", ["bookId", "chapterIndex", "voice"]);
         }
       },
     });
@@ -131,59 +131,61 @@ export function getBookDb() {
 
 // ───────────────────────────── Books ──
 export async function getAllBooks(): Promise<Book[]> {
-  const rows = await (await getBookDb()).getAllFromIndex('books', 'updatedAt');
+  const rows = await (await getBookDb()).getAllFromIndex("books", "updatedAt");
   return rows.reverse();
 }
 
 export async function getBook(id: string): Promise<Book | undefined> {
-  return (await getBookDb()).get('books', id);
+  return (await getBookDb()).get("books", id);
 }
 
 export async function saveBook(book: Book): Promise<void> {
-  await (await getBookDb()).put('books', { ...book, updatedAt: Date.now() });
+  await (await getBookDb()).put("books", { ...book, updatedAt: Date.now() });
 }
 
 export async function deleteBook(id: string): Promise<void> {
   const db = await getBookDb();
   // Cascade: blob + chapters + highlights + bookmarks + analyses + TTS audio.
   await Promise.allSettled([
-    db.delete('books', id),
-    db.delete('bookBlobs', id),
+    db.delete("books", id),
+    db.delete("bookBlobs", id),
     (async () => {
-      const chapters = await db.getAllFromIndex('bookChapters', 'bookId', id);
-      await Promise.all(chapters.map((c) => db.delete('bookChapters', c.id)));
+      const chapters = await db.getAllFromIndex("bookChapters", "bookId", id);
+      await Promise.all(chapters.map((c) => db.delete("bookChapters", c.id)));
     })(),
     (async () => {
-      const hs = await db.getAllFromIndex('bookHighlights', 'bookId', id);
-      await Promise.all(hs.map((h) => db.delete('bookHighlights', h.id)));
+      const hs = await db.getAllFromIndex("bookHighlights", "bookId", id);
+      await Promise.all(hs.map((h) => db.delete("bookHighlights", h.id)));
     })(),
     (async () => {
-      const bs = await db.getAllFromIndex('bookBookmarks', 'bookId', id);
-      await Promise.all(bs.map((b) => db.delete('bookBookmarks', b.id)));
+      const bs = await db.getAllFromIndex("bookBookmarks", "bookId", id);
+      await Promise.all(bs.map((b) => db.delete("bookBookmarks", b.id)));
     })(),
     (async () => {
-      const as = await db.getAllFromIndex('bookParagraphAnalyses', 'bookId', id);
-      await Promise.all(as.map((a) => db.delete('bookParagraphAnalyses', a.id)));
+      const as = await db.getAllFromIndex("bookParagraphAnalyses", "bookId", id);
+      await Promise.all(as.map((a) => db.delete("bookParagraphAnalyses", a.id)));
     })(),
     (async () => {
-      const ts = await db.getAllFromIndex('bookTTSAudio', 'bookId', id);
-      await Promise.all(ts.map((t) => db.delete('bookTTSAudio', t.id)));
+      const ts = await db.getAllFromIndex("bookTTSAudio", "bookId", id);
+      await Promise.all(ts.map((t) => db.delete("bookTTSAudio", t.id)));
     })(),
     (async () => {
-      const cs = await db.getAllFromIndex('bookTTSChunks', 'bookId', id);
-      await Promise.all(cs.map((c) => db.delete('bookTTSChunks', c.id)));
+      const cs = await db.getAllFromIndex("bookTTSChunks", "bookId", id);
+      await Promise.all(cs.map((c) => db.delete("bookTTSChunks", c.id)));
     })(),
     (async () => {
-      const rs = await db.getAllFromIndex('bookChapterRewrites', 'bookId', id);
-      await Promise.all(rs.map((r) => db.delete('bookChapterRewrites', r.id)));
+      const rs = await db.getAllFromIndex("bookChapterRewrites", "bookId", id);
+      await Promise.all(rs.map((r) => db.delete("bookChapterRewrites", r.id)));
     })(),
   ]);
 }
 
 // ───────────────────────────── Blobs (.epub bytes) ──
 export async function saveBookBlob(id: string, file: File | Blob): Promise<void> {
-  const mimeType = (file as File).type || 'application/epub+zip';
-  await (await getBookDb()).put('bookBlobs', {
+  const mimeType = (file as File).type || "application/epub+zip";
+  await (
+    await getBookDb()
+  ).put("bookBlobs", {
     id,
     blob: file,
     mimeType,
@@ -192,7 +194,7 @@ export async function saveBookBlob(id: string, file: File | Blob): Promise<void>
 }
 
 export async function getBookBlob(id: string): Promise<Blob | null> {
-  const row = await (await getBookDb()).get('bookBlobs', id);
+  const row = await (await getBookDb()).get("bookBlobs", id);
   return row?.blob ?? null;
 }
 
@@ -202,25 +204,22 @@ export function chapterKey(bookId: string, index: number): string {
 }
 
 export async function saveChapter(chapter: BookChapter): Promise<void> {
-  await (await getBookDb()).put('bookChapters', chapter);
+  await (await getBookDb()).put("bookChapters", chapter);
 }
 
 export async function saveChapters(chapters: BookChapter[]): Promise<void> {
   const db = await getBookDb();
-  const tx = db.transaction('bookChapters', 'readwrite');
+  const tx = db.transaction("bookChapters", "readwrite");
   await Promise.all(chapters.map((c) => tx.store.put(c)));
   await tx.done;
 }
 
-export async function getChapter(
-  bookId: string,
-  index: number,
-): Promise<BookChapter | undefined> {
-  return (await getBookDb()).get('bookChapters', chapterKey(bookId, index));
+export async function getChapter(bookId: string, index: number): Promise<BookChapter | undefined> {
+  return (await getBookDb()).get("bookChapters", chapterKey(bookId, index));
 }
 
 export async function getChaptersForBook(bookId: string): Promise<BookChapter[]> {
-  const rows = await (await getBookDb()).getAllFromIndex('bookChapters', 'bookId', bookId);
+  const rows = await (await getBookDb()).getAllFromIndex("bookChapters", "bookId", bookId);
   return rows.sort((a, b) => a.index - b.index);
 }
 
@@ -247,39 +246,38 @@ export async function appendChapter(
 
 // ───────────────────────────── Highlights ──
 export async function saveHighlight(h: BookHighlight): Promise<void> {
-  await (await getBookDb()).put('bookHighlights', h);
+  await (await getBookDb()).put("bookHighlights", h);
 }
 
 export async function deleteHighlight(id: string): Promise<void> {
-  await (await getBookDb()).delete('bookHighlights', id);
+  await (await getBookDb()).delete("bookHighlights", id);
 }
 
 export async function getHighlightsForBook(bookId: string): Promise<BookHighlight[]> {
-  return (await getBookDb()).getAllFromIndex('bookHighlights', 'bookId', bookId);
+  return (await getBookDb()).getAllFromIndex("bookHighlights", "bookId", bookId);
 }
 
 export async function getHighlightsForChapter(
   bookId: string,
   chapterIndex: number,
 ): Promise<BookHighlight[]> {
-  return (await getBookDb()).getAllFromIndex(
-    'bookHighlights',
-    'bookId+chapterIndex',
-    [bookId, chapterIndex],
-  );
+  return (await getBookDb()).getAllFromIndex("bookHighlights", "bookId+chapterIndex", [
+    bookId,
+    chapterIndex,
+  ]);
 }
 
 // ───────────────────────────── Bookmarks ──
 export async function saveBookmark(b: BookBookmark): Promise<void> {
-  await (await getBookDb()).put('bookBookmarks', b);
+  await (await getBookDb()).put("bookBookmarks", b);
 }
 
 export async function deleteBookmark(id: string): Promise<void> {
-  await (await getBookDb()).delete('bookBookmarks', id);
+  await (await getBookDb()).delete("bookBookmarks", id);
 }
 
 export async function getBookmarksForBook(bookId: string): Promise<BookBookmark[]> {
-  return (await getBookDb()).getAllFromIndex('bookBookmarks', 'bookId', bookId);
+  return (await getBookDb()).getAllFromIndex("bookBookmarks", "bookId", bookId);
 }
 
 // ───────────────────────────── Paragraph analyses ──
@@ -297,24 +295,23 @@ export async function getParagraphAnalysis(
   paragraphHash: string,
 ): Promise<BookParagraphAnalysis | undefined> {
   return (await getBookDb()).get(
-    'bookParagraphAnalyses',
+    "bookParagraphAnalyses",
     paragraphAnalysisKey(bookId, chapterIndex, paragraphHash),
   );
 }
 
 export async function saveParagraphAnalysis(a: BookParagraphAnalysis): Promise<void> {
-  await (await getBookDb()).put('bookParagraphAnalyses', a);
+  await (await getBookDb()).put("bookParagraphAnalyses", a);
 }
 
 export async function getAnalysesForChapter(
   bookId: string,
   chapterIndex: number,
 ): Promise<BookParagraphAnalysis[]> {
-  return (await getBookDb()).getAllFromIndex(
-    'bookParagraphAnalyses',
-    'bookId+chapterIndex',
-    [bookId, chapterIndex],
-  );
+  return (await getBookDb()).getAllFromIndex("bookParagraphAnalyses", "bookId+chapterIndex", [
+    bookId,
+    chapterIndex,
+  ]);
 }
 
 // ───────────────────────────── TTS audio cache ──
@@ -323,7 +320,7 @@ export function ttsKey(bookId: string, chapterIndex: number, voice: string): str
 }
 
 export async function saveTTSAudio(audio: BookTTSAudio): Promise<void> {
-  await (await getBookDb()).put('bookTTSAudio', audio);
+  await (await getBookDb()).put("bookTTSAudio", audio);
 }
 
 export async function getTTSAudio(
@@ -331,7 +328,7 @@ export async function getTTSAudio(
   chapterIndex: number,
   voice: string,
 ): Promise<BookTTSAudio | undefined> {
-  return (await getBookDb()).get('bookTTSAudio', ttsKey(bookId, chapterIndex, voice));
+  return (await getBookDb()).get("bookTTSAudio", ttsKey(bookId, chapterIndex, voice));
 }
 
 export async function deleteTTSAudio(
@@ -339,7 +336,7 @@ export async function deleteTTSAudio(
   chapterIndex: number,
   voice: string,
 ): Promise<void> {
-  await (await getBookDb()).delete('bookTTSAudio', ttsKey(bookId, chapterIndex, voice));
+  await (await getBookDb()).delete("bookTTSAudio", ttsKey(bookId, chapterIndex, voice));
 }
 
 // ───────────────────────────── TTS per-chunk cache ──
@@ -353,7 +350,7 @@ export function ttsChunkKey(
 }
 
 export async function saveTTSChunk(chunk: BookTTSChunk): Promise<void> {
-  await (await getBookDb()).put('bookTTSChunks', chunk);
+  await (await getBookDb()).put("bookTTSChunks", chunk);
 }
 
 export async function getTTSChunks(
@@ -361,11 +358,9 @@ export async function getTTSChunks(
   chapterIndex: number,
   voice: string,
 ): Promise<BookTTSChunk[]> {
-  const all = await (await getBookDb()).getAllFromIndex(
-    'bookTTSChunks',
-    'bookId+chapterIndex+voice',
-    [bookId, chapterIndex, voice],
-  );
+  const all = await (
+    await getBookDb()
+  ).getAllFromIndex("bookTTSChunks", "bookId+chapterIndex+voice", [bookId, chapterIndex, voice]);
   return all.sort((a, b) => a.chunkIndex - b.chunkIndex);
 }
 
@@ -375,26 +370,21 @@ export async function deleteTTSChunks(
   voice: string,
 ): Promise<void> {
   const db = await getBookDb();
-  const all = await db.getAllFromIndex(
-    'bookTTSChunks',
-    'bookId+chapterIndex+voice',
-    [bookId, chapterIndex, voice],
-  );
-  await Promise.all(all.map((c) => db.delete('bookTTSChunks', c.id)));
+  const all = await db.getAllFromIndex("bookTTSChunks", "bookId+chapterIndex+voice", [
+    bookId,
+    chapterIndex,
+    voice,
+  ]);
+  await Promise.all(all.map((c) => db.delete("bookTTSChunks", c.id)));
 }
 
-
 // ───────────────────────────── Chapter rewrites ──
-export function rewriteKey(
-  bookId: string,
-  chapterIndex: number,
-  style: RewriteStyle,
-): string {
+export function rewriteKey(bookId: string, chapterIndex: number, style: RewriteStyle): string {
   return `${bookId}:${chapterIndex}:${style}`;
 }
 
 export async function saveChapterRewrite(r: BookChapterRewrite): Promise<void> {
-  await (await getBookDb()).put('bookChapterRewrites', r);
+  await (await getBookDb()).put("bookChapterRewrites", r);
 }
 
 export async function getChapterRewrite(
@@ -402,21 +392,17 @@ export async function getChapterRewrite(
   chapterIndex: number,
   style: RewriteStyle,
 ): Promise<BookChapterRewrite | undefined> {
-  return (await getBookDb()).get(
-    'bookChapterRewrites',
-    rewriteKey(bookId, chapterIndex, style),
-  );
+  return (await getBookDb()).get("bookChapterRewrites", rewriteKey(bookId, chapterIndex, style));
 }
 
 export async function getRewritesForChapter(
   bookId: string,
   chapterIndex: number,
 ): Promise<BookChapterRewrite[]> {
-  return (await getBookDb()).getAllFromIndex(
-    'bookChapterRewrites',
-    'bookId+chapterIndex',
-    [bookId, chapterIndex],
-  );
+  return (await getBookDb()).getAllFromIndex("bookChapterRewrites", "bookId+chapterIndex", [
+    bookId,
+    chapterIndex,
+  ]);
 }
 
 export async function deleteChapterRewrite(
@@ -424,17 +410,14 @@ export async function deleteChapterRewrite(
   chapterIndex: number,
   style: RewriteStyle,
 ): Promise<void> {
-  await (await getBookDb()).delete(
-    'bookChapterRewrites',
-    rewriteKey(bookId, chapterIndex, style),
-  );
+  await (await getBookDb()).delete("bookChapterRewrites", rewriteKey(bookId, chapterIndex, style));
 }
 
 // ───────────────────────────── Reading sessions ──
 function todayKey(d = new Date()): string {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -442,15 +425,15 @@ export async function addReadingTime(seconds: number, words = 0): Promise<void> 
   if (!Number.isFinite(seconds) || seconds <= 0) return;
   const db = await getBookDb();
   const date = todayKey();
-  const existing = await db.get('readingSessions', date);
+  const existing = await db.get("readingSessions", date);
   const next: ReadingSession = {
     date,
     seconds: (existing?.seconds ?? 0) + Math.round(seconds),
     words: (existing?.words ?? 0) + Math.max(0, Math.round(words)),
   };
-  await db.put('readingSessions', next);
+  await db.put("readingSessions", next);
 }
 
 export async function getAllReadingSessions(): Promise<ReadingSession[]> {
-  return (await getBookDb()).getAll('readingSessions');
+  return (await getBookDb()).getAll("readingSessions");
 }

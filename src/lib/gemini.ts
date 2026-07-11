@@ -1,14 +1,11 @@
-import type { SegmentAnalysis } from '@/types';
+import type { SegmentAnalysis } from "@/types";
 
 export class GeminiError extends Error {
-  code: 'missing_key' | 'rate_limit' | 'invalid_response' | 'network' | 'auth' | 'unknown';
-  constructor(
-    code: GeminiError['code'],
-    message: string,
-  ) {
+  code: "missing_key" | "rate_limit" | "invalid_response" | "network" | "auth" | "unknown";
+  constructor(code: GeminiError["code"], message: string) {
     super(message);
     this.code = code;
-    this.name = 'GeminiError';
+    this.name = "GeminiError";
   }
 }
 
@@ -38,49 +35,48 @@ The "translation" field is REQUIRED — a natural, fluent Persian translation of
 
 function stripFences(s: string): string {
   let t = s.trim();
-  if (t.startsWith('```')) {
-    t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '');
+  if (t.startsWith("```")) {
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
   }
   return t.trim();
 }
 
 async function callGemini(prompt: string, apiKey: string, model: string): Promise<string> {
-  if (!apiKey) throw new GeminiError('missing_key', 'Gemini API key is not set.');
+  if (!apiKey) throw new GeminiError("missing_key", "Gemini API key is not set.");
 
   let res: Response;
   try {
     res = await fetch(ENDPOINT(model, apiKey), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.2 },
       }),
     });
   } catch (e) {
-    throw new GeminiError('network', 'Network error while contacting Gemini.');
+    throw new GeminiError("network", "Network error while contacting Gemini.");
   }
 
   if (res.status === 429) {
-    throw new GeminiError('rate_limit', 'Gemini rate limit hit. Slow down or try later.');
+    throw new GeminiError("rate_limit", "Gemini rate limit hit. Slow down or try later.");
   }
   if (res.status === 401 || res.status === 403) {
-    throw new GeminiError('auth', 'Gemini rejected the API key.');
+    throw new GeminiError("auth", "Gemini rejected the API key.");
   }
   if (!res.ok) {
-    throw new GeminiError('unknown', `Gemini error (${res.status}).`);
+    throw new GeminiError("unknown", `Gemini error (${res.status}).`);
   }
 
   let data: any;
   try {
     data = await res.json();
   } catch {
-    throw new GeminiError('invalid_response', 'Gemini returned non-JSON.');
+    throw new GeminiError("invalid_response", "Gemini returned non-JSON.");
   }
 
-  const text =
-    data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? '').join('') ?? '';
-  if (!text) throw new GeminiError('invalid_response', 'Gemini returned empty content.');
+  const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
+  if (!text) throw new GeminiError("invalid_response", "Gemini returned empty content.");
   return text;
 }
 
@@ -97,17 +93,17 @@ export async function analyzeSegment(
   } catch {
     // last-ditch: try extracting first {...} block
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (!m) throw new GeminiError('invalid_response', 'Could not parse JSON from Gemini.');
+    if (!m) throw new GeminiError("invalid_response", "Could not parse JSON from Gemini.");
     try {
       parsed = JSON.parse(m[0]);
     } catch {
-      throw new GeminiError('invalid_response', 'Could not parse JSON from Gemini.');
+      throw new GeminiError("invalid_response", "Could not parse JSON from Gemini.");
     }
   }
 
   const vocabulary = Array.isArray(parsed?.vocabulary)
     ? parsed.vocabulary
-        .filter((v: any) => v && typeof v.word === 'string' && typeof v.translation === 'string')
+        .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
         .map((v: any) => ({
           word: String(v.word),
           translation: String(v.translation),
@@ -117,7 +113,7 @@ export async function analyzeSegment(
     : [];
   const idioms = Array.isArray(parsed?.idioms)
     ? parsed.idioms
-        .filter((i: any) => i && typeof i.phrase === 'string' && typeof i.meaning === 'string')
+        .filter((i: any) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
         .map((i: any) => ({
           phrase: String(i.phrase),
           meaning: String(i.meaning),
@@ -129,7 +125,7 @@ export async function analyzeSegment(
     vocabulary,
     idioms,
     translation:
-      typeof parsed?.translation === 'string' ? String(parsed.translation).trim() : undefined,
+      typeof parsed?.translation === "string" ? String(parsed.translation).trim() : undefined,
     analyzedAt: Date.now(),
     model,
   };
@@ -150,8 +146,8 @@ export async function analyzeSegmentsBatch(
 
   // Build a numbered list — using simple short ids keeps the model focused.
   const lines = cues
-    .map((c, i) => `[${i + 1}] "${c.text.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`)
-    .join('\n');
+    .map((c, i) => `[${i + 1}] "${c.text.replace(/"/g, '\\"').replace(/\n/g, " ")}"`)
+    .join("\n");
 
   const prompt = `You are an English-to-Persian language learning assistant.
 You will receive ${cues.length} numbered English subtitle lines from the SAME video.
@@ -186,11 +182,11 @@ ${lines}`;
     parsed = JSON.parse(cleaned);
   } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (!m) throw new GeminiError('invalid_response', 'Could not parse batch JSON from Gemini.');
+    if (!m) throw new GeminiError("invalid_response", "Could not parse batch JSON from Gemini.");
     try {
       parsed = JSON.parse(m[0]);
     } catch {
-      throw new GeminiError('invalid_response', 'Could not parse batch JSON from Gemini.');
+      throw new GeminiError("invalid_response", "Could not parse batch JSON from Gemini.");
     }
   }
 
@@ -203,7 +199,7 @@ ${lines}`;
 
     const vocabulary = Array.isArray(r?.vocabulary)
       ? r.vocabulary
-          .filter((v: any) => v && typeof v.word === 'string' && typeof v.translation === 'string')
+          .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
           .map((v: any) => ({
             word: String(v.word),
             translation: String(v.translation),
@@ -213,7 +209,7 @@ ${lines}`;
       : [];
     const idioms = Array.isArray(r?.idioms)
       ? r.idioms
-          .filter((i: any) => i && typeof i.phrase === 'string' && typeof i.meaning === 'string')
+          .filter((i: any) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
           .map((i: any) => ({
             phrase: String(i.phrase),
             meaning: String(i.meaning),
@@ -224,8 +220,7 @@ ${lines}`;
     out.set(cue.id, {
       vocabulary,
       idioms,
-      translation:
-        typeof r?.translation === 'string' ? String(r.translation).trim() : undefined,
+      translation: typeof r?.translation === "string" ? String(r.translation).trim() : undefined,
       analyzedAt: Date.now(),
       model,
     });
@@ -233,7 +228,6 @@ ${lines}`;
 
   return out;
 }
-
 
 export async function quickTranslate(
   text: string,
@@ -246,10 +240,12 @@ export async function quickTranslate(
 Translate the word/phrase "${text.replace(/"/g, '\\"')}" into natural Persian as it is used in this sentence. Return only the Persian translation (1-4 words), no explanation, no quotes.`
     : `Translate this English subtitle to natural Persian. Return only the translation, no explanation: ${text}`;
   const raw = await callGemini(prompt, apiKey, model);
-  return stripFences(raw).trim().replace(/^["'`]|["'`]$/g, '');
+  return stripFences(raw)
+    .trim()
+    .replace(/^["'`]|["'`]$/g, "");
 }
 
 export async function pingGemini(apiKey: string, model: string): Promise<boolean> {
-  await callGemini('Reply with the single word: ok', apiKey, model);
+  await callGemini("Reply with the single word: ok", apiKey, model);
   return true;
 }

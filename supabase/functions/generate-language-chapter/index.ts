@@ -21,8 +21,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
@@ -50,8 +49,7 @@ const tools = [
         properties: {
           title: {
             type: "string",
-            description:
-              "A short, intriguing English title for the story (max 8 words).",
+            description: "A short, intriguing English title for the story (max 8 words).",
           },
           story: {
             type: "string",
@@ -109,16 +107,16 @@ serve(async (req) => {
       ? body.items.map((s) => String(s ?? "").trim()).filter(Boolean)
       : [];
     if (items.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Provide at least one target item." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Provide at least one target item." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (items.length > 60) {
-      return new Response(
-        JSON.stringify({ error: "Too many items (max 60 per chapter)." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Too many items (max 60 per chapter)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const mode: "guided" | "auto" = body.mode === "guided" ? "guided" : "auto";
@@ -127,13 +125,12 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
-    const chosenModel =
-      typeof body.model === "string" && body.model ? body.model : DEFAULT_MODEL;
+    const chosenModel = typeof body.model === "string" && body.model ? body.model : DEFAULT_MODEL;
 
     const itemList = items.map((it, i) => `${i + 1}. ${it}`).join("\n");
     const userMsg =
@@ -156,28 +153,25 @@ ${itemList}
 
 Then call the tool with the result.`;
 
-    const aiRes = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: chosenModel,
-          messages: [
-            { role: "system", content: SYSTEM_PROMPT },
-            { role: "user", content: userMsg },
-          ],
-          tools,
-          tool_choice: {
-            type: "function",
-            function: { name: "return_language_chapter" },
-          },
-        }),
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        model: chosenModel,
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userMsg },
+        ],
+        tools,
+        tool_choice: {
+          type: "function",
+          function: { name: "return_language_chapter" },
+        },
+      }),
+    });
 
     if (aiRes.status === 429) {
       return new Response(
@@ -196,10 +190,10 @@ Then call the tool with the result.`;
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("[generate-language-chapter] gateway error", aiRes.status, t);
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await aiRes.json();
@@ -220,10 +214,10 @@ Then call the tool with the result.`;
     try {
       parsed = JSON.parse(argsStr);
     } catch {
-      return new Response(
-        JSON.stringify({ error: "AI returned malformed structured output." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI returned malformed structured output." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const story = String(parsed.story ?? "").trim();
@@ -242,9 +236,7 @@ Then call the tool with the result.`;
 
     // Sanity check: which items DID appear (case-insensitive substring match)?
     const lower = story.toLowerCase();
-    const actuallyUsed = items.filter((it) =>
-      lower.includes(it.toLowerCase()),
-    );
+    const actuallyUsed = items.filter((it) => lower.includes(it.toLowerCase()));
     const missing = items.filter((it) => !lower.includes(it.toLowerCase()));
 
     return new Response(

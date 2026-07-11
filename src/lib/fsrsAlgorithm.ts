@@ -25,7 +25,7 @@ export interface FsrsState {
   /** ISO timestamp of the next scheduled review. */
   nextReviewDate: string;
   /** Lifecycle state. */
-  state: 'new' | 'learning' | 'review' | 'relearning';
+  state: "new" | "learning" | "review" | "relearning";
   /** ISO timestamp of the last review (or null for new cards). */
   lastReviewedAt: string | null;
 }
@@ -44,18 +44,29 @@ export interface FsrsReviewInput {
  * These are not personalised — they ship as sensible defaults.
  */
 const W = [
-  0.4, 0.6, 2.4, 5.8,         // initial stability per grade (1..4)
-  4.93, 0.94, 0.86, 0.01,     // difficulty params
-  1.49, 0.14, 0.94,           // stability-on-success params
-  2.18, 0.05, 0.34, 1.26,     // stability-on-lapse params
-  0.29, 2.61,                 // hard/easy multipliers
+  0.4,
+  0.6,
+  2.4,
+  5.8, // initial stability per grade (1..4)
+  4.93,
+  0.94,
+  0.86,
+  0.01, // difficulty params
+  1.49,
+  0.14,
+  0.94, // stability-on-success params
+  2.18,
+  0.05,
+  0.34,
+  1.26, // stability-on-lapse params
+  0.29,
+  2.61, // hard/easy multipliers
 ] as const;
 
 const FACTOR = 19 / 81;
 const DECAY = -0.5;
 
-const clamp = (n: number, min: number, max: number) =>
-  Math.max(min, Math.min(max, n));
+const clamp = (n: number, min: number, max: number) => Math.max(min, Math.min(max, n));
 
 /** Build a fresh state for a brand-new card. */
 export function initFsrsState(now: Date = new Date()): FsrsState {
@@ -66,7 +77,7 @@ export function initFsrsState(now: Date = new Date()): FsrsState {
     reps: 0,
     lapses: 0,
     nextReviewDate: now.toISOString(),
-    state: 'new',
+    state: "new",
     lastReviewedAt: null,
   };
 }
@@ -85,7 +96,7 @@ function initDifficulty(grade: FsrsGrade): number {
 /** Update difficulty after a non-first review (FSRS w6, w7). */
 function nextDifficulty(prevD: number, grade: FsrsGrade): number {
   const delta = -W[6] * (grade - 3);
-  const next = prevD + delta * (10 - prevD) / 9;
+  const next = prevD + (delta * (10 - prevD)) / 9;
   // Mean-reversion towards the easy-grade default (FSRS w7).
   const reverted = W[7] * initDifficulty(4) + (1 - W[7]) * next;
   return clamp(reverted, 1, 10);
@@ -112,11 +123,7 @@ function nextStabilityOnRecall(
 }
 
 /** Stability after a lapse (grade=Again). */
-function nextStabilityOnLapse(
-  prevS: number,
-  prevD: number,
-  retrievability: number,
-): number {
+function nextStabilityOnLapse(prevS: number, prevD: number, retrievability: number): number {
   const s =
     W[11] *
     Math.pow(prevD, -W[12]) *
@@ -145,7 +152,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
   const requestRetention = input.requestRetention ?? 0.9;
 
   // ── First review ────────────────────────────────────────────────
-  if (prev.state === 'new' || prev.stability === 0) {
+  if (prev.state === "new" || prev.stability === 0) {
     const stability = initStability(grade);
     const difficulty = initDifficulty(grade);
     if (grade === 1) {
@@ -157,7 +164,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
         reps: 0,
         lapses: 1,
         nextReviewDate: addMinutes(now, 10).toISOString(),
-        state: 'relearning',
+        state: "relearning",
         lastReviewedAt: now.toISOString(),
       };
     }
@@ -169,7 +176,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
       reps: 1,
       lapses: 0,
       nextReviewDate: addDays(now, intervalDays).toISOString(),
-      state: 'review',
+      state: "review",
       lastReviewedAt: now.toISOString(),
     };
   }
@@ -179,8 +186,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
     ? Math.max(
         0,
         Math.round(
-          (now.getTime() - new Date(prev.lastReviewedAt).getTime()) /
-            (1000 * 60 * 60 * 24),
+          (now.getTime() - new Date(prev.lastReviewedAt).getTime()) / (1000 * 60 * 60 * 24),
         ),
       )
     : prev.elapsedDays;
@@ -197,7 +203,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
       lapses: prev.lapses + 1,
       // 10-minute relearning step before next full review.
       nextReviewDate: addMinutes(now, 10).toISOString(),
-      state: 'relearning',
+      state: "relearning",
       lastReviewedAt: now.toISOString(),
     };
   }
@@ -212,7 +218,7 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
     reps: prev.reps + 1,
     lapses: prev.lapses,
     nextReviewDate: addDays(now, intervalDays).toISOString(),
-    state: 'review',
+    state: "review",
     lastReviewedAt: now.toISOString(),
   };
 }
@@ -220,10 +226,8 @@ export function applyReview(input: FsrsReviewInput): FsrsState {
 /** Convenience: compute only the next interval (in days) for a planned grade. */
 export function previewInterval(prev: FsrsState, grade: FsrsGrade): number {
   const next = applyReview({ prev, grade });
-  if (next.state === 'relearning') return 0; // < 1 day
-  const ms =
-    new Date(next.nextReviewDate).getTime() -
-    new Date(next.lastReviewedAt!).getTime();
+  if (next.state === "relearning") return 0; // < 1 day
+  const ms = new Date(next.nextReviewDate).getTime() - new Date(next.lastReviewedAt!).getTime();
   return Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24)));
 }
 

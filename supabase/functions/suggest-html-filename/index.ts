@@ -9,14 +9,16 @@ const corsHeaders = {
 const DEFAULT_MODEL = "google/gemini-3.1-flash-lite-preview";
 
 function cleanFilename(input: string): string {
-  return (input || "")
-    .replace(/```[\s\S]*?```/g, " ")
-    .replace(/[\"'“”‘’`]/g, "")
-    .replace(/\.html?$/i, "")
-    .replace(/[\\/:*?\"<>|]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 80) || "متن خبری";
+  return (
+    (input || "")
+      .replace(/```[\s\S]*?```/g, " ")
+      .replace(/[\"'“”‘’`]/g, "")
+      .replace(/\.html?$/i, "")
+      .replace(/[\\/:*?\"<>|]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 80) || "متن خبری"
+  );
 }
 
 serve(async (req) => {
@@ -54,7 +56,10 @@ ${String(excerpt || "").slice(0, 2500)}
       body: JSON.stringify({
         model: typeof model === "string" && model ? model : DEFAULT_MODEL,
         messages: [
-          { role: "system", content: "You write short Persian filenames. Return only the filename text." },
+          {
+            role: "system",
+            content: "You write short Persian filenames. Return only the filename text.",
+          },
           { role: "user", content: prompt },
         ],
         temperature: 0.2,
@@ -62,10 +67,13 @@ ${String(excerpt || "").slice(0, 2500)}
     });
     if (!aiRes.ok) {
       const t = await aiRes.text().catch(() => "");
-      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}): ${t.slice(0, 160)}` }), {
-        status: aiRes.status,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return new Response(
+        JSON.stringify({ error: `AI gateway error (${aiRes.status}): ${t.slice(0, 160)}` }),
+        {
+          status: aiRes.status,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
     }
     const data = await aiRes.json();
     const filename = cleanFilename(data?.choices?.[0]?.message?.content ?? "");

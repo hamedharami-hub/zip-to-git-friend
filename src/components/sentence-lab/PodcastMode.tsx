@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -11,30 +11,26 @@ import {
   Download,
   CheckCircle2,
   XCircle,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useSentenceStore } from '@/store/sentenceStore';
-import { getSentenceAudio, warmSentenceAudio } from '@/lib/sentenceAudio';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useSentenceStore } from "@/store/sentenceStore";
+import { getSentenceAudio, warmSentenceAudio } from "@/lib/sentenceAudio";
 import {
   startRecognition,
   isSpeechRecognitionSupported,
   type RecognitionHandle,
-} from '@/lib/webSpeechRecognition';
-import { scoreShadowing, type ShadowingResult } from '@/lib/shadowingScore';
-import { getCacheSize } from '@/lib/audioOfflineCache';
-import { toast } from 'sonner';
-import { FlagButton } from '@/components/sentence-lab/FlagButton';
+} from "@/lib/webSpeechRecognition";
+import { scoreShadowing, type ShadowingResult } from "@/lib/shadowingScore";
+import { getCacheSize } from "@/lib/audioOfflineCache";
+import { toast } from "sonner";
+import { FlagButton } from "@/components/sentence-lab/FlagButton";
 
 /**
  * Hands-free podcast-style playback for the daily Sentence Lab queue.
@@ -48,15 +44,8 @@ import { FlagButton } from '@/components/sentence-lab/FlagButton';
  * playback from Bluetooth headphones or the locked screen.
  */
 
-type Mode = 'listen' | 'shadow' | 'translate';
-type Step =
-  | 'idle'
-  | 'persian'
-  | 'silence'
-  | 'english_1'
-  | 'english_2'
-  | 'recording'
-  | 'scored';
+type Mode = "listen" | "shadow" | "translate";
+type Step = "idle" | "persian" | "silence" | "english_1" | "english_2" | "recording" | "scored";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5];
 
@@ -67,13 +56,13 @@ export function PodcastMode() {
   const gradeCurrent = useSentenceStore((s) => s.gradeCurrent);
 
   const [playing, setPlaying] = useState(false);
-  const [step, setStep] = useState<Step>('idle');
+  const [step, setStep] = useState<Step>("idle");
   const [loading, setLoading] = useState(false);
   const [silenceProgress, setSilenceProgress] = useState(0);
   const [internalIdx, setInternalIdx] = useState(currentIndex);
 
   // settings
-  const [mode, setMode] = useState<Mode>('listen');
+  const [mode, setMode] = useState<Mode>("listen");
   const [gapSec, setGapSec] = useState(5);
   const [repeatCount, setRepeatCount] = useState(2);
   const [speed, setSpeed] = useState(1);
@@ -81,8 +70,8 @@ export function PodcastMode() {
   const [cacheInfo, setCacheInfo] = useState({ count: 0, bytes: 0 });
 
   // shadowing state
-  const [transcript, setTranscript] = useState('');
-  const [partial, setPartial] = useState('');
+  const [transcript, setTranscript] = useState("");
+  const [partial, setPartial] = useState("");
   const [shadowResult, setShadowResult] = useState<ShadowingResult | null>(null);
   /** Manual reveal toggle for Listen mode (user clicked "نمایش متن"). */
   const [manualReveal, setManualReveal] = useState(false);
@@ -119,7 +108,7 @@ export function PodcastMode() {
   const stopAudio = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
-      audioRef.current.src = '';
+      audioRef.current.src = "";
     }
     stopSilence();
     if (recRef.current) {
@@ -138,12 +127,24 @@ export function PodcastMode() {
         a.onerror = null;
         a.src = url;
         a.playbackRate = speed;
-        const cleanup = () => { a.onended = null; a.onerror = null; };
-        a.onended = () => { cleanup(); resolve(); };
-        a.onerror = () => { cleanup(); reject(new Error('Audio playback error')); };
-        void a.play().catch((err) => { cleanup(); reject(err); });
+        const cleanup = () => {
+          a.onended = null;
+          a.onerror = null;
+        };
+        a.onended = () => {
+          cleanup();
+          resolve();
+        };
+        a.onerror = () => {
+          cleanup();
+          reject(new Error("Audio playback error"));
+        };
+        void a.play().catch((err) => {
+          cleanup();
+          reject(err);
+        });
       }),
-    [speed]
+    [speed],
   );
 
   const wait = useCallback(
@@ -162,20 +163,20 @@ export function PodcastMode() {
           resolve();
         }, totalMs);
       }),
-    [stopSilence]
+    [stopSilence],
   );
 
   const recordOnce = useCallback(
     (maxSeconds: number) =>
       new Promise<string>((resolve) => {
         if (!speechSupported) {
-          toast.error('این مرورگر از تشخیص گفتار پشتیبانی نمی‌کند');
-          resolve('');
+          toast.error("این مرورگر از تشخیص گفتار پشتیبانی نمی‌کند");
+          resolve("");
           return;
         }
-        setTranscript('');
-        setPartial('');
-        let finalText = '';
+        setTranscript("");
+        setPartial("");
+        let finalText = "";
         let settled = false;
         let timeoutId: number | null = null;
         const finish = (text: string) => {
@@ -183,15 +184,19 @@ export function PodcastMode() {
           settled = true;
           if (timeoutId !== null) window.clearTimeout(timeoutId);
           recRef.current = null;
-          setPartial('');
+          setPartial("");
           setTranscript(text);
           resolve(text);
         };
         const handle = startRecognition({
-          lang: 'en-US',
+          lang: "en-US",
           onPartial: (t) => setPartial(t),
-          onFinal: (t) => { finalText = t; },
-          onError: (e) => { console.warn('[Shadow] rec error', e); },
+          onFinal: (t) => {
+            finalText = t;
+          },
+          onError: (e) => {
+            console.warn("[Shadow] rec error", e);
+          },
           onEnd: () => finish(finalText),
         });
         recRef.current = handle;
@@ -201,97 +206,97 @@ export function PodcastMode() {
           window.setTimeout(() => finish(finalText), 500);
         }, maxSeconds * 1000);
       }),
-    [speechSupported]
+    [speechSupported],
   );
 
   /* ───────── main playback loop (iterative, no recursion) ───────── */
   const runSentence = useCallback(
-    async (idx: number): Promise<{ next: 'continue' | 'stop'; nextIdx: number }> => {
+    async (idx: number): Promise<{ next: "continue" | "stop"; nextIdx: number }> => {
       const item = queue[idx];
-      if (!item) return { next: 'stop', nextIdx: idx };
+      if (!item) return { next: "stop", nextIdx: idx };
       const { sentence } = item;
       setShadowResult(null);
-      setTranscript('');
+      setTranscript("");
       setManualReveal(false);
       setLoading(true);
       const [faUrl, enUrl] = await Promise.all([
         sentence.persian
-          ? getSentenceAudio(sentence.id, 'fa', sentence.persian)
-          : Promise.resolve(''),
-        getSentenceAudio(sentence.id, 'en', sentence.english),
+          ? getSentenceAudio(sentence.id, "fa", sentence.persian)
+          : Promise.resolve(""),
+        getSentenceAudio(sentence.id, "en", sentence.english),
       ]);
       setLoading(false);
-      if (cancelled.current) return { next: 'stop', nextIdx: idx };
+      if (cancelled.current) return { next: "stop", nextIdx: idx };
 
       const expected = sentence.expectedDurationSeconds ?? gapSec;
 
-      if (mode === 'listen') {
+      if (mode === "listen") {
         if (faUrl) {
-          setStep('persian');
+          setStep("persian");
           await playClip(faUrl);
-          if (cancelled.current) return { next: 'stop', nextIdx: idx };
+          if (cancelled.current) return { next: "stop", nextIdx: idx };
         }
-        setStep('silence');
+        setStep("silence");
         await wait(gapSec);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
 
         for (let r = 0; r < Math.max(1, repeatCount); r++) {
-          setStep(r === 0 ? 'english_1' : 'english_2');
+          setStep(r === 0 ? "english_1" : "english_2");
           await playClip(enUrl);
-          if (cancelled.current) return { next: 'stop', nextIdx: idx };
+          if (cancelled.current) return { next: "stop", nextIdx: idx };
           if (r < repeatCount - 1) {
             await wait(0.5);
-            if (cancelled.current) return { next: 'stop', nextIdx: idx };
+            if (cancelled.current) return { next: "stop", nextIdx: idx };
           }
         }
         void gradeCurrent(3);
-      } else if (mode === 'shadow') {
-        setStep('english_1');
+      } else if (mode === "shadow") {
+        setStep("english_1");
         await playClip(enUrl);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
 
-        setStep('recording');
+        setStep("recording");
         const maxRec = Math.max(3, Math.ceil(expected * 1.5));
         const heard = await recordOnce(maxRec);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
 
         const result = scoreShadowing(sentence.english, heard);
         setShadowResult(result);
-        setStep('scored');
+        setStep("scored");
 
         const grade = result.score >= 85 ? 4 : result.score >= 65 ? 3 : result.score >= 40 ? 2 : 1;
         void gradeCurrent(grade);
 
         await wait(2.5);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
       } else {
         // translate
         if (faUrl) {
-          setStep('persian');
+          setStep("persian");
           await playClip(faUrl);
-          if (cancelled.current) return { next: 'stop', nextIdx: idx };
+          if (cancelled.current) return { next: "stop", nextIdx: idx };
         }
-        setStep('recording');
+        setStep("recording");
         const maxRec = Math.max(3, Math.ceil(expected * 1.5));
         const heard = await recordOnce(maxRec);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
 
         const result = scoreShadowing(sentence.english, heard);
         setShadowResult(result);
-        setStep('scored');
+        setStep("scored");
         await playClip(enUrl);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
 
         const grade = result.score >= 85 ? 4 : result.score >= 65 ? 3 : result.score >= 40 ? 2 : 1;
         void gradeCurrent(grade);
 
         await wait(2);
-        if (cancelled.current) return { next: 'stop', nextIdx: idx };
+        if (cancelled.current) return { next: "stop", nextIdx: idx };
       }
 
-      return { next: 'continue', nextIdx: idx + 1 };
+      return { next: "continue", nextIdx: idx + 1 };
     },
-    [queue, playClip, wait, gradeCurrent, mode, gapSec, repeatCount, recordOnce]
+    [queue, playClip, wait, gradeCurrent, mode, gapSec, repeatCount, recordOnce],
   );
 
   // Iterative driver — avoids recursion + handles graceful stop
@@ -301,7 +306,7 @@ export function PodcastMode() {
       try {
         while (idx < queue.length) {
           const result = await runSentence(idx);
-          if (result.next === 'stop' || cancelled.current) return;
+          if (result.next === "stop" || cancelled.current) return;
           if (result.nextIdx < queue.length) {
             setInternalIdx(result.nextIdx);
             next();
@@ -311,17 +316,17 @@ export function PodcastMode() {
           }
         }
         setPlaying(false);
-        setStep('idle');
-        toast.success('🎉 پایان صف امروز');
+        setStep("idle");
+        toast.success("🎉 پایان صف امروز");
       } catch (e) {
-        console.error('[PodcastMode] playback error', e);
+        console.error("[PodcastMode] playback error", e);
         setLoading(false);
         setPlaying(false);
-        setStep('idle');
-        toast.error((e as Error).message || 'خطا در پخش');
+        setStep("idle");
+        toast.error((e as Error).message || "خطا در پخش");
       }
     },
-    [queue, runSentence, next]
+    [queue, runSentence, next],
   );
 
   /* ───────── controls ───────── */
@@ -336,7 +341,7 @@ export function PodcastMode() {
     cancelled.current = true;
     stopAudio();
     setPlaying(false);
-    setStep('idle');
+    setStep("idle");
     setSilenceProgress(0);
   }, [stopAudio]);
 
@@ -390,9 +395,9 @@ export function PodcastMode() {
     try {
       const items: Array<{ id: string; lang: string; text: string }> = [];
       for (const q of queue) {
-        items.push({ id: q.sentence.id, lang: 'en', text: q.sentence.english });
+        items.push({ id: q.sentence.id, lang: "en", text: q.sentence.english });
         if (q.sentence.persian) {
-          items.push({ id: q.sentence.id, lang: 'fa', text: q.sentence.persian });
+          items.push({ id: q.sentence.id, lang: "fa", text: q.sentence.persian });
         }
       }
       await warmSentenceAudio(items);
@@ -400,7 +405,7 @@ export function PodcastMode() {
       setCacheInfo(info);
       toast.success(`دانلود کامل · ${items.length} فایل آفلاین شد`);
     } catch (e) {
-      toast.error('دانلود ناموفق: ' + (e as Error).message);
+      toast.error("دانلود ناموفق: " + (e as Error).message);
     } finally {
       setPrefetching(false);
     }
@@ -408,25 +413,25 @@ export function PodcastMode() {
 
   /* ───────── MediaSession ───────── */
   useEffect(() => {
-    if (!('mediaSession' in navigator)) return;
+    if (!("mediaSession" in navigator)) return;
     const ms = navigator.mediaSession;
     if (current) {
       ms.metadata = new MediaMetadata({
         title: current.sentence.english.slice(0, 80),
-        artist: current.sentence.persian ?? 'Sentence Lab',
-        album: 'Daily Drill',
+        artist: current.sentence.persian ?? "Sentence Lab",
+        album: "Daily Drill",
       });
     }
-    ms.setActionHandler('play', start);
-    ms.setActionHandler('pause', pause);
-    ms.setActionHandler('nexttrack', skipForward);
-    ms.setActionHandler('previoustrack', skipBack);
-    ms.playbackState = playing ? 'playing' : 'paused';
+    ms.setActionHandler("play", start);
+    ms.setActionHandler("pause", pause);
+    ms.setActionHandler("nexttrack", skipForward);
+    ms.setActionHandler("previoustrack", skipBack);
+    ms.playbackState = playing ? "playing" : "paused";
     return () => {
-      ms.setActionHandler('play', null);
-      ms.setActionHandler('pause', null);
-      ms.setActionHandler('nexttrack', null);
-      ms.setActionHandler('previoustrack', null);
+      ms.setActionHandler("play", null);
+      ms.setActionHandler("pause", null);
+      ms.setActionHandler("nexttrack", null);
+      ms.setActionHandler("previoustrack", null);
     };
   }, [current, start, pause, skipForward, skipBack, playing]);
 
@@ -448,17 +453,16 @@ export function PodcastMode() {
   }
 
   const stepLabel: Record<Step, string> = {
-    idle: 'Idle',
-    persian: '🇮🇷 Persian',
-    silence: '🤔 Think…',
-    english_1: '🇬🇧 English',
-    english_2: '🇬🇧 Repeat',
-    recording: '🎙️ Speak now',
-    scored: '✅ Scored',
+    idle: "Idle",
+    persian: "🇮🇷 Persian",
+    silence: "🤔 Think…",
+    english_1: "🇬🇧 English",
+    english_2: "🇬🇧 Repeat",
+    recording: "🎙️ Speak now",
+    scored: "✅ Scored",
   };
 
-  const progressPct =
-    queue.length > 0 ? ((internalIdx + 1) / queue.length) * 100 : 0;
+  const progressPct = queue.length > 0 ? ((internalIdx + 1) / queue.length) * 100 : 0;
   const cacheMb = (cacheInfo.bytes / 1024 / 1024).toFixed(1);
 
   return (
@@ -470,8 +474,8 @@ export function PodcastMode() {
             <span className="text-sm font-medium">Podcast Mode</span>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={playing ? 'default' : 'secondary'}>
-              {loading ? 'Loading…' : stepLabel[step]}
+            <Badge variant={playing ? "default" : "secondary"}>
+              {loading ? "Loading…" : stepLabel[step]}
             </Badge>
             <Popover>
               <PopoverTrigger asChild>
@@ -494,7 +498,11 @@ export function PodcastMode() {
                     <ToggleGroupItem value="shadow" className="text-xs" disabled={!speechSupported}>
                       Shadow
                     </ToggleGroupItem>
-                    <ToggleGroupItem value="translate" className="text-xs" disabled={!speechSupported}>
+                    <ToggleGroupItem
+                      value="translate"
+                      className="text-xs"
+                      disabled={!speechSupported}
+                    >
                       Translate
                     </ToggleGroupItem>
                   </ToggleGroup>
@@ -554,7 +562,9 @@ export function PodcastMode() {
                 <div className="border-t pt-3">
                   <div className="mb-2 flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">آفلاین</span>
-                    <span>{cacheInfo.count} فایل · {cacheMb} MB</span>
+                    <span>
+                      {cacheInfo.count} فایل · {cacheMb} MB
+                    </span>
                   </div>
                   <Button
                     variant="outline"
@@ -586,87 +596,84 @@ export function PodcastMode() {
           <Progress value={progressPct} className="h-1" />
         </div>
 
-        {current && (() => {
-          // Decide what to show based on mode + step.
-          // Listen: only Persian; English revealed at the end OR on user click.
-          // Shadow: hide everything during play; show English when recording/scored.
-          // Translate: only Persian until scored.
-          const isShadow = mode === 'shadow';
-          const isTranslate = mode === 'translate';
-          const isListen = mode === 'listen';
-          const s: Step = step;
+        {current &&
+          (() => {
+            // Decide what to show based on mode + step.
+            // Listen: only Persian; English revealed at the end OR on user click.
+            // Shadow: hide everything during play; show English when recording/scored.
+            // Translate: only Persian until scored.
+            const isShadow = mode === "shadow";
+            const isTranslate = mode === "translate";
+            const isListen = mode === "listen";
+            const s: Step = step;
 
-          const showEnglish =
-            manualReveal ||
-            s === 'scored' ||
-            (isListen && s === 'english_2') ||
-            (isShadow && (s === 'recording' || s === 'english_1'));
+            const showEnglish =
+              manualReveal ||
+              s === "scored" ||
+              (isListen && s === "english_2") ||
+              (isShadow && (s === "recording" || s === "english_1"));
 
-          const showPersian =
-            !!current.sentence.persian &&
-            (isListen || isTranslate || (isShadow && s === 'scored'));
+            const showPersian =
+              !!current.sentence.persian &&
+              (isListen || isTranslate || (isShadow && s === "scored"));
 
-          const hideAll = isShadow && (s === 'idle' || s === 'persian' || s === 'silence');
+            const hideAll = isShadow && (s === "idle" || s === "persian" || s === "silence");
 
-          return (
-            <div className="rounded-md bg-muted/40 p-3 text-sm">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 flex-1">
-                  {hideAll && (
-                    <p className="text-center text-xs italic text-muted-foreground py-2">
-                      🎧 فقط گوش کن…
-                    </p>
-                  )}
-                  {showEnglish && (
-                    <p className="font-medium leading-snug">{current.sentence.english}</p>
-                  )}
-                  {showPersian && (
-                    <p dir="rtl" className="mt-1 text-right text-muted-foreground">
-                      {current.sentence.persian}
-                    </p>
-                  )}
-                  {/* Manual reveal button for Listen mode while English is hidden */}
-                  {isListen && !showEnglish && step !== 'idle' && (
-                    <button
-                      onClick={() => setManualReveal(true)}
-                      className="mt-2 text-[11px] text-primary/80 hover:text-primary underline-offset-2 hover:underline"
-                    >
-                      نمایش متن انگلیسی
-                    </button>
-                  )}
+            return (
+              <div className="rounded-md bg-muted/40 p-3 text-sm">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    {hideAll && (
+                      <p className="text-center text-xs italic text-muted-foreground py-2">
+                        🎧 فقط گوش کن…
+                      </p>
+                    )}
+                    {showEnglish && (
+                      <p className="font-medium leading-snug">{current.sentence.english}</p>
+                    )}
+                    {showPersian && (
+                      <p dir="rtl" className="mt-1 text-right text-muted-foreground">
+                        {current.sentence.persian}
+                      </p>
+                    )}
+                    {/* Manual reveal button for Listen mode while English is hidden */}
+                    {isListen && !showEnglish && step !== "idle" && (
+                      <button
+                        onClick={() => setManualReveal(true)}
+                        className="mt-2 text-[11px] text-primary/80 hover:text-primary underline-offset-2 hover:underline"
+                      >
+                        نمایش متن انگلیسی
+                      </button>
+                    )}
+                  </div>
+                  <FlagButton sentenceId={current.sentence.id} size="sm" />
                 </div>
-                <FlagButton sentenceId={current.sentence.id} size="sm" />
               </div>
-            </div>
-          );
-        })()}
+            );
+          })()}
 
-        {step === 'silence' && (
+        {step === "silence" && (
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">
-              Translate aloud · {gapSec}s
-            </p>
+            <p className="mb-1 text-xs text-muted-foreground">Translate aloud · {gapSec}s</p>
             <Progress value={silenceProgress} className="h-1.5" />
           </div>
         )}
 
-        {step === 'recording' && (
+        {step === "recording" && (
           <div className="rounded-md border border-primary/40 bg-primary/5 p-3">
             <div className="mb-2 flex items-center gap-2 text-xs font-medium text-primary">
               <Mic className="h-3 w-3 animate-pulse" />
               در حال شنیدن…
             </div>
-            {partial && (
-              <p className="text-xs italic text-muted-foreground">{partial}</p>
-            )}
+            {partial && <p className="text-xs italic text-muted-foreground">{partial}</p>}
           </div>
         )}
 
-        {step === 'scored' && shadowResult && (
+        {step === "scored" && shadowResult && (
           <div className="rounded-md border bg-muted/40 p-3 text-xs">
             <div className="mb-2 flex items-center justify-between">
               <span className="font-medium">امتیاز شما</span>
-              <Badge variant={shadowResult.score >= 70 ? 'default' : 'destructive'}>
+              <Badge variant={shadowResult.score >= 70 ? "default" : "destructive"}>
                 {shadowResult.score}%
               </Badge>
             </div>
@@ -711,7 +718,7 @@ export function PodcastMode() {
             onClick={playing ? pause : start}
             disabled={loading}
             className="h-12 w-12 rounded-full"
-            aria-label={playing ? 'Pause' : 'Play'}
+            aria-label={playing ? "Pause" : "Play"}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />

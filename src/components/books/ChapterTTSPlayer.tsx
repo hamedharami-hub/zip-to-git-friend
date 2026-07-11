@@ -15,7 +15,7 @@
  * (Gemini path is the most reliable on iOS for true background audio).
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Headphones,
   Play,
@@ -27,42 +27,38 @@ import {
   Download,
   Trash2,
   RefreshCw,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
-import { useSettingsStore } from '@/store/settingsStore';
-import {
-  type GeminiTtsVoice,
-  GeminiTtsError,
-  synthesizeChapter,
-} from '@/lib/geminiTts';
-import { GeminiVoicePicker } from './chapter-tts/GeminiVoicePicker';
-import { emitParagraphSpeech } from '@/lib/paragraphSpeechBus';
+} from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import { useSettingsStore } from "@/store/settingsStore";
+import { type GeminiTtsVoice, GeminiTtsError, synthesizeChapter } from "@/lib/geminiTts";
+import { GeminiVoicePicker } from "./chapter-tts/GeminiVoicePicker";
+import { emitParagraphSpeech } from "@/lib/paragraphSpeechBus";
 import {
   BrowserTtsController,
   isBrowserTtsSupported,
   listVoices,
   type BrowserTtsVoice,
-} from '@/lib/browserTts';
-import { deleteTTSAudio, getTTSAudio, getTTSChunks, deleteTTSChunks } from '@/lib/bookDb';
-import { useMediaSession } from '@/hooks/useMediaSession';
-import { useWakeLock } from '@/hooks/useWakeLock';
-import { Link } from 'react-router-dom';
-import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '@/lib/elevenLabsTts';
-import { loadElevenLabsBlob, elevenLabsErrorMessage } from './chapter-tts/loadElevenLabs';
-import { ElevenLabsPanel } from './chapter-tts/ElevenLabsPanel';
-import { LangToggle } from './chapter-tts/LangToggle';
-import { subscribeParagraphSpeechRequest } from '@/lib/paragraphSpeechRequestBus';
-import { synthesizeOther, otherEngineErrorMessage } from './chapter-tts/synthesizeOther';
+} from "@/lib/browserTts";
+import { deleteTTSAudio, getTTSAudio, getTTSChunks, deleteTTSChunks } from "@/lib/bookDb";
+import { useMediaSession } from "@/hooks/useMediaSession";
+import { useWakeLock } from "@/hooks/useWakeLock";
+import { Link } from "react-router-dom";
+import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from "@/lib/elevenLabsTts";
+import { loadElevenLabsBlob, elevenLabsErrorMessage } from "./chapter-tts/loadElevenLabs";
+import { ElevenLabsPanel } from "./chapter-tts/ElevenLabsPanel";
+import { LangToggle } from "./chapter-tts/LangToggle";
+import { subscribeParagraphSpeechRequest } from "@/lib/paragraphSpeechRequestBus";
+import { synthesizeOther, otherEngineErrorMessage } from "./chapter-tts/synthesizeOther";
 import {
   ENGINE_KEY,
   VOICE_KEY,
@@ -74,14 +70,11 @@ import {
   type Engine,
   isEngine,
   fmtTime as fmt,
-} from './chapter-tts/constants';
-import {
-  ParagraphChunkList,
-  type ReadyChunk,
-} from './chapter-tts/ParagraphChunkList';
-import { useTtsKeepAlive } from './chapter-tts/useTtsKeepAlive';
-import { useOtherEngineVoices } from './chapter-tts/useOtherEngineVoices';
-import { EngineSelector } from './chapter-tts/EngineSelector';
+} from "./chapter-tts/constants";
+import { ParagraphChunkList, type ReadyChunk } from "./chapter-tts/ParagraphChunkList";
+import { useTtsKeepAlive } from "./chapter-tts/useTtsKeepAlive";
+import { useOtherEngineVoices } from "./chapter-tts/useOtherEngineVoices";
+import { EngineSelector } from "./chapter-tts/EngineSelector";
 
 interface Props {
   bookId: string;
@@ -94,9 +87,6 @@ interface Props {
   /** Cover for OS lock-screen artwork (data URL is fine). */
   coverUrl?: string;
 }
-
-
-
 
 export function ChapterTTSPlayer({
   bookId,
@@ -111,18 +101,24 @@ export function ChapterTTSPlayer({
 
   // EN / FA podcast language. The Persian variant is gated on textFa being
   // available (set by callers like NewsArticle once translations are ready).
-  const [ttsLang, setTtsLang] = useState<'en' | 'fa'>(() => {
+  const [ttsLang, setTtsLang] = useState<"en" | "fa">(() => {
     try {
       const v = localStorage.getItem(TTS_LANG_KEY);
-      return v === 'fa' ? 'fa' : 'en';
-    } catch { return 'en'; }
+      return v === "fa" ? "fa" : "en";
+    } catch {
+      return "en";
+    }
   });
   useEffect(() => {
-    try { localStorage.setItem(TTS_LANG_KEY, ttsLang); } catch { /* noop */ }
+    try {
+      localStorage.setItem(TTS_LANG_KEY, ttsLang);
+    } catch {
+      /* noop */
+    }
   }, [ttsLang]);
-  const text = ttsLang === 'fa' && textFa ? textFa : textProp;
+  const text = ttsLang === "fa" && textFa ? textFa : textProp;
   // Use a different chapterIndex namespace for FA so cached audio stays separate.
-  const effectiveChapterIndex = ttsLang === 'fa' ? chapterIndexProp + 100000 : chapterIndexProp;
+  const effectiveChapterIndex = ttsLang === "fa" ? chapterIndexProp + 100000 : chapterIndexProp;
 
   const [open, setOpen] = useState(false);
   const [engine, setEngine] = useState<Engine>(() => {
@@ -132,7 +128,7 @@ export function ChapterTTSPlayer({
     } catch {
       /* noop */
     }
-    return isBrowserTtsSupported() ? 'browser' : 'gemini';
+    return isBrowserTtsSupported() ? "browser" : "gemini";
   });
   useEffect(() => {
     try {
@@ -146,22 +142,21 @@ export function ChapterTTSPlayer({
       if (e.key === ENGINE_KEY && isEngine(e.newValue)) {
         setEngine(e.newValue);
       }
-      if (e.key === TTS_LANG_KEY && (e.newValue === 'en' || e.newValue === 'fa')) {
+      if (e.key === TTS_LANG_KEY && (e.newValue === "en" || e.newValue === "fa")) {
         setTtsLang(e.newValue);
       }
     };
-    window.addEventListener('storage', sync);
-    return () => window.removeEventListener('storage', sync);
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
   }, []);
-
 
   // ───────── Gemini TTS state ─────────
   const [voice, setVoice] = useState<GeminiTtsVoice>(() => {
     try {
       const saved = localStorage.getItem(VOICE_KEY) as GeminiTtsVoice | null;
-      return saved ?? 'Kore';
+      return saved ?? "Kore";
     } catch {
-      return 'Kore';
+      return "Kore";
     }
   });
   useEffect(() => {
@@ -187,7 +182,11 @@ export function ChapterTTSPlayer({
 
   function revokeChunkUrls() {
     for (const u of chunkUrlsRef.current) {
-      try { URL.revokeObjectURL(u); } catch { /* */ }
+      try {
+        URL.revokeObjectURL(u);
+      } catch {
+        /* */
+      }
     }
     chunkUrlsRef.current = [];
   }
@@ -203,10 +202,13 @@ export function ChapterTTSPlayer({
     a.src = url;
     a.playbackRate = rate;
     a.onended = () => setPlayingChunk(null);
-    a.onpause = () => { if (a.ended) setPlayingChunk(null); };
-    a.play().then(() => setPlayingChunk(idx)).catch(() => setPlayingChunk(null));
+    a.onpause = () => {
+      if (a.ended) setPlayingChunk(null);
+    };
+    a.play()
+      .then(() => setPlayingChunk(idx))
+      .catch(() => setPlayingChunk(null));
   }
-
 
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -226,10 +228,18 @@ export function ChapterTTSPlayer({
     }
   });
   const [browserLang, setBrowserLang] = useState<string>(() => {
-    try { return localStorage.getItem(BROWSER_LANG_KEY) || 'all'; } catch { return 'all'; }
+    try {
+      return localStorage.getItem(BROWSER_LANG_KEY) || "all";
+    } catch {
+      return "all";
+    }
   });
   useEffect(() => {
-    try { localStorage.setItem(BROWSER_LANG_KEY, browserLang); } catch { /* noop */ }
+    try {
+      localStorage.setItem(BROWSER_LANG_KEY, browserLang);
+    } catch {
+      /* noop */
+    }
   }, [browserLang]);
   const [browserChunk, setBrowserChunk] = useState<{ done: number; total: number } | null>(null);
   const [browserPlaying, setBrowserPlaying] = useState(false);
@@ -243,90 +253,133 @@ export function ChapterTTSPlayer({
   // Background keep-alive for browser TTS — see useTtsKeepAlive.
   useTtsKeepAlive(browserPlaying);
 
-
   // ───────── ElevenLabs state ─────────
-  const elevenKey = settings.elevenLabsApiKey?.trim() ?? '';
+  const elevenKey = settings.elevenLabsApiKey?.trim() ?? "";
   const [elevenVoice, setElevenVoice] = useState<string>(() => {
-    try { return localStorage.getItem(ELEVEN_VOICE_KEY) || ELEVENLABS_VOICES[0].id; }
-    catch { return ELEVENLABS_VOICES[0].id; }
+    try {
+      return localStorage.getItem(ELEVEN_VOICE_KEY) || ELEVENLABS_VOICES[0].id;
+    } catch {
+      return ELEVENLABS_VOICES[0].id;
+    }
   });
   const [elevenModel, setElevenModel] = useState<string>(() => {
-    try { return localStorage.getItem(ELEVEN_MODEL_KEY) || ELEVENLABS_MODELS[0].id; }
-    catch { return ELEVENLABS_MODELS[0].id; }
+    try {
+      return localStorage.getItem(ELEVEN_MODEL_KEY) || ELEVENLABS_MODELS[0].id;
+    } catch {
+      return ELEVENLABS_MODELS[0].id;
+    }
   });
-  useEffect(() => { try { localStorage.setItem(ELEVEN_VOICE_KEY, elevenVoice); } catch { /* */ } }, [elevenVoice]);
-  useEffect(() => { try { localStorage.setItem(ELEVEN_MODEL_KEY, elevenModel); } catch { /* */ } }, [elevenModel]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ELEVEN_VOICE_KEY, elevenVoice);
+    } catch {
+      /* */
+    }
+  }, [elevenVoice]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(ELEVEN_MODEL_KEY, elevenModel);
+    } catch {
+      /* */
+    }
+  }, [elevenModel]);
   const [elevenLoading, setElevenLoading] = useState(false);
 
   // ───────── Azure / HF / Play.ht / OpenTTS state ─────────
-  const azureKey = settings.azureTtsApiKey?.trim() ?? '';
-  const azureRegion = settings.azureTtsRegion?.trim() || 'westeurope';
-  const hfKey = settings.huggingFaceApiKey?.trim() ?? '';
-  const playHtUser = settings.playHtUserId?.trim() ?? '';
-  const playHtKey = settings.playHtApiKey?.trim() ?? '';
-  const openTtsUrl = settings.openTtsUrl?.trim() ?? '';
+  const azureKey = settings.azureTtsApiKey?.trim() ?? "";
+  const azureRegion = settings.azureTtsRegion?.trim() || "westeurope";
+  const hfKey = settings.huggingFaceApiKey?.trim() ?? "";
+  const playHtUser = settings.playHtUserId?.trim() ?? "";
+  const playHtKey = settings.playHtApiKey?.trim() ?? "";
+  const openTtsUrl = settings.openTtsUrl?.trim() ?? "";
   const {
-    azureVoiceOpts, hfVoiceOpts, playHtVoiceOpts,
-    azureVoice, setAzureVoice,
-    hfVoice, setHfVoice,
-    playHtVoice, setPlayHtVoice,
-    openTtsVoice, setOpenTtsVoice,
+    azureVoiceOpts,
+    hfVoiceOpts,
+    playHtVoiceOpts,
+    azureVoice,
+    setAzureVoice,
+    hfVoice,
+    setHfVoice,
+    playHtVoice,
+    setPlayHtVoice,
+    openTtsVoice,
+    setOpenTtsVoice,
   } = useOtherEngineVoices(ttsLang);
   const [otherLoading, setOtherLoading] = useState(false);
 
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
   const loadOther = async (force = false) => {
-    if (ttsLang === 'fa' && !textFa?.trim()) { toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.'); return; }
-    if (!text.trim()) { toast.error('متنی برای روایت پیدا نشد.'); return; }
+    if (ttsLang === "fa" && !textFa?.trim()) {
+      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
+      return;
+    }
+    if (!text.trim()) {
+      toast.error("متنی برای روایت پیدا نشد.");
+      return;
+    }
     setOtherLoading(true);
     try {
       const blob = await synthesizeOther({
-        engine: engine as 'azure' | 'huggingface' | 'playht' | 'opentts',
-        text, rate, ttsLang,
+        engine: engine as "azure" | "huggingface" | "playht" | "opentts",
+        text,
+        rate,
+        ttsLang,
         force,
-        azureKey, azureRegion, azureVoice,
-        hfKey, hfVoice,
-        playHtUser, playHtKey, playHtVoice,
-        openTtsUrl, openTtsVoice,
+        azureKey,
+        azureRegion,
+        azureVoice,
+        hfKey,
+        hfVoice,
+        playHtUser,
+        playHtKey,
+        playHtVoice,
+        openTtsUrl,
+        openTtsVoice,
       });
       revokeUrl();
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success('روایت آماده شد.');
+      toast.success("روایت آماده شد.");
     } catch (e) {
       toast.error(otherEngineErrorMessage(e));
-    } finally { setOtherLoading(false); }
+    } finally {
+      setOtherLoading(false);
+    }
   };
 
   // ───────── Paragraph-speech-request bus (long-press menu) ─────────
   useEffect(() => {
     return subscribeParagraphSpeechRequest(bookId, chapterIndexProp, (req) => {
-      if (req.action === 'stop') {
-        try { window.speechSynthesis.cancel(); } catch { /* */ }
+      if (req.action === "stop") {
+        try {
+          window.speechSynthesis.cancel();
+        } catch {
+          /* */
+        }
         browserCtrlRef.current?.stop();
         browserCtrlRef.current = null;
         setBrowserPlaying(false);
         setBrowserChunk(null);
         return;
       }
-      if (req.action === 'play-from') {
-        if (req.lang === 'fa') setTtsLang('fa');
-        else if (req.lang === 'en') setTtsLang('en');
-        setEngine('browser');
+      if (req.action === "play-from") {
+        if (req.lang === "fa") setTtsLang("fa");
+        else if (req.lang === "en") setTtsLang("en");
+        setEngine("browser");
         setOpen(true);
         // Find matching chunk index by scanning chunks for the paragraph head.
         setTimeout(() => {
           if (!isBrowserTtsSupported()) return;
-          const fullText = req.lang === 'fa' && textFa ? textFa : textProp;
-          const head = req.text.replace(/\s+/g, ' ').trim().slice(0, 40).toLowerCase();
+          const fullText = req.lang === "fa" && textFa ? textFa : textProp;
+          const head = req.text.replace(/\s+/g, " ").trim().slice(0, 40).toLowerCase();
           const idx = Math.max(0, fullText.toLowerCase().indexOf(head));
           // Estimate chunk index by char offset / ~250 chars per chunk.
           const chunkIdx = Math.floor(idx / 250);
           resumeIndexRef.current = chunkIdx;
           const ctl = new BrowserTtsController(fullText, {
             voiceId: browserVoiceId,
-            lang: req.lang === 'fa' ? 'fa-IR' : 'en-US',
+            lang: req.lang === "fa" ? "fa-IR" : "en-US",
             rate,
             onChunkStart: (i, total) => {
               setBrowserChunk({ done: i, total });
@@ -334,10 +387,20 @@ export function ChapterTTSPlayer({
               try {
                 const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[i - 1];
                 if (chunk) emitParagraphSpeech(bookId, chapterIndexProp, chunk);
-              } catch {/* */}
+              } catch {
+                /* */
+              }
             },
-            onEnd: () => { setBrowserPlaying(false); setBrowserChunk(null); resumeIndexRef.current = 0; emitParagraphSpeech(bookId, chapterIndexProp, null); },
-            onError: () => { setBrowserPlaying(false); emitParagraphSpeech(bookId, chapterIndexProp, null); },
+            onEnd: () => {
+              setBrowserPlaying(false);
+              setBrowserChunk(null);
+              resumeIndexRef.current = 0;
+              emitParagraphSpeech(bookId, chapterIndexProp, null);
+            },
+            onError: () => {
+              setBrowserPlaying(false);
+              emitParagraphSpeech(bookId, chapterIndexProp, null);
+            },
           });
           browserCtrlRef.current?.stop();
           browserCtrlRef.current = ctl;
@@ -350,7 +413,6 @@ export function ChapterTTSPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, chapterIndexProp, textProp, textFa, browserVoiceId, rate]);
 
-
   // Lazy-load voices the first time the panel opens.
   useEffect(() => {
     if (!open || browserVoices.length > 0) return;
@@ -360,7 +422,7 @@ export function ChapterTTSPlayer({
       if (cancelled) return;
       setBrowserVoices(v);
       if (!browserVoiceId && v.length > 0) {
-        const prefix = ttsLang === 'fa' ? 'fa' : 'en';
+        const prefix = ttsLang === "fa" ? "fa" : "en";
         const def =
           v.find((vv) => vv.lang.toLowerCase().startsWith(prefix) && vv.default) ??
           v.find((vv) => vv.lang.toLowerCase().startsWith(prefix)) ??
@@ -387,7 +449,7 @@ export function ChapterTTSPlayer({
   // Fixes the bug where switching to فارسی still narrated with an English voice.
   useEffect(() => {
     if (browserVoices.length === 0) return;
-    const prefix = ttsLang === 'fa' ? 'fa' : 'en';
+    const prefix = ttsLang === "fa" ? "fa" : "en";
     const current = browserVoices.find((v) => v.id === browserVoiceId);
     const matches = current && current.lang.toLowerCase().startsWith(prefix);
     if (!matches) {
@@ -395,9 +457,9 @@ export function ChapterTTSPlayer({
       if (next) {
         setBrowserVoiceId(next.id);
         setBrowserLang(prefix);
-      } else if (ttsLang === 'fa') {
+      } else if (ttsLang === "fa") {
         // No Persian voice installed — surface a hint once.
-        setBrowserLang('fa');
+        setBrowserLang("fa");
       }
     }
   }, [ttsLang, browserVoices, browserVoiceId]);
@@ -408,7 +470,11 @@ export function ChapterTTSPlayer({
     revokeChunkUrls();
     setReadyChunks([]);
     setPlayingChunk(null);
-    try { previewAudioRef.current?.pause(); } catch { /* */ }
+    try {
+      previewAudioRef.current?.pause();
+    } catch {
+      /* */
+    }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);
@@ -435,7 +501,7 @@ export function ChapterTTSPlayer({
   // (book, chapter, voice) combo — even before the user taps "Listen", so
   // previously-generated paragraphs are immediately playable offline.
   useEffect(() => {
-    if (engine !== 'gemini' || !open) return;
+    if (engine !== "gemini" || !open) return;
     let cancelled = false;
     (async () => {
       try {
@@ -448,30 +514,41 @@ export function ChapterTTSPlayer({
           return { index: c.chunkIndex + 1, total: c.total, text: c.text, url, cached: true };
         });
         setReadyChunks(next);
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [engine, open, bookId, effectiveChapterIndex, voice]);
 
-  useEffect(() => () => {
-    revokeUrl();
-    revokeChunkUrls();
-    try { previewAudioRef.current?.pause(); } catch { /* */ }
-    browserCtrlRef.current?.stop();
-  }, []);
+  useEffect(
+    () => () => {
+      revokeUrl();
+      revokeChunkUrls();
+      try {
+        previewAudioRef.current?.pause();
+      } catch {
+        /* */
+      }
+      browserCtrlRef.current?.stop();
+    },
+    [],
+  );
 
   // ───────── Gemini path ─────────
   const loadOrSynthesize = async (force = false) => {
-    if (ttsLang === 'fa' && !textFa?.trim()) {
-      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+    if (ttsLang === "fa" && !textFa?.trim()) {
+      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
       return;
     }
     if (!apiKey) {
-      toast.error('Add your Gemini API key in Settings → AI first.');
+      toast.error("Add your Gemini API key in Settings → AI first.");
       return;
     }
     if (!text.trim()) {
-      toast.error('This chapter has no text to narrate.');
+      toast.error("This chapter has no text to narrate.");
       return;
     }
     setLoading(true);
@@ -494,7 +571,13 @@ export function ChapterTTSPlayer({
             setChunkInfo({ done, total });
             setProgress(done / total);
           },
-          onChunkReady: ({ index, total, text: chunkText, blob: chunkBlob, cached: chunkCached }) => {
+          onChunkReady: ({
+            index,
+            total,
+            text: chunkText,
+            blob: chunkBlob,
+            cached: chunkCached,
+          }) => {
             const url = URL.createObjectURL(chunkBlob);
             chunkUrlsRef.current.push(url);
             setReadyChunks((prev) => {
@@ -511,20 +594,20 @@ export function ChapterTTSPlayer({
       lastUrlRef.current = url;
       setAudioUrl(url);
       setCachedHit(cached);
-      if (!cached) toast.success('Narration ready.');
+      if (!cached) toast.success("Narration ready.");
     } catch (e) {
       const msg =
         e instanceof GeminiTtsError
-          ? e.code === 'auth'
-            ? 'Gemini rejected the TTS key — check Settings → AI.'
-            : e.code === 'quota'
-              ? 'Gemini TTS rate-limit reached. موقتاً به Browser TTS سوییچ شد.'
-              : e.code === 'no-audio'
-                ? 'Gemini returned no audio. Try a different voice.'
+          ? e.code === "auth"
+            ? "Gemini rejected the TTS key — check Settings → AI."
+            : e.code === "quota"
+              ? "Gemini TTS rate-limit reached. موقتاً به Browser TTS سوییچ شد."
+              : e.code === "no-audio"
+                ? "Gemini returned no audio. Try a different voice."
                 : `TTS failed: ${e.message}`
-          : 'TTS failed.';
-      if (e instanceof GeminiTtsError && e.code === 'quota' && isBrowserTtsSupported()) {
-        setEngine('browser');
+          : "TTS failed.";
+      if (e instanceof GeminiTtsError && e.code === "quota" && isBrowserTtsSupported()) {
+        setEngine("browser");
       }
       toast.error(msg);
     } finally {
@@ -561,8 +644,8 @@ export function ChapterTTSPlayer({
 
   const onRate = (r: number) => {
     setRate(r);
-    if (engine === 'gemini' && audioRef.current) audioRef.current.playbackRate = r;
-    if (engine === 'browser' && browserCtrlRef.current) browserCtrlRef.current.setRate(r);
+    if (engine === "gemini" && audioRef.current) audioRef.current.playbackRate = r;
+    if (engine === "browser" && browserCtrlRef.current) browserCtrlRef.current.setRate(r);
   };
 
   const handleClear = async () => {
@@ -572,25 +655,33 @@ export function ChapterTTSPlayer({
     revokeChunkUrls();
     setReadyChunks([]);
     setPlayingChunk(null);
-    try { previewAudioRef.current?.pause(); } catch { /* */ }
+    try {
+      previewAudioRef.current?.pause();
+    } catch {
+      /* */
+    }
     setAudioUrl(null);
     setPlaying(false);
     setCurrent(0);
     setDuration(0);
-    toast.success('Cached narration deleted.');
+    toast.success("Cached narration deleted.");
   };
 
   const handleDownload = async () => {
     const row = await getTTSAudio(bookId, effectiveChapterIndex, voice);
     const blob = row?.blob;
     if (!blob) {
-      toast.error('No cached audio yet.');
+      toast.error("No cached audio yet.");
       return;
     }
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    const safeTitle = chapterTitle.replace(/[^\w\s.-]+/g, '').slice(0, 60).trim() || 'chapter';
+    const safeTitle =
+      chapterTitle
+        .replace(/[^\w\s.-]+/g, "")
+        .slice(0, 60)
+        .trim() || "chapter";
     a.download = `${safeTitle} (${voice}).wav`;
     document.body.appendChild(a);
     a.click();
@@ -598,20 +689,18 @@ export function ChapterTTSPlayer({
     URL.revokeObjectURL(url);
   };
 
-  
-
   // ───────── ElevenLabs path ─────────
   const loadElevenLabs = async () => {
-    if (ttsLang === 'fa' && !textFa?.trim()) {
-      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+    if (ttsLang === "fa" && !textFa?.trim()) {
+      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
       return;
     }
     if (!elevenKey) {
-      toast.error('کلید ElevenLabs را در تنظیمات وارد کنید.');
+      toast.error("کلید ElevenLabs را در تنظیمات وارد کنید.");
       return;
     }
     if (!text.trim()) {
-      toast.error('متنی برای روایت پیدا نشد.');
+      toast.error("متنی برای روایت پیدا نشد.");
       return;
     }
     setElevenLoading(true);
@@ -627,7 +716,7 @@ export function ChapterTTSPlayer({
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success('روایت ElevenLabs آماده شد.');
+      toast.success("روایت ElevenLabs آماده شد.");
     } catch (e) {
       toast.error(elevenLabsErrorMessage(e));
     } finally {
@@ -636,40 +725,48 @@ export function ChapterTTSPlayer({
   };
 
   const downloadElevenLabs = async () => {
-    if (!audioUrl) { toast.error('ابتدا روی Listen بزن.'); return; }
-    const a = document.createElement('a');
+    if (!audioUrl) {
+      toast.error("ابتدا روی Listen بزن.");
+      return;
+    }
+    const a = document.createElement("a");
     a.href = audioUrl;
-    const safeTitle = chapterTitle.replace(/[^\w\s.-]+/g, '').slice(0, 60).trim() || 'narration';
+    const safeTitle =
+      chapterTitle
+        .replace(/[^\w\s.-]+/g, "")
+        .slice(0, 60)
+        .trim() || "narration";
     a.download = `${safeTitle} (ElevenLabs ${ttsLang}).mp3`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
-
 
   // ───────── Browser TTS path ─────────
   const startBrowser = () => {
     if (!isBrowserTtsSupported()) {
-      toast.error('Your browser does not support speech synthesis.');
+      toast.error("Your browser does not support speech synthesis.");
       return;
     }
-    if (ttsLang === 'fa' && !textFa?.trim()) {
-      toast.error('برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.');
+    if (ttsLang === "fa" && !textFa?.trim()) {
+      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
       return;
     }
     if (!text.trim()) {
-      toast.error('This chapter has no text to narrate.');
+      toast.error("This chapter has no text to narrate.");
       return;
     }
-    const langPrefix = ttsLang === 'fa' ? 'fa' : 'en';
+    const langPrefix = ttsLang === "fa" ? "fa" : "en";
     const matchingVoices = browserVoices.filter((v) => v.lang.toLowerCase().startsWith(langPrefix));
     const selected = browserVoices.find((v) => v.id === browserVoiceId);
     const voiceIdForRun = selected?.lang.toLowerCase().startsWith(langPrefix)
       ? browserVoiceId
-      : matchingVoices[0]?.id ?? null;
+      : (matchingVoices[0]?.id ?? null);
     if (voiceIdForRun && voiceIdForRun !== browserVoiceId) setBrowserVoiceId(voiceIdForRun);
     browserCtrlRef.current?.stop();
     const ctl = new BrowserTtsController(text, {
       voiceId: voiceIdForRun,
-      lang: ttsLang === 'fa' ? 'fa-IR' : 'en-US',
+      lang: ttsLang === "fa" ? "fa-IR" : "en-US",
       rate,
       onChunkStart: (idx, total) => {
         setBrowserChunk({ done: idx, total });
@@ -680,7 +777,9 @@ export function ChapterTTSPlayer({
         try {
           const chunk = (ctl as unknown as { chunks?: string[] }).chunks?.[idx - 1];
           if (chunk) emitParagraphSpeech(bookId, chapterIndexProp, chunk);
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       },
       onEnd: () => {
         setBrowserPlaying(false);
@@ -690,7 +789,7 @@ export function ChapterTTSPlayer({
       },
       onError: () => {
         setBrowserPlaying(false);
-        toast.error('Browser TTS error.');
+        toast.error("Browser TTS error.");
         emitParagraphSpeech(bookId, chapterIndexProp, null);
       },
     });
@@ -743,8 +842,8 @@ export function ChapterTTSPlayer({
       open
         ? {
             title: chapterTitle,
-            artist: 'Chapter narration',
-            album: 'Language Learning Player',
+            artist: "Chapter narration",
+            album: "Language Learning Player",
             artwork: coverUrl,
           }
         : null,
@@ -752,11 +851,11 @@ export function ChapterTTSPlayer({
   );
 
   useMediaSession(
-    engine === 'gemini' ? audioRef.current : null,
+    engine === "gemini" ? audioRef.current : null,
     sessionMeta,
     {
       onPlay:
-        engine === 'gemini'
+        engine === "gemini"
           ? () => audioRef.current?.play().catch(() => {})
           : () => {
               if (browserCtrlRef.current?.isPaused) {
@@ -767,20 +866,15 @@ export function ChapterTTSPlayer({
               }
             },
       onPause:
-        engine === 'gemini'
+        engine === "gemini"
           ? () => audioRef.current?.pause()
           : () => {
               browserCtrlRef.current?.pause();
               setBrowserPlaying(false);
             },
-      onSeekBackward:
-        engine === 'gemini' ? (s) => seekRel(-Math.max(5, s)) : undefined,
-      onSeekForward:
-        engine === 'gemini' ? (s) => seekRel(Math.max(5, s)) : undefined,
-      onStop:
-        engine === 'gemini'
-          ? () => audioRef.current?.pause()
-          : () => stopBrowser(),
+      onSeekBackward: engine === "gemini" ? (s) => seekRel(-Math.max(5, s)) : undefined,
+      onSeekForward: engine === "gemini" ? (s) => seekRel(Math.max(5, s)) : undefined,
+      onStop: engine === "gemini" ? () => audioRef.current?.pause() : () => stopBrowser(),
     },
     open,
   );
@@ -810,7 +904,6 @@ export function ChapterTTSPlayer({
         aria-label="Chapter narration player"
       >
         <div className="max-w-4xl mx-auto px-2 py-1.5 space-y-1.5 pb-[max(env(safe-area-inset-bottom),0.25rem)]">
-
           {/* One-row: engine dropdown + lang toggle + close */}
           <div className="flex items-center gap-1.5">
             <EngineSelector
@@ -818,7 +911,6 @@ export function ChapterTTSPlayer({
               onChange={setEngine}
               browserSupported={browserSupported}
             />
-
 
             <LangToggle value={ttsLang} onChange={setTtsLang} />
 
@@ -829,14 +921,17 @@ export function ChapterTTSPlayer({
               size="icon"
               className="h-6 w-6"
               aria-label="Close player"
-              onClick={() => { stopBrowser(); setOpen(false); }}
+              onClick={() => {
+                stopBrowser();
+                setOpen(false);
+              }}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
           </div>
 
           {/* Body — Browser TTS */}
-          {engine === 'browser' && (
+          {engine === "browser" && (
             <div className="space-y-1.5">
               {!browserSupported ? (
                 <div className="text-xs text-muted-foreground">
@@ -854,19 +949,27 @@ export function ChapterTTSPlayer({
                       </SelectTrigger>
                       <SelectContent className="max-h-[40vh]">
                         {browserVoices.length === 0 && (
-                          <SelectItem value="__none__" disabled>Loading…</SelectItem>
+                          <SelectItem value="__none__" disabled>
+                            Loading…
+                          </SelectItem>
                         )}
                         {browserVoices
-                          .filter((v) => v.lang.toLowerCase().startsWith(ttsLang === 'fa' ? 'fa' : 'en'))
+                          .filter((v) =>
+                            v.lang.toLowerCase().startsWith(ttsLang === "fa" ? "fa" : "en"),
+                          )
                           .map((v) => (
                             <SelectItem key={v.id} value={v.id}>
                               {v.name} <span className="opacity-60">({v.lang})</span>
                             </SelectItem>
                           ))}
                         {browserVoices.length > 0 &&
-                          browserVoices.filter((v) => v.lang.toLowerCase().startsWith(ttsLang === 'fa' ? 'fa' : 'en')).length === 0 && (
+                          browserVoices.filter((v) =>
+                            v.lang.toLowerCase().startsWith(ttsLang === "fa" ? "fa" : "en"),
+                          ).length === 0 && (
                             <SelectItem value="__no_voice__" disabled>
-                              {ttsLang === 'fa' ? 'صدای فارسی روی این مرورگر پیدا نشد' : 'No English voice found'}
+                              {ttsLang === "fa"
+                                ? "صدای فارسی روی این مرورگر پیدا نشد"
+                                : "No English voice found"}
                             </SelectItem>
                           )}
                       </SelectContent>
@@ -877,7 +980,9 @@ export function ChapterTTSPlayer({
                       </SelectTrigger>
                       <SelectContent>
                         {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                          <SelectItem key={r} value={String(r)}>{r}×</SelectItem>
+                          <SelectItem key={r} value={String(r)}>
+                            {r}×
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -903,10 +1008,14 @@ export function ChapterTTSPlayer({
                       size="sm"
                       className="h-7 px-2 gap-1 text-[11px]"
                       onClick={toggleBrowserPlay}
-                      title={browserPlaying ? 'Pause' : 'Listen'}
+                      title={browserPlaying ? "Pause" : "Listen"}
                     >
-                      {browserPlaying ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
-                      {browserPlaying ? 'Pause' : 'Listen'}
+                      {browserPlaying ? (
+                        <Pause className="h-3.5 w-3.5" />
+                      ) : (
+                        <Play className="h-3.5 w-3.5" />
+                      )}
+                      {browserPlaying ? "Pause" : "Listen"}
                     </Button>
                     <Button
                       size="icon"
@@ -928,23 +1037,35 @@ export function ChapterTTSPlayer({
                     </Button>
 
                     {(browserCtrlRef.current || resumeIndexRef.current > 0) && (
-                      <Button variant="ghost" size="sm" className="h-7 px-2 text-[11px]" onClick={stopBrowser}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 px-2 text-[11px]"
+                        onClick={stopBrowser}
+                      >
                         Stop
                       </Button>
                     )}
                   </div>
                   {browserChunk && (
                     <div className="space-y-0.5">
-                      <Progress value={(browserChunk.done / browserChunk.total) * 100} className="h-1" />
+                      <Progress
+                        value={(browserChunk.done / browserChunk.total) * 100}
+                        className="h-1"
+                      />
                       <p className="text-[10px] text-muted-foreground">
                         {browserChunk.done} / {browserChunk.total}
                       </p>
                     </div>
                   )}
-                  {ttsLang === 'fa' && browserVoices.length > 0 &&
-                    browserVoices.filter((v) => v.lang.toLowerCase().startsWith('fa')).length === 0 && (
+                  {ttsLang === "fa" &&
+                    browserVoices.length > 0 &&
+                    browserVoices.filter((v) => v.lang.toLowerCase().startsWith("fa")).length ===
+                      0 && (
                       <p className="text-[11px] text-destructive/90 leading-relaxed">
-                        این مرورگر فعلاً صدای fa-IR را به Web Speech API نداده است؛ اگر روی گوشی صدای فارسی نصب است، یک‌بار مرورگر/اپ را کامل ببند و باز کن، یا از Azure/ElevenLabs استفاده کن.
+                        این مرورگر فعلاً صدای fa-IR را به Web Speech API نداده است؛ اگر روی گوشی
+                        صدای فارسی نصب است، یک‌بار مرورگر/اپ را کامل ببند و باز کن، یا از
+                        Azure/ElevenLabs استفاده کن.
                       </p>
                     )}
                 </>
@@ -952,13 +1073,12 @@ export function ChapterTTSPlayer({
             </div>
           )}
 
-
           {/* Body — Gemini TTS */}
-          {engine === 'gemini' && (
+          {engine === "gemini" && (
             <>
               {!apiKey ? (
                 <div className="text-sm text-muted-foreground">
-                  Gemini TTS needs an API key.{' '}
+                  Gemini TTS needs an API key.{" "}
                   <Link to="/settings" className="text-primary underline underline-offset-2">
                     Add it in Settings → AI
                   </Link>
@@ -974,14 +1094,15 @@ export function ChapterTTSPlayer({
                       ) : (
                         <Play className="h-4 w-4 mr-2" />
                       )}
-                      {loading ? 'Generating…' : 'Listen'}
+                      {loading ? "Generating…" : "Listen"}
                     </Button>
                   </div>
                   {loading && chunkInfo && (
                     <div className="space-y-1">
                       <Progress value={progress * 100} />
                       <p className="text-xs text-muted-foreground">
-                        پاراگراف {chunkInfo.done} از {chunkInfo.total} — {Math.round(progress * 100)}٪
+                        پاراگراف {chunkInfo.done} از {chunkInfo.total} —{" "}
+                        {Math.round(progress * 100)}٪
                       </p>
                     </div>
                   )}
@@ -993,7 +1114,8 @@ export function ChapterTTSPlayer({
                     />
                   )}
                   <p className="text-xs text-muted-foreground">
-                    ~{Math.ceil(text.length / 1000)}k نویسه · هر پاراگراف بلافاصله بعد از ساخت قابل پخش است و در حافظهٔ آفلاین می‌ماند.
+                    ~{Math.ceil(text.length / 1000)}k نویسه · هر پاراگراف بلافاصله بعد از ساخت قابل
+                    پخش است و در حافظهٔ آفلاین می‌ماند.
                   </p>
                 </div>
               ) : (
@@ -1046,7 +1168,7 @@ export function ChapterTTSPlayer({
                       <Button
                         size="icon"
                         onClick={togglePlay}
-                        aria-label={playing ? 'Pause' : 'Play'}
+                        aria-label={playing ? "Pause" : "Play"}
                       >
                         {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                       </Button>
@@ -1114,7 +1236,7 @@ export function ChapterTTSPlayer({
           )}
 
           {/* Body — ElevenLabs */}
-          {engine === 'elevenlabs' && (
+          {engine === "elevenlabs" && (
             <ElevenLabsPanel
               elevenKey={elevenKey}
               audioUrl={audioUrl}
@@ -1142,48 +1264,87 @@ export function ChapterTTSPlayer({
           )}
 
           {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
-          {(engine === 'azure' || engine === 'huggingface' || engine === 'playht' || engine === 'opentts') && (
+          {(engine === "azure" ||
+            engine === "huggingface" ||
+            engine === "playht" ||
+            engine === "opentts") && (
             <div className="space-y-3">
-              {engine === 'azure' && !azureKey && (
+              {engine === "azure" && !azureKey && (
                 <div className="text-sm text-muted-foreground">
-                  Azure نیاز به key + region دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                  Azure نیاز به key + region دارد.{" "}
+                  <Link to="/settings" className="text-primary underline">
+                    تنظیمات → AI
+                  </Link>
                 </div>
               )}
-              {engine === 'huggingface' && !hfKey && (
+              {engine === "huggingface" && !hfKey && (
                 <div className="text-sm text-muted-foreground">
-                  Hugging Face نیاز به token دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                  Hugging Face نیاز به token دارد.{" "}
+                  <Link to="/settings" className="text-primary underline">
+                    تنظیمات → AI
+                  </Link>
                 </div>
               )}
-              {engine === 'playht' && (!playHtUser || !playHtKey) && (
+              {engine === "playht" && (!playHtUser || !playHtKey) && (
                 <div className="text-sm text-muted-foreground">
-                  Play.ht نیاز به user id + key دارد. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                  Play.ht نیاز به user id + key دارد.{" "}
+                  <Link to="/settings" className="text-primary underline">
+                    تنظیمات → AI
+                  </Link>
                 </div>
               )}
-              {engine === 'opentts' && !openTtsUrl && (
+              {engine === "opentts" && !openTtsUrl && (
                 <div className="text-sm text-muted-foreground">
-                  آدرس سرور OpenTTS را در تنظیمات بگذار. <Link to="/settings" className="text-primary underline">تنظیمات → AI</Link>
+                  آدرس سرور OpenTTS را در تنظیمات بگذار.{" "}
+                  <Link to="/settings" className="text-primary underline">
+                    تنظیمات → AI
+                  </Link>
                 </div>
               )}
               <div className="flex items-center gap-2 flex-wrap">
-                {engine === 'azure' && (
+                {engine === "azure" && (
                   <Select value={azureVoice} onValueChange={setAzureVoice}>
-                    <SelectTrigger className="h-9 w-[220px]"><SelectValue placeholder="انتخاب صدا" /></SelectTrigger>
-                    <SelectContent>{azureVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-9 w-[220px]">
+                      <SelectValue placeholder="انتخاب صدا" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {azureVoiceOpts.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 )}
-                {engine === 'huggingface' && (
+                {engine === "huggingface" && (
                   <Select value={hfVoice} onValueChange={setHfVoice}>
-                    <SelectTrigger className="h-9 w-[260px]"><SelectValue placeholder="انتخاب مدل" /></SelectTrigger>
-                    <SelectContent>{hfVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-9 w-[260px]">
+                      <SelectValue placeholder="انتخاب مدل" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {hfVoiceOpts.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 )}
-                {engine === 'playht' && (
+                {engine === "playht" && (
                   <Select value={playHtVoice} onValueChange={setPlayHtVoice}>
-                    <SelectTrigger className="h-9 w-[240px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>{playHtVoiceOpts.map((v) => <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>)}</SelectContent>
+                    <SelectTrigger className="h-9 w-[240px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {playHtVoiceOpts.map((v) => (
+                        <SelectItem key={v.id} value={v.id}>
+                          {v.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
                   </Select>
                 )}
-                {engine === 'opentts' && (
+                {engine === "opentts" && (
                   <input
                     type="text"
                     value={openTtsVoice}
@@ -1193,8 +1354,12 @@ export function ChapterTTSPlayer({
                   />
                 )}
                 <Button onClick={() => loadOther(false)} disabled={otherLoading}>
-                  {otherLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Play className="h-4 w-4 mr-2" />}
-                  {otherLoading ? 'در حال ساخت…' : 'Listen'}
+                  {otherLoading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Play className="h-4 w-4 mr-2" />
+                  )}
+                  {otherLoading ? "در حال ساخت…" : "Listen"}
                 </Button>
               </div>
               {audioUrl && (
@@ -1203,7 +1368,11 @@ export function ChapterTTSPlayer({
                   src={audioUrl}
                   controls
                   className="w-full"
-                  onLoadedMetadata={(e) => { const a = e.currentTarget; setDuration(a.duration || 0); a.playbackRate = rate; }}
+                  onLoadedMetadata={(e) => {
+                    const a = e.currentTarget;
+                    setDuration(a.duration || 0);
+                    a.playbackRate = rate;
+                  }}
                   onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
                   onPlay={() => setPlaying(true)}
                   onPause={() => setPlaying(false)}

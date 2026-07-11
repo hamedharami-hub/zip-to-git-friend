@@ -29,7 +29,7 @@ function readArrayBuffer(file: File | Blob): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as ArrayBuffer);
-    reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+    reader.onerror = () => reject(reader.error ?? new Error("read failed"));
     reader.readAsArrayBuffer(file);
   });
 }
@@ -43,7 +43,10 @@ async function decodeToMono16k(file: File | Blob): Promise<Float32Array> {
 
   // Use a temporary online-style context for the initial decodeAudioData (some
   // browsers require an AudioContext to decode). It's closed immediately.
-  const tmpCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+  const tmpCtx = new (
+    window.AudioContext ||
+    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+  )();
   let decoded: AudioBuffer;
   try {
     decoded = await tmpCtx.decodeAudioData(buf.slice(0));
@@ -51,7 +54,7 @@ async function decodeToMono16k(file: File | Blob): Promise<Float32Array> {
     void tmpCtx.close();
   }
 
-  const targetLength = Math.ceil((decoded.duration * TARGET_SAMPLE_RATE));
+  const targetLength = Math.ceil(decoded.duration * TARGET_SAMPLE_RATE);
   const offline = new OfflineAudioContext(1, targetLength, TARGET_SAMPLE_RATE);
   const src = offline.createBufferSource();
   src.buffer = decoded;
@@ -73,10 +76,10 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
     for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
   };
 
-  writeStr(0, 'RIFF');
+  writeStr(0, "RIFF");
   view.setUint32(4, 36 + dataLen, true);
-  writeStr(8, 'WAVE');
-  writeStr(12, 'fmt ');
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
   view.setUint32(16, 16, true); // PCM chunk size
   view.setUint16(20, 1, true); // PCM format
   view.setUint16(22, 1, true); // mono
@@ -84,7 +87,7 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   view.setUint32(28, sampleRate * BYTES_PER_SAMPLE, true); // byte rate
   view.setUint16(32, BYTES_PER_SAMPLE, true); // block align
   view.setUint16(34, 16, true); // bits per sample
-  writeStr(36, 'data');
+  writeStr(36, "data");
   view.setUint32(40, dataLen, true);
 
   let offset = 44;
@@ -92,7 +95,7 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
     const s = Math.max(-1, Math.min(1, samples[i]));
     view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
-  return new Blob([buffer], { type: 'audio/wav' });
+  return new Blob([buffer], { type: "audio/wav" });
 }
 
 /**

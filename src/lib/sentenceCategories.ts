@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface SentenceCategory {
   id: string;
@@ -36,10 +36,10 @@ function map(row: any): SentenceCategory {
 /** Top-level categories (parent_id = null) with child + sentence counts. */
 export async function fetchTopCategories(): Promise<CategoryWithStats[]> {
   const { data, error } = await supabase
-    .from('sentence_categories')
-    .select('*')
-    .is('parent_id', null)
-    .order('sort_order', { ascending: true });
+    .from("sentence_categories")
+    .select("*")
+    .is("parent_id", null)
+    .order("sort_order", { ascending: true });
   if (error) throw error;
 
   const cats = (data ?? []).map(map);
@@ -48,10 +48,10 @@ export async function fetchTopCategories(): Promise<CategoryWithStats[]> {
   const childCounts = new Map<string, number>();
   if (cats.length > 0) {
     const { data: children } = await supabase
-      .from('sentence_categories')
-      .select('parent_id')
+      .from("sentence_categories")
+      .select("parent_id")
       .in(
-        'parent_id',
+        "parent_id",
         cats.map((c) => c.id),
       );
     for (const c of children ?? []) {
@@ -63,9 +63,9 @@ export async function fetchTopCategories(): Promise<CategoryWithStats[]> {
   // Sentence count per category slug
   const sentenceCounts = new Map<string, number>();
   const { data: sentences } = await supabase
-    .from('sentence_lab')
-    .select('category')
-    .eq('status', 'published');
+    .from("sentence_lab")
+    .select("category")
+    .eq("status", "published");
   for (const s of sentences ?? []) {
     if (!s.category) continue;
     sentenceCounts.set(s.category, (sentenceCounts.get(s.category) ?? 0) + 1);
@@ -79,22 +79,20 @@ export async function fetchTopCategories(): Promise<CategoryWithStats[]> {
 }
 
 /** Sub-categories under a given parent slug. */
-export async function fetchSubcategories(
-  parentSlug: string,
-): Promise<CategoryWithStats[]> {
+export async function fetchSubcategories(parentSlug: string): Promise<CategoryWithStats[]> {
   const { data: parent } = await supabase
-    .from('sentence_categories')
-    .select('id, slug')
-    .eq('slug', parentSlug)
-    .is('parent_id', null)
+    .from("sentence_categories")
+    .select("id, slug")
+    .eq("slug", parentSlug)
+    .is("parent_id", null)
     .maybeSingle();
   if (!parent) return [];
 
   const { data, error } = await supabase
-    .from('sentence_categories')
-    .select('*')
-    .eq('parent_id', parent.id)
-    .order('sort_order', { ascending: true });
+    .from("sentence_categories")
+    .select("*")
+    .eq("parent_id", parent.id)
+    .order("sort_order", { ascending: true });
   if (error) throw error;
 
   const subs = (data ?? []).map(map);
@@ -102,10 +100,10 @@ export async function fetchSubcategories(
   // Sentence counts by subcategory slug, scoped to this parent's category
   const counts = new Map<string, number>();
   const { data: sentences } = await supabase
-    .from('sentence_lab')
-    .select('subcategory')
-    .eq('status', 'published')
-    .eq('category', parent.slug);
+    .from("sentence_lab")
+    .select("subcategory")
+    .eq("status", "published")
+    .eq("category", parent.slug);
   for (const s of sentences ?? []) {
     if (!s.subcategory) continue;
     counts.set(s.subcategory, (counts.get(s.subcategory) ?? 0) + 1);
@@ -120,9 +118,9 @@ export async function fetchSubcategories(
 
 export async function fetchCategoryBySlug(slug: string): Promise<SentenceCategory | null> {
   const { data } = await supabase
-    .from('sentence_categories')
-    .select('*')
-    .eq('slug', slug)
+    .from("sentence_categories")
+    .select("*")
+    .eq("slug", slug)
     .maybeSingle();
   return data ? map(data) : null;
 }
@@ -139,23 +137,23 @@ export interface CreateCategoryInput {
 export async function createCategory(input: CreateCategoryInput): Promise<SentenceCategory> {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
-  if (!userId) throw new Error('Sign in required');
+  if (!userId) throw new Error("Sign in required");
 
   let parentId: string | null = null;
   if (input.parentSlug) {
     const parent = await fetchCategoryBySlug(input.parentSlug);
-    if (!parent) throw new Error('Parent category not found');
+    if (!parent) throw new Error("Parent category not found");
     parentId = parent.id;
   }
 
   const { data, error } = await supabase
-    .from('sentence_categories')
+    .from("sentence_categories")
     .insert({
       slug: input.slug,
       name: input.name,
       description: input.description ?? null,
-      icon: input.icon ?? 'Folder',
-      color: input.color ?? 'sky',
+      icon: input.icon ?? "Folder",
+      color: input.color ?? "sky",
       parent_id: parentId,
       created_by: userId,
       is_default: false,
@@ -187,11 +185,11 @@ export async function importSentences(
 ): Promise<number> {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
-  if (!userId) throw new Error('Sign in required');
+  if (!userId) throw new Error("Sign in required");
 
   const rows = sentences.map((s) => ({
     id: `usr_${categorySlug}_${crypto.randomUUID().slice(0, 8)}`,
-    status: 'published',
+    status: "published",
     category: categorySlug,
     subcategory: subcategorySlug,
     cefr_level: s.cefr_level ?? null,
@@ -207,7 +205,7 @@ export async function importSentences(
     created_by: userId,
   }));
 
-  const { error } = await supabase.from('sentence_lab').insert(rows);
+  const { error } = await supabase.from("sentence_lab").insert(rows);
   if (error) throw error;
   return rows.length;
 }

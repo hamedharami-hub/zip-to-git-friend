@@ -1,16 +1,16 @@
-import { useEffect, useMemo, useState } from 'react';
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Trash2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useBookStore } from '@/store/bookStore';
-import { EmptyState } from '@/components/EmptyState';
-import { BookImportMenu } from '@/components/books/BookImportMenu';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { AddChapterDialog } from '@/components/books/AddChapterDialog';
-import { generateGradientCover } from '@/lib/manualBook';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { useEffect, useMemo, useState } from "react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { Link } from "react-router-dom";
+import { ArrowLeft, BookOpen, Trash2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useBookStore } from "@/store/bookStore";
+import { EmptyState } from "@/components/EmptyState";
+import { BookImportMenu } from "@/components/books/BookImportMenu";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { AddChapterDialog } from "@/components/books/AddChapterDialog";
+import { generateGradientCover } from "@/lib/manualBook";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const Books = () => {
   const books = useBookStore((s) => s.books);
@@ -18,14 +18,18 @@ const Books = () => {
   const remove = useBookStore((s) => s.remove);
 
   usePageMeta({
-    title: 'Library — Language Learning Player',
-    description: 'کتابخانه‌ی شخصی شما — افزودن، مطالعه، ترجمه و تحلیل کتاب‌ها با هوش مصنوعی.',
+    title: "Library — Language Learning Player",
+    description: "کتابخانه‌ی شخصی شما — افزودن، مطالعه، ترجمه و تحلیل کتاب‌ها با هوش مصنوعی.",
   });
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
     let alive = true;
-    load().finally(() => { if (alive) setHydrated(true); });
-    return () => { alive = false; };
+    load().finally(() => {
+      if (alive) setHydrated(true);
+    });
+    return () => {
+      alive = false;
+    };
   }, [load]);
 
   const handleDelete = async (id: string, title: string) => {
@@ -33,8 +37,8 @@ const Books = () => {
       await remove(id);
       toast.success(`Deleted "${title}".`);
     } catch (err) {
-      console.error('[Books] delete failed', err);
-      toast.error('Could not delete this book.');
+      console.error("[Books] delete failed", err);
+      toast.error("Could not delete this book.");
     }
   };
 
@@ -90,13 +94,16 @@ const Books = () => {
         ) : (
           <>
             <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--secondary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8 mb-8">
-              <div aria-hidden className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--secondary)/0.18)] blur-3xl" />
+              <div
+                aria-hidden
+                className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--secondary)/0.18)] blur-3xl"
+              />
               <div className="relative">
                 <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
                   Your Library
                 </p>
                 <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-secondary-container))] leading-tight">
-                  {sorted.length} {sorted.length === 1 ? 'کتاب' : 'کتاب'}
+                  {sorted.length} {sorted.length === 1 ? "کتاب" : "کتاب"}
                 </h2>
                 <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
                   روی جلد ضربه بزن تا شروع به خواندن کنی
@@ -117,11 +124,8 @@ const Books = () => {
                       : 0,
                   ),
                 );
-                const cover =
-                  b.coverDataUrl ??
-                  generateGradientCover(b.title, b.author);
-                const isManual =
-                  !b.fileName || /\.manual$/i.test(b.fileName);
+                const cover = b.coverDataUrl ?? generateGradientCover(b.title, b.author);
+                const isManual = !b.fileName || /\.manual$/i.test(b.fileName);
 
                 return (
                   <li key={b.id} className="group relative">
@@ -134,16 +138,16 @@ const Books = () => {
                       <div className="relative">
                         <div
                           className={cn(
-                            'aspect-[2/3] rounded-md overflow-hidden bg-muted',
-                            'shadow-[0_10px_25px_-12px_hsl(var(--foreground)/0.35)]',
-                            'transition-all duration-300 ease-out',
-                            'group-hover:-translate-y-1 group-hover:shadow-[0_18px_35px_-12px_hsl(var(--foreground)/0.45)]',
-                            'group-focus-within:ring-2 group-focus-within:ring-ring',
+                            "aspect-[2/3] rounded-md overflow-hidden bg-muted",
+                            "shadow-[0_10px_25px_-12px_hsl(var(--foreground)/0.35)]",
+                            "transition-all duration-300 ease-out",
+                            "group-hover:-translate-y-1 group-hover:shadow-[0_18px_35px_-12px_hsl(var(--foreground)/0.45)]",
+                            "group-focus-within:ring-2 group-focus-within:ring-ring",
                           )}
                           style={{
                             backgroundImage: `url("${cover}")`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
                           }}
                         >
                           {/* Subtle inner shadow + spine line for depth */}
@@ -152,7 +156,7 @@ const Books = () => {
                             className="absolute inset-0 pointer-events-none"
                             style={{
                               background:
-                                'linear-gradient(90deg, hsl(0 0% 0% / 0.18) 0, transparent 6%), linear-gradient(180deg, transparent 70%, hsl(0 0% 0% / 0.25) 100%)',
+                                "linear-gradient(90deg, hsl(0 0% 0% / 0.18) 0, transparent 6%), linear-gradient(180deg, transparent 70%, hsl(0 0% 0% / 0.25) 100%)",
                             }}
                           />
                         </div>
@@ -194,9 +198,9 @@ const Books = () => {
                         <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70 pt-0.5">
                           {b.chapterCount > 0
                             ? `${b.chapterCount} ch${
-                                inProgress ? ` · ${Math.round(progress * 100)}%` : ''
+                                inProgress ? ` · ${Math.round(progress * 100)}%` : ""
                               }`
-                            : 'Empty — add a chapter'}
+                            : "Empty — add a chapter"}
                         </p>
                       </div>
                     </Link>

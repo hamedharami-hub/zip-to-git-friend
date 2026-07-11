@@ -4,8 +4,7 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ReqBody {
@@ -34,7 +33,10 @@ const TOOL_DEF = {
     parameters: {
       type: "object",
       properties: {
-        english: { type: "string", description: "Natural English example sentence using the phrase." },
+        english: {
+          type: "string",
+          description: "Natural English example sentence using the phrase.",
+        },
         persian: { type: "string", description: "Idiomatic Persian translation of the example." },
       },
       required: ["english", "persian"],
@@ -95,7 +97,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: (typeof body.model === 'string' && body.model) || "google/gemini-2.5-flash-lite",
+        model: (typeof body.model === "string" && body.model) || "google/gemini-2.5-flash-lite",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userMsg },
@@ -160,8 +162,8 @@ Deno.serve(async (req) => {
     });
   }
 
-  return new Response(
-    JSON.stringify({ example: { english, persian } }),
-    { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-  );
+  return new Response(JSON.stringify({ example: { english, persian } }), {
+    status: 200,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 });

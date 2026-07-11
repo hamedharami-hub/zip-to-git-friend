@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom';
-import { Cloud, CloudOff, LogIn, LogOut, User as UserIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link } from "react-router-dom";
+import { Cloud, CloudOff, LogIn, LogOut, User as UserIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,9 +8,9 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+} from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export const AccountButton = () => {
   const { user, signOut, loading } = useAuth();
@@ -36,10 +36,10 @@ export const AccountButton = () => {
 
   const handleSignOut = async () => {
     await signOut();
-    toast.success('Signed out. Cards remain on this device.');
+    toast.success("Signed out. Cards remain on this device.");
   };
 
-  const initials = (user.email ?? '?').slice(0, 2).toUpperCase();
+  const initials = (user.email ?? "?").slice(0, 2).toUpperCase();
 
   return (
     <DropdownMenu>
@@ -83,7 +83,10 @@ export const SyncBadge = () => {
     );
   }
   return (
-    <Link to="/auth" className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground">
+    <Link
+      to="/auth"
+      className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+    >
       <CloudOff className="h-3.5 w-3.5" /> local only
     </Link>
   );

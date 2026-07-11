@@ -1,34 +1,30 @@
-import { useState } from 'react';
-import { Repeat, Square, Settings2 } from 'lucide-react';
-import type { SubtitleCue, LoopConfig } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { useState } from "react";
+import { Repeat, Square, Settings2 } from "lucide-react";
+import type { SubtitleCue, LoopConfig } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useLoopStore, DEFAULT_PATTERN } from '@/store/loopStore';
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { useLoopStore, DEFAULT_PATTERN } from "@/store/loopStore";
 
 interface Props {
   cue: SubtitleCue | null;
 }
 
-type Vis = LoopConfig['visibilityPattern'][number];
+type Vis = LoopConfig["visibilityPattern"][number];
 const VIS_LABEL: Record<Vis, string> = {
-  both: 'Both',
-  primary: 'Primary only',
-  secondary: 'Secondary only',
-  none: 'No subtitles',
+  both: "Both",
+  primary: "Primary only",
+  secondary: "Secondary only",
+  none: "No subtitles",
 };
 
 export function LoopControls({ cue }: Props) {
@@ -46,7 +42,7 @@ export function LoopControls({ cue }: Props) {
     setPattern((prev) => {
       const next = prev.slice(0, n);
       while (next.length < n) {
-        next.push(DEFAULT_PATTERN[next.length % DEFAULT_PATTERN.length] ?? 'both');
+        next.push(DEFAULT_PATTERN[next.length % DEFAULT_PATTERN.length] ?? "both");
       }
       return next;
     });
@@ -125,11 +121,11 @@ export function LoopControls({ cue }: Props) {
                     <div key={i} className="flex items-center gap-2 text-sm">
                       <span className="w-6 text-muted-foreground tabular-nums">#{i + 1}</span>
                       <Select
-                        value={pattern[i] ?? 'both'}
+                        value={pattern[i] ?? "both"}
                         onValueChange={(val) =>
                           setPattern((prev) => {
                             const next = prev.slice();
-                            while (next.length <= i) next.push('both');
+                            while (next.length <= i) next.push("both");
                             next[i] = val as Vis;
                             return next;
                           })
@@ -159,11 +155,7 @@ export function LoopControls({ cue }: Props) {
                     After iterations end, jump to the next cue and keep looping.
                   </span>
                 </div>
-                <Switch
-                  id="loop-chain"
-                  checked={chainNext}
-                  onCheckedChange={setChainNext}
-                />
+                <Switch id="loop-chain" checked={chainNext} onCheckedChange={setChainNext} />
               </div>
             </PopoverContent>
           </Popover>

@@ -18,11 +18,31 @@ export const Route = createRootRoute({
       { property: "og:site_name", content: "Lingua" },
       { property: "og:title", content: "Lingua — Language Learning Player" },
       { name: "twitter:title", content: "Lingua — Language Learning Player" },
-      { name: "description", content: "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر — همه در یک اپ." },
-      { property: "og:description", content: "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر." },
-      { name: "twitter:description", content: "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5443ecba-76c6-4e94-8366-3f3711fd18e2/id-preview-eabf2b0f--35e82add-0afb-4eb5-be53-15efd6682065.lovable.app-1779577332714.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5443ecba-76c6-4e94-8366-3f3711fd18e2/id-preview-eabf2b0f--35e82add-0afb-4eb5-be53-15efd6682065.lovable.app-1779577332714.png" },
+      {
+        name: "description",
+        content:
+          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر — همه در یک اپ.",
+      },
+      {
+        property: "og:description",
+        content:
+          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر.",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5443ecba-76c6-4e94-8366-3f3711fd18e2/id-preview-eabf2b0f--35e82add-0afb-4eb5-be53-15efd6682065.lovable.app-1779577332714.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/5443ecba-76c6-4e94-8366-3f3711fd18e2/id-preview-eabf2b0f--35e82add-0afb-4eb5-be53-15efd6682065.lovable.app-1779577332714.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
     ],

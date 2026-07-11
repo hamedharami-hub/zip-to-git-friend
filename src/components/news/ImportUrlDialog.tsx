@@ -2,11 +2,11 @@
  * Dialog to paste any URL (article or YouTube video) and import it as
  * a polished English article into the news reader.
  */
-import { useState, useEffect } from 'react';
-import { Loader2, Sparkles, Link2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { useState, useEffect } from "react";
+import { Loader2, Sparkles, Link2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -15,10 +15,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { importUrl, upsertArticle, addSource, youtubeChannelFeed, type NewsSource } from '@/lib/news';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+} from "@/components/ui/dialog";
+import {
+  importUrl,
+  upsertArticle,
+  addSource,
+  youtubeChannelFeed,
+  type NewsSource,
+} from "@/lib/news";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Props {
   trigger?: React.ReactNode;
@@ -28,15 +34,9 @@ interface Props {
   onChannelAdded?: (s: NewsSource) => void;
 }
 
-export function ImportUrlDialog({
-  trigger,
-  initialUrl,
-  autoOpen,
-  onClose,
-  onChannelAdded,
-}: Props) {
+export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChannelAdded }: Props) {
   const [open, setOpen] = useState(!!autoOpen);
-  const [url, setUrl] = useState(initialUrl ?? '');
+  const [url, setUrl] = useState(initialUrl ?? "");
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
 
@@ -58,13 +58,13 @@ export function ImportUrlDialog({
   const handleImport = async () => {
     const u = url.trim();
     if (!u) {
-      toast.error('یک لینک وارد کن.');
+      toast.error("یک لینک وارد کن.");
       return;
     }
     setBusy(true);
     try {
       const result = await importUrl(u);
-      if (result.kind === 'youtube_channel') {
+      if (result.kind === "youtube_channel") {
         // Resolve the canonical channel id + title via the feed endpoint so
         // we can store a real RSS URL (channel handle URLs aren't valid feeds).
         let channelTitle = u;
@@ -74,17 +74,17 @@ export function ImportUrlDialog({
           channelTitle = ch.channelTitle || u;
           feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${ch.channelId}`;
         } catch (err) {
-          console.warn('[importUrl] channel resolve failed', err);
+          console.warn("[importUrl] channel resolve failed", err);
         }
         const created = await addSource({
-          kind: 'rss',
+          kind: "rss",
           name: channelTitle,
           url: feedUrl,
           topic: null,
           language: null,
         });
         onChannelAdded?.(created);
-        toast.success('کانال یوتیوب اضافه شد.');
+        toast.success("کانال یوتیوب اضافه شد.");
         handleOpenChange(false);
         return;
       }
@@ -103,11 +103,11 @@ export function ImportUrlDialog({
         publishedAt: a.publishedAt,
         wordCount: a.wordCount,
       });
-      toast.success('مقاله آماده شد.');
+      toast.success("مقاله آماده شد.");
       handleOpenChange(false);
       navigate(`/news/article/${saved.id}`);
     } catch (e: any) {
-      toast.error(e.message ?? 'Import failed.');
+      toast.error(e.message ?? "Import failed.");
     } finally {
       setBusy(false);
     }

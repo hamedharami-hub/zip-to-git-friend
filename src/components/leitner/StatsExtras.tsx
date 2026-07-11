@@ -2,9 +2,9 @@
  * Leitner Stats extras: 30-day review activity heatmap + 7-day due forecast.
  * Pure read-only view of the in-memory card collection — no extra storage needed.
  */
-import { useMemo } from 'react';
-import type { LeitnerCard } from '@/types';
-import { Flame, Calendar, TrendingUp } from 'lucide-react';
+import { useMemo } from "react";
+import type { LeitnerCard } from "@/types";
+import { Flame, Calendar, TrendingUp } from "lucide-react";
 
 interface Props {
   cards: LeitnerCard[];
@@ -65,7 +65,12 @@ export function StatsExtras({ cards, folderId }: Props) {
       bins.push({
         day: start,
         count,
-        label: i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : d.toLocaleDateString(undefined, { weekday: 'short' }),
+        label:
+          i === 0
+            ? "Today"
+            : i === 1
+              ? "Tomorrow"
+              : d.toLocaleDateString(undefined, { weekday: "short" }),
       });
     }
     const max = Math.max(1, ...bins.map((b) => b.count), overdue);
@@ -76,30 +81,44 @@ export function StatsExtras({ cards, folderId }: Props) {
     <div className="space-y-6">
       {/* Streak + 30-day summary */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryTile icon={<Flame className="h-4 w-4" />} label="Streak" value={`${heatmap.streak} d`} />
-        <SummaryTile icon={<Calendar className="h-4 w-4" />} label="Reviews 30d" value={heatmap.total.toLocaleString()} />
-        <SummaryTile icon={<TrendingUp className="h-4 w-4" />} label="Due 7d" value={forecast.bins.reduce((s, b) => s + b.count, 0).toLocaleString()} />
+        <SummaryTile
+          icon={<Flame className="h-4 w-4" />}
+          label="Streak"
+          value={`${heatmap.streak} d`}
+        />
+        <SummaryTile
+          icon={<Calendar className="h-4 w-4" />}
+          label="Reviews 30d"
+          value={heatmap.total.toLocaleString()}
+        />
+        <SummaryTile
+          icon={<TrendingUp className="h-4 w-4" />}
+          label="Due 7d"
+          value={forecast.bins.reduce((s, b) => s + b.count, 0).toLocaleString()}
+        />
       </div>
 
       {/* Heatmap */}
       <section className="rounded-[20px] border border-border bg-card p-5">
         <header className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold">۳۰ روز گذشته</h3>
-          <span className="text-[11px] text-muted-foreground">
-            {heatmap.total} مرور
-          </span>
+          <span className="text-[11px] text-muted-foreground">{heatmap.total} مرور</span>
         </header>
-        <div className="grid grid-cols-15 gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>
+        <div
+          className="grid grid-cols-15 gap-1"
+          style={{ gridTemplateColumns: "repeat(15, minmax(0, 1fr))" }}
+        >
           {heatmap.cells.map((c) => {
             const intensity = c.count === 0 ? 0 : Math.min(1, c.count / heatmap.max);
-            const bg = c.count === 0
-              ? 'hsl(var(--muted))'
-              : `color-mix(in oklab, hsl(var(--primary)) ${Math.round(20 + intensity * 80)}%, transparent)`;
+            const bg =
+              c.count === 0
+                ? "hsl(var(--muted))"
+                : `color-mix(in oklab, hsl(var(--primary)) ${Math.round(20 + intensity * 80)}%, transparent)`;
             const d = new Date(c.day);
             return (
               <div
                 key={c.day}
-                title={`${d.toLocaleDateString()} — ${c.count} review${c.count === 1 ? '' : 's'}`}
+                title={`${d.toLocaleDateString()} — ${c.count} review${c.count === 1 ? "" : "s"}`}
                 className="aspect-square rounded-[4px]"
                 style={{ background: bg }}
               />
@@ -123,12 +142,16 @@ export function StatsExtras({ cards, folderId }: Props) {
             const h = b.count === 0 ? 4 : Math.max(6, Math.round((b.count / forecast.max) * 100));
             return (
               <div key={b.day} className="flex-1 flex flex-col items-center gap-1.5 min-w-0">
-                <span className="text-[10px] tabular-nums text-muted-foreground">{b.count || ''}</span>
+                <span className="text-[10px] tabular-nums text-muted-foreground">
+                  {b.count || ""}
+                </span>
                 <div
                   className="w-full rounded-md bg-gradient-to-t from-[hsl(var(--primary))] to-[hsl(var(--primary)/0.5)] transition-all"
                   style={{ height: `${h}%`, opacity: b.count === 0 ? 0.25 : 1 }}
                 />
-                <span className="text-[10px] text-muted-foreground truncate w-full text-center">{b.label}</span>
+                <span className="text-[10px] text-muted-foreground truncate w-full text-center">
+                  {b.label}
+                </span>
               </div>
             );
           })}
@@ -138,7 +161,15 @@ export function StatsExtras({ cards, folderId }: Props) {
   );
 }
 
-function SummaryTile({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function SummaryTile({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-[16px] border border-border bg-card p-3 flex items-center gap-3">
       <span className="h-8 w-8 rounded-full bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] flex items-center justify-center shrink-0">

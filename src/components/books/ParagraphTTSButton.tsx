@@ -5,38 +5,34 @@
  * state (per-paragraph), and exposes simple play/pause toggling. We do NOT
  * persist this to IndexedDB because paragraphs are small and cheap to re-gen.
  */
-import { useEffect, useRef, useState } from 'react';
-import { Play, Pause, Loader2, Volume2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { useSettingsStore } from '@/store/settingsStore';
-import {
-  GeminiTtsError,
-  synthesizeText,
-  type GeminiTtsVoice,
-} from '@/lib/geminiTts';
-import { isBrowserTtsSupported } from '@/lib/browserTts';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState } from "react";
+import { Play, Pause, Loader2, Volume2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useSettingsStore } from "@/store/settingsStore";
+import { GeminiTtsError, synthesizeText, type GeminiTtsVoice } from "@/lib/geminiTts";
+import { isBrowserTtsSupported } from "@/lib/browserTts";
+import { cn } from "@/lib/utils";
 
 interface Props {
   text: string;
   className?: string;
   /** When 'fa', prefer Web Speech with a Persian voice; falls back to Gemini. */
-  lang?: 'en' | 'fa';
+  lang?: "en" | "fa";
 }
 
-const VOICE_KEY = 'llvp-tts-voice';
+const VOICE_KEY = "llvp-tts-voice";
 
 function getStoredVoice(): GeminiTtsVoice {
   try {
     const v = localStorage.getItem(VOICE_KEY) as GeminiTtsVoice | null;
-    return v ?? 'Kore';
+    return v ?? "Kore";
   } catch {
-    return 'Kore';
+    return "Kore";
   }
 }
 
-export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
+export function ParagraphTTSButton({ text, className, lang = "en" }: Props) {
   const { settings } = useSettingsStore();
   const apiKey = settings.geminiTtsApiKey || settings.geminiApiKey;
 
@@ -73,7 +69,7 @@ export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
     const voices = synth.getVoices();
     const prefix = targetLang.toLowerCase().slice(0, 2);
     const voice = voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
-    if (!voice && targetLang === 'fa-IR') return false; // require a Persian voice
+    if (!voice && targetLang === "fa-IR") return false; // require a Persian voice
     const u = new SpeechSynthesisUtterance(text);
     if (voice) {
       u.voice = voice;
@@ -105,7 +101,11 @@ export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
     // Toggle pause/resume if Gemini audio already loaded.
     if (audioRef.current) {
       if (audioRef.current.paused) {
-        try { await audioRef.current.play(); } catch { /* ignore */ }
+        try {
+          await audioRef.current.play();
+        } catch {
+          /* ignore */
+        }
       } else {
         audioRef.current.pause();
       }
@@ -123,16 +123,18 @@ export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
     if (!text.trim()) return;
 
     // Persian → try Web Speech first (instant, free, offline).
-    if (lang === 'fa') {
-      if (speakWithBrowser('fa-IR')) return;
+    if (lang === "fa") {
+      if (speakWithBrowser("fa-IR")) return;
       if (!apiKey) {
-        toast.error('برای صدای فارسی، یک صدای فارسی در سیستم نصب کن یا کلید Gemini در تنظیمات بگذار.');
+        toast.error(
+          "برای صدای فارسی، یک صدای فارسی در سیستم نصب کن یا کلید Gemini در تنظیمات بگذار.",
+        );
         return;
       }
     } else if (!apiKey) {
       // English → if no Gemini key, fall back to Web Speech.
-      if (speakWithBrowser('en-US')) return;
-      toast.error('Add your Gemini API key in Settings → AI to use TTS.');
+      if (speakWithBrowser("en-US")) return;
+      toast.error("Add your Gemini API key in Settings → AI to use TTS.");
       return;
     }
 
@@ -150,12 +152,12 @@ export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
     } catch (err) {
       const msg =
         err instanceof GeminiTtsError
-          ? err.code === 'auth'
-            ? 'Gemini rejected the TTS key — check Settings → AI.'
-            : err.code === 'quota'
-              ? 'Gemini TTS rate limit hit. Wait a moment.'
+          ? err.code === "auth"
+            ? "Gemini rejected the TTS key — check Settings → AI."
+            : err.code === "quota"
+              ? "Gemini TTS rate limit hit. Wait a moment."
               : `TTS failed: ${err.message}`
-          : 'TTS failed.';
+          : "TTS failed.";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -171,11 +173,11 @@ export function ParagraphTTSButton({ text, className, lang = 'en' }: Props) {
       variant="ghost"
       onClick={handleClick}
       disabled={loading}
-      className={cn('h-7 w-7', className)}
-      title={playing ? 'Pause' : 'Listen to this paragraph'}
-      aria-label={playing ? 'Pause paragraph' : 'Listen to this paragraph'}
+      className={cn("h-7 w-7", className)}
+      title={playing ? "Pause" : "Listen to this paragraph"}
+      aria-label={playing ? "Pause paragraph" : "Listen to this paragraph"}
     >
-      <Icon className={cn('h-3.5 w-3.5', loading && 'animate-spin')} />
+      <Icon className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
     </Button>
   );
 }

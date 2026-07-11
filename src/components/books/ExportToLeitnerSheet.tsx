@@ -10,23 +10,17 @@
  *    import — the leitner store already enforces this, but we surface the
  *    duplicate-state in the UI so users see what's already in their deck.
  */
-import { useEffect, useMemo, useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Layers, BookOpen, Loader2, Search } from 'lucide-react';
-import { toast } from 'sonner';
-import { getBookDb } from '@/lib/bookDb';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { normalizeFront } from '@/lib/leitner';
-import type { BookChapter, BookParagraphAnalysis, VocabItem } from '@/types';
+import { useEffect, useMemo, useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Layers, BookOpen, Loader2, Search } from "lucide-react";
+import { toast } from "sonner";
+import { getBookDb } from "@/lib/bookDb";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { normalizeFront } from "@/lib/leitner";
+import type { BookChapter, BookParagraphAnalysis, VocabItem } from "@/types";
 
 interface Props {
   bookId: string;
@@ -50,7 +44,7 @@ interface Candidate {
 
 async function loadAllAnalyses(bookId: string): Promise<BookParagraphAnalysis[]> {
   const db = await getBookDb();
-  return db.getAllFromIndex('bookParagraphAnalyses', 'bookId', bookId);
+  return db.getAllFromIndex("bookParagraphAnalyses", "bookId", bookId);
 }
 
 export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
@@ -59,7 +53,7 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
   const [importing, setImporting] = useState(false);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [filter, setFilter] = useState('');
+  const [filter, setFilter] = useState("");
 
   const cards = useLeitnerStore((s) => s.cards);
   const loadCards = useLeitnerStore((s) => s.load);
@@ -82,8 +76,7 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
           useLeitnerStore.getState().cards.map((c) => normalizeFront(c.front)),
         );
         for (const a of analyses) {
-          const sourceTitle =
-            titleByIdx.get(a.chapterIndex) ?? `Chapter ${a.chapterIndex + 1}`;
+          const sourceTitle = titleByIdx.get(a.chapterIndex) ?? `Chapter ${a.chapterIndex + 1}`;
           for (const v of a.vocabulary as VocabItem[]) {
             if (!v?.word || !v?.translation) continue;
             const key = normalizeFront(v.word);
@@ -93,16 +86,14 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
               word: v.word.trim(),
               translation: v.translation.trim(),
               partOfSpeech: v.partOfSpeech,
-              example: (v.example?.trim() || '').slice(0, 240),
+              example: (v.example?.trim() || "").slice(0, 240),
               chapterIndex: a.chapterIndex,
               chapterTitle: sourceTitle,
               alreadyInDeck: existingKeys.has(key),
             });
           }
         }
-        const list = Array.from(dedup.values()).sort((a, b) =>
-          a.word.localeCompare(b.word),
-        );
+        const list = Array.from(dedup.values()).sort((a, b) => a.word.localeCompare(b.word));
         if (cancelled) return;
         setCandidates(list);
         // Pre-select everything that's not already in the deck.
@@ -120,9 +111,7 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
     const q = filter.trim().toLowerCase();
     if (!q) return candidates;
     return candidates.filter(
-      (c) =>
-        c.word.toLowerCase().includes(q) ||
-        c.translation.toLowerCase().includes(q),
+      (c) => c.word.toLowerCase().includes(q) || c.translation.toLowerCase().includes(q),
     );
   }, [candidates, filter]);
 
@@ -146,11 +135,9 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
   const clearAll = () => setSelected(new Set());
 
   const handleImport = async () => {
-    const picks = candidates.filter(
-      (c) => selected.has(c.key) && !c.alreadyInDeck,
-    );
+    const picks = candidates.filter((c) => selected.has(c.key) && !c.alreadyInDeck);
     if (picks.length === 0) {
-      toast.info('Nothing new to import.');
+      toast.info("Nothing new to import.");
       return;
     }
     setImporting(true);
@@ -160,20 +147,20 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
       for (const c of picks) {
         const back = [
           c.translation,
-          c.partOfSpeech ? `(${c.partOfSpeech})` : '',
-          c.example ? `\n\n📖 ${c.example}` : '',
+          c.partOfSpeech ? `(${c.partOfSpeech})` : "",
+          c.example ? `\n\n📖 ${c.example}` : "",
           `\n— ${bookTitle} · ${c.chapterTitle}`,
         ]
           .filter(Boolean)
-          .join(' ')
+          .join(" ")
           .trim();
         const result = await addCard(c.word, back, bookId);
-        if (result === 'added') added += 1;
+        if (result === "added") added += 1;
         else dup += 1;
       }
       toast.success(
-        `Imported ${added} card${added === 1 ? '' : 's'}` +
-          (dup > 0 ? ` · skipped ${dup} duplicate${dup === 1 ? '' : 's'}.` : '.'),
+        `Imported ${added} card${added === 1 ? "" : "s"}` +
+          (dup > 0 ? ` · skipped ${dup} duplicate${dup === 1 ? "" : "s"}.` : "."),
       );
       setOpen(false);
     } finally {
@@ -184,14 +171,10 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
   // Re-flag duplicates in real time as cards mutate.
   useEffect(() => {
     const existingKeys = new Set(cards.map((c) => normalizeFront(c.front)));
-    setCandidates((prev) =>
-      prev.map((c) => ({ ...c, alreadyInDeck: existingKeys.has(c.key) })),
-    );
+    setCandidates((prev) => prev.map((c) => ({ ...c, alreadyInDeck: existingKeys.has(c.key) })));
   }, [cards]);
 
-  const newSelectableCount = filtered.filter(
-    (c) => selected.has(c.key) && !c.alreadyInDeck,
-  ).length;
+  const newSelectableCount = filtered.filter((c) => selected.has(c.key) && !c.alreadyInDeck).length;
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -222,8 +205,8 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
             <BookOpen className="h-10 w-10 text-muted-foreground/60" />
             <p className="text-sm font-medium">No analyzed vocabulary yet.</p>
             <p className="text-xs text-muted-foreground max-w-[260px]">
-              Analyze some paragraphs (✨) — or run "Batch Analyze Chapter" — and
-              their vocabulary will appear here.
+              Analyze some paragraphs (✨) — or run "Batch Analyze Chapter" — and their vocabulary
+              will appear here.
             </p>
           </div>
         ) : (
@@ -240,23 +223,15 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
               </div>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
-                  {selected.size} selected · {candidates.length} total ·{' '}
+                  {selected.size} selected · {candidates.length} total ·{" "}
                   {candidates.filter((c) => c.alreadyInDeck).length} already in deck
                 </span>
                 <div className="flex gap-1">
-                  <button
-                    type="button"
-                    className="hover:text-primary"
-                    onClick={selectAllVisible}
-                  >
+                  <button type="button" className="hover:text-primary" onClick={selectAllVisible}>
                     Select all
                   </button>
                   <span aria-hidden>·</span>
-                  <button
-                    type="button"
-                    className="hover:text-primary"
-                    onClick={clearAll}
-                  >
+                  <button type="button" className="hover:text-primary" onClick={clearAll}>
                     Clear
                   </button>
                 </div>
@@ -270,7 +245,7 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
                   <label
                     key={c.key}
                     className={`flex items-start gap-3 rounded-md border border-border bg-card px-3 py-2 cursor-pointer transition ${
-                      c.alreadyInDeck ? 'opacity-60' : 'hover:bg-accent/40'
+                      c.alreadyInDeck ? "opacity-60" : "hover:bg-accent/40"
                     }`}
                   >
                     <Checkbox
@@ -317,12 +292,9 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
 
             <div className="border-t border-border px-5 py-3 flex items-center justify-between gap-3">
               <p className="text-xs text-muted-foreground">
-                {newSelectableCount} new card{newSelectableCount === 1 ? '' : 's'}
+                {newSelectableCount} new card{newSelectableCount === 1 ? "" : "s"}
               </p>
-              <Button
-                onClick={handleImport}
-                disabled={importing || newSelectableCount === 0}
-              >
+              <Button onClick={handleImport} disabled={importing || newSelectableCount === 0}>
                 {importing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

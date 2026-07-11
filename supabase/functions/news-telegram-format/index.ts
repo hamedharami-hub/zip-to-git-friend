@@ -76,15 +76,14 @@ function stripBold(md: string): string {
 }
 
 function mdToTelegramHtml(md: string): string {
-  const esc = (s: string) =>
-    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const inline = (t: string) =>
-    esc(t).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const inline = (t: string) => esc(t).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
   // Split on blank lines into paragraphs.
-  const blocks = md.split(/\n{2,}/).map((b) => b.trim()).filter(Boolean);
-  return blocks
-    .map((b) => `<p>${inline(b).replace(/\n/g, "<br>")}</p>`)
-    .join("\n");
+  const blocks = md
+    .split(/\n{2,}/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+  return blocks.map((b) => `<p>${inline(b).replace(/\n/g, "<br>")}</p>`).join("\n");
 }
 
 serve(async (req) => {
@@ -93,23 +92,27 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const { title, contentMd, contentFa, url, siteName, model: requestedModel } = await req.json();
     if (!title || typeof title !== "string") {
       return new Response(JSON.stringify({ error: "title is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const body = String(contentFa ?? contentMd ?? "").trim();
     if (!body) {
       return new Response(JSON.stringify({ error: "contentMd or contentFa is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const model = requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
+    const model =
+      requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
     const userPrompt = [
       `عنوان اصلی: ${title}`,
@@ -120,7 +123,9 @@ serve(async (req) => {
       "```",
       body.slice(0, 8000),
       "```",
-    ].filter(Boolean).join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -131,22 +136,27 @@ serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userPrompt },
         ],
-        tools: [{
-          type: "function",
-          function: {
-            name: "emit_post",
-            description: "Return the Telegram-ready Persian post.",
-            parameters: {
-              type: "object",
-              properties: {
-                title: { type: "string", description: "عنوان فارسی نهایی (یک خط)." },
-                markdown: { type: "string", description: "متن کامل با ** برای bold و خطوط خالی بین پاراگراف‌ها." },
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "emit_post",
+              description: "Return the Telegram-ready Persian post.",
+              parameters: {
+                type: "object",
+                properties: {
+                  title: { type: "string", description: "عنوان فارسی نهایی (یک خط)." },
+                  markdown: {
+                    type: "string",
+                    description: "متن کامل با ** برای bold و خطوط خالی بین پاراگراف‌ها.",
+                  },
+                },
+                required: ["title", "markdown"],
+                additionalProperties: false,
               },
-              required: ["title", "markdown"],
-              additionalProperties: false,
             },
           },
-        }],
+        ],
         tool_choice: { type: "function", function: { name: "emit_post" } },
       }),
     });
@@ -155,17 +165,26 @@ serve(async (req) => {
       const errBody = await aiRes.text();
       console.error("AI gateway error", aiRes.status, errBody);
       if (aiRes.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Try again in a moment." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "Rate limit exceeded. Try again in a moment." }),
+          {
+            status: 429,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
       if (aiRes.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Top up in workspace settings." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({ error: "AI credits exhausted. Top up in workspace settings." }),
+          {
+            status: 402,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
       return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status})` }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -173,7 +192,8 @@ serve(async (req) => {
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall) {
       return new Response(JSON.stringify({ error: "AI did not return a tool call" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const args = JSON.parse(toolCall.function.arguments);
@@ -186,17 +206,21 @@ serve(async (req) => {
     const html = mdToTelegramHtml(markdown);
     const plain = stripBold(markdown);
 
-    return new Response(JSON.stringify({
-      title: outTitle,
-      markdown,
-      html,
-      plain,
-      model,
-    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({
+        title: outTitle,
+        markdown,
+        html,
+        plain,
+        model,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e: any) {
     console.error("news-telegram-format error", e);
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

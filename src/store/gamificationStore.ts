@@ -2,8 +2,8 @@
  * Lightweight zustand store for gamification HUD: XP, streak, hearts, combo.
  * Combo lives only in memory (resets on page reload / wrong answer).
  */
-import { create } from 'zustand';
-import { toast } from 'sonner';
+import { create } from "zustand";
+import { toast } from "sonner";
 import {
   getOrCreateState,
   recordGrade,
@@ -11,7 +11,7 @@ import {
   claimQuest,
   type GamificationState,
   type DailyQuest,
-} from '@/lib/gamification';
+} from "@/lib/gamification";
 
 interface GamificationStore {
   state: GamificationState | null;
@@ -20,7 +20,7 @@ interface GamificationStore {
   loading: boolean;
   load: () => Promise<void>;
   loadQuests: () => Promise<void>;
-  grade: (grade: 'again' | 'hard' | 'good' | 'easy') => Promise<void>;
+  grade: (grade: "again" | "hard" | "good" | "easy") => Promise<void>;
   claim: (questId: string) => Promise<void>;
   resetCombo: () => void;
 }
@@ -38,7 +38,7 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
       const s = await getOrCreateState();
       set({ state: s, loading: false });
     } catch (e) {
-      console.warn('[gamification] load failed', e);
+      console.warn("[gamification] load failed", e);
       set({ loading: false });
     }
   },
@@ -48,31 +48,31 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
       const q = await ensureDailyQuests();
       set({ quests: q });
     } catch (e) {
-      console.warn('[gamification] loadQuests failed', e);
+      console.warn("[gamification] loadQuests failed", e);
     }
   },
 
   async grade(grade) {
     const prevCombo = get().combo;
-    const newCombo = grade === 'again' ? 0 : prevCombo + 1;
+    const newCombo = grade === "again" ? 0 : prevCombo + 1;
     set({ combo: newCombo });
     try {
       const res = await recordGrade({ grade, combo: newCombo });
       if (res.state) set({ state: res.state });
       if (res.xpEarned > 0) {
-        const mult = newCombo >= 10 ? ' ×3' : newCombo >= 5 ? ' ×2' : '';
+        const mult = newCombo >= 10 ? " ×3" : newCombo >= 5 ? " ×2" : "";
         toast.success(`+${res.xpEarned} XP${mult}`, { duration: 1200 });
       }
       if (res.leveledUp) {
         toast.success(`🎉 Level ${res.state?.level}!`, { duration: 2500 });
       }
       if (res.lostHeart) {
-        toast.error('💔 یک قلب از دست دادی', { duration: 1600 });
+        toast.error("💔 یک قلب از دست دادی", { duration: 1600 });
       }
       // Refresh quests so HUD shows progress
       void get().loadQuests();
     } catch (e) {
-      console.warn('[gamification] grade failed', e);
+      console.warn("[gamification] grade failed", e);
     }
   },
 
@@ -81,9 +81,9 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
       const s = await claimQuest(questId);
       if (s) set({ state: s });
       await get().loadQuests();
-      toast.success('🎁 جایزه دریافت شد!');
+      toast.success("🎁 جایزه دریافت شد!");
     } catch (e) {
-      console.warn('[gamification] claim failed', e);
+      console.warn("[gamification] claim failed", e);
     }
   },
 

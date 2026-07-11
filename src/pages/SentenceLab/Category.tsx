@@ -1,27 +1,60 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, Plus, Folder, Hand, Heart, MessageCircle, HelpCircle,
-  Sparkles, Mic, GitBranch, Calendar, Clock, Pill, Stethoscope,
-  GraduationCap, ShoppingBag, Briefcase, Layers, Drama,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+  ArrowLeft,
+  Loader2,
+  Plus,
+  Folder,
+  Hand,
+  Heart,
+  MessageCircle,
+  HelpCircle,
+  Sparkles,
+  Mic,
+  GitBranch,
+  Calendar,
+  Clock,
+  Pill,
+  Stethoscope,
+  GraduationCap,
+  ShoppingBag,
+  Briefcase,
+  Layers,
+  Drama,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
-  fetchSubcategories, fetchCategoryBySlug, type CategoryWithStats,
+  fetchSubcategories,
+  fetchCategoryBySlug,
+  type CategoryWithStats,
   type SentenceCategory,
-} from '@/lib/sentenceCategories';
-import { CreateCategoryDialog } from '@/components/sentence-lab/CreateCategoryDialog';
-import { ImportSentencesDialog } from '@/components/sentence-lab/ImportSentencesDialog';
+} from "@/lib/sentenceCategories";
+import { CreateCategoryDialog } from "@/components/sentence-lab/CreateCategoryDialog";
+import { ImportSentencesDialog } from "@/components/sentence-lab/ImportSentencesDialog";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  Folder, Hand, Heart, MessageCircle, HelpCircle, Sparkles, Mic, GitBranch,
-  Calendar, Clock, Pill, Stethoscope, GraduationCap, ShoppingBag, Briefcase, Layers,
+  Folder,
+  Hand,
+  Heart,
+  MessageCircle,
+  HelpCircle,
+  Sparkles,
+  Mic,
+  GitBranch,
+  Calendar,
+  Clock,
+  Pill,
+  Stethoscope,
+  GraduationCap,
+  ShoppingBag,
+  Briefcase,
+  Layers,
 };
 
 export default function SentenceCategoryPage() {
-  const { categorySlug = '' } = useParams<{ categorySlug: string }>();
+  const { categorySlug = "" } = useParams<{ categorySlug: string }>();
   const navigate = useNavigate();
   const [cat, setCat] = useState<SentenceCategory | null>(null);
   const [subs, setSubs] = useState<CategoryWithStats[]>([]);
@@ -39,7 +72,7 @@ export default function SentenceCategoryPage() {
       const s = await fetchSubcategories(categorySlug);
       setSubs(s);
     } catch (e: any) {
-      setError(e?.message ?? 'Failed to load');
+      setError(e?.message ?? "Failed to load");
     } finally {
       setLoading(false);
     }
@@ -57,7 +90,7 @@ export default function SentenceCategoryPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/sentence-lab')}
+              onClick={() => navigate("/sentence-lab")}
               aria-label="Back to categories"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -95,7 +128,9 @@ export default function SentenceCategoryPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">Drill all {cat.name}</p>
-                <p className="text-xs text-muted-foreground">Mixed daily queue across every sub-topic</p>
+                <p className="text-xs text-muted-foreground">
+                  Mixed daily queue across every sub-topic
+                </p>
               </div>
             </div>
             <span className="text-xs text-primary">Start →</span>
@@ -107,20 +142,26 @@ export default function SentenceCategoryPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : error ? (
-          <Card><CardContent className="py-8 text-center text-sm text-destructive">{error}</CardContent></Card>
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-destructive">{error}</CardContent>
+          </Card>
         ) : subs.length === 0 ? (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No sub-topics yet in this category.<br />
+              No sub-topics yet in this category.
+              <br />
               Use <strong>+ Sub-topic</strong> or <strong>Import</strong> to add some.
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
             {subs.map((s) => {
-              const Icon = ICONS[s.icon ?? 'Folder'] ?? Folder;
+              const Icon = ICONS[s.icon ?? "Folder"] ?? Folder;
               return (
-                <div key={s.id} className="rounded-xl border bg-card transition-colors hover:border-primary/50">
+                <div
+                  key={s.id}
+                  className="rounded-xl border bg-card transition-colors hover:border-primary/50"
+                >
                   <Link
                     to={`/sentence-lab/${categorySlug}/${s.slug}`}
                     className="group flex items-center justify-between gap-3 p-4"
@@ -132,9 +173,7 @@ export default function SentenceCategoryPage() {
                       <div className="min-w-0">
                         <p className="truncate text-sm font-medium">{s.name}</p>
                         {s.description && (
-                          <p className="truncate text-xs text-muted-foreground">
-                            {s.description}
-                          </p>
+                          <p className="truncate text-xs text-muted-foreground">{s.description}</p>
                         )}
                       </div>
                     </div>
@@ -171,7 +210,9 @@ export default function SentenceCategoryPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">🎭 Scenario across all of {cat.name}</p>
-                <p className="text-xs text-muted-foreground">Real conversation that uses your drilled sentences</p>
+                <p className="text-xs text-muted-foreground">
+                  Real conversation that uses your drilled sentences
+                </p>
               </div>
             </div>
             <span className="text-xs text-primary">Start →</span>
@@ -183,14 +224,20 @@ export default function SentenceCategoryPage() {
         open={showCreate}
         onOpenChange={setShowCreate}
         parentSlug={categorySlug}
-        onCreated={() => { setShowCreate(false); void load(); }}
+        onCreated={() => {
+          setShowCreate(false);
+          void load();
+        }}
       />
       <ImportSentencesDialog
         open={showImport}
         onOpenChange={setShowImport}
         categorySlug={categorySlug}
         subcategories={subs}
-        onImported={() => { setShowImport(false); void load(); }}
+        onImported={() => {
+          setShowImport(false);
+          void load();
+        }}
       />
     </div>
   );

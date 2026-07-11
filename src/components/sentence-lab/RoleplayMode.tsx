@@ -1,41 +1,52 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Mic, Square, Loader2, Volume2, Plus, Check, AlertCircle, UserCog, Stethoscope, Sparkles, Pause, Play, Radio } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Mic,
+  Square,
+  Loader2,
+  Volume2,
+  Plus,
+  Check,
+  AlertCircle,
+  UserCog,
+  Stethoscope,
+  Sparkles,
+  Pause,
+  Play,
+  Radio,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { useSentenceStore, type SentenceLabItem } from '@/store/sentenceStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import {
-  isWebSpeechSupported,
-  startWebSpeech,
-  type WebSpeechController,
-} from '@/lib/webSpeech';
-import { getSentenceAudio } from '@/lib/sentenceAudio';
-import { BrowserTtsController, isBrowserTtsSupported } from '@/lib/browserTts';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/dialog";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useSentenceStore, type SentenceLabItem } from "@/store/sentenceStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { isWebSpeechSupported, startWebSpeech, type WebSpeechController } from "@/lib/webSpeech";
+import { getSentenceAudio } from "@/lib/sentenceAudio";
+import { BrowserTtsController, isBrowserTtsSupported } from "@/lib/browserTts";
+import { cn } from "@/lib/utils";
+import { BidiText } from "@/components/BidiText";
 
-type Light = 'idle' | 'green' | 'yellow' | 'red';
+type Light = "idle" | "green" | "yellow" | "red";
 
 export interface GrammarMarker {
   span: string;
   correction: string;
   rule_label: string;
   explanation: string;
-  severity: 'minor' | 'major';
+  severity: "minor" | "major";
 }
 
 interface Turn {
@@ -44,7 +55,7 @@ interface Turn {
   spokenSeconds: number;
   ai: RoleplayResponse;
   latencyMs: number;
-  light: Exclude<Light, 'idle'>;
+  light: Exclude<Light, "idle">;
   ts: number;
 }
 
@@ -54,7 +65,7 @@ interface RoleplayResponse {
   grammar_markers: GrammarMarker[];
   fluency_penalty_notes: string;
   harvested_sentences: string[];
-  intent_match: 'green' | 'yellow' | 'red';
+  intent_match: "green" | "yellow" | "red";
 }
 
 const LATENCY_YELLOW_MS = 2500;
@@ -72,12 +83,12 @@ export function RoleplayMode({
 
   const [recording, setRecording] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [light, setLight] = useState<Light>('idle');
+  const [light, setLight] = useState<Light>("idle");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [showDissection, setShowDissection] = useState(false);
-  const [interim, setInterim] = useState('');
+  const [interim, setInterim] = useState("");
   /** Who the USER plays. AI plays the opposite role. */
-  const [roleMode, setRoleMode] = useState<'professional' | 'candidate'>('professional');
+  const [roleMode, setRoleMode] = useState<"professional" | "candidate">("professional");
   /** Live mode = hands-free; mic auto-restarts after each AI reply. */
   const [liveMode, setLiveMode] = useState(false);
   /** When ON in Live mode, the conversation pauses after each AI reply
@@ -95,9 +106,15 @@ export function RoleplayMode({
   const liveModeRef = useRef(liveMode);
   const autoPauseRef = useRef(autoPause);
   const livePausedRef = useRef(livePaused);
-  useEffect(() => { liveModeRef.current = liveMode; }, [liveMode]);
-  useEffect(() => { autoPauseRef.current = autoPause; }, [autoPause]);
-  useEffect(() => { livePausedRef.current = livePaused; }, [livePaused]);
+  useEffect(() => {
+    liveModeRef.current = liveMode;
+  }, [liveMode]);
+  useEffect(() => {
+    autoPauseRef.current = autoPause;
+  }, [autoPause]);
+  useEffect(() => {
+    livePausedRef.current = livePaused;
+  }, [livePaused]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -111,18 +128,17 @@ export function RoleplayMode({
     if (busy || recording) return;
     if (!isWebSpeechSupported()) {
       toast({
-        title: 'Browser not supported',
-        description:
-          'Speech recognition needs Chrome or Edge. Try one of those browsers.',
-        variant: 'destructive',
+        title: "Browser not supported",
+        description: "Speech recognition needs Chrome or Edge. Try one of those browsers.",
+        variant: "destructive",
       });
       return;
     }
     try {
-      setInterim('');
-      setLight('idle');
+      setInterim("");
+      setLight("idle");
       const ctrl = startWebSpeech({
-        lang: 'en-US',
+        lang: "en-US",
         interimResults: true,
         onInterim: (t) => setInterim(t),
       });
@@ -131,9 +147,9 @@ export function RoleplayMode({
       setRecording(true);
     } catch (e) {
       toast({
-        title: 'Microphone blocked',
-        description: e instanceof Error ? e.message : 'Could not start recognition.',
-        variant: 'destructive',
+        title: "Microphone blocked",
+        description: e instanceof Error ? e.message : "Could not start recognition.",
+        variant: "destructive",
       });
     }
   }, [busy, recording, toast]);
@@ -141,7 +157,9 @@ export function RoleplayMode({
   // Keep a ref to the latest startRecording so audio "ended" handlers
   // can trigger it without going stale.
   const startRecordingRef = useRef(startRecording);
-  useEffect(() => { startRecordingRef.current = startRecording; }, [startRecording]);
+  useEffect(() => {
+    startRecordingRef.current = startRecording;
+  }, [startRecording]);
 
   /** Plays the AI reply, tracks aiSpeaking, and (in Live mode + autoPause off)
    *  auto-restarts recording when playback ends. */
@@ -154,11 +172,7 @@ export function RoleplayMode({
       const onEnded = () => {
         setAiSpeaking(false);
         currentAudioRef.current = null;
-        if (
-          liveModeRef.current &&
-          !autoPauseRef.current &&
-          !livePausedRef.current
-        ) {
+        if (liveModeRef.current && !autoPauseRef.current && !livePausedRef.current) {
           window.setTimeout(() => {
             void startRecordingRef.current?.();
           }, 350);
@@ -167,15 +181,15 @@ export function RoleplayMode({
 
       setAiSpeaking(true);
       try {
-        const url = await getSentenceAudio(`${sentenceId}__reply_${turnId}`, 'en', text);
+        const url = await getSentenceAudio(`${sentenceId}__reply_${turnId}`, "en", text);
         const audio = new Audio(url);
         currentAudioRef.current = audio;
-        audio.addEventListener('ended', onEnded, { once: true });
-        audio.addEventListener('error', onEnded, { once: true });
+        audio.addEventListener("ended", onEnded, { once: true });
+        audio.addEventListener("error", onEnded, { once: true });
         await audio.play();
         return;
       } catch (e) {
-        console.warn('[RoleplayMode] Gemini TTS unavailable, falling back', e);
+        console.warn("[RoleplayMode] Gemini TTS unavailable, falling back", e);
       }
       if (isBrowserTtsSupported()) {
         try {
@@ -185,7 +199,7 @@ export function RoleplayMode({
           window.setTimeout(onEnded, estMs);
           return;
         } catch (e) {
-          console.warn('[RoleplayMode] browser TTS failed', e);
+          console.warn("[RoleplayMode] browser TTS failed", e);
         }
       }
       onEnded();
@@ -205,7 +219,7 @@ export function RoleplayMode({
           recogRef.current.abort();
           recogRef.current = null;
           setRecording(false);
-          setInterim('');
+          setInterim("");
         }
       } else if (liveModeRef.current && !autoPauseRef.current) {
         // Resuming with autoPause OFF → restart mic immediately.
@@ -226,17 +240,17 @@ export function RoleplayMode({
     try {
       const { transcript } = await ctrl.stop();
       recogRef.current = null;
-      setInterim('');
+      setInterim("");
 
       if (!transcript) {
-        toast({ title: 'No speech detected', description: 'Try again, a bit louder.' });
+        toast({ title: "No speech detected", description: "Try again, a bit louder." });
         setBusy(false);
         return;
       }
 
       // Roleplay controller
       const t0 = performance.now();
-      const { data, error } = await supabase.functions.invoke('sentence-roleplay', {
+      const { data, error } = await supabase.functions.invoke("sentence-roleplay", {
         body: {
           transcript,
           expected_intent: item.expectedIntent,
@@ -247,30 +261,30 @@ export function RoleplayMode({
           spoken_duration_seconds: Math.round(spokenSeconds),
           role_mode: roleMode,
           history: turns.flatMap((t) => [
-            { role: 'user' as const, content: t.userTranscript },
-            { role: 'assistant' as const, content: t.ai.ai_audio_response },
+            { role: "user" as const, content: t.userTranscript },
+            { role: "assistant" as const, content: t.ai.ai_audio_response },
           ]),
-          model: sentenceLabModelRef?.provider === 'gateway' ? sentenceLabModelRef.model : undefined,
+          model:
+            sentenceLabModelRef?.provider === "gateway" ? sentenceLabModelRef.model : undefined,
         },
       });
       const latencyMs = performance.now() - t0;
 
       if (error) {
-        const msg = (error as { message?: string }).message ?? 'Roleplay request failed';
-        toast({ title: 'AI error', description: msg, variant: 'destructive' });
-        setLight('red');
+        const msg = (error as { message?: string }).message ?? "Roleplay request failed";
+        toast({ title: "AI error", description: msg, variant: "destructive" });
+        setLight("red");
         setBusy(false);
         return;
       }
 
       const ai = data as RoleplayResponse;
       const semanticLight = ai.intent_match;
-      const latencyLight: Exclude<Light, 'idle'> =
-        latencyMs > LATENCY_RED_MS ? 'red' : latencyMs > LATENCY_YELLOW_MS ? 'yellow' : 'green';
+      const latencyLight: Exclude<Light, "idle"> =
+        latencyMs > LATENCY_RED_MS ? "red" : latencyMs > LATENCY_YELLOW_MS ? "yellow" : "green";
       // Final light = worst of the two
-      const order: Record<Exclude<Light, 'idle'>, number> = { green: 0, yellow: 1, red: 2 };
-      const finalLight =
-        order[semanticLight] >= order[latencyLight] ? semanticLight : latencyLight;
+      const order: Record<Exclude<Light, "idle">, number> = { green: 0, yellow: 1, red: 2 };
+      const finalLight = order[semanticLight] >= order[latencyLight] ? semanticLight : latencyLight;
       setLight(finalLight);
 
       const turn: Turn = {
@@ -295,9 +309,9 @@ export function RoleplayMode({
       //   - if autoPause is OFF → auto-restart the mic for next turn.
       void playReplyControlled(item.id, turn.id, ai.ai_audio_response);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Unknown error';
-      toast({ title: 'Recognition failed', description: msg, variant: 'destructive' });
-      setLight('red');
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Recognition failed", description: msg, variant: "destructive" });
+      setLight("red");
     } finally {
       setBusy(false);
     }
@@ -323,14 +337,14 @@ export function RoleplayMode({
               <Badge
                 variant="outline"
                 className={cn(
-                  'gap-1 text-[10px] uppercase tracking-wide',
+                  "gap-1 text-[10px] uppercase tracking-wide",
                   livePaused
-                    ? 'border-amber-500/40 text-amber-600 dark:text-amber-400'
-                    : 'border-emerald-500/40 text-emerald-600 dark:text-emerald-400',
+                    ? "border-amber-500/40 text-amber-600 dark:text-amber-400"
+                    : "border-emerald-500/40 text-emerald-600 dark:text-emerald-400",
                 )}
               >
                 <Radio className="h-3 w-3" />
-                {livePaused ? 'Paused' : 'Live'}
+                {livePaused ? "Paused" : "Live"}
               </Badge>
             )}
           </div>
@@ -341,8 +355,8 @@ export function RoleplayMode({
                 size="icon"
                 className="h-7 w-7"
                 onClick={toggleLivePause}
-                aria-label={livePaused ? 'Resume live conversation' : 'Pause live conversation'}
-                title={livePaused ? 'Resume' : 'Pause after current turn'}
+                aria-label={livePaused ? "Resume live conversation" : "Pause live conversation"}
+                title={livePaused ? "Resume" : "Pause after current turn"}
               >
                 {livePaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
               </Button>
@@ -353,20 +367,18 @@ export function RoleplayMode({
         <CardContent className="space-y-4">
           {/* Role selector — disabled mid-drill so role can't flip after turn 1 */}
           <div className="rounded-md border bg-muted/30 p-2">
-            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">
-              You play
-            </p>
+            <p className="mb-2 text-xs uppercase tracking-wide text-muted-foreground">You play</p>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 disabled={turns.length > 0 || recording || busy}
-                onClick={() => setRoleMode('professional')}
+                onClick={() => setRoleMode("professional")}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
-                  roleMode === 'professional'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card hover:bg-muted/50',
-                  (turns.length > 0 || recording || busy) && 'opacity-60 cursor-not-allowed',
+                  "flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                  roleMode === "professional"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card hover:bg-muted/50",
+                  (turns.length > 0 || recording || busy) && "opacity-60 cursor-not-allowed",
                 )}
               >
                 <Stethoscope className="h-3.5 w-3.5" />
@@ -375,13 +387,13 @@ export function RoleplayMode({
               <button
                 type="button"
                 disabled={turns.length > 0 || recording || busy}
-                onClick={() => setRoleMode('candidate')}
+                onClick={() => setRoleMode("candidate")}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors',
-                  roleMode === 'candidate'
-                    ? 'border-primary bg-primary/10 text-primary'
-                    : 'border-border bg-card hover:bg-muted/50',
-                  (turns.length > 0 || recording || busy) && 'opacity-60 cursor-not-allowed',
+                  "flex items-center justify-center gap-1.5 rounded-md border px-2 py-1.5 text-xs font-medium transition-colors",
+                  roleMode === "candidate"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card hover:bg-muted/50",
+                  (turns.length > 0 || recording || busy) && "opacity-60 cursor-not-allowed",
                 )}
               >
                 <UserCog className="h-3.5 w-3.5" />
@@ -389,8 +401,9 @@ export function RoleplayMode({
               </button>
             </div>
             <p className="mt-1.5 text-[11px] text-muted-foreground">
-              AI will play the {roleMode === 'professional' ? 'patient/examiner' : 'pharmacist/examiner'}.
-              {turns.length > 0 && ' Locked for this drill.'}
+              AI will play the{" "}
+              {roleMode === "professional" ? "patient/examiner" : "pharmacist/examiner"}.
+              {turns.length > 0 && " Locked for this drill."}
             </p>
           </div>
 
@@ -418,19 +431,15 @@ export function RoleplayMode({
                 <Label htmlFor="rp-autopause" className="text-xs text-muted-foreground">
                   Auto-pause after each AI reply
                 </Label>
-                <Switch
-                  id="rp-autopause"
-                  checked={autoPause}
-                  onCheckedChange={setAutoPause}
-                />
+                <Switch id="rp-autopause" checked={autoPause} onCheckedChange={setAutoPause} />
               </div>
             )}
             <p className="text-[11px] text-muted-foreground">
               {liveMode
                 ? autoPause
-                  ? 'AI will speak, then wait. Tap the mic (or Resume) to reply.'
-                  : 'After the AI finishes speaking, the mic will auto-restart.'
-                : 'Push-to-talk: hold the mic to speak, release to send.'}
+                  ? "AI will speak, then wait. Tap the mic (or Resume) to reply."
+                  : "After the AI finishes speaking, the mic will auto-restart."
+                : "Push-to-talk: hold the mic to speak, release to send."}
             </p>
           </div>
 
@@ -440,15 +449,15 @@ export function RoleplayMode({
                 type="button"
                 onClick={handleMicTap}
                 disabled={busy || aiSpeaking}
-                aria-label={recording ? 'Tap to stop' : 'Tap to talk'}
+                aria-label={recording ? "Tap to stop" : "Tap to talk"}
                 className={cn(
-                  'relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-all select-none',
+                  "relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-all select-none",
                   recording
-                    ? 'border-destructive bg-destructive/15 scale-110'
+                    ? "border-destructive bg-destructive/15 scale-110"
                     : aiSpeaking
-                      ? 'border-amber-500 bg-amber-500/10'
-                      : 'border-primary bg-primary/10 hover:bg-primary/20',
-                  (busy || aiSpeaking) && 'opacity-60 cursor-not-allowed',
+                      ? "border-amber-500 bg-amber-500/10"
+                      : "border-primary bg-primary/10 hover:bg-primary/20",
+                  (busy || aiSpeaking) && "opacity-60 cursor-not-allowed",
                 )}
               >
                 {busy ? (
@@ -472,14 +481,14 @@ export function RoleplayMode({
                 onPointerLeave={() => recording && stopRecording()}
                 onPointerCancel={() => recording && stopRecording()}
                 disabled={busy}
-                aria-label={recording ? 'Release to send' : 'Hold to talk'}
+                aria-label={recording ? "Release to send" : "Hold to talk"}
                 className={cn(
-                  'relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-all',
-                  'select-none touch-none',
+                  "relative flex h-24 w-24 items-center justify-center rounded-full border-2 transition-all",
+                  "select-none touch-none",
                   recording
-                    ? 'border-destructive bg-destructive/15 scale-110'
-                    : 'border-primary bg-primary/10 hover:bg-primary/20',
-                  busy && 'opacity-60 cursor-not-allowed',
+                    ? "border-destructive bg-destructive/15 scale-110"
+                    : "border-primary bg-primary/10 hover:bg-primary/20",
+                  busy && "opacity-60 cursor-not-allowed",
                 )}
               >
                 {busy ? (
@@ -496,19 +505,25 @@ export function RoleplayMode({
             )}
           </div>
           <p className="text-center text-xs text-muted-foreground min-h-[1.25rem]">
-            {recording
-              ? interim
-                ? `“${interim}”`
-                : 'Listening…'
-              : busy
-                ? 'Thinking…'
-                : aiSpeaking
-                  ? 'AI is speaking…'
-                  : liveMode
-                    ? livePaused
-                      ? 'Paused. Tap Resume to continue.'
-                      : 'Tap the mic to start speaking'
-                    : 'Hold the mic to talk'}
+            {recording ? (
+              interim ? (
+                <BidiText as="span">“{interim}”</BidiText>
+              ) : (
+                "Listening…"
+              )
+            ) : busy ? (
+              "Thinking…"
+            ) : aiSpeaking ? (
+              "AI is speaking…"
+            ) : liveMode ? (
+              livePaused ? (
+                "Paused. Tap Resume to continue."
+              ) : (
+                "Tap the mic to start speaking"
+              )
+            ) : (
+              "Hold the mic to talk"
+            )}
           </p>
 
           {turns.length > 0 && (
@@ -517,12 +532,7 @@ export function RoleplayMode({
               <ScrollArea className="max-h-64">
                 <div className="space-y-3 pr-2">
                   {turns.map((t) => (
-                    <TurnRow
-                      key={t.id}
-                      turn={t}
-                      sentenceId={item.id}
-                      item={item}
-                    />
+                    <TurnRow key={t.id} turn={t} sentenceId={item.id} item={item} />
                   ))}
                 </div>
               </ScrollArea>
@@ -559,9 +569,9 @@ function TrafficLight({ light, busy }: { light: Light; busy: boolean }) {
   const dot = (color: string, active: boolean) => (
     <span
       className={cn(
-        'h-2.5 w-2.5 rounded-full transition-opacity',
+        "h-2.5 w-2.5 rounded-full transition-opacity",
         color,
-        active ? 'opacity-100 shadow-[0_0_8px_currentColor]' : 'opacity-25',
+        active ? "opacity-100 shadow-[0_0_8px_currentColor]" : "opacity-25",
       )}
     />
   );
@@ -578,9 +588,9 @@ function TrafficLight({ light, busy }: { light: Light; busy: boolean }) {
       className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2 py-1"
       aria-label={`Status: ${light}`}
     >
-      {dot('bg-emerald-500 text-emerald-500', light === 'green')}
-      {dot('bg-amber-500 text-amber-500', light === 'yellow')}
-      {dot('bg-red-500 text-red-500', light === 'red')}
+      {dot("bg-emerald-500 text-emerald-500", light === "green")}
+      {dot("bg-amber-500 text-amber-500", light === "yellow")}
+      {dot("bg-red-500 text-red-500", light === "red")}
     </div>
   );
 }
@@ -599,22 +609,26 @@ function TurnRow({
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs uppercase tracking-wide text-muted-foreground">You</p>
         {turn.ai.grammar_markers?.length > 0 && (
-          <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600 dark:text-amber-400">
-            {turn.ai.grammar_markers.length} grammar note{turn.ai.grammar_markers.length > 1 ? 's' : ''}
+          <Badge
+            variant="outline"
+            className="text-[10px] border-amber-500/40 text-amber-600 dark:text-amber-400"
+          >
+            {turn.ai.grammar_markers.length} grammar note
+            {turn.ai.grammar_markers.length > 1 ? "s" : ""}
           </Badge>
         )}
       </div>
-      <p className="mb-2 leading-relaxed">
+      <BidiText className="mb-2 leading-relaxed">
         <HighlightedTranscript
           text={turn.userTranscript}
           markers={turn.ai.grammar_markers ?? []}
           item={item}
         />
-      </p>
+      </BidiText>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">AI</p>
-          <p>{turn.ai.ai_audio_response}</p>
+          <BidiText>{turn.ai.ai_audio_response}</BidiText>
         </div>
         <Button
           variant="ghost"
@@ -655,7 +669,10 @@ function HighlightedTranscript({
   );
 }
 
-interface Segment { text: string; marker: GrammarMarker | null }
+interface Segment {
+  text: string;
+  marker: GrammarMarker | null;
+}
 
 function buildSegments(text: string, markers: GrammarMarker[]): Segment[] {
   if (!markers?.length) return [{ text, marker: null }];
@@ -663,7 +680,7 @@ function buildSegments(text: string, markers: GrammarMarker[]): Segment[] {
   const hits: Hit[] = [];
   const lower = text.toLowerCase();
   for (const m of markers) {
-    const span = (m.span ?? '').trim();
+    const span = (m.span ?? "").trim();
     if (!span) continue;
     let from = 0;
     while (from <= lower.length) {
@@ -709,14 +726,14 @@ function MarkerPopover({
       const { data: auth } = await supabase.auth.getUser();
       const userId = auth.user?.id;
       if (!userId) {
-        toast({ title: 'Sign in required', variant: 'destructive' });
+        toast({ title: "Sign in required", variant: "destructive" });
         return;
       }
       const newId = `correction_${crypto.randomUUID()}`;
-      const { error: insErr } = await supabase.from('sentence_lab').insert({
+      const { error: insErr } = await supabase.from("sentence_lab").insert({
         id: newId,
-        status: 'published',
-        category: 'grammar-correction',
+        status: "published",
+        category: "grammar-correction",
         subcategory: item.subcategory ?? null,
         cefr_level: item.cefrLevel ?? null,
         english: marker.correction,
@@ -726,10 +743,10 @@ function MarkerPopover({
         common_mistakes: [marker.span],
       });
       if (insErr) throw insErr;
-      const { error: progErr } = await supabase.from('sentence_progress').insert({
+      const { error: progErr } = await supabase.from("sentence_progress").insert({
         user_id: userId,
         sentence_id: newId,
-        state: 'new',
+        state: "new",
         stability: 0,
         difficulty: 5,
         elapsed_days: 0,
@@ -739,29 +756,29 @@ function MarkerPopover({
       });
       if (progErr) throw progErr;
       setSaved(true);
-      toast({ title: 'Correction added to deck', description: marker.correction });
+      toast({ title: "Correction added to deck", description: marker.correction });
     } catch (e) {
       toast({
-        title: 'Could not save',
-        description: e instanceof Error ? e.message : 'Unknown error',
-        variant: 'destructive',
+        title: "Could not save",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
       });
     } finally {
       setSaving(false);
     }
   };
 
-  const isMajor = marker.severity === 'major';
+  const isMajor = marker.severity === "major";
   return (
     <Popover>
       <PopoverTrigger asChild>
         <button
           type="button"
           className={cn(
-            'mx-0.5 inline rounded px-1 align-baseline underline decoration-wavy underline-offset-4 transition-colors',
+            "mx-0.5 inline rounded px-1 align-baseline underline decoration-wavy underline-offset-4 transition-colors",
             isMajor
-              ? 'decoration-red-500 text-red-700 dark:text-red-400 hover:bg-red-500/10'
-              : 'decoration-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10',
+              ? "decoration-red-500 text-red-700 dark:text-red-400 hover:bg-red-500/10"
+              : "decoration-amber-500 text-amber-700 dark:text-amber-400 hover:bg-amber-500/10",
           )}
         >
           {text}
@@ -773,10 +790,10 @@ function MarkerPopover({
             <Badge
               variant="outline"
               className={cn(
-                'text-[10px]',
+                "text-[10px]",
                 isMajor
-                  ? 'border-red-500/40 text-red-600 dark:text-red-400'
-                  : 'border-amber-500/40 text-amber-600 dark:text-amber-400',
+                  ? "border-red-500/40 text-red-600 dark:text-red-400"
+                  : "border-amber-500/40 text-amber-600 dark:text-amber-400",
               )}
             >
               {marker.rule_label}
@@ -797,17 +814,21 @@ function MarkerPopover({
           )}
           <Button
             size="sm"
-            variant={saved ? 'secondary' : 'default'}
+            variant={saved ? "secondary" : "default"}
             disabled={saved || saving}
             onClick={handleAdd}
             className="w-full"
           >
             {saved ? (
-              <><Check className="h-3.5 w-3.5 mr-1" /> Added to deck</>
+              <>
+                <Check className="h-3.5 w-3.5 mr-1" /> Added to deck
+              </>
             ) : saving ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <><Plus className="h-3.5 w-3.5 mr-1" /> Add correction to deck</>
+              <>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Add correction to deck
+              </>
             )}
           </Button>
         </div>
@@ -815,7 +836,6 @@ function MarkerPopover({
     </Popover>
   );
 }
-
 
 function DissectionModal({
   open,
@@ -849,7 +869,7 @@ function DissectionModal({
       turns
         .map((t) => t.ai.grammar_corrections?.trim())
         .filter((s): s is string => !!s)
-        .join('\n'),
+        .join("\n"),
     [turns],
   );
 
@@ -867,26 +887,27 @@ function DissectionModal({
     setGrammarPack(null);
     (async () => {
       try {
-        const topic = [item.category, item.subcategory].filter(Boolean).join(' / ') || null;
-        const { data, error } = await supabase.functions.invoke('sentence-grammar-examples', {
+        const topic = [item.category, item.subcategory].filter(Boolean).join(" / ") || null;
+        const { data, error } = await supabase.functions.invoke("sentence-grammar-examples", {
           body: {
             grammar_notes: grammarNotes,
             topic,
             cefr_level: item.cefrLevel,
             scenario_english: item.english,
-            model: sentenceLabModelRef?.provider === 'gateway' ? sentenceLabModelRef.model : undefined,
+            model:
+              sentenceLabModelRef?.provider === "gateway" ? sentenceLabModelRef.model : undefined,
           },
         });
         if (cancelled) return;
         if (error) throw error;
         const pack = data as GrammarPack;
         if (!pack || !Array.isArray(pack.examples) || pack.examples.length === 0) {
-          throw new Error('No examples returned.');
+          throw new Error("No examples returned.");
         }
         setGrammarPack(pack);
       } catch (e) {
         if (cancelled) return;
-        setGrammarError(e instanceof Error ? e.message : 'Failed to generate examples.');
+        setGrammarError(e instanceof Error ? e.message : "Failed to generate examples.");
       } finally {
         if (!cancelled) setGrammarLoading(false);
       }
@@ -913,10 +934,7 @@ function DissectionModal({
     return out;
   }, [turns]);
 
-  const totalSpoken = useMemo(
-    () => turns.reduce((s, t) => s + t.spokenSeconds, 0),
-    [turns],
-  );
+  const totalSpoken = useMemo(() => turns.reduce((s, t) => s + t.spokenSeconds, 0), [turns]);
   const expected = item.expectedDurationSeconds ?? 0;
   const fluencyDelta = expected
     ? Math.round(((totalSpoken / turns.length - expected) / expected) * 100)
@@ -933,18 +951,18 @@ function DissectionModal({
       const userId = auth.user?.id;
       if (!userId) {
         toast({
-          title: 'Sign in required',
-          description: 'Please sign in to save phrases to your deck.',
-          variant: 'destructive',
+          title: "Sign in required",
+          description: "Please sign in to save phrases to your deck.",
+          variant: "destructive",
         });
         return;
       }
       const newId = `harvest_${crypto.randomUUID()}`;
       // 1) insert into sentence_lab (so the FK from sentence_progress holds)
-      const { error: insErr } = await supabase.from('sentence_lab').insert({
+      const { error: insErr } = await supabase.from("sentence_lab").insert({
         id: newId,
-        status: 'published',
-        category: opts?.category ?? 'harvested',
+        status: "published",
+        category: opts?.category ?? "harvested",
         subcategory: item.subcategory ?? null,
         cefr_level: item.cefrLevel ?? null,
         english: text,
@@ -956,10 +974,10 @@ function DissectionModal({
       if (insErr) throw insErr;
 
       // 2) seed a fresh FSRS progress row so it shows up in tomorrow's queue
-      const { error: progErr } = await supabase.from('sentence_progress').insert({
+      const { error: progErr } = await supabase.from("sentence_progress").insert({
         user_id: userId,
         sentence_id: newId,
-        state: 'new',
+        state: "new",
         stability: 0,
         difficulty: 5,
         elapsed_days: 0,
@@ -970,12 +988,12 @@ function DissectionModal({
       if (progErr) throw progErr;
 
       setSavedIds((s) => new Set(s).add(key));
-      toast({ title: 'Added to your deck', description: text });
+      toast({ title: "Added to your deck", description: text });
     } catch (e) {
       toast({
-        title: 'Could not save',
-        description: e instanceof Error ? e.message : 'Unknown error',
-        variant: 'destructive',
+        title: "Could not save",
+        description: e instanceof Error ? e.message : "Unknown error",
+        variant: "destructive",
       });
     } finally {
       setSavingKey(null);
@@ -1014,10 +1032,8 @@ function DissectionModal({
                   <div className="mt-1 flex items-start gap-2 text-xs">
                     <AlertCircle
                       className={cn(
-                        'mt-0.5 h-3.5 w-3.5',
-                        Math.abs(fluencyDelta) > 30
-                          ? 'text-amber-500'
-                          : 'text-emerald-500',
+                        "mt-0.5 h-3.5 w-3.5",
+                        Math.abs(fluencyDelta) > 30 ? "text-amber-500" : "text-emerald-500",
                       )}
                     />
                     <span className="text-muted-foreground">
@@ -1025,7 +1041,7 @@ function DissectionModal({
                         ? `You spoke ${fluencyDelta}% slower than expected.`
                         : fluencyDelta < 0
                           ? `You spoke ${Math.abs(fluencyDelta)}% faster than expected.`
-                          : 'Pacing on target.'}
+                          : "Pacing on target."}
                     </span>
                   </div>
                 )}
@@ -1047,16 +1063,16 @@ function DissectionModal({
                         </Badge>
                         <span
                           className={cn(
-                            'h-2 w-2 rounded-full',
-                            t.light === 'green' && 'bg-emerald-500',
-                            t.light === 'yellow' && 'bg-amber-500',
-                            t.light === 'red' && 'bg-red-500',
+                            "h-2 w-2 rounded-full",
+                            t.light === "green" && "bg-emerald-500",
+                            t.light === "yellow" && "bg-amber-500",
+                            t.light === "red" && "bg-red-500",
                           )}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground italic mb-1">
+                      <BidiText className="text-xs text-muted-foreground italic mb-1">
                         “{t.userTranscript}”
-                      </p>
+                      </BidiText>
                       {!hasFeedback ? (
                         <p className="text-xs text-emerald-600 dark:text-emerald-400">
                           No issues detected.
@@ -1064,16 +1080,16 @@ function DissectionModal({
                       ) : (
                         <>
                           {t.ai.grammar_corrections.trim() && (
-                            <p className="text-xs">
-                              <span className="font-medium">Grammar:</span>{' '}
+                            <BidiText className="text-xs">
+                              <span className="font-medium">Grammar:</span>{" "}
                               {t.ai.grammar_corrections}
-                            </p>
+                            </BidiText>
                           )}
                           {t.ai.fluency_penalty_notes.trim() && (
-                            <p className="text-xs">
-                              <span className="font-medium">Fluency:</span>{' '}
+                            <BidiText className="text-xs">
+                              <span className="font-medium">Fluency:</span>{" "}
                               {t.ai.fluency_penalty_notes}
-                            </p>
+                            </BidiText>
                           )}
                         </>
                       )}
@@ -1104,9 +1120,7 @@ function DissectionModal({
                 {grammarPack && !grammarLoading && (
                   <div className="space-y-2">
                     <div className="rounded-md border bg-primary/5 p-2">
-                      <p className="text-xs font-medium text-primary">
-                        {grammarPack.rule_label}
-                      </p>
+                      <p className="text-xs font-medium text-primary">{grammarPack.rule_label}</p>
                       {grammarPack.rule_explanation && (
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {grammarPack.rule_explanation}
@@ -1124,11 +1138,11 @@ function DissectionModal({
                           <p className="flex-1 text-sm">{ex}</p>
                           <Button
                             size="sm"
-                            variant={saved ? 'secondary' : 'outline'}
+                            variant={saved ? "secondary" : "outline"}
                             disabled={saved || savingKey === key}
                             onClick={() =>
                               void handleAdd(ex, key, {
-                                category: 'grammar-drill',
+                                category: "grammar-drill",
                                 grammarFocus: [grammarPack.rule_label],
                               })
                             }
@@ -1159,9 +1173,7 @@ function DissectionModal({
                 Native phrases harvested ({harvested.length})
               </h3>
               {harvested.length === 0 ? (
-                <p className="text-xs text-muted-foreground">
-                  No reusable phrases captured yet.
-                </p>
+                <p className="text-xs text-muted-foreground">No reusable phrases captured yet.</p>
               ) : (
                 <div className="space-y-2">
                   {harvested.map((h) => {
@@ -1174,7 +1186,7 @@ function DissectionModal({
                         <p className="flex-1 text-sm">{h.text}</p>
                         <Button
                           size="sm"
-                          variant={saved ? 'secondary' : 'outline'}
+                          variant={saved ? "secondary" : "outline"}
                           disabled={saved || savingKey === h.key}
                           onClick={() => void handleAdd(h.text, h.key)}
                         >
@@ -1224,19 +1236,19 @@ function DissectionModal({
 async function playReply(sentenceId: string, turnId: string, text: string) {
   if (!text?.trim()) return;
   try {
-    const url = await getSentenceAudio(`${sentenceId}__reply_${turnId}`, 'en', text);
+    const url = await getSentenceAudio(`${sentenceId}__reply_${turnId}`, "en", text);
     const audio = new Audio(url);
     await audio.play();
     return;
   } catch (e) {
-    console.warn('[RoleplayMode] Gemini TTS unavailable, falling back to browser TTS', e);
+    console.warn("[RoleplayMode] Gemini TTS unavailable, falling back to browser TTS", e);
   }
   if (isBrowserTtsSupported()) {
     try {
       const ctrl = new BrowserTtsController(text, { rate: 1, pitch: 1, volume: 1 });
       ctrl.start();
     } catch (e) {
-      console.warn('[RoleplayMode] browser TTS failed', e);
+      console.warn("[RoleplayMode] browser TTS failed", e);
     }
   }
 }

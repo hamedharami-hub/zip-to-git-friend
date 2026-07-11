@@ -3,13 +3,13 @@
  * Cycles: EN → EN+FA → FA → EN …
  * Replaces the wider tab group in the header.
  */
-import { Languages } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { DisplayLang } from '@/components/books/TranslateChapterButton';
-import { cn } from '@/lib/utils';
+import { Languages } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { DisplayLang } from "@/components/books/TranslateChapterButton";
+import { cn } from "@/lib/utils";
 
-const ORDER: DisplayLang[] = ['en', 'both', 'fa'];
-const LABEL: Record<DisplayLang, string> = { en: 'EN', both: 'EN+FA', fa: 'FA' };
+const ORDER: DisplayLang[] = ["en", "both", "fa"];
+const LABEL: Record<DisplayLang, string> = { en: "EN", both: "EN+FA", fa: "FA" };
 
 export function LangCycleButton({
   value,
@@ -31,8 +31,8 @@ export function LangCycleButton({
       size="sm"
       onClick={next}
       className={cn(
-        'h-7 px-2 gap-1 text-[10px] font-semibold rounded-md',
-        hasAnyTranslation ? 'text-foreground' : 'text-muted-foreground/80',
+        "h-7 px-2 gap-1 text-[10px] font-semibold rounded-md",
+        hasAnyTranslation ? "text-foreground" : "text-muted-foreground/80",
       )}
       title="تغییر زبان نمایش"
       aria-label={`زبان نمایش: ${LABEL[value]}`}

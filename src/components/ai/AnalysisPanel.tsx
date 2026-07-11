@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Sparkles, Plus, Loader2, Languages, Check, WifiOff } from 'lucide-react';
-import type { SubtitleCue, SegmentAnalysis } from '@/types';
-import { Button } from '@/components/ui/button';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { getAnalysis, saveAnalysis } from '@/lib/db';
-import { runAnalyze, runTranslate, aiErrorMessage, getApiKeyFor } from '@/lib/ai';
-import { useOnline } from '@/hooks/useOnline';
-import { toast } from 'sonner';
-import { ensureAutoFolder } from '@/lib/leitnerAutoFolder';
+import { useEffect, useState } from "react";
+import { Sparkles, Plus, Loader2, Languages, Check, WifiOff } from "lucide-react";
+import type { SubtitleCue, SegmentAnalysis } from "@/types";
+import { Button } from "@/components/ui/button";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { getAnalysis, saveAnalysis } from "@/lib/db";
+import { runAnalyze, runTranslate, aiErrorMessage, getApiKeyFor } from "@/lib/ai";
+import { useOnline } from "@/hooks/useOnline";
+import { toast } from "sonner";
+import { ensureAutoFolder } from "@/lib/leitnerAutoFolder";
 
 interface Props {
   videoId: string;
@@ -32,17 +32,18 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
 
   const isInLeitner = (front: string) => !!findByFront(front);
 
-  const handleAdd = async (front: string, back: string, kind: 'word' | 'idiom') => {
-    const folderId = await ensureAutoFolder({ kind: 'video', sourceRef: videoId });
+  const handleAdd = async (front: string, back: string, kind: "word" | "idiom") => {
+    const folderId = await ensureAutoFolder({ kind: "video", sourceRef: videoId });
     const result = await addCard({
-      front, back,
+      front,
+      back,
       sourceVideoId: videoId,
       sourceCueId: cue?.id,
       folderId,
-      sourceKind: 'video',
+      sourceKind: "video",
       exampleSentence: cue?.text,
     });
-    if (result === 'duplicate') {
+    if (result === "duplicate") {
       toast(`Already in Leitner: ${front}`);
     } else {
       toast.success(`Added ${kind}: ${front}`);
@@ -78,9 +79,9 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
     if (!getApiKeyFor(choice, settings)) {
       if (!silent)
         toast.error(
-          choice.provider === 'gemini'
-            ? 'Add your Gemini API key in Settings.'
-            : 'Add your Groq API key in Settings.',
+          choice.provider === "gemini"
+            ? "Add your Gemini API key in Settings."
+            : "Add your Groq API key in Settings.",
         );
       return;
     }
@@ -107,7 +108,7 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
       setAnalysis(finalResult);
       if (finalResult.translation) setTranslation(finalResult.translation);
     } catch (e) {
-      if (!silent) toast.error(aiErrorMessage(e, 'Analysis failed.'));
+      if (!silent) toast.error(aiErrorMessage(e, "Analysis failed."));
     } finally {
       setLoading(false);
     }
@@ -117,9 +118,9 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
     const choice = settings.translateModel;
     if (!getApiKeyFor(choice, settings)) {
       toast.error(
-        choice.provider === 'gemini'
-          ? 'Add your Gemini API key in Settings.'
-          : 'Add your Groq API key in Settings.',
+        choice.provider === "gemini"
+          ? "Add your Gemini API key in Settings."
+          : "Add your Groq API key in Settings.",
       );
       return;
     }
@@ -128,7 +129,7 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
       const t = await runTranslate(c.text, choice, settings);
       setTranslation(t);
     } catch (e) {
-      toast.error(aiErrorMessage(e, 'Translation failed.'));
+      toast.error(aiErrorMessage(e, "Translation failed."));
     } finally {
       setTranslating(false);
     }
@@ -136,8 +137,7 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
 
   if (!cue) return null;
 
-  const hasContent =
-    !!analysis && (analysis.vocabulary.length > 0 || analysis.idioms.length > 0);
+  const hasContent = !!analysis && (analysis.vocabulary.length > 0 || analysis.idioms.length > 0);
 
   return (
     <div className="space-y-2">
@@ -171,8 +171,8 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6 shrink-0"
-                        title={added ? 'Already in Leitner' : 'Add to Leitner'}
-                        onClick={() => handleAdd(v.word, v.translation, 'word')}
+                        title={added ? "Already in Leitner" : "Add to Leitner"}
+                        onClick={() => handleAdd(v.word, v.translation, "word")}
                         disabled={added}
                       >
                         {added ? (
@@ -209,8 +209,8 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
                         size="icon"
                         variant="ghost"
                         className="h-6 w-6 shrink-0"
-                        title={added ? 'Already in Leitner' : 'Add to Leitner'}
-                        onClick={() => handleAdd(it.phrase, it.meaning, 'idiom')}
+                        title={added ? "Already in Leitner" : "Add to Leitner"}
+                        onClick={() => handleAdd(it.phrase, it.meaning, "idiom")}
                         disabled={added}
                       >
                         {added ? (
@@ -242,14 +242,14 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
           onClick={() => runAnalyzeNow(cue)}
           disabled={loading || !online}
           aria-label="Analyze subtitle"
-          title={!online ? 'AI analysis requires an internet connection' : undefined}
+          title={!online ? "AI analysis requires an internet connection" : undefined}
         >
           {loading ? (
             <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
           ) : (
             <Sparkles className="h-3.5 w-3.5 mr-1.5" />
           )}
-          {analysis ? 'Re-analyze' : 'Analyze'}
+          {analysis ? "Re-analyze" : "Analyze"}
         </Button>
         {showTranslate && !translation && (
           <Button
@@ -258,7 +258,7 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
             onClick={() => runTranslateNow(cue)}
             disabled={translating || !online}
             aria-label="Translate subtitle"
-            title={!online ? 'Translation requires an internet connection' : undefined}
+            title={!online ? "Translation requires an internet connection" : undefined}
           >
             {translating ? (
               <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -269,7 +269,10 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
           </Button>
         )}
         {!online && (
-          <span className="inline-flex items-center gap-1 text-xs text-muted-foreground" role="status">
+          <span
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+            role="status"
+          >
             <WifiOff className="h-3 w-3" /> offline — AI features paused
           </span>
         )}

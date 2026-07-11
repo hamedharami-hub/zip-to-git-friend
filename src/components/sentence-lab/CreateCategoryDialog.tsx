@@ -1,15 +1,19 @@
-import { useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import {
-  Dialog, DialogContent, DialogDescription, DialogFooter,
-  DialogHeader, DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
-import { createCategory } from '@/lib/sentenceCategories';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { createCategory } from "@/lib/sentenceCategories";
 
 interface Props {
   open: boolean;
@@ -20,19 +24,23 @@ interface Props {
 }
 
 function slugify(s: string) {
-  return s.toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  return s
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
 }
 
 export function CreateCategoryDialog({ open, onOpenChange, parentSlug, onCreated }: Props) {
   const { toast } = useToast();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function handleCreate() {
     const trimmed = name.trim();
     if (!trimmed) {
-      toast({ title: 'Name required', variant: 'destructive' });
+      toast({ title: "Name required", variant: "destructive" });
       return;
     }
     setBusy(true);
@@ -43,15 +51,15 @@ export function CreateCategoryDialog({ open, onOpenChange, parentSlug, onCreated
         description: description.trim() || undefined,
         parentSlug,
       });
-      toast({ title: 'Created', description: trimmed });
-      setName('');
-      setDescription('');
+      toast({ title: "Created", description: trimmed });
+      setName("");
+      setDescription("");
       onCreated?.();
     } catch (e: any) {
       toast({
-        title: 'Could not create',
-        description: e?.message ?? 'Unknown error',
-        variant: 'destructive',
+        title: "Could not create",
+        description: e?.message ?? "Unknown error",
+        variant: "destructive",
       });
     } finally {
       setBusy(false);
@@ -62,13 +70,11 @@ export function CreateCategoryDialog({ open, onOpenChange, parentSlug, onCreated
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {parentSlug ? 'New sub-topic' : 'New category'}
-          </DialogTitle>
+          <DialogTitle>{parentSlug ? "New sub-topic" : "New category"}</DialogTitle>
           <DialogDescription>
             {parentSlug
               ? `Add a sub-topic under "${parentSlug}".`
-              : 'Create your own top-level category for sentences.'}
+              : "Create your own top-level category for sentences."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
@@ -78,7 +84,7 @@ export function CreateCategoryDialog({ open, onOpenChange, parentSlug, onCreated
               id="cat-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={parentSlug ? 'e.g. Cold & Flu OTC' : 'e.g. Hospitality'}
+              placeholder={parentSlug ? "e.g. Cold & Flu OTC" : "e.g. Hospitality"}
               autoFocus
             />
           </div>

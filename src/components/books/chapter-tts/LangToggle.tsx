@@ -4,8 +4,8 @@
  */
 
 interface Props {
-  value: 'en' | 'fa';
-  onChange: (v: 'en' | 'fa') => void;
+  value: "en" | "fa";
+  onChange: (v: "en" | "fa") => void;
 }
 
 export function LangToggle({ value, onChange }: Props) {
@@ -15,7 +15,7 @@ export function LangToggle({ value, onChange }: Props) {
       aria-label="زبان"
       className="inline-flex rounded-md border border-border bg-muted/40 p-0.5"
     >
-      {(['en', 'fa'] as const).map((l) => (
+      {(["en", "fa"] as const).map((l) => (
         <button
           key={l}
           type="button"
@@ -23,8 +23,8 @@ export function LangToggle({ value, onChange }: Props) {
           aria-selected={value === l}
           onClick={() => onChange(l)}
           className={
-            'px-2 py-0.5 text-[11px] font-medium rounded ' +
-            (value === l ? 'bg-background shadow-sm' : 'text-muted-foreground')
+            "px-2 py-0.5 text-[11px] font-medium rounded " +
+            (value === l ? "bg-background shadow-sm" : "text-muted-foreground")
           }
         >
           {l.toUpperCase()}

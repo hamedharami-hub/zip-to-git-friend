@@ -2,9 +2,9 @@
  * Shared Zustand store for Reading Mode preferences. Persisted to
  * localStorage so choices survive reloads.
  */
-import { create } from 'zustand';
+import { create } from "zustand";
 
-export type EyeComfortPreset = 'off' | 'comfort' | 'sepia' | 'night' | 'contrast';
+export type EyeComfortPreset = "off" | "comfort" | "sepia" | "night" | "contrast";
 
 interface ReadingModeState {
   // Bionic
@@ -21,11 +21,11 @@ interface ReadingModeState {
   eyeComfortPreset: EyeComfortPreset;
   blueLightFilter: number; // 0..0.4
   extraLineHeight: number; // 0..0.6 added to base
-  set: (patch: Partial<Omit<ReadingModeState, 'set' | 'reset'>>) => void;
+  set: (patch: Partial<Omit<ReadingModeState, "set" | "reset">>) => void;
   reset: () => void;
 }
 
-const KEY = 'llvp-reading-mode.v2';
+const KEY = "llvp-reading-mode.v2";
 
 const DEFAULTS = {
   bionicEnabled: false,
@@ -35,7 +35,7 @@ const DEFAULTS = {
   rulerEnabled: false,
   focusHighlightEnabled: false,
   focusBlurEnabled: false,
-  eyeComfortPreset: 'off' as EyeComfortPreset,
+  eyeComfortPreset: "off" as EyeComfortPreset,
   blueLightFilter: 0,
   extraLineHeight: 0,
 };
@@ -51,19 +51,25 @@ function load(): typeof DEFAULTS {
 }
 
 function save(state: typeof DEFAULTS) {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* noop */ }
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+  } catch {
+    /* noop */
+  }
 }
 
 export const useReadingMode = create<ReadingModeState>((set) => ({
   ...load(),
-  set: (patch) => set((s) => {
-    const next = { ...s, ...patch };
-    const { set: _s, reset: _r, ...persistable } = next;
-    save(persistable as typeof DEFAULTS);
-    return next;
-  }),
-  reset: () => set((s) => {
-    save(DEFAULTS);
-    return { ...s, ...DEFAULTS };
-  }),
+  set: (patch) =>
+    set((s) => {
+      const next = { ...s, ...patch };
+      const { set: _s, reset: _r, ...persistable } = next;
+      save(persistable as typeof DEFAULTS);
+      return next;
+    }),
+  reset: () =>
+    set((s) => {
+      save(DEFAULTS);
+      return { ...s, ...DEFAULTS };
+    }),
 }));

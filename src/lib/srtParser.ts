@@ -1,4 +1,4 @@
-import type { SubtitleCue } from '@/types';
+import type { SubtitleCue } from "@/types";
 
 function tsToMs(ts: string): number {
   const m = ts.trim().match(/^(\d{2}):(\d{2}):(\d{2})[,.](\d{3})$/);
@@ -8,25 +8,28 @@ function tsToMs(ts: string): number {
 }
 
 function stripHtml(text: string): string {
-  return text.replace(/<\/?[^>]+>/g, '');
+  return text.replace(/<\/?[^>]+>/g, "");
 }
 
 function uuid(): string {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0;
-    return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    return (c === "x" ? r : (r & 0x3) | 0x8).toString(16);
   });
 }
 
 export function parseSRT(content: string): SubtitleCue[] {
   // Strip BOM
-  const cleaned = content.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').trim();
+  const cleaned = content
+    .replace(/^\uFEFF/, "")
+    .replace(/\r\n/g, "\n")
+    .trim();
   const blocks = cleaned.split(/\n\s*\n/);
   const cues: SubtitleCue[] = [];
 
   for (const block of blocks) {
-    const lines = block.split('\n').filter((l) => l.length > 0);
+    const lines = block.split("\n").filter((l) => l.length > 0);
     if (lines.length < 2) continue;
 
     let lineIdx = 0;
@@ -40,13 +43,13 @@ export function parseSRT(content: string): SubtitleCue[] {
     }
 
     const timingLine = lines[lineIdx];
-    if (!timingLine || !timingLine.includes('-->')) continue;
-    const [startStr, endStr] = timingLine.split('-->');
+    if (!timingLine || !timingLine.includes("-->")) continue;
+    const [startStr, endStr] = timingLine.split("-->");
     const startMs = tsToMs(startStr);
     const endMs = tsToMs(endStr);
     if (!(startMs < endMs)) continue;
 
-    const text = stripHtml(lines.slice(lineIdx + 1).join('\n')).trim();
+    const text = stripHtml(lines.slice(lineIdx + 1).join("\n")).trim();
     if (!text) continue;
 
     cues.push({ id: uuid(), index, startMs, endMs, text });

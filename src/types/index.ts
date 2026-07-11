@@ -16,7 +16,7 @@ export interface Video {
   playbackSpeed: number;
   createdAt: number;
   /** 'video' (default) or 'audio' (podcast / mp3). */
-  mediaType?: 'video' | 'audio';
+  mediaType?: "video" | "audio";
   /** Best-effort mime type for audio playback after reload. */
   mimeType?: string;
 }
@@ -35,8 +35,8 @@ export interface SubtitleCue {
 export interface SubtitleTrack {
   id: string;
   videoId: string;
-  language: 'en' | 'fa' | string;
-  role: 'primary' | 'secondary';
+  language: "en" | "fa" | string;
+  role: "primary" | "secondary";
   cues: SubtitleCue[];
   delayMs: number;
   speedMultiplier: number;
@@ -64,16 +64,10 @@ export interface IdiomItem {
   literalTranslation?: string;
 }
 
-export type LeitnerSourceKind =
-  | 'video'
-  | 'audio'
-  | 'book'
-  | 'language_book'
-  | 'news'
-  | 'manual';
+export type LeitnerSourceKind = "video" | "audio" | "book" | "language_book" | "news" | "manual";
 
 /** Four-level FSRS-style answer rating. */
-export type LeitnerRating = 'again' | 'hard' | 'good' | 'easy';
+export type LeitnerRating = "again" | "hard" | "good" | "easy";
 
 /** Single review event in a card's history. */
 export interface LeitnerReviewLog {
@@ -123,7 +117,7 @@ export interface LeitnerCard {
   /** Recent review history (capped to last 50 entries). */
   reviewLog?: LeitnerReviewLog[];
   /** CEFR level (A1–C2) when known. */
-  cefr?: 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+  cefr?: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
   /** Part of speech (noun, verb, idiom…). */
   partOfSpeech?: string;
   /** User-flagged "important / difficult" star. */
@@ -137,7 +131,7 @@ export interface LeitnerCard {
 export interface LeitnerFolder {
   id: string;
   name: string;
-  kind: LeitnerSourceKind | 'custom';
+  kind: LeitnerSourceKind | "custom";
   /** Source identifier (videoId, bookId, articleId…) when this folder
    *  represents a single piece of content. */
   sourceRef?: string;
@@ -152,36 +146,34 @@ export interface LoopConfig {
   currentIteration: number;
   maxIterations: number;
   pauseBetweenMs: number;
-  visibilityPattern: Array<'both' | 'primary' | 'secondary' | 'none'>;
+  visibilityPattern: Array<"both" | "primary" | "secondary" | "none">;
   /** When true, after finishing the current cue's iterations, advance to the next cue and keep looping. */
   chainNext: boolean;
 }
 
 /** Available Gemini chat models (latest stable 3.x line). */
-export type GeminiModel =
-  | 'gemini-3-flash-preview'
-  | 'gemini-3.1-flash-lite-preview';
+export type GeminiModel = "gemini-3-flash-preview" | "gemini-3.1-flash-lite-preview";
 
 /** Available Groq chat models (latest line). */
 export type GroqChatModel =
-  | 'llama-3.3-70b-versatile'
-  | 'llama-3.1-8b-instant'
-  | 'openai/gpt-oss-20b'
-  | 'openai/gpt-oss-120b';
+  | "llama-3.3-70b-versatile"
+  | "llama-3.1-8b-instant"
+  | "openai/gpt-oss-20b"
+  | "openai/gpt-oss-120b";
 
 /** Available Groq transcription (Whisper) models. */
-export type GroqWhisperModel = 'whisper-large-v3-turbo' | 'whisper-large-v3';
+export type GroqWhisperModel = "whisper-large-v3-turbo" | "whisper-large-v3";
 
 /** Provider/model bundle for chat-style tasks (analyze, translate). */
 export interface AIModelChoice {
-  provider: 'gemini' | 'groq';
+  provider: "gemini" | "groq";
   model: GeminiModel | GroqChatModel;
 }
 
 export interface AppSettings {
-  theme: 'dark' | 'light';
-  fontSize: 'sm' | 'md' | 'lg' | 'xl';
-  displayMode: 'inside' | 'outside' | 'hybrid';
+  theme: "dark" | "light";
+  fontSize: "sm" | "md" | "lg" | "xl";
+  displayMode: "inside" | "outside" | "hybrid";
   autoShowAnalysis: boolean;
   /** When true, hides subtitle text and auto-pauses at end of each cue
    *  until the user presses "Next" to advance. */
@@ -263,7 +255,7 @@ export interface AppSettings {
   /** When true, paragraphs respond to swipe / double-tap / long-press gestures. */
   paragraphGestures?: boolean;
   /** Text alignment used by the reader and exported HTML. */
-  paragraphTextAlign?: 'start' | 'justify' | 'center';
+  paragraphTextAlign?: "start" | "justify" | "center";
   /** AI model used inside Sentence Lab (planner / roleplay / examples). */
   sentenceLabModelRef?: BookAIModelRef;
   /** AI model used by the podcast / audio features. */
@@ -290,15 +282,15 @@ export interface AppSettings {
 
 /** Models available on the Lovable AI Gateway for the book analyzer. */
 export type BookAnalysisModel =
-  | 'google/gemini-3-flash-preview'
-  | 'google/gemini-3.1-flash-lite-preview'
-  | 'openai/gpt-5'
-  | 'openai/gpt-5-mini'
-  | 'openai/gpt-5-nano';
+  | "google/gemini-3-flash-preview"
+  | "google/gemini-3.1-flash-lite-preview"
+  | "openai/gpt-5"
+  | "openai/gpt-5-mini"
+  | "openai/gpt-5-nano";
 
 /** Provider behind a book-AI call. Reserved for the upcoming
  *  per-provider routing (uses the user's own Gemini/Groq key). */
-export type BookAIProvider = 'gateway' | 'gemini' | 'groq';
+export type BookAIProvider = "gateway" | "gemini" | "groq";
 
 /** Resolved provider+model used for any book AI task. */
 export interface BookAIModelRef {
@@ -308,16 +300,16 @@ export interface BookAIModelRef {
 
 /** A saved AI rewrite of a single chapter (summary, key points, etc.). */
 export type RewriteStyle =
-  | 'short_summary'
-  | 'detailed_summary'
-  | 'key_points'
-  | 'simplified'
-  | 'everyday_simple'
-  | 'key_quotes'
-  | 'review_questions';
+  | "short_summary"
+  | "detailed_summary"
+  | "key_points"
+  | "simplified"
+  | "everyday_simple"
+  | "key_quotes"
+  | "review_questions";
 
 /** Difficulty level used by the "everyday simple" rewrite style. */
-export type SimplifyLevel = 'a2-b1' | 'b1-b2';
+export type SimplifyLevel = "a2-b1" | "b1-b2";
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */
@@ -347,7 +339,7 @@ export interface WordTranslation {
  *  - learning: user is studying it
  *  - known: user knows it (won't be highlighted/pre-studied)
  *  - ignored: hide from pre-study (proper nouns, names…) */
-export type WordStatusValue = 'new' | 'learning' | 'known' | 'ignored';
+export type WordStatusValue = "new" | "learning" | "known" | "ignored";
 
 export interface WordStatus {
   /** Normalized lowercased word (key). */

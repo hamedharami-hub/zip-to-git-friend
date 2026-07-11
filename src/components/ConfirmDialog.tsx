@@ -1,4 +1,4 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useState } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -9,7 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 interface Props {
   trigger: ReactNode;
@@ -25,8 +25,8 @@ export function ConfirmDialog({
   trigger,
   title,
   description,
-  confirmLabel = 'Delete',
-  cancelLabel = 'Cancel',
+  confirmLabel = "Delete",
+  cancelLabel = "Cancel",
   destructive = true,
   onConfirm,
 }: Props) {
@@ -48,8 +48,8 @@ export function ConfirmDialog({
             }}
             className={
               destructive
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-                : ''
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : ""
             }
           >
             {confirmLabel}

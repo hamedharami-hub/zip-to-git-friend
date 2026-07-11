@@ -4,7 +4,12 @@
  * source video/podcast) when available, otherwise falls back to the
  * browser's Web Speech API.
  */
-import { BrowserTtsController, isBrowserTtsSupported, listVoices, type BrowserTtsVoice } from '@/lib/browserTts';
+import {
+  BrowserTtsController,
+  isBrowserTtsSupported,
+  listVoices,
+  type BrowserTtsVoice,
+} from "@/lib/browserTts";
 
 let cachedVoices: BrowserTtsVoice[] | null = null;
 
@@ -15,10 +20,12 @@ async function getVoices(): Promise<BrowserTtsVoice[]> {
 }
 
 /** Pick the best English voice available on this device. */
-async function pickVoiceId(lang = 'en'): Promise<string | null> {
+async function pickVoiceId(lang = "en"): Promise<string | null> {
   const voices = await getVoices();
   if (voices.length === 0) return null;
-  const exact = voices.find((v) => v.lang.toLowerCase().startsWith(lang.toLowerCase()) && v.default);
+  const exact = voices.find(
+    (v) => v.lang.toLowerCase().startsWith(lang.toLowerCase()) && v.default,
+  );
   if (exact) return exact.id;
   const anyLang = voices.find((v) => v.lang.toLowerCase().startsWith(lang.toLowerCase()));
   if (anyLang) return anyLang.id;
@@ -68,11 +75,14 @@ export function playClip(url: string): Promise<void> {
 }
 
 /** Speak arbitrary text using the browser TTS engine. */
-export async function speak(text: string, opts: { rate?: number; lang?: string } = {}): Promise<void> {
-  const trimmed = (text ?? '').trim();
+export async function speak(
+  text: string,
+  opts: { rate?: number; lang?: string } = {},
+): Promise<void> {
+  const trimmed = (text ?? "").trim();
   if (!trimmed || !isBrowserTtsSupported()) return;
   stopAllTts();
-  const voiceId = await pickVoiceId(opts.lang ?? 'en');
+  const voiceId = await pickVoiceId(opts.lang ?? "en");
   return new Promise((resolve) => {
     const controller = new BrowserTtsController(trimmed, {
       voiceId,

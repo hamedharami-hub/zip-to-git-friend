@@ -1,17 +1,13 @@
-import { create } from 'zustand';
-import type { LeitnerCard, LeitnerRating, LeitnerSourceKind } from '@/types';
-import {
-  getAllLeitnerCards,
-  saveLeitnerCard,
-  deleteLeitnerCard as dbDeleteCard,
-} from '@/lib/db';
-import { applyAnswer, applyReview, normalizeFront, nextReviewFor, sortDue } from '@/lib/leitner';
-import { pushCard, deleteRemoteCard } from '@/lib/leitnerSync';
-import { extractAndUploadClip } from '@/lib/audioClip';
-import { applyDailyLimits } from '@/lib/leitnerLimits';
+import { create } from "zustand";
+import type { LeitnerCard, LeitnerRating, LeitnerSourceKind } from "@/types";
+import { getAllLeitnerCards, saveLeitnerCard, deleteLeitnerCard as dbDeleteCard } from "@/lib/db";
+import { applyAnswer, applyReview, normalizeFront, nextReviewFor, sortDue } from "@/lib/leitner";
+import { pushCard, deleteRemoteCard } from "@/lib/leitnerSync";
+import { extractAndUploadClip } from "@/lib/audioClip";
+import { applyDailyLimits } from "@/lib/leitnerLimits";
 
 function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2);
 }
 
@@ -50,8 +46,13 @@ interface LeitnerState {
    *  signature `(front, back, sourceVideoId?, sourceCueId?)` for backwards
    *  compatibility with existing call sites. */
   addCard: {
-    (input: AddCardInput): Promise<'added' | 'duplicate'>;
-    (front: string, back: string, sourceVideoId?: string, sourceCueId?: string): Promise<'added' | 'duplicate'>;
+    (input: AddCardInput): Promise<"added" | "duplicate">;
+    (
+      front: string,
+      back: string,
+      sourceVideoId?: string,
+      sourceCueId?: string,
+    ): Promise<"added" | "duplicate">;
   };
   /** Patch arbitrary fields on a card (front/back/example/image/audio/folder…). */
   updateCard: (id: string, patch: Partial<LeitnerCard>) => Promise<void>;
@@ -70,7 +71,7 @@ interface LeitnerState {
   getDueCards: (now?: number, folderId?: string) => LeitnerCard[];
   /** Build a queue of cards for a study profile. */
   getProfileQueue: (
-    profile: 'due' | 'quick' | 'cram' | 'listening' | 'starred',
+    profile: "due" | "quick" | "cram" | "listening" | "starred",
     folderId?: string,
     limit?: number,
   ) => LeitnerCard[];
@@ -93,27 +94,30 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     sourceCueId?: string,
   ) => {
     const input: AddCardInput =
-      typeof arg1 === 'string'
-        ? { front: arg1, back: back ?? '', sourceVideoId, sourceCueId }
+      typeof arg1 === "string"
+        ? { front: arg1, back: back ?? "", sourceVideoId, sourceCueId }
         : arg1;
     const key = normalizeFront(input.front);
     const existing = get().cards.find((c) => normalizeFront(c.front) === key);
     if (existing) {
       // Backfill missing rich fields onto existing card so re-adds don't lose context.
       const patch: Partial<LeitnerCard> = {};
-      if (input.exampleSentence && !existing.exampleSentence) patch.exampleSentence = input.exampleSentence;
+      if (input.exampleSentence && !existing.exampleSentence)
+        patch.exampleSentence = input.exampleSentence;
       if (input.audioUrl && !existing.audioUrl) patch.audioUrl = input.audioUrl;
       if (input.imageUrl && !existing.imageUrl) patch.imageUrl = input.imageUrl;
       if (input.folderId && !existing.folderId) patch.folderId = input.folderId;
-      if (input.sourceStartMs != null && existing.sourceStartMs == null) patch.sourceStartMs = input.sourceStartMs;
-      if (input.sourceEndMs != null && existing.sourceEndMs == null) patch.sourceEndMs = input.sourceEndMs;
+      if (input.sourceStartMs != null && existing.sourceStartMs == null)
+        patch.sourceStartMs = input.sourceStartMs;
+      if (input.sourceEndMs != null && existing.sourceEndMs == null)
+        patch.sourceEndMs = input.sourceEndMs;
       if (input.sourceUrl && !existing.sourceUrl) patch.sourceUrl = input.sourceUrl;
       if (input.sourceTitle && !existing.sourceTitle) patch.sourceTitle = input.sourceTitle;
       if (input.sourceKind && !existing.sourceKind) patch.sourceKind = input.sourceKind;
       if (Object.keys(patch).length > 0) {
         await get().updateCard(existing.id, patch);
       }
-      return 'duplicate';
+      return "duplicate";
     }
     const now = Date.now();
     const card: LeitnerCard = {
@@ -133,7 +137,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
       sourceEndMs: input.sourceEndMs,
       sourceUrl: input.sourceUrl,
       sourceTitle: input.sourceTitle,
-      sourceKind: input.sourceKind ?? 'video',
+      sourceKind: input.sourceKind ?? "video",
     };
     await saveLeitnerCard(card);
     set({ cards: [...get().cards, card] });
@@ -143,8 +147,8 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     if (
       !card.audioUrl &&
       card.sourceVideoId &&
-      typeof card.sourceStartMs === 'number' &&
-      typeof card.sourceEndMs === 'number' &&
+      typeof card.sourceStartMs === "number" &&
+      typeof card.sourceEndMs === "number" &&
       card.sourceEndMs > card.sourceStartMs
     ) {
       void (async () => {
@@ -157,12 +161,12 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
           });
           if (url) await get().updateCard(card.id, { audioUrl: url });
         } catch (e) {
-          console.warn('auto clip extract failed', e);
+          console.warn("auto clip extract failed", e);
         }
       })();
     }
-    return 'added';
-  }) as LeitnerState['addCard'],
+    return "added";
+  }) as LeitnerState["addCard"],
   updateCard: async (id, patch) => {
     const card = get().cards.find((c) => c.id === id);
     if (!card) return;
@@ -219,46 +223,40 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     pushCard(updated).catch(() => {});
   },
   getDueCards: (now = Date.now(), folderId) => {
-    const base = folderId
-      ? get().cards.filter((c) => c.folderId === folderId)
-      : get().cards;
+    const base = folderId ? get().cards.filter((c) => c.folderId === folderId) : get().cards;
     return sortDue(base.filter((c) => c.nextReview <= now));
   },
   getProfileQueue: (profile, folderId, limit) => {
     const now = Date.now();
-    const base = folderId
-      ? get().cards.filter((c) => c.folderId === folderId)
-      : get().cards;
+    const base = folderId ? get().cards.filter((c) => c.folderId === folderId) : get().cards;
     let list: LeitnerCard[];
     switch (profile) {
-      case 'starred':
+      case "starred":
         list = sortDue(base.filter((c) => c.starred));
         break;
-      case 'cram':
+      case "cram":
         // Ignore SRS schedule — review everything in scope.
         list = sortDue(base);
         break;
-      case 'listening':
+      case "listening":
         list = sortDue(base.filter((c) => c.audioUrl));
         break;
-      case 'quick': {
+      case "quick": {
         const due = sortDue(base.filter((c) => c.nextReview <= now));
         list = due.slice(0, limit ?? 10);
         break;
       }
-      case 'due':
+      case "due":
       default: {
         const due = sortDue(base.filter((c) => c.nextReview <= now));
         list = applyDailyLimits(due, get().cards, { now });
       }
     }
-    return typeof limit === 'number' ? list.slice(0, limit) : list;
+    return typeof limit === "number" ? list.slice(0, limit) : list;
   },
   getBoxStats: (now = Date.now(), folderId) => {
     const stats: BoxStats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, total: 0, due: 0 };
-    const list = folderId
-      ? get().cards.filter((c) => c.folderId === folderId)
-      : get().cards;
+    const list = folderId ? get().cards.filter((c) => c.folderId === folderId) : get().cards;
     for (const c of list) {
       stats[c.box] += 1;
       stats.total += 1;
@@ -271,7 +269,5 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     return get().cards.find((c) => normalizeFront(c.front) === key);
   },
   cardsInFolder: (folderId) =>
-    folderId
-      ? get().cards.filter((c) => c.folderId === folderId)
-      : get().cards,
+    folderId ? get().cards.filter((c) => c.folderId === folderId) : get().cards,
 }));

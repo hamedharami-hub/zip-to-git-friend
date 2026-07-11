@@ -1,26 +1,22 @@
-import { useEffect, useState } from 'react';
-import { Volume2, ExternalLink, Plus, Loader2, Check, GraduationCap, EyeOff } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import type { SubtitleCue } from '@/types';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { useVideoStore } from '@/store/videoStore';
-import { useOnline } from '@/hooks/useOnline';
-import { runTranslate, aiErrorMessage, getApiKeyFor } from '@/lib/ai';
-import { getWordTranslation, saveWordTranslation } from '@/lib/db';
+import { useEffect, useState } from "react";
+import { Volume2, ExternalLink, Plus, Loader2, Check, GraduationCap, EyeOff } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { SubtitleCue } from "@/types";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { useVideoStore } from "@/store/videoStore";
+import { useOnline } from "@/hooks/useOnline";
+import { runTranslate, aiErrorMessage, getApiKeyFor } from "@/lib/ai";
+import { getWordTranslation, saveWordTranslation } from "@/lib/db";
 import {
   useAllWordStatus,
   useWordStatus,
   statusColorClass,
   statusLabel,
-} from '@/hooks/useWordStatus';
-import { toast } from 'sonner';
+} from "@/hooks/useWordStatus";
+import { toast } from "sonner";
 
 interface Props {
   cue: SubtitleCue;
@@ -32,10 +28,10 @@ interface Props {
 
 function speak(word: string) {
   try {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.lang = 'en-US';
+    u.lang = "en-US";
     u.rate = 0.9;
     window.speechSynthesis.speak(u);
   } catch {
@@ -44,7 +40,7 @@ function speak(word: string) {
 }
 
 function clean(w: string): string {
-  return w.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '');
+  return w.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, "");
 }
 
 /**
@@ -77,7 +73,7 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
     return () => releasePlayback();
   }, [open, holdPlayback, releasePlayback]);
 
-  const activeWord = activeIdx >= 0 ? words[activeIdx]?.text ?? '' : '';
+  const activeWord = activeIdx >= 0 ? (words[activeIdx]?.text ?? "") : "";
   const cleaned = clean(activeWord);
   const inLeitner = !!findByFront(cleaned);
   const hasKey = !!getApiKeyFor(settings.translateModel, settings);
@@ -113,11 +109,11 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
       try {
         const t = await runTranslate(cleaned, choice, settings, cue.text);
         if (cancelled) return;
-        const trimmed = t.trim().replace(/^["'`]|["'`]$/g, '');
+        const trimmed = t.trim().replace(/^["'`]|["'`]$/g, "");
         setTranslation(trimmed);
         void saveWordTranslation(cleaned, trimmed);
       } catch (e) {
-        if (!cancelled) toast.error(aiErrorMessage(e, 'Translation failed.'));
+        if (!cancelled) toast.error(aiErrorMessage(e, "Translation failed."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -130,13 +126,13 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
 
   const handleAdd = async () => {
     if (!cleaned) return;
-    const back = translation ?? '';
+    const back = translation ?? "";
     if (!back) {
-      toast.error('No translation yet.');
+      toast.error("No translation yet.");
       return;
     }
     const result = await addCard(cleaned, back, videoId, cue.id);
-    if (result === 'duplicate') {
+    if (result === "duplicate") {
       toast(`Already in Leitner: ${cleaned}`);
     } else {
       toast.success(`Added to Leitner: ${cleaned}`);
@@ -153,7 +149,7 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
           const isPlaying = i === playingIdx;
           const isPast = playingIdx >= 0 && i < playingIdx;
           const wKey = clean(w.text).toLowerCase();
-          const st = statusMap[wKey] ?? 'new';
+          const st = statusMap[wKey] ?? "new";
           return (
             <span key={i}>
               <button
@@ -165,15 +161,15 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
                   setOpen(true);
                 }}
                 className={cn(
-                  'inline-block rounded px-0.5 transition-colors duration-100 cursor-pointer hover:bg-primary/25',
+                  "inline-block rounded px-0.5 transition-colors duration-100 cursor-pointer hover:bg-primary/25",
                   statusColorClass(st),
-                  isPlaying && 'bg-primary text-primary-foreground font-semibold scale-105',
-                  !isPlaying && isPast && 'opacity-70',
+                  isPlaying && "bg-primary text-primary-foreground font-semibold scale-105",
+                  !isPlaying && isPast && "opacity-70",
                 )}
               >
                 {w.text}
               </button>
-              {i < words.length - 1 && ' '}
+              {i < words.length - 1 && " "}
             </span>
           );
         })}
@@ -186,13 +182,13 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
             aria-hidden
             tabIndex={-1}
             style={{
-              position: 'fixed',
+              position: "fixed",
               left: anchorRect?.x ?? 0,
               top: anchorRect?.y ?? 0,
               width: 0,
               height: 0,
               opacity: 0,
-              pointerEvents: 'none',
+              pointerEvents: "none",
             }}
           />
         </PopoverTrigger>
@@ -233,7 +229,8 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
             </div>
             <div className="flex items-center gap-1 text-[11px]">
               <span className="text-muted-foreground mr-auto">
-                Status: <span className="text-foreground font-medium">{statusLabel(activeStatus)}</span>
+                Status:{" "}
+                <span className="text-foreground font-medium">{statusLabel(activeStatus)}</span>
               </span>
               <Button
                 size="sm"
@@ -249,11 +246,11 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
                 size="sm"
                 variant="ghost"
                 className="h-6 px-1.5 text-[10px] gap-1 text-muted-foreground"
-                onClick={() => setStatus(activeStatus === 'ignored' ? 'new' : 'ignored')}
+                onClick={() => setStatus(activeStatus === "ignored" ? "new" : "ignored")}
                 title="Toggle ignore"
               >
                 <EyeOff className="h-3 w-3" />
-                {activeStatus === 'ignored' ? 'Unignore' : 'Ignore'}
+                {activeStatus === "ignored" ? "Unignore" : "Ignore"}
               </Button>
             </div>
             <div className="flex gap-1.5">
@@ -264,9 +261,13 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
                 disabled={inLeitner || !translation}
               >
                 {inLeitner ? (
-                  <><Check className="h-4 w-4 mr-1.5" /> In Leitner</>
+                  <>
+                    <Check className="h-4 w-4 mr-1.5" /> In Leitner
+                  </>
                 ) : (
-                  <><Plus className="h-4 w-4 mr-1.5" /> Add to Leitner</>
+                  <>
+                    <Plus className="h-4 w-4 mr-1.5" /> Add to Leitner
+                  </>
                 )}
               </Button>
               <a

@@ -6,7 +6,7 @@
  * Scope: per (bookId, chapterIndex). Subscribers receive the FULL merged map
  * so they can re-render idiom underlines + inline translations in place.
  */
-import type { BookParagraphAnalysis } from '@/types';
+import type { BookParagraphAnalysis } from "@/types";
 
 type Listener = (results: Record<string, BookParagraphAnalysis>) => void;
 type Key = string; // `${bookId}:${chapterIndex}`

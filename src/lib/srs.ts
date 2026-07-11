@@ -5,7 +5,7 @@
  * (Again/Hard/Good/Easy) and an adaptive ease factor. Pure functions, fully
  * client-side. No external deps.
  */
-import type { LeitnerCard, LeitnerRating, LeitnerReviewLog } from '@/types';
+import type { LeitnerCard, LeitnerRating, LeitnerReviewLog } from "@/types";
 
 const DAY = 86_400_000;
 
@@ -52,18 +52,18 @@ export function applyRating(
   let lapses = card.lapseCount ?? 0;
 
   switch (rating) {
-    case 'again':
+    case "again":
       nextBox = 1;
       nextEase = clamp(ease - 0.2, MIN_EASE, MAX_EASE);
       nextInterval = DAY; // back to 1 day
       lapses += 1;
       break;
-    case 'hard':
+    case "hard":
       // stay in same box, halve interval (min 1 day)
       nextEase = clamp(ease - 0.05, MIN_EASE, MAX_EASE);
       nextInterval = Math.max(DAY, Math.round(baseInterval * 0.6));
       break;
-    case 'good':
+    case "good":
       nextBox = clampBox(card.box + 1);
       // grow interval modestly
       nextInterval = Math.max(
@@ -71,7 +71,7 @@ export function applyRating(
         Math.round(baseInterval * Math.max(1.2, ease)),
       );
       break;
-    case 'easy':
+    case "easy":
       nextBox = clampBox(card.box + 2);
       nextEase = clamp(ease + 0.1, MIN_EASE, MAX_EASE);
       nextInterval = Math.max(
@@ -103,14 +103,14 @@ export function applyRating(
 
 /** Map a legacy boolean "correct" answer into a rating. */
 export function ratingFromBoolean(correct: boolean): LeitnerRating {
-  return correct ? 'good' : 'again';
+  return correct ? "good" : "again";
 }
 
 export function intervalLabel(ms: number): string {
   const d = Math.round(ms / DAY);
-  if (d < 1) return '<1d';
-  if (d === 1) return '1d';
+  if (d < 1) return "<1d";
+  if (d === 1) return "1d";
   if (d < 30) return `${d}d`;
   const m = Math.round(d / 30);
-  return m <= 1 ? '1mo' : `${m}mo`;
+  return m <= 1 ? "1mo" : `${m}mo`;
 }

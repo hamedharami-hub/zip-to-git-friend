@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
-import { Sparkles, Image as ImageIcon, Loader2, X, Wand2, BookOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useRef, useState } from "react";
+import { Sparkles, Image as ImageIcon, Loader2, X, Wand2, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +9,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { generateGradientCover, imageFileToDataUrl } from '@/lib/manualBook';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { generateGradientCover, imageFileToDataUrl } from "@/lib/manualBook";
 import {
   createLanguageBook,
   generateLanguageChapter,
   parseItemsList,
   type LanguageChapterAIResult,
-} from '@/lib/languageBook';
+} from "@/lib/languageBook";
 
 interface Props {
   trigger?: React.ReactNode;
@@ -42,32 +42,32 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
   const [aiResult, setAiResult] = useState<LanguageChapterAIResult | null>(null);
 
   // Book metadata
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [language, setLanguage] = useState("en");
   const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Chapter inputs
-  const [chapterTitle, setChapterTitle] = useState('Chapter 1');
-  const [mode, setMode] = useState<'auto' | 'guided'>('auto');
-  const [itemsRaw, setItemsRaw] = useState('');
-  const [outline, setOutline] = useState('');
-  const [userNotes, setUserNotes] = useState('');
+  const [chapterTitle, setChapterTitle] = useState("Chapter 1");
+  const [mode, setMode] = useState<"auto" | "guided">("auto");
+  const [itemsRaw, setItemsRaw] = useState("");
+  const [outline, setOutline] = useState("");
+  const [userNotes, setUserNotes] = useState("");
 
   const items = useMemo(() => parseItemsList(itemsRaw), [itemsRaw]);
 
   const reset = () => {
     setAiResult(null);
-    setTitle('');
-    setAuthor('');
-    setLanguage('en');
+    setTitle("");
+    setAuthor("");
+    setLanguage("en");
     setCoverDataUrl(null);
-    setChapterTitle('Chapter 1');
-    setMode('auto');
-    setItemsRaw('');
-    setOutline('');
-    setUserNotes('');
+    setChapterTitle("Chapter 1");
+    setMode("auto");
+    setItemsRaw("");
+    setOutline("");
+    setUserNotes("");
   };
 
   async function handleCoverPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -75,7 +75,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
     if (!f) return;
     const data = await imageFileToDataUrl(f);
     if (!data) {
-      toast.error('Could not read this image. Try a smaller JPG/PNG.');
+      toast.error("Could not read this image. Try a smaller JPG/PNG.");
       return;
     }
     setCoverDataUrl(data);
@@ -83,7 +83,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
 
   async function handleGenerate() {
     if (items.length === 0) {
-      toast.error('Add at least one word, phrase, or idiom.');
+      toast.error("Add at least one word, phrase, or idiom.");
       return;
     }
     setBusy(true);
@@ -91,22 +91,20 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
       const result = await generateLanguageChapter({
         items,
         mode,
-        outline: mode === 'guided' ? outline.trim() || undefined : undefined,
+        outline: mode === "guided" ? outline.trim() || undefined : undefined,
       });
       setAiResult(result);
-      if (!chapterTitle.trim() || chapterTitle === 'Chapter 1') {
+      if (!chapterTitle.trim() || chapterTitle === "Chapter 1") {
         setChapterTitle(result.title);
       }
       toast.success(
         result.missingItems.length
           ? `Story ready — ${result.usedItems.length}/${items.length} items used.`
-          : 'Story ready ✨',
+          : "Story ready ✨",
       );
     } catch (err) {
-      console.error('[CreateLanguageBook] generate failed', err);
-      toast.error(
-        err instanceof Error ? err.message : 'AI request failed. Try again.',
-      );
+      console.error("[CreateLanguageBook] generate failed", err);
+      toast.error(err instanceof Error ? err.message : "AI request failed. Try again.");
     } finally {
       setBusy(false);
     }
@@ -115,11 +113,11 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
   async function handleCreate() {
     const t = title.trim();
     if (!t) {
-      toast.error('Please enter a book title.');
+      toast.error("Please enter a book title.");
       return;
     }
     if (!aiResult) {
-      toast.error('Generate the story first.');
+      toast.error("Generate the story first.");
       return;
     }
     setBusy(true);
@@ -127,7 +125,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
       const id = await createLanguageBook({
         title: t,
         author: author.trim() || undefined,
-        language: language.trim() || 'en',
+        language: language.trim() || "en",
         coverDataUrl,
         firstChapter: {
           title: chapterTitle.trim() || aiResult.title,
@@ -141,8 +139,8 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
       reset();
       navigate(`/books/${id}`);
     } catch (err) {
-      console.error('[CreateLanguageBook] create failed', err);
-      toast.error('Could not create this book. Please try again.');
+      console.error("[CreateLanguageBook] create failed", err);
+      toast.error("Could not create this book. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -174,8 +172,8 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
             New Language Learning Book
           </DialogTitle>
           <DialogDescription>
-            Give AI your target words / idioms — it weaves a short story you read
-            like a normal chapter, with the targets underlined.
+            Give AI your target words / idioms — it weaves a short story you read like a normal
+            chapter, with the targets underlined.
           </DialogDescription>
         </DialogHeader>
 
@@ -188,9 +186,9 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
                 style={{
                   backgroundImage: coverDataUrl
                     ? `url(${coverDataUrl})`
-                    : `url(${generateGradientCover(title || 'Language Book', author)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                    : `url(${generateGradientCover(title || "Language Book", author)})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
                 {coverDataUrl && (
@@ -269,7 +267,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
               />
             </div>
 
-            <Tabs value={mode} onValueChange={(v) => setMode(v as 'auto' | 'guided')}>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as "auto" | "guided")}>
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="auto" className="gap-1.5">
                   <Wand2 className="h-3.5 w-3.5" />
@@ -288,7 +286,9 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
                     id="lb-items-auto"
                     value={itemsRaw}
                     onChange={(e) => setItemsRaw(e.target.value)}
-                    placeholder={'one per line, or comma-separated\ne.g.\nbreak the ice\nspill the beans\non cloud nine'}
+                    placeholder={
+                      "one per line, or comma-separated\ne.g.\nbreak the ice\nspill the beans\non cloud nine"
+                    }
                     rows={6}
                     className="resize-y font-mono text-sm"
                   />
@@ -309,9 +309,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
                     rows={4}
                     className="resize-y font-mono text-sm"
                   />
-                  <p className="text-[11px] text-muted-foreground">
-                    {items.length}/60 items
-                  </p>
+                  <p className="text-[11px] text-muted-foreground">{items.length}/60 items</p>
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="lb-outline">Story outline / plot</Label>
@@ -340,7 +338,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
 
             <div className="flex items-center justify-between gap-2 pt-2">
               <p className="text-[11px] text-muted-foreground">
-                {aiResult ? '✓ Story ready — review & create.' : 'Generate to preview.'}
+                {aiResult ? "✓ Story ready — review & create." : "Generate to preview."}
               </p>
               <Button
                 type="button"
@@ -355,7 +353,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
                 ) : (
                   <Sparkles className="h-3.5 w-3.5" />
                 )}
-                {aiResult ? 'Regenerate' : 'Generate story'}
+                {aiResult ? "Regenerate" : "Generate story"}
               </Button>
             </div>
 
@@ -367,11 +365,11 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
                 <h4 className="font-semibold">{aiResult.title}</h4>
                 <p className="text-sm whitespace-pre-wrap leading-relaxed">
                   {aiResult.story.slice(0, 600)}
-                  {aiResult.story.length > 600 ? '…' : ''}
+                  {aiResult.story.length > 600 ? "…" : ""}
                 </p>
                 {aiResult.missingItems.length > 0 && (
                   <p className="text-[11px] text-destructive">
-                    Missing: {aiResult.missingItems.join(', ')}
+                    Missing: {aiResult.missingItems.join(", ")}
                   </p>
                 )}
               </div>
@@ -383,10 +381,7 @@ export function CreateLanguageBookDialog({ trigger }: Props) {
           <Button variant="ghost" onClick={() => setOpen(false)} disabled={busy}>
             Cancel
           </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={busy || !title.trim() || !aiResult}
-          >
+          <Button onClick={handleCreate} disabled={busy || !title.trim() || !aiResult}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
             Create book
           </Button>

@@ -13,23 +13,23 @@
  * Each one returns the SAME shape the existing edge functions return,
  * so callers can plug it in transparently.
  */
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
-import { analyzeParagraph as analyzeParagraphGateway } from '@/lib/bookAnalysis';
-import { rewriteChapter as rewriteChapterGateway } from '@/lib/chapterRewrite';
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
+import { analyzeParagraph as analyzeParagraphGateway } from "@/lib/bookAnalysis";
+import { rewriteChapter as rewriteChapterGateway } from "@/lib/chapterRewrite";
 import {
   paragraphAnalysisKey,
   getChapterRewrite,
   rewriteKey,
   saveChapterRewrite,
-} from '@/lib/bookDb';
+} from "@/lib/bookDb";
 import {
   getCachedParagraphAnalysisShared,
   saveParagraphAnalysisShared,
-} from '@/lib/paragraphAnalysisCloud';
-import { hashParagraph } from '@/lib/bookAnalysis';
-import { ChapterRewriteError, REWRITE_STYLES } from '@/lib/chapterRewrite';
-import { BookAnalysisError } from '@/lib/bookAnalysis';
+} from "@/lib/paragraphAnalysisCloud";
+import { hashParagraph } from "@/lib/bookAnalysis";
+import { ChapterRewriteError, REWRITE_STYLES } from "@/lib/chapterRewrite";
+import { BookAnalysisError } from "@/lib/bookAnalysis";
 import type {
   BookAIModelRef,
   BookChapterRewrite,
@@ -37,7 +37,7 @@ import type {
   RewriteStyle,
   VocabItem,
   IdiomItem,
-} from '@/types';
+} from "@/types";
 
 // ─── Tool / schema definitions reused by direct API calls ─────────────
 
@@ -51,41 +51,41 @@ Your job: analyze ONE paragraph of English prose and produce:
 Always respond by calling the provided tool. Never reply with prose.`;
 
 const ANALYZE_TOOL = {
-  type: 'function' as const,
+  type: "function" as const,
   function: {
-    name: 'return_paragraph_analysis',
-    description: 'Return the full analysis of an English paragraph for a Persian-speaking learner.',
+    name: "return_paragraph_analysis",
+    description: "Return the full analysis of an English paragraph for a Persian-speaking learner.",
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
-        translation: { type: 'string' },
+        translation: { type: "string" },
         vocabulary: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              word: { type: 'string' },
-              translation: { type: 'string' },
-              partOfSpeech: { type: 'string' },
-              example: { type: 'string' },
+              word: { type: "string" },
+              translation: { type: "string" },
+              partOfSpeech: { type: "string" },
+              example: { type: "string" },
             },
-            required: ['word', 'translation'],
+            required: ["word", "translation"],
           },
         },
         idioms: {
-          type: 'array',
+          type: "array",
           items: {
-            type: 'object',
+            type: "object",
             properties: {
-              phrase: { type: 'string' },
-              meaning: { type: 'string' },
-              literalTranslation: { type: 'string' },
+              phrase: { type: "string" },
+              meaning: { type: "string" },
+              literalTranslation: { type: "string" },
             },
-            required: ['phrase', 'meaning'],
+            required: ["phrase", "meaning"],
           },
         },
       },
-      required: ['translation', 'vocabulary', 'idioms'],
+      required: ["translation", "vocabulary", "idioms"],
     },
   },
 };
@@ -97,84 +97,99 @@ Produce the rewrite in clean modern ENGLISH (never Persian). Output BOTH a markd
 Always respond by calling the provided tool. Never reply with prose.`;
 
 const REWRITE_TOOL = {
-  type: 'function' as const,
+  type: "function" as const,
   function: {
-    name: 'return_chapter_rewrite',
-    description: 'Return the rewritten chapter in markdown and plain text.',
+    name: "return_chapter_rewrite",
+    description: "Return the rewritten chapter in markdown and plain text.",
     parameters: {
-      type: 'object',
+      type: "object",
       properties: {
-        markdown: { type: 'string' },
-        text: { type: 'string' },
-        wordCount: { type: 'number' },
+        markdown: { type: "string" },
+        text: { type: "string" },
+        wordCount: { type: "number" },
       },
-      required: ['markdown', 'text', 'wordCount'],
+      required: ["markdown", "text", "wordCount"],
     },
   },
 };
 
 const STYLE_INSTRUCTIONS: Record<RewriteStyle, string> = {
   short_summary:
-    'Write a SHORT summary (≈ 120–180 words) of the chapter in clear modern English. Capture the central thesis and main moves; skip examples.',
+    "Write a SHORT summary (≈ 120–180 words) of the chapter in clear modern English. Capture the central thesis and main moves; skip examples.",
   detailed_summary:
-    'Write a DETAILED summary (≈ 350–600 words) preserving every important argument and example in the original order.',
+    "Write a DETAILED summary (≈ 350–600 words) preserving every important argument and example in the original order.",
   key_points:
-    'Distill the chapter into 6–12 KEY POINTS, each one focused sentence in clear modern English. Use a markdown bullet list. Keep the original order.',
+    "Distill the chapter into 6–12 KEY POINTS, each one focused sentence in clear modern English. Use a markdown bullet list. Keep the original order.",
   simplified:
-    'REWRITE the chapter in SIMPLIFIED English (CEFR B1 level): same ideas, shorter sentences, common vocabulary, no idioms. ≈ 60% of original length.',
+    "REWRITE the chapter in SIMPLIFIED English (CEFR B1 level): same ideas, shorter sentences, common vocabulary, no idioms. ≈ 60% of original length.",
   everyday_simple:
     'REWRITE the chapter in SIMPLE, EVERYDAY conversational English (CEFR A2–B1). Use the most common everyday words, short sentences, and the high-frequency phrasal verbs / idioms / collocations a native speaker uses in daily conversation (e.g. "find out", "give up", "look forward to", "at the end of the day"). CRITICAL: do NOT shorten or summarise — preserve EVERY single fact, name, number, date, quote, example and idea in the original order. Output length should be roughly the SAME as the original (not shorter). The goal is daily-conversation language, not a summary.',
   key_quotes:
-    'Extract 5–10 of the MOST POWERFUL sentences VERBATIM. Render each as a markdown blockquote. After each, add ONE short italic line (≤ 15 words) explaining why it matters.',
+    "Extract 5–10 of the MOST POWERFUL sentences VERBATIM. Render each as a markdown blockquote. After each, add ONE short italic line (≤ 15 words) explaining why it matters.",
   review_questions:
-    'Create 6–10 thought-provoking REVIEW QUESTIONS in a markdown numbered list. Mix factual recall and reflection. No answers.',
+    "Create 6–10 thought-provoking REVIEW QUESTIONS in a markdown numbered list. Mix factual recall and reflection. No answers.",
 };
 
 // ─── Tiny markdown → HTML (mirrors edge fn) ───────────────────────────
 
 function mdToHtml(md: string): string {
   const escape = (s: string) =>
-    s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const inline = (s: string) =>
     escape(s)
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>');
-  const lines = md.replace(/\r\n?/g, '\n').split('\n');
+      .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>")
+      .replace(/`([^`]+)`/g, "<code>$1</code>");
+  const lines = md.replace(/\r\n?/g, "\n").split("\n");
   const out: string[] = [];
   let i = 0;
   while (i < lines.length) {
     const line = lines[i];
-    if (!line.trim()) { i++; continue; }
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
     const h = /^(#{1,6})\s+(.*)$/.exec(line);
-    if (h) { out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`); i++; continue; }
+    if (h) {
+      out.push(`<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`);
+      i++;
+      continue;
+    }
     if (/^>\s?/.test(line)) {
       const buf: string[] = [];
-      while (i < lines.length && /^>\s?/.test(lines[i])) { buf.push(lines[i].replace(/^>\s?/, '')); i++; }
-      out.push(`<blockquote><p>${inline(buf.join(' '))}</p></blockquote>`);
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        buf.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      out.push(`<blockquote><p>${inline(buf.join(" "))}</p></blockquote>`);
       continue;
     }
     if (/^\d+\.\s+/.test(line)) {
       const items: string[] = [];
       while (i < lines.length && /^\d+\.\s+/.test(lines[i])) {
-        items.push(`<li>${inline(lines[i].replace(/^\d+\.\s+/, ''))}</li>`); i++;
+        items.push(`<li>${inline(lines[i].replace(/^\d+\.\s+/, ""))}</li>`);
+        i++;
       }
-      out.push(`<ol>${items.join('')}</ol>`); continue;
+      out.push(`<ol>${items.join("")}</ol>`);
+      continue;
     }
     if (/^[-*]\s+/.test(line)) {
       const items: string[] = [];
       while (i < lines.length && /^[-*]\s+/.test(lines[i])) {
-        items.push(`<li>${inline(lines[i].replace(/^[-*]\s+/, ''))}</li>`); i++;
+        items.push(`<li>${inline(lines[i].replace(/^[-*]\s+/, ""))}</li>`);
+        i++;
       }
-      out.push(`<ul>${items.join('')}</ul>`); continue;
+      out.push(`<ul>${items.join("")}</ul>`);
+      continue;
     }
     const buf: string[] = [];
     while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|>|[-*]\s|\d+\.\s)/.test(lines[i])) {
-      buf.push(lines[i]); i++;
+      buf.push(lines[i]);
+      i++;
     }
-    out.push(`<p>${inline(buf.join(' '))}</p>`);
+    out.push(`<p>${inline(buf.join(" "))}</p>`);
   }
-  return out.join('\n');
+  return out.join("\n");
 }
 
 // ─── Direct provider HTTP calls ───────────────────────────────────────
@@ -196,35 +211,35 @@ async function callOpenAICompatible<T>(opts: {
   errorTag: string;
 }): Promise<ToolResponse<T>> {
   const res = await fetch(opts.url, {
-    method: 'POST',
+    method: "POST",
     headers: {
       Authorization: `Bearer ${opts.apiKey}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
       model: opts.model,
       messages: [
-        { role: 'system', content: opts.system },
-        { role: 'user', content: opts.user },
+        { role: "system", content: opts.system },
+        { role: "user", content: opts.user },
       ],
       tools: [opts.tool],
-      tool_choice: { type: 'function', function: { name: opts.toolName } },
+      tool_choice: { type: "function", function: { name: opts.toolName } },
     }),
   });
-  if (res.status === 429) throw new BookAnalysisError('rate_limit', 'Provider rate limit reached.');
+  if (res.status === 429) throw new BookAnalysisError("rate_limit", "Provider rate limit reached.");
   if (res.status === 401 || res.status === 403)
-    throw new BookAnalysisError('invalid', 'Invalid or expired API key.');
+    throw new BookAnalysisError("invalid", "Invalid or expired API key.");
   if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new BookAnalysisError('network', `${opts.errorTag} ${res.status} ${body.slice(0, 200)}`);
+    const body = await res.text().catch(() => "");
+    throw new BookAnalysisError("network", `${opts.errorTag} ${res.status} ${body.slice(0, 200)}`);
   }
   const data = await res.json();
   const argsStr = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!argsStr) throw new BookAnalysisError('invalid', 'Provider returned no structured output.');
+  if (!argsStr) throw new BookAnalysisError("invalid", "Provider returned no structured output.");
   try {
     return { args: JSON.parse(argsStr) as T, modelLabel: opts.model };
   } catch {
-    throw new BookAnalysisError('invalid', 'Provider returned malformed JSON.');
+    throw new BookAnalysisError("invalid", "Provider returned malformed JSON.");
   }
 }
 
@@ -242,27 +257,27 @@ async function callGeminiTool<T>(opts: {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(opts.model)}:generateContent?key=${encodeURIComponent(opts.apiKey)}`;
   const body = {
     systemInstruction: { parts: [{ text: opts.system }] },
-    contents: [{ role: 'user', parts: [{ text: opts.user }] }],
+    contents: [{ role: "user", parts: [{ text: opts.user }] }],
     tools: [{ functionDeclarations: [{ name: opts.toolName, parameters: opts.toolParameters }] }],
-    toolConfig: { functionCallingConfig: { mode: 'ANY', allowedFunctionNames: [opts.toolName] } },
+    toolConfig: { functionCallingConfig: { mode: "ANY", allowedFunctionNames: [opts.toolName] } },
   };
   const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-  if (res.status === 429) throw new BookAnalysisError('rate_limit', 'Gemini rate limit reached.');
+  if (res.status === 429) throw new BookAnalysisError("rate_limit", "Gemini rate limit reached.");
   if (res.status === 401 || res.status === 403)
-    throw new BookAnalysisError('invalid', 'Invalid Gemini API key.');
+    throw new BookAnalysisError("invalid", "Invalid Gemini API key.");
   if (!res.ok) {
-    const t = await res.text().catch(() => '');
-    throw new BookAnalysisError('network', `${opts.errorTag} ${res.status} ${t.slice(0, 200)}`);
+    const t = await res.text().catch(() => "");
+    throw new BookAnalysisError("network", `${opts.errorTag} ${res.status} ${t.slice(0, 200)}`);
   }
   const data = await res.json();
   const parts = data?.candidates?.[0]?.content?.parts ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fnCall = parts.find((p: any) => p?.functionCall?.name === opts.toolName)?.functionCall;
-  if (!fnCall?.args) throw new BookAnalysisError('invalid', 'Gemini returned no functionCall.');
+  if (!fnCall?.args) throw new BookAnalysisError("invalid", "Gemini returned no functionCall.");
   return { args: fnCall.args as T, modelLabel: opts.model };
 }
 
@@ -290,14 +305,14 @@ export async function analyzeParagraphRouted(
 
   const settings = useSettingsStore.getState().settings;
   const ref = coerceBookModel(
-    options.modelRef
-      ?? settings.paragraphAnalysisModelRef
-      ?? settings.bookSingleAnalysisModelRef
-      ?? settings.bookSingleAnalysisModel,
+    options.modelRef ??
+      settings.paragraphAnalysisModelRef ??
+      settings.bookSingleAnalysisModelRef ??
+      settings.bookSingleAnalysisModel,
   );
 
   // Gateway path delegates to the existing edge-function helper.
-  if (ref.provider === 'gateway') {
+  if (ref.provider === "gateway") {
     return analyzeParagraphGateway(bookId, chapterIndex, paragraphText, {
       force: options.force,
       model: ref.model,
@@ -308,9 +323,9 @@ export async function analyzeParagraphRouted(
 
   let parsed: RawAnalyze;
   let modelLabel: string;
-  if (ref.provider === 'gemini') {
+  if (ref.provider === "gemini") {
     const key = settings.geminiApiKey?.trim();
-    if (!key) throw new BookAnalysisError('invalid', 'No Gemini API key configured.');
+    if (!key) throw new BookAnalysisError("invalid", "No Gemini API key configured.");
     const r = await callGeminiTool<RawAnalyze>({
       apiKey: key,
       model: ref.model,
@@ -318,22 +333,22 @@ export async function analyzeParagraphRouted(
       user: userPrompt,
       toolParameters: ANALYZE_TOOL.function.parameters,
       toolName: ANALYZE_TOOL.function.name,
-      errorTag: '[gemini analyze]',
+      errorTag: "[gemini analyze]",
     });
     parsed = r.args;
     modelLabel = `gemini:${r.modelLabel}`;
   } else {
     const key = settings.groqApiKey?.trim();
-    if (!key) throw new BookAnalysisError('invalid', 'No Groq API key configured.');
+    if (!key) throw new BookAnalysisError("invalid", "No Groq API key configured.");
     const r = await callOpenAICompatible<RawAnalyze>({
-      url: 'https://api.groq.com/openai/v1/chat/completions',
+      url: "https://api.groq.com/openai/v1/chat/completions",
       apiKey: key,
       model: ref.model,
       system: ANALYZE_SYSTEM,
       user: userPrompt,
       tool: ANALYZE_TOOL,
       toolName: ANALYZE_TOOL.function.name,
-      errorTag: '[groq analyze]',
+      errorTag: "[groq analyze]",
     });
     parsed = r.args;
     modelLabel = `groq:${r.modelLabel}`;
@@ -344,7 +359,7 @@ export async function analyzeParagraphRouted(
     bookId,
     chapterIndex,
     paragraphHash: hash,
-    translation: (parsed.translation ?? '').trim(),
+    translation: (parsed.translation ?? "").trim(),
     vocabulary: Array.isArray(parsed.vocabulary) ? parsed.vocabulary : [],
     idioms: Array.isArray(parsed.idioms) ? parsed.idioms : [],
     analyzedAt: Date.now(),
@@ -376,13 +391,13 @@ export async function rewriteChapterRouted(
   }
   const settings = useSettingsStore.getState().settings;
   const ref = coerceBookModel(
-    options.modelRef
-      ?? settings.rewriteModelRef
-      ?? settings.bookRewriteModelRef
-      ?? settings.bookRewriteModel,
+    options.modelRef ??
+      settings.rewriteModelRef ??
+      settings.bookRewriteModelRef ??
+      settings.bookRewriteModel,
   );
 
-  if (ref.provider === 'gateway') {
+  if (ref.provider === "gateway") {
     return rewriteChapterGateway(bookId, chapterIndex, chapterTitle, chapterText, style, {
       force: options.force,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -391,13 +406,13 @@ export async function rewriteChapterRouted(
   }
 
   const styleInstr = STYLE_INSTRUCTIONS[style] ?? STYLE_INSTRUCTIONS.short_summary;
-  const userPrompt = `STYLE: ${style}\nINSTRUCTIONS: ${styleInstr}\n\nCHAPTER TITLE: ${chapterTitle || '(untitled)'}\n\nCHAPTER TEXT:\n"""\n${chapterText.slice(0, 60000)}\n"""\n\nCall the tool with the rewrite.`;
+  const userPrompt = `STYLE: ${style}\nINSTRUCTIONS: ${styleInstr}\n\nCHAPTER TITLE: ${chapterTitle || "(untitled)"}\n\nCHAPTER TEXT:\n"""\n${chapterText.slice(0, 60000)}\n"""\n\nCall the tool with the rewrite.`;
 
   let parsed: RawRewrite;
   let modelLabel: string;
-  if (ref.provider === 'gemini') {
+  if (ref.provider === "gemini") {
     const key = settings.geminiApiKey?.trim();
-    if (!key) throw new ChapterRewriteError('invalid', 'No Gemini API key configured.');
+    if (!key) throw new ChapterRewriteError("invalid", "No Gemini API key configured.");
     const r = await callGeminiTool<RawRewrite>({
       apiKey: key,
       model: ref.model,
@@ -405,30 +420,30 @@ export async function rewriteChapterRouted(
       user: userPrompt,
       toolParameters: REWRITE_TOOL.function.parameters,
       toolName: REWRITE_TOOL.function.name,
-      errorTag: '[gemini rewrite]',
+      errorTag: "[gemini rewrite]",
     });
     parsed = r.args;
     modelLabel = `gemini:${r.modelLabel}`;
   } else {
     const key = settings.groqApiKey?.trim();
-    if (!key) throw new ChapterRewriteError('invalid', 'No Groq API key configured.');
+    if (!key) throw new ChapterRewriteError("invalid", "No Groq API key configured.");
     const r = await callOpenAICompatible<RawRewrite>({
-      url: 'https://api.groq.com/openai/v1/chat/completions',
+      url: "https://api.groq.com/openai/v1/chat/completions",
       apiKey: key,
       model: ref.model,
       system: REWRITE_SYSTEM,
       user: userPrompt,
       tool: REWRITE_TOOL,
       toolName: REWRITE_TOOL.function.name,
-      errorTag: '[groq rewrite]',
+      errorTag: "[groq rewrite]",
     });
     parsed = r.args;
     modelLabel = `groq:${r.modelLabel}`;
   }
 
-  const md = String(parsed.markdown ?? '').trim();
-  const txt = String(parsed.text ?? '').trim();
-  if (!md || !txt) throw new ChapterRewriteError('invalid', 'Provider returned empty rewrite.');
+  const md = String(parsed.markdown ?? "").trim();
+  const txt = String(parsed.text ?? "").trim();
+  if (!md || !txt) throw new ChapterRewriteError("invalid", "Provider returned empty rewrite.");
   const html = mdToHtml(md);
   const record: BookChapterRewrite = {
     id: rewriteKey(bookId, chapterIndex, style),
@@ -438,7 +453,7 @@ export async function rewriteChapterRouted(
     html,
     text: txt,
     wordCount:
-      typeof parsed.wordCount === 'number' && parsed.wordCount > 0
+      typeof parsed.wordCount === "number" && parsed.wordCount > 0
         ? Math.round(parsed.wordCount)
         : txt.split(/\s+/).filter(Boolean).length,
     model: modelLabel,

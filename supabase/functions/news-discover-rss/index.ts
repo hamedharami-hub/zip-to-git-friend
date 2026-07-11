@@ -26,8 +26,7 @@ const corsHeaders = {
 const BROWSER_HEADERS: Record<string, string> = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-  Accept:
-    "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
+  Accept: "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
   "Accept-Language": "en-AU,en;q=0.9",
 };
 
@@ -49,25 +48,38 @@ function regionToParams(region?: string, language?: string) {
 function decodeEntities(s: string): string {
   return s
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
     .replace(/&amp;/g, "&");
 }
-function stripTags(html: string) { return decodeEntities(html.replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim(); }
+function stripTags(html: string) {
+  return decodeEntities(html.replace(/<[^>]*>/g, " "))
+    .replace(/\s+/g, " ")
+    .trim();
+}
 function pick(xml: string, tag: string) {
   const re = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, "i");
-  const m = xml.match(re); return m ? m[1].trim() : undefined;
+  const m = xml.match(re);
+  return m ? m[1].trim() : undefined;
 }
 
 async function fetchText(url: string, timeoutMs = 5000): Promise<string | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    const res = await fetch(url, { headers: BROWSER_HEADERS, redirect: "follow", signal: ctrl.signal });
+    const res = await fetch(url, {
+      headers: BROWSER_HEADERS,
+      redirect: "follow",
+      signal: ctrl.signal,
+    });
     clearTimeout(t);
     if (!res.ok) return null;
     return await res.text();
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
@@ -75,16 +87,31 @@ async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), timeoutMs);
-    const res = await fetch(url, { method: "GET", redirect: "follow", signal: ctrl.signal,
-      headers: { "User-Agent": BROWSER_HEADERS["User-Agent"] } });
+    const res = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: { "User-Agent": BROWSER_HEADERS["User-Agent"] },
+    });
     clearTimeout(t);
     return res.url || url;
-  } catch { return url; }
+  } catch {
+    return url;
+  }
 }
 
-interface SourceCandidate { domain: string; siteName: string; homepage: string; articleCount: number; }
+interface SourceCandidate {
+  domain: string;
+  siteName: string;
+  homepage: string;
+  articleCount: number;
+}
 
-async function gatherTopDomains(opts: { topic: string; region?: string; language?: string }): Promise<SourceCandidate[]> {
+async function gatherTopDomains(opts: {
+  topic: string;
+  region?: string;
+  language?: string;
+}): Promise<SourceCandidate[]> {
   const { hl, gl, ceid } = regionToParams(opts.region, opts.language);
   const q = encodeURIComponent(opts.topic);
   const rssUrl = `https://news.google.com/rss/search?q=${q}&hl=${hl}&gl=${gl}&ceid=${ceid}`;
@@ -93,16 +120,24 @@ async function gatherTopDomains(opts: { topic: string; region?: string; language
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/gi) ?? [];
   const counts = new Map<string, SourceCandidate>();
   const limited = blocks.slice(0, 60);
-  const items = await Promise.all(limited.map(async (block) => {
-    const link = stripTags(pick(block, "link") ?? "");
-    const sourceTag = pick(block, "source") ?? "";
-    const siteName = stripTags(sourceTag);
-    const real = await resolveRealUrl(link);
-    try {
-      const u = new URL(real);
-      return { domain: u.hostname.replace(/^www\./, ""), homepage: `${u.protocol}//${u.hostname}`, siteName: siteName || u.hostname.replace(/^www\./, "") };
-    } catch { return null; }
-  }));
+  const items = await Promise.all(
+    limited.map(async (block) => {
+      const link = stripTags(pick(block, "link") ?? "");
+      const sourceTag = pick(block, "source") ?? "";
+      const siteName = stripTags(sourceTag);
+      const real = await resolveRealUrl(link);
+      try {
+        const u = new URL(real);
+        return {
+          domain: u.hostname.replace(/^www\./, ""),
+          homepage: `${u.protocol}//${u.hostname}`,
+          siteName: siteName || u.hostname.replace(/^www\./, ""),
+        };
+      } catch {
+        return null;
+      }
+    }),
+  );
   for (const it of items) {
     if (!it) continue;
     const prev = counts.get(it.domain);
@@ -113,11 +148,21 @@ async function gatherTopDomains(opts: { topic: string; region?: string; language
 }
 
 const COMMON_FEED_PATHS = [
-  "/feed", "/feed/", "/rss", "/rss/", "/feed.xml", "/rss.xml", "/index.xml",
-  "/atom.xml", "/feeds/posts/default", "/rss/index.xml",
+  "/feed",
+  "/feed/",
+  "/rss",
+  "/rss/",
+  "/feed.xml",
+  "/rss.xml",
+  "/index.xml",
+  "/atom.xml",
+  "/feeds/posts/default",
+  "/rss/index.xml",
 ];
 
-function looksLikeFeed(text: string) { return /<\s*(item|entry)\b/i.test(text) && /<\s*(rss|feed)\b/i.test(text); }
+function looksLikeFeed(text: string) {
+  return /<\s*(item|entry)\b/i.test(text) && /<\s*(rss|feed)\b/i.test(text);
+}
 
 async function validateFeed(url: string): Promise<{ ok: boolean; title?: string }> {
   const text = await fetchText(url, 4000);
@@ -126,7 +171,10 @@ async function validateFeed(url: string): Promise<{ ok: boolean; title?: string 
   return { ok: true, title: t ? stripTags(t) : undefined };
 }
 
-function discoverFeedsInHtml(html: string, baseUrl: string): Array<{ url: string; title?: string }> {
+function discoverFeedsInHtml(
+  html: string,
+  baseUrl: string,
+): Array<{ url: string; title?: string }> {
   const out: Array<{ url: string; title?: string }> = [];
   const re = /<link[^>]+rel=["'][^"']*alternate[^"']*["'][^>]*>/gi;
   let m: RegExpExecArray | null;
@@ -139,12 +187,17 @@ function discoverFeedsInHtml(html: string, baseUrl: string): Array<{ url: string
     try {
       const abs = new URL(hrefMatch[1], baseUrl).toString();
       out.push({ url: abs, title: titleMatch?.[1] });
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
   return out;
 }
 
-async function findAllFeedsFor(homepage: string, siteName: string): Promise<Array<{ name: string; url: string }>> {
+async function findAllFeedsFor(
+  homepage: string,
+  siteName: string,
+): Promise<Array<{ name: string; url: string }>> {
   const seen = new Set<string>();
   const out: Array<{ name: string; url: string }> = [];
 
@@ -152,24 +205,34 @@ async function findAllFeedsFor(homepage: string, siteName: string): Promise<Arra
   const html = await fetchText(homepage);
   if (html) {
     const found = discoverFeedsInHtml(html, homepage);
-    const checks = await Promise.all(found.map(async (f) => {
-      const v = await validateFeed(f.url);
-      return v.ok ? { name: f.title || v.title || siteName, url: f.url } : null;
-    }));
+    const checks = await Promise.all(
+      found.map(async (f) => {
+        const v = await validateFeed(f.url);
+        return v.ok ? { name: f.title || v.title || siteName, url: f.url } : null;
+      }),
+    );
     for (const c of checks) {
-      if (c && !seen.has(c.url)) { seen.add(c.url); out.push(c); }
+      if (c && !seen.has(c.url)) {
+        seen.add(c.url);
+        out.push(c);
+      }
     }
   }
 
   // 2) common paths — fill in if homepage didn't expose anything.
   if (out.length === 0) {
     const candidates = COMMON_FEED_PATHS.map((p) => homepage.replace(/\/$/, "") + p);
-    const checks = await Promise.all(candidates.map(async (u) => {
-      const v = await validateFeed(u);
-      return v.ok ? { name: v.title || siteName, url: u } : null;
-    }));
+    const checks = await Promise.all(
+      candidates.map(async (u) => {
+        const v = await validateFeed(u);
+        return v.ok ? { name: v.title || siteName, url: u } : null;
+      }),
+    );
     for (const c of checks) {
-      if (c && !seen.has(c.url)) { seen.add(c.url); out.push(c); }
+      if (c && !seen.has(c.url)) {
+        seen.add(c.url);
+        out.push(c);
+      }
     }
   }
   return out;
@@ -186,7 +249,8 @@ serve(async (req) => {
 
     if (!topic) {
       return new Response(JSON.stringify({ error: "topic is required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -197,22 +261,29 @@ serve(async (req) => {
     const domains = await gatherTopDomains({ topic, region, language });
     const top = domains.slice(0, limit);
 
-    const sites = await Promise.all(top.map(async (d) => {
-      const feeds = await findAllFeedsFor(d.homepage, d.siteName);
-      if (feeds.length === 0) return null;
-      return { siteName: d.siteName, domain: d.domain, articleCount: d.articleCount, feeds };
-    }));
+    const sites = await Promise.all(
+      top.map(async (d) => {
+        const feeds = await findAllFeedsFor(d.homepage, d.siteName);
+        if (feeds.length === 0) return null;
+        return { siteName: d.siteName, domain: d.domain, articleCount: d.articleCount, feeds };
+      }),
+    );
 
     const valid = sites.filter((s): s is NonNullable<typeof s> => s !== null);
 
-    return new Response(JSON.stringify({
-      googleNews: { name: `Google News — ${topic}`, url: googleNewsUrl, articleCount: 0 },
-      sites: valid,
-      topic,
-    }), { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({
+        googleNews: { name: `Google News — ${topic}`, url: googleNewsUrl, articleCount: 0 },
+        sites: valid,
+        topic,
+      }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   } catch (e) {
     console.error("news-discover-rss error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+    );
   }
 });

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 
 /**
  * Centralized read/write hook for an <video>/<audio> element.
@@ -27,9 +27,7 @@ export interface VideoElementApi extends VideoElementState {
   setPlaybackRate: (r: number) => void;
 }
 
-export function useVideoElement(
-  ref: RefObject<HTMLMediaElement | null>,
-): VideoElementApi {
+export function useVideoElement(ref: RefObject<HTMLMediaElement | null>): VideoElementApi {
   const [state, setState] = useState<VideoElementState>({
     volume: 1,
     muted: false,
@@ -45,8 +43,7 @@ export function useVideoElement(
     const el = ref.current;
     if (!el) return;
 
-    const sync = (patch: Partial<VideoElementState>) =>
-      setState((s) => ({ ...s, ...patch }));
+    const sync = (patch: Partial<VideoElementState>) => setState((s) => ({ ...s, ...patch }));
 
     const onVolume = () => sync({ volume: el.volume, muted: el.muted });
     const onRate = () => sync({ playbackRate: el.playbackRate });
@@ -73,67 +70,94 @@ export function useVideoElement(
       paused: el.paused,
     });
 
-    el.addEventListener('volumechange', onVolume);
-    el.addEventListener('ratechange', onRate);
-    el.addEventListener('timeupdate', onTime);
-    el.addEventListener('durationchange', onDuration);
-    el.addEventListener('loadedmetadata', onDuration);
-    el.addEventListener('play', onPlay);
-    el.addEventListener('pause', onPause);
-    el.addEventListener('waiting', onWaiting);
-    el.addEventListener('playing', onPlaying);
-    el.addEventListener('canplay', onCanPlay);
+    el.addEventListener("volumechange", onVolume);
+    el.addEventListener("ratechange", onRate);
+    el.addEventListener("timeupdate", onTime);
+    el.addEventListener("durationchange", onDuration);
+    el.addEventListener("loadedmetadata", onDuration);
+    el.addEventListener("play", onPlay);
+    el.addEventListener("pause", onPause);
+    el.addEventListener("waiting", onWaiting);
+    el.addEventListener("playing", onPlaying);
+    el.addEventListener("canplay", onCanPlay);
     return () => {
-      el.removeEventListener('volumechange', onVolume);
-      el.removeEventListener('ratechange', onRate);
-      el.removeEventListener('timeupdate', onTime);
-      el.removeEventListener('durationchange', onDuration);
-      el.removeEventListener('loadedmetadata', onDuration);
-      el.removeEventListener('play', onPlay);
-      el.removeEventListener('pause', onPause);
-      el.removeEventListener('waiting', onWaiting);
-      el.removeEventListener('playing', onPlaying);
-      el.removeEventListener('canplay', onCanPlay);
+      el.removeEventListener("volumechange", onVolume);
+      el.removeEventListener("ratechange", onRate);
+      el.removeEventListener("timeupdate", onTime);
+      el.removeEventListener("durationchange", onDuration);
+      el.removeEventListener("loadedmetadata", onDuration);
+      el.removeEventListener("play", onPlay);
+      el.removeEventListener("pause", onPause);
+      el.removeEventListener("waiting", onWaiting);
+      el.removeEventListener("playing", onPlaying);
+      el.removeEventListener("canplay", onCanPlay);
     };
   }, [ref]);
 
   const play = useCallback(async () => {
     const el = ref.current;
     if (!el) return;
-    try { await el.play(); } catch {}
+    try {
+      await el.play();
+    } catch {}
   }, [ref]);
-  const pause = useCallback(() => { ref.current?.pause(); }, [ref]);
+  const pause = useCallback(() => {
+    ref.current?.pause();
+  }, [ref]);
   const togglePlay = useCallback(() => {
     const el = ref.current;
     if (!el) return;
-    if (el.paused) { el.play().catch(() => {}); } else { el.pause(); }
+    if (el.paused) {
+      el.play().catch(() => {});
+    } else {
+      el.pause();
+    }
   }, [ref]);
-  const seek = useCallback((sec: number) => {
-    const el = ref.current;
-    if (!el) return;
-    if (el.readyState < 1) return;
-    try { el.currentTime = Math.max(0, Math.min(el.duration || sec, sec)); } catch {}
-  }, [ref]);
-  const seekBy = useCallback((delta: number) => {
-    const el = ref.current;
-    if (!el) return;
-    try { el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta)); } catch {}
-  }, [ref]);
-  const setVolume = useCallback((v: number) => {
-    const el = ref.current;
-    if (!el) return;
-    el.volume = Math.max(0, Math.min(1, v));
-  }, [ref]);
-  const setMuted = useCallback((m: boolean) => {
-    const el = ref.current;
-    if (!el) return;
-    el.muted = m;
-  }, [ref]);
-  const setPlaybackRate = useCallback((r: number) => {
-    const el = ref.current;
-    if (!el) return;
-    el.playbackRate = r;
-  }, [ref]);
+  const seek = useCallback(
+    (sec: number) => {
+      const el = ref.current;
+      if (!el) return;
+      if (el.readyState < 1) return;
+      try {
+        el.currentTime = Math.max(0, Math.min(el.duration || sec, sec));
+      } catch {}
+    },
+    [ref],
+  );
+  const seekBy = useCallback(
+    (delta: number) => {
+      const el = ref.current;
+      if (!el) return;
+      try {
+        el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta));
+      } catch {}
+    },
+    [ref],
+  );
+  const setVolume = useCallback(
+    (v: number) => {
+      const el = ref.current;
+      if (!el) return;
+      el.volume = Math.max(0, Math.min(1, v));
+    },
+    [ref],
+  );
+  const setMuted = useCallback(
+    (m: boolean) => {
+      const el = ref.current;
+      if (!el) return;
+      el.muted = m;
+    },
+    [ref],
+  );
+  const setPlaybackRate = useCallback(
+    (r: number) => {
+      const el = ref.current;
+      if (!el) return;
+      el.playbackRate = r;
+    },
+    [ref],
+  );
 
   return { ...state, play, pause, togglePlay, seek, seekBy, setVolume, setMuted, setPlaybackRate };
 }

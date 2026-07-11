@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { Link, useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ChevronLeft,
@@ -9,43 +9,47 @@ import {
   Bookmark,
   BookmarkCheck,
   Wand2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useBookStore } from '@/store/bookStore';
-import { EmptyState } from '@/components/EmptyState';
-import { InteractiveBookText } from '@/components/books/InteractiveBookText';
-import { ChapterTOC } from '@/components/books/ChapterTOC';
-import { ReaderSettings, type ReaderFontFamily, FAMILY_FONT_STACKS } from '@/components/books/ReaderSettings';
-import { BatchAnalyzeChapterButton } from '@/components/books/BatchAnalyzeChapterButton';
-import { TranslateChapterButton } from '@/components/books/TranslateChapterButton';
-import type { DisplayLang } from '@/components/books/InteractiveBookText';
-import { ChapterTTSPlayer } from '@/components/books/ChapterTTSPlayer';
-import { ReaderTTSQuickSettings } from '@/components/books/ReaderTTSQuickSettings';
-import { ChapterRewriteTabs } from '@/components/books/ChapterRewriteTabs';
-import { BookNotesSheet } from '@/components/books/BookNotesSheet';
-import { ReaderSelectionToolbar } from '@/components/books/ReaderSelectionToolbar';
-import { BookSearchSheet } from '@/components/books/BookSearchSheet';
-import { ExportToLeitnerSheet } from '@/components/books/ExportToLeitnerSheet';
-import { AddChapterDialog } from '@/components/books/AddChapterDialog';
-import { useBookAnnotations } from '@/hooks/useBookAnnotations';
-import { addReadingTime, getRewritesForChapter } from '@/lib/bookDb';
-import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
-import { decodeTargetsFromHtml, isLanguageBook } from '@/lib/languageBook';
-import { AddLanguageChapterDialog } from '@/components/books/AddLanguageChapterDialog';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
-import { extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
-import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
-import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useBookStore } from "@/store/bookStore";
+import { EmptyState } from "@/components/EmptyState";
+import { InteractiveBookText } from "@/components/books/InteractiveBookText";
+import { ChapterTOC } from "@/components/books/ChapterTOC";
+import {
+  ReaderSettings,
+  type ReaderFontFamily,
+  FAMILY_FONT_STACKS,
+} from "@/components/books/ReaderSettings";
+import { BatchAnalyzeChapterButton } from "@/components/books/BatchAnalyzeChapterButton";
+import { TranslateChapterButton } from "@/components/books/TranslateChapterButton";
+import type { DisplayLang } from "@/components/books/InteractiveBookText";
+import { ChapterTTSPlayer } from "@/components/books/ChapterTTSPlayer";
+import { ReaderTTSQuickSettings } from "@/components/books/ReaderTTSQuickSettings";
+import { ChapterRewriteTabs } from "@/components/books/ChapterRewriteTabs";
+import { BookNotesSheet } from "@/components/books/BookNotesSheet";
+import { ReaderSelectionToolbar } from "@/components/books/ReaderSelectionToolbar";
+import { BookSearchSheet } from "@/components/books/BookSearchSheet";
+import { ExportToLeitnerSheet } from "@/components/books/ExportToLeitnerSheet";
+import { AddChapterDialog } from "@/components/books/AddChapterDialog";
+import { useBookAnnotations } from "@/hooks/useBookAnnotations";
+import { addReadingTime, getRewritesForChapter } from "@/lib/bookDb";
+import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
+import { decodeTargetsFromHtml, isLanguageBook } from "@/lib/languageBook";
+import { AddLanguageChapterDialog } from "@/components/books/AddLanguageChapterDialog";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { extractAnalysableParagraphs } from "@/lib/batchAnalyzeChapter";
+import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
+import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
 
 const SCROLL_SAVE_DEBOUNCE = 600;
 /** Read-time accrual: ping every 15 s while the tab is visible & scrolled. */
 const READ_PING_MS = 15_000;
 
-const FAMILY_KEY = 'llvp-reader-family';
-const SCALE_KEY = 'llvp-reader-scale';
-const LINE_HEIGHT_KEY = 'llvp-reader-line-height';
+const FAMILY_KEY = "llvp-reader-family";
+const SCALE_KEY = "llvp-reader-scale";
+const LINE_HEIGHT_KEY = "llvp-reader-line-height";
 
 function loadLocalString(key: string, fallback: string): string {
   try {
@@ -73,11 +77,11 @@ const BookReader = () => {
   const closeBook = useBookStore((s) => s.closeBook);
   const upsert = useBookStore((s) => s.upsert);
   usePageMeta({
-    title: currentBook?.title ? `${currentBook.title} — کتاب` : 'خواندن کتاب — Lingua',
+    title: currentBook?.title ? `${currentBook.title} — کتاب` : "خواندن کتاب — Lingua",
     description: currentBook?.title
       ? `مطالعه‌ی «${currentBook.title}» با ترجمه، تحلیل و خواندن صوتی هوش مصنوعی.`
-      : 'خواندن تعاملی کتاب با ترجمه و TTS.',
-    ogType: 'book',
+      : "خواندن تعاملی کتاب با ترجمه و TTS.",
+    ogType: "book",
     image: currentBook?.coverDataUrl || undefined,
   });
 
@@ -85,17 +89,17 @@ const BookReader = () => {
   const [fontScale, setFontScale] = useState<number>(() => loadLocalNumber(SCALE_KEY, 1));
   const [lineHeight, setLineHeight] = useState<number>(() => loadLocalNumber(LINE_HEIGHT_KEY, 1.6));
   const [family, setFamily] = useState<ReaderFontFamily>(
-    () => (loadLocalString(FAMILY_KEY, 'serif') as ReaderFontFamily),
+    () => loadLocalString(FAMILY_KEY, "serif") as ReaderFontFamily,
   );
   /** Whether the reader currently shows the original chapter or the AI rewrite. */
-  const [chapterView, setChapterView] = useState<'original' | 'rewrite'>('original');
+  const [chapterView, setChapterView] = useState<"original" | "rewrite">("original");
   /** True once any rewrite exists for the current chapter — controls the sticky toggle. */
   const [hasRewrite, setHasRewrite] = useState(false);
   /** EN / FA / EN+FA display mode for the original chapter. */
-  const [displayLang, setDisplayLang] = useState<DisplayLang>('en');
+  const [displayLang, setDisplayLang] = useState<DisplayLang>("en");
   /** Number of paragraphs that have a Persian translation cached. */
   const [translationCount, setTranslationCount] = useState(0);
-  const [faTtsText, setFaTtsText] = useState('');
+  const [faTtsText, setFaTtsText] = useState("");
 
   const scrollerRef = useRef<HTMLDivElement>(null);
   const saveTimerRef = useRef<number | null>(null);
@@ -127,7 +131,8 @@ const BookReader = () => {
   useEffect(() => {
     if (!bookId) return;
     openBook(bookId).then((book) => {
-      if (book) setChapterIndex(Math.max(0, Math.min(book.lastChapterIndex, book.chapterCount - 1)));
+      if (book)
+        setChapterIndex(Math.max(0, Math.min(book.lastChapterIndex, book.chapterCount - 1)));
     });
     return () => closeBook();
   }, [bookId, openBook, closeBook]);
@@ -136,17 +141,17 @@ const BookReader = () => {
   const chapter = currentChapters[chapterIndex];
   useEffect(() => {
     document.title = currentBook
-      ? `${chapter?.title ? `${chapter.title} · ` : ''}${currentBook.title} — Reader`
-      : 'Book Reader';
+      ? `${chapter?.title ? `${chapter.title} · ` : ""}${currentBook.title} — Reader`
+      : "Book Reader";
   }, [currentBook, chapter]);
 
   // Reset toggle state whenever chapter changes (re-fetched from rewrites).
   useEffect(() => {
-    setChapterView('original');
+    setChapterView("original");
     setHasRewrite(false);
-    setDisplayLang('en');
+    setDisplayLang("en");
     setTranslationCount(0);
-    setFaTtsText('');
+    setFaTtsText("");
   }, [chapterIndex, bookId]);
 
   useEffect(() => {
@@ -160,7 +165,7 @@ const BookReader = () => {
         const fa = cached?.translation?.trim();
         if (fa) out.push(fa);
       }
-      if (!cancelled) setFaTtsText(out.join('\n\n'));
+      if (!cancelled) setFaTtsText(out.join("\n\n"));
     })();
     return () => {
       cancelled = true;
@@ -198,8 +203,7 @@ const BookReader = () => {
     if (!el) return;
     // Wait one frame so the article has measured height.
     const id = requestAnimationFrame(() => {
-      const ratio =
-        chapterIndex === currentBook.lastChapterIndex ? currentBook.lastScrollRatio : 0;
+      const ratio = chapterIndex === currentBook.lastChapterIndex ? currentBook.lastScrollRatio : 0;
       const max = el.scrollHeight - el.clientHeight;
       el.scrollTop = Math.max(0, Math.min(1, ratio)) * max;
       restoredChapterRef.current = chapterIndex;
@@ -295,7 +299,7 @@ const BookReader = () => {
 
   // ─── Annotation handlers ──
   const handleAddHighlight = useCallback(
-    async (text: string, color: 'yellow' | 'green' | 'pink') => {
+    async (text: string, color: "yellow" | "green" | "pink") => {
       if (!currentBook) return;
       await addHighlight({
         bookId: currentBook.id,
@@ -303,7 +307,7 @@ const BookReader = () => {
         text,
         color,
       });
-      toast.success('Highlighted.');
+      toast.success("Highlighted.");
     },
     [currentBook, chapterIndex, addHighlight],
   );
@@ -315,10 +319,10 @@ const BookReader = () => {
         bookId: currentBook.id,
         chapterIndex,
         text,
-        color: 'yellow',
-        note: '',
+        color: "yellow",
+        note: "",
       });
-      toast.success('Saved — open Notes to write your thought.');
+      toast.success("Saved — open Notes to write your thought.");
     },
     [currentBook, chapterIndex, addHighlight],
   );
@@ -328,7 +332,7 @@ const BookReader = () => {
     const here = bookmarks.find((b) => b.chapterIndex === chapterIndex);
     if (here) {
       await removeBookmark(here.id);
-      toast.success('Bookmark removed.');
+      toast.success("Bookmark removed.");
       return;
     }
     await addBookmark({
@@ -337,12 +341,12 @@ const BookReader = () => {
       scrollRatio,
       label: chapter?.title,
     });
-    toast.success('Bookmarked.');
+    toast.success("Bookmarked.");
   }, [currentBook, chapterIndex, bookmarks, scrollRatio, chapter, addBookmark, removeBookmark]);
 
-  const fontSizeClass = useMemo(() => '', []);
+  const fontSizeClass = useMemo(() => "", []);
   const fontFamilyStack = FAMILY_FONT_STACKS[family];
-  const fontFamilyClass = '';
+  const fontFamilyClass = "";
 
   // ─── Empty / loading states ──
   if (!bookId) return null;
@@ -372,13 +376,12 @@ const BookReader = () => {
 
   if (currentChapters.length === 0) {
     const isLang = isLanguageBook(currentBook);
-    const isManual =
-      !isLang && (!currentBook.fileName || /\.manual$/i.test(currentBook.fileName));
+    const isManual = !isLang && (!currentBook.fileName || /\.manual$/i.test(currentBook.fileName));
     return (
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
           <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Link to={isLang ? '/language-books' : '/books'}>
+            <Link to={isLang ? "/language-books" : "/books"}>
               <Button variant="ghost" size="icon" aria-label="Back">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -389,12 +392,12 @@ const BookReader = () => {
         <main className="max-w-3xl mx-auto px-6 py-10">
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
-            title={isLang || isManual ? 'No chapters yet' : 'No chapters found'}
+            title={isLang || isManual ? "No chapters yet" : "No chapters found"}
             description={
               isLang
-                ? 'Generate your first chapter — give AI a list of words/phrases/idioms and it will weave a short story.'
+                ? "Generate your first chapter — give AI a list of words/phrases/idioms and it will weave a short story."
                 : isManual
-                  ? 'Paste your first chapter to start reading. You can keep adding more chapters anytime.'
+                  ? "Paste your first chapter to start reading. You can keep adding more chapters anytime."
                   : "This book doesn't have parsed chapters. Try re-uploading the EPUB."
             }
             action={
@@ -417,7 +420,7 @@ const BookReader = () => {
                   }
                 />
               ) : (
-                <Button onClick={() => navigate('/books')}>Back to library</Button>
+                <Button onClick={() => navigate("/books")}>Back to library</Button>
               )
             }
           />
@@ -436,7 +439,7 @@ const BookReader = () => {
       {/* ─────────── Header ─────────── */}
       <header className="sticky top-0 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 z-20">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-3 flex items-center gap-1 sm:gap-2">
-          <Link to={isLanguageBook(currentBook) ? '/language-books' : '/books'}>
+          <Link to={isLanguageBook(currentBook) ? "/language-books" : "/books"}>
             <Button variant="ghost" size="icon" aria-label="Back to books">
               <ArrowLeft className="h-5 w-5" />
             </Button>
@@ -451,16 +454,13 @@ const BookReader = () => {
               {currentBook.title}
             </h1>
             <p className="text-[11px] sm:text-xs text-muted-foreground truncate">
-              {chapter?.title ?? `Chapter ${chapterIndex + 1}`} ·{' '}
-              {chapterIndex + 1}/{total}
+              {chapter?.title ?? `Chapter ${chapterIndex + 1}`} · {chapterIndex + 1}/{total}
             </p>
           </div>
           <BatchAnalyzeChapterButton
             bookId={currentBook.id}
             chapter={chapter}
-            onResults={(results) =>
-              emitChapterAnalyses(currentBook.id, chapterIndex, results)
-            }
+            onResults={(results) => emitChapterAnalyses(currentBook.id, chapterIndex, results)}
           />
           <TranslateChapterButton
             bookId={currentBook.id}
@@ -474,8 +474,8 @@ const BookReader = () => {
             variant="ghost"
             size="icon"
             onClick={() => {
-              const el = document.getElementById('chapter-rewrite');
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              const el = document.getElementById("chapter-rewrite");
+              if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
             }}
             aria-label="Jump to chapter rewrite"
             title="Rewrite this chapter (summary, key points, simplified…)"
@@ -500,9 +500,9 @@ const BookReader = () => {
             variant="ghost"
             size="icon"
             onClick={toggleBookmarkHere}
-            aria-label={isBookmarkedHere ? 'Remove bookmark' : 'Bookmark this spot'}
-            title={isBookmarkedHere ? 'Remove bookmark' : 'Bookmark this spot'}
-            className={isBookmarkedHere ? 'text-primary' : undefined}
+            aria-label={isBookmarkedHere ? "Remove bookmark" : "Bookmark this spot"}
+            title={isBookmarkedHere ? "Remove bookmark" : "Bookmark this spot"}
+            className={isBookmarkedHere ? "text-primary" : undefined}
           >
             {isBookmarkedHere ? (
               <BookmarkCheck className="h-5 w-5" />
@@ -553,18 +553,18 @@ const BookReader = () => {
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={chapterView === 'original'}
+                  aria-selected={chapterView === "original"}
                   onClick={() => {
-                    setChapterView('original');
+                    setChapterView("original");
                     requestAnimationFrame(() => {
-                      scrollerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
                     });
                   }}
                   className={cn(
-                    'px-4 py-1.5 text-xs font-medium rounded-md transition-colors',
-                    chapterView === 'original'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground',
+                    "px-4 py-1.5 text-xs font-medium rounded-md transition-colors",
+                    chapterView === "original"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   متن اصلی
@@ -572,20 +572,20 @@ const BookReader = () => {
                 <button
                   type="button"
                   role="tab"
-                  aria-selected={chapterView === 'rewrite'}
+                  aria-selected={chapterView === "rewrite"}
                   onClick={() => {
-                    setChapterView('rewrite');
+                    setChapterView("rewrite");
                     requestAnimationFrame(() => {
                       document
-                        .getElementById('chapter-rewrite')
-                        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        .getElementById("chapter-rewrite")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
                     });
                   }}
                   className={cn(
-                    'px-4 py-1.5 text-xs font-medium rounded-md transition-colors',
-                    chapterView === 'rewrite'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground',
+                    "px-4 py-1.5 text-xs font-medium rounded-md transition-colors",
+                    chapterView === "rewrite"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground",
                   )}
                 >
                   بازنویسی AI
@@ -606,7 +606,6 @@ const BookReader = () => {
           coverUrl={currentBook.coverDataUrl}
         />
       )}
-
 
       {/* Floating selection toolbar — appears when user selects text inside the scroller. */}
       <ReaderSelectionToolbar
@@ -633,7 +632,9 @@ const BookReader = () => {
                 <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
                   Chapter {chapterIndex + 1} of {total}
                 </p>
-                <h2 className={cn('text-3xl sm:text-4xl font-bold tracking-tight', fontFamilyClass)}>
+                <h2
+                  className={cn("text-3xl sm:text-4xl font-bold tracking-tight", fontFamilyClass)}
+                >
                   {chapter.title}
                 </h2>
                 {chapter.wordCount > 0 && (
@@ -643,7 +644,7 @@ const BookReader = () => {
                 )}
               </header>
 
-              <div className={chapterView === 'rewrite' && hasRewrite ? 'hidden' : ''}>
+              <div className={chapterView === "rewrite" && hasRewrite ? "hidden" : ""}>
                 <InteractiveBookText
                   html={chapter.html}
                   bookId={currentBook.id}
@@ -652,13 +653,11 @@ const BookReader = () => {
                   fontFamilyClass={fontFamilyClass}
                   highlights={chapterHighlights}
                   targetWords={
-                    isLanguageBook(currentBook)
-                      ? decodeTargetsFromHtml(chapter.html)
-                      : undefined
+                    isLanguageBook(currentBook) ? decodeTargetsFromHtml(chapter.html) : undefined
                   }
                   displayLang={displayLang}
                   onTranslationCountChange={setTranslationCount}
-                  sourceKind={isLanguageBook(currentBook) ? 'language_book' : 'book'}
+                  sourceKind={isLanguageBook(currentBook) ? "language_book" : "book"}
                   sourceTitle={currentBook.title}
                 />
               </div>
@@ -674,9 +673,9 @@ const BookReader = () => {
                 onHasRewriteChange={setHasRewrite}
                 onToggleView={(v) => {
                   setChapterView(v);
-                  if (v === 'original') {
+                  if (v === "original") {
                     requestAnimationFrame(() => {
-                      scrollerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+                      scrollerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
                     });
                   }
                 }}

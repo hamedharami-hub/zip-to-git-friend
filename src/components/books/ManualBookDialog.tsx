@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
-import { Pencil, Image as ImageIcon, Loader2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useRef, useState } from "react";
+import { Pencil, Image as ImageIcon, Loader2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,20 +9,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { useBookStore } from '@/store/bookStore';
-import { appendChapter } from '@/lib/bookDb';
-import {
-  pastedTextToChapter,
-  generateGradientCover,
-  imageFileToDataUrl,
-} from '@/lib/manualBook';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useBookStore } from "@/store/bookStore";
+import { appendChapter } from "@/lib/bookDb";
+import { pastedTextToChapter, generateGradientCover, imageFileToDataUrl } from "@/lib/manualBook";
 
 interface Props {
   /** Optional custom trigger; defaults to a small outline button. */
@@ -40,24 +36,24 @@ export function ManualBookDialog({ trigger }: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [language, setLanguage] = useState('en');
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [language, setLanguage] = useState("en");
   const [coverDataUrl, setCoverDataUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [includeFirstChapter, setIncludeFirstChapter] = useState(true);
-  const [chapterTitle, setChapterTitle] = useState('Chapter 1');
-  const [chapterText, setChapterText] = useState('');
+  const [chapterTitle, setChapterTitle] = useState("Chapter 1");
+  const [chapterText, setChapterText] = useState("");
 
   const reset = () => {
-    setTitle('');
-    setAuthor('');
-    setLanguage('en');
+    setTitle("");
+    setAuthor("");
+    setLanguage("en");
     setCoverDataUrl(null);
     setIncludeFirstChapter(true);
-    setChapterTitle('Chapter 1');
-    setChapterText('');
+    setChapterTitle("Chapter 1");
+    setChapterText("");
   };
 
   async function handleCoverPick(e: React.ChangeEvent<HTMLInputElement>) {
@@ -65,7 +61,7 @@ export function ManualBookDialog({ trigger }: Props) {
     if (!f) return;
     const data = await imageFileToDataUrl(f);
     if (!data) {
-      toast.error('Could not read this image. Try a smaller JPG/PNG.');
+      toast.error("Could not read this image. Try a smaller JPG/PNG.");
       return;
     }
     setCoverDataUrl(data);
@@ -74,7 +70,7 @@ export function ManualBookDialog({ trigger }: Props) {
   async function handleCreate() {
     const t = title.trim();
     if (!t) {
-      toast.error('Please enter a book title.');
+      toast.error("Please enter a book title.");
       return;
     }
     setBusy(true);
@@ -88,12 +84,12 @@ export function ManualBookDialog({ trigger }: Props) {
       if (includeFirstChapter && chapterText.trim()) {
         const parsed = pastedTextToChapter(chapterText);
         if (!parsed.text) {
-          toast.error('The pasted chapter looks empty.');
+          toast.error("The pasted chapter looks empty.");
           setBusy(false);
           return;
         }
         await appendChapter(bookId, {
-          title: chapterTitle.trim() || 'Chapter 1',
+          title: chapterTitle.trim() || "Chapter 1",
           html: parsed.html,
           text: parsed.text,
           wordCount: parsed.wordCount,
@@ -130,8 +126,8 @@ export function ManualBookDialog({ trigger }: Props) {
       // Take the user straight into the reader.
       navigate(`/books/${bookId}`);
     } catch (err) {
-      console.error('[ManualBookDialog] create failed', err);
-      toast.error('Could not create this book. Please try again.');
+      console.error("[ManualBookDialog] create failed", err);
+      toast.error("Could not create this book. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -159,8 +155,8 @@ export function ManualBookDialog({ trigger }: Props) {
         <DialogHeader>
           <DialogTitle>Add a book manually</DialogTitle>
           <DialogDescription>
-            Type the book details, optionally paste the first chapter, and
-            keep adding chapters one by one from the reader.
+            Type the book details, optionally paste the first chapter, and keep adding chapters one
+            by one from the reader.
           </DialogDescription>
         </DialogHeader>
 
@@ -173,9 +169,9 @@ export function ManualBookDialog({ trigger }: Props) {
                 style={{
                   backgroundImage: coverDataUrl
                     ? `url(${coverDataUrl})`
-                    : `url(${generateGradientCover(title || 'Book', author)})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
+                    : `url(${generateGradientCover(title || "Book", author)})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
                 }}
               >
                 {coverDataUrl && (
@@ -281,7 +277,7 @@ export function ManualBookDialog({ trigger }: Props) {
                   <p className="text-[11px] text-muted-foreground">
                     {chapterText.trim()
                       ? `${chapterText.trim().split(/\s+/).filter(Boolean).length.toLocaleString()} words`
-                      : 'Tip: each blank line starts a new paragraph.'}
+                      : "Tip: each blank line starts a new paragraph."}
                   </p>
                 </div>
               </div>

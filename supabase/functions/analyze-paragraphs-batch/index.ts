@@ -12,8 +12,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
@@ -86,30 +85,34 @@ serve(async (req) => {
   try {
     const { paragraphs, model } = await req.json();
     if (!Array.isArray(paragraphs) || paragraphs.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "Missing 'paragraphs' array." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Missing 'paragraphs' array." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const cleaned = paragraphs
       .slice(0, MAX_PARAGRAPHS)
-      .map((p: any) => String(p ?? "").trim().slice(0, MAX_CHARS_PER_PARAGRAPH))
+      .map((p: any) =>
+        String(p ?? "")
+          .trim()
+          .slice(0, MAX_CHARS_PER_PARAGRAPH),
+      )
       .filter(Boolean);
 
     if (cleaned.length === 0) {
-      return new Response(
-        JSON.stringify({ error: "No valid paragraphs." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "No valid paragraphs." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const chosenModel = typeof model === "string" && model ? model : DEFAULT_MODEL;
@@ -136,42 +139,44 @@ serve(async (req) => {
     });
 
     if (aiRes.status === 429) {
-      return new Response(
-        JSON.stringify({ error: "Rate limit reached." }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Rate limit reached." }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (aiRes.status === 402) {
-      return new Response(
-        JSON.stringify({ error: "AI credits exhausted." }),
-        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("[analyze-paragraphs-batch] gateway error", aiRes.status, t);
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await aiRes.json();
     const argsStr = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!argsStr) {
       console.error("[analyze-paragraphs-batch] no tool_calls", JSON.stringify(data).slice(0, 500));
-      return new Response(
-        JSON.stringify({ error: "AI returned no structured output." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI returned no structured output." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     let parsed: any;
-    try { parsed = JSON.parse(argsStr); } catch {
-      return new Response(
-        JSON.stringify({ error: "Malformed AI output." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+    try {
+      parsed = JSON.parse(argsStr);
+    } catch {
+      return new Response(JSON.stringify({ error: "Malformed AI output." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const rawResults: any[] = Array.isArray(parsed.results) ? parsed.results : [];
@@ -183,7 +188,9 @@ serve(async (req) => {
         translation: typeof r.translation === "string" ? r.translation.trim() : "",
         vocabulary: Array.isArray(r.vocabulary)
           ? r.vocabulary
-              .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
+              .filter(
+                (v: any) => v && typeof v.word === "string" && typeof v.translation === "string",
+              )
               .map((v: any) => ({
                 word: String(v.word).trim(),
                 translation: String(v.translation).trim(),
@@ -193,20 +200,23 @@ serve(async (req) => {
           : [],
         idioms: Array.isArray(r.idioms)
           ? r.idioms
-              .filter((x: any) => x && typeof x.phrase === "string" && typeof x.meaning === "string")
+              .filter(
+                (x: any) => x && typeof x.phrase === "string" && typeof x.meaning === "string",
+              )
               .map((x: any) => ({
                 phrase: String(x.phrase).trim(),
                 meaning: String(x.meaning).trim(),
-                literalTranslation: x.literalTranslation ? String(x.literalTranslation).trim() : undefined,
+                literalTranslation: x.literalTranslation
+                  ? String(x.literalTranslation).trim()
+                  : undefined,
               }))
           : [],
       };
     });
 
-    return new Response(
-      JSON.stringify({ results: normalized, model: chosenModel }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ results: normalized, model: chosenModel }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("[analyze-paragraphs-batch] error", e);
     return new Response(

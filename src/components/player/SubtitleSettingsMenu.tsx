@@ -1,12 +1,8 @@
-import { Subtitles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
-import { useSettingsStore } from '@/store/settingsStore';
+import { Subtitles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useSettingsStore } from "@/store/settingsStore";
 
 export function SubtitleSettingsMenu() {
   const settings = useSettingsStore((s) => s.settings);
@@ -26,9 +22,7 @@ export function SubtitleSettingsMenu() {
     <div className="flex items-start justify-between gap-3 rounded-md border border-border p-3">
       <div className="min-w-0">
         <p className="text-sm font-medium">{title}</p>
-        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
-          {desc}
-        </p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{desc}</p>
       </div>
       <Switch checked={checked} onCheckedChange={(v) => onChange(!!v)} />
     </div>

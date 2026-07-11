@@ -2,7 +2,7 @@
  * Daily review limits inspired by Anki / Duolingo to prevent burnout.
  * A "new" card has never been reviewed (no lastReviewed). A "review" card has.
  */
-import type { LeitnerCard } from '@/types';
+import type { LeitnerCard } from "@/types";
 
 export const DEFAULT_DAILY_NEW = 20;
 export const DEFAULT_DAILY_REVIEW = 200;
@@ -29,7 +29,10 @@ export function countReviewedToday(cards: LeitnerCard[], now = Date.now()): Revi
     // first review today => count "new"; subsequent => "review"
     let firstToday = -1;
     for (let i = 0; i < log.length; i++) {
-      if (log[i].at >= start) { firstToday = i; break; }
+      if (log[i].at >= start) {
+        firstToday = i;
+        break;
+      }
     }
     if (firstToday < 0) continue;
     // If the card had no logs before today's first review, it's a "new" card
@@ -56,14 +59,21 @@ export function applyDailyLimits(
   const { newDone, reviewDone } = countReviewedToday(allCards, opts.now);
   const newBudget = Math.max(0, maxNew - newDone);
   const reviewBudget = Math.max(0, maxReview - reviewDone);
-  let n = newBudget, r = reviewBudget;
+  let n = newBudget,
+    r = reviewBudget;
   const out: LeitnerCard[] = [];
   for (const c of due) {
     const isNew = !(c.reviewLog && c.reviewLog.length > 0);
     if (isNew) {
-      if (n > 0) { out.push(c); n--; }
+      if (n > 0) {
+        out.push(c);
+        n--;
+      }
     } else {
-      if (r > 0) { out.push(c); r--; }
+      if (r > 0) {
+        out.push(c);
+        r--;
+      }
     }
   }
   return out;

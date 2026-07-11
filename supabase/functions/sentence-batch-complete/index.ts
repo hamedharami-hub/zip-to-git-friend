@@ -30,16 +30,16 @@ async function completeOne(s: SentenceRow): Promise<Partial<SentenceRow>> {
   const sys = `You enrich English-learning sentences for an Australian-English learner app.
 Always return strict JSON. No markdown, no commentary.`;
   const user = `Sentence: "${s.english}"
-${s.persian ? `Persian translation: "${s.persian}"` : ''}
-Category: ${s.category ?? 'general'} / ${s.subcategory ?? 'misc'}
+${s.persian ? `Persian translation: "${s.persian}"` : ""}
+Category: ${s.category ?? "general"} / ${s.subcategory ?? "misc"}
 
-Return JSON with these keys${need.aussie ? '' : ' (omit "english_aussie")'}${need.intent ? '' : ' (omit "expected_intent")'}${need.counter ? '' : ' (omit "ai_counter_prompt")'}:
-${need.aussie ? '- "english_aussie": natural Australian-English version (slang/idiom OK if appropriate, otherwise same sentence)\n' : ''}${need.intent ? '- "expected_intent": one short phrase describing communicative goal (e.g. "asking for clarification", "polite refusal")\n' : ''}${need.counter ? '- "ai_counter_prompt": one realistic line another speaker would say in reply, to use in roleplay practice\n' : ''}`;
+Return JSON with these keys${need.aussie ? "" : ' (omit "english_aussie")'}${need.intent ? "" : ' (omit "expected_intent")'}${need.counter ? "" : ' (omit "ai_counter_prompt")'}:
+${need.aussie ? '- "english_aussie": natural Australian-English version (slang/idiom OK if appropriate, otherwise same sentence)\n' : ""}${need.intent ? '- "expected_intent": one short phrase describing communicative goal (e.g. "asking for clarification", "polite refusal")\n' : ""}${need.counter ? '- "ai_counter_prompt": one realistic line another speaker would say in reply, to use in roleplay practice\n' : ""}`;
 
   const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
-      "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+      Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -57,11 +57,18 @@ ${need.aussie ? '- "english_aussie": natural Australian-English version (slang/i
   const data = await resp.json();
   const txt = data.choices?.[0]?.message?.content ?? "{}";
   let parsed: any = {};
-  try { parsed = JSON.parse(txt); } catch { parsed = {}; }
+  try {
+    parsed = JSON.parse(txt);
+  } catch {
+    parsed = {};
+  }
   const out: Partial<SentenceRow> = {};
-  if (need.aussie && typeof parsed.english_aussie === "string") out.english_aussie = parsed.english_aussie;
-  if (need.intent && typeof parsed.expected_intent === "string") out.expected_intent = parsed.expected_intent;
-  if (need.counter && typeof parsed.ai_counter_prompt === "string") out.ai_counter_prompt = parsed.ai_counter_prompt;
+  if (need.aussie && typeof parsed.english_aussie === "string")
+    out.english_aussie = parsed.english_aussie;
+  if (need.intent && typeof parsed.expected_intent === "string")
+    out.expected_intent = parsed.expected_intent;
+  if (need.counter && typeof parsed.ai_counter_prompt === "string")
+    out.ai_counter_prompt = parsed.ai_counter_prompt;
   return out;
 }
 
@@ -77,7 +84,9 @@ Deno.serve(async (req) => {
 
     let q = supabase
       .from("sentence_lab")
-      .select("id, english, persian, english_aussie, expected_intent, ai_counter_prompt, category, subcategory")
+      .select(
+        "id, english, persian, english_aussie, expected_intent, ai_counter_prompt, category, subcategory",
+      )
       .eq("status", "published")
       .or("english_aussie.is.null,expected_intent.is.null,ai_counter_prompt.is.null")
       .limit(limit);
@@ -112,14 +121,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    return new Response(
-      JSON.stringify({ scanned: rows?.length ?? 0, updated, failed, results }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ scanned: rows?.length ?? 0, updated, failed, results }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e: any) {
-    return new Response(
-      JSON.stringify({ error: String(e?.message ?? e) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

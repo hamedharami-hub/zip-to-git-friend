@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Loader2, Newspaper, Sparkles, ExternalLink, Network, ArrowRight } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Loader2, Newspaper, Sparkles, ExternalLink, Network, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   searchNews,
   importUrl,
@@ -10,10 +10,10 @@ import {
   type FeedItem,
   type NewsArticle,
   type CompareResult,
-} from '@/lib/news';
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
-import { toast } from 'sonner';
+} from "@/lib/news";
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
+import { toast } from "sonner";
 
 interface RelatedNewsProps {
   article: NewsArticle;
@@ -30,15 +30,18 @@ export function RelatedNews({ article }: RelatedNewsProps) {
 
   const settings = useSettingsStore((s) => s.settings);
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef
-      ?? settings.bookBatchAnalysisModelRef
-      ?? settings.newsRewriteModelRef
-      ?? 'google/gemini-3-flash-preview',
+    settings.paragraphBatchModelRef ??
+      settings.bookBatchAnalysisModelRef ??
+      settings.newsRewriteModelRef ??
+      "google/gemini-3-flash-preview",
   );
 
   const ownDomain = (() => {
-    try { return new URL(article.url).hostname.replace(/^www\./, ''); }
-    catch { return ''; }
+    try {
+      return new URL(article.url).hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
   })();
 
   const fetchRelated = async () => {
@@ -53,20 +56,22 @@ export function RelatedNews({ article }: RelatedNewsProps) {
       });
       // Filter out the same article (same URL) and same-domain near-duplicates by title.
       const seen = new Set<string>([article.url]);
-      const filtered = raw.filter((it) => {
-        if (!it.url || seen.has(it.url)) return false;
-        seen.add(it.url);
-        if (ownDomain && it.url.includes(ownDomain) && it.title.trim() === article.title.trim()) {
-          return false;
-        }
-        return true;
-      }).slice(0, 10);
+      const filtered = raw
+        .filter((it) => {
+          if (!it.url || seen.has(it.url)) return false;
+          seen.add(it.url);
+          if (ownDomain && it.url.includes(ownDomain) && it.title.trim() === article.title.trim()) {
+            return false;
+          }
+          return true;
+        })
+        .slice(0, 10);
       setItems(filtered);
       if (filtered.length === 0) {
-        toast.info('چیزی پیدا نشد. شاید موضوع خیلی تازه یا خاص است.');
+        toast.info("چیزی پیدا نشد. شاید موضوع خیلی تازه یا خاص است.");
       }
     } catch (e: any) {
-      toast.error(e?.message ?? 'جستجوی اخبار مرتبط شکست خورد.');
+      toast.error(e?.message ?? "جستجوی اخبار مرتبط شکست خورد.");
     } finally {
       setLoading(false);
     }
@@ -76,8 +81,8 @@ export function RelatedNews({ article }: RelatedNewsProps) {
     setOpeningUrl(it.url);
     try {
       const result = await importUrl(it.url);
-      if (result.kind !== 'article' && result.kind !== 'youtube') {
-        toast.error('این لینک به صورت مقاله قابل باز کردن نیست.');
+      if (result.kind !== "article" && result.kind !== "youtube") {
+        toast.error("این لینک به صورت مقاله قابل باز کردن نیست.");
         return;
       }
       const a = result.article;
@@ -97,7 +102,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
       });
       navigate(`/news/article/${saved.id}`);
     } catch (e: any) {
-      toast.error(e?.message ?? 'باز کردن این خبر شکست خورد.');
+      toast.error(e?.message ?? "باز کردن این خبر شکست خورد.");
     } finally {
       setOpeningUrl(null);
     }
@@ -124,7 +129,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
       });
       setCompare(result);
     } catch (e: any) {
-      toast.error(e?.message ?? 'مقایسه شکست خورد.');
+      toast.error(e?.message ?? "مقایسه شکست خورد.");
     } finally {
       setComparing(false);
     }
@@ -145,25 +150,37 @@ export function RelatedNews({ article }: RelatedNewsProps) {
       {!items ? (
         <div className="rounded-lg border border-dashed border-border p-6 text-center space-y-3">
           <p className="text-sm text-muted-foreground">
-            هوش مصنوعی بین ۴ تا ۱۰ خبر مرتبط از منابع دیگر پیدا می‌کند.
-            می‌توانی هرکدام را باز کنی یا خلاصه‌ی تفاوت‌هایشان را بگیری.
+            هوش مصنوعی بین ۴ تا ۱۰ خبر مرتبط از منابع دیگر پیدا می‌کند. می‌توانی هرکدام را باز کنی
+            یا خلاصه‌ی تفاوت‌هایشان را بگیری.
           </p>
           <Button onClick={fetchRelated} disabled={loading} size="sm" className="gap-1.5">
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-            {loading ? 'در حال جستجو…' : 'پیدا کن'}
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="h-4 w-4" />
+            )}
+            {loading ? "در حال جستجو…" : "پیدا کن"}
           </Button>
         </div>
       ) : (
         <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             <Button onClick={fetchRelated} disabled={loading} size="sm" variant="outline">
-              {loading ? <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5 mr-1.5" />}
+              {loading ? (
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Sparkles className="h-3.5 w-3.5 mr-1.5" />
+              )}
               بازجستجو
             </Button>
             {items.length > 0 && (
               <Button onClick={runCompare} disabled={comparing} size="sm" className="gap-1.5">
-                {comparing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                {comparing ? 'در حال تحلیل…' : 'خلاصه تفاوت‌ها'}
+                {comparing ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
+                {comparing ? "در حال تحلیل…" : "خلاصه تفاوت‌ها"}
               </Button>
             )}
           </div>
@@ -194,7 +211,9 @@ export function RelatedNews({ article }: RelatedNewsProps) {
                           alt=""
                           loading="lazy"
                           className="w-20 h-20 rounded-md object-cover shrink-0 bg-muted"
-                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = "none";
+                          }}
                         />
                       ) : (
                         <div className="w-20 h-20 rounded-md bg-muted/60 shrink-0 flex items-center justify-center">
@@ -206,8 +225,10 @@ export function RelatedNews({ article }: RelatedNewsProps) {
                           {it.title}
                         </p>
                         <p className="text-[11px] text-muted-foreground mt-1 truncate">
-                          {it.siteName ?? new URL(it.url).hostname.replace(/^www\./, '')}
-                          {it.publishedAt ? ` · ${new Date(it.publishedAt).toLocaleDateString('fa-IR')}` : ''}
+                          {it.siteName ?? new URL(it.url).hostname.replace(/^www\./, "")}
+                          {it.publishedAt
+                            ? ` · ${new Date(it.publishedAt).toLocaleDateString("fa-IR")}`
+                            : ""}
                         </p>
                         {it.excerpt && (
                           <p className="text-[11px] text-muted-foreground/80 mt-1 line-clamp-2">
@@ -216,9 +237,13 @@ export function RelatedNews({ article }: RelatedNewsProps) {
                         )}
                         <div className="flex items-center gap-1 mt-1.5 text-[10px] text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                           {isOpening ? (
-                            <><Loader2 className="h-3 w-3 animate-spin" /> در حال آماده‌سازی…</>
+                            <>
+                              <Loader2 className="h-3 w-3 animate-spin" /> در حال آماده‌سازی…
+                            </>
                           ) : (
-                            <>باز کن <ArrowRight className="h-3 w-3 rtl:rotate-180" /></>
+                            <>
+                              باز کن <ArrowRight className="h-3 w-3 rtl:rotate-180" />
+                            </>
                           )}
                         </div>
                       </div>

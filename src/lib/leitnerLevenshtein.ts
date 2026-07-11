@@ -20,7 +20,12 @@ export function levenshtein(a: string, b: string): number {
 }
 
 function normalize(s: string): string {
-  return s.trim().toLowerCase().replace(/[^a-z0-9\u0600-\u06ff]+/gi, ' ').replace(/\s+/g, ' ').trim();
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9\u0600-\u06ff]+/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Returns 0–1 similarity. */
@@ -36,7 +41,10 @@ export function similarity(a: string, b: string): number {
 }
 
 /** Match user typing against the back text. Tolerates typos. */
-export function matchAnswer(input: string, expected: string): {
+export function matchAnswer(
+  input: string,
+  expected: string,
+): {
   ok: boolean;
   score: number;
 } {

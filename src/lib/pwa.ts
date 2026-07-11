@@ -150,9 +150,7 @@ export function registerPWA() {
       disabledReason: inIframe ? "iframe" : "preview-host",
     });
     // Clean up any leftover SW so preview is never served stale assets.
-    navigator.serviceWorker
-      .getRegistrations()
-      .then((rs) => rs.forEach((r) => r.unregister()));
+    navigator.serviceWorker.getRegistrations().then((rs) => rs.forEach((r) => r.unregister()));
     return;
   }
 
@@ -190,10 +188,13 @@ export function registerPWA() {
       updateSWFn = updateSW;
 
       // Poll for updates every 60 min while app is open.
-      setInterval(() => {
-        updateSW().catch(() => {});
-        set({ lastChecked: Date.now() });
-      }, 60 * 60 * 1000);
+      setInterval(
+        () => {
+          updateSW().catch(() => {});
+          set({ lastChecked: Date.now() });
+        },
+        60 * 60 * 1000,
+      );
     })
     .catch(() => {
       /* SW not built (dev) */

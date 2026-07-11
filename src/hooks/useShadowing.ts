@@ -6,9 +6,9 @@
  * "play original cue" by calling videoStore.requestSeek + auto-pause-at-cue-end.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { listTakes, saveTake } from '@/lib/shadowing';
-import type { ShadowingTake } from '@/types';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { listTakes, saveTake } from "@/lib/shadowing";
+import type { ShadowingTake } from "@/types";
 
 interface UseShadowingArgs {
   videoId?: string;
@@ -35,8 +35,8 @@ export interface UseShadowingApi {
 }
 
 function pickMimeType(): string {
-  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg'];
-  if (typeof MediaRecorder === 'undefined') return '';
+  const candidates = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
+  if (typeof MediaRecorder === "undefined") return "";
   for (const m of candidates) {
     try {
       if (MediaRecorder.isTypeSupported(m)) return m;
@@ -44,11 +44,11 @@ function pickMimeType(): string {
       /* ignore */
     }
   }
-  return '';
+  return "";
 }
 
 function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2);
 }
 
@@ -106,11 +106,11 @@ export function useShadowing({
   const start = useCallback(async () => {
     if (isRecording) return;
     if (!videoId || !cueId) {
-      setError('Pick a cue first.');
+      setError("Pick a cue first.");
       return;
     }
-    if (typeof navigator === 'undefined' || !navigator.mediaDevices?.getUserMedia) {
-      setError('Microphone is not available in this browser.');
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setError("Microphone is not available in this browser.");
       return;
     }
     setError(null);
@@ -127,7 +127,7 @@ export function useShadowing({
         },
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Microphone permission denied.';
+      const msg = e instanceof Error ? e.message : "Microphone permission denied.";
       setError(msg);
       return;
     }
@@ -139,7 +139,7 @@ export function useShadowing({
       recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
     } catch (e) {
       cleanupStream();
-      setError(e instanceof Error ? e.message : 'Recorder unavailable.');
+      setError(e instanceof Error ? e.message : "Recorder unavailable.");
       return;
     }
     recorderRef.current = recorder;
@@ -150,7 +150,7 @@ export function useShadowing({
 
     recorder.onstop = async () => {
       const durationMs = Date.now() - startedAtRef.current;
-      const finalMime = mimeType || 'audio/webm';
+      const finalMime = mimeType || "audio/webm";
       const blob = new Blob(chunksRef.current, { type: finalMime });
       chunksRef.current = [];
       cleanupStream();
@@ -171,7 +171,7 @@ export function useShadowing({
         });
         await refresh();
       } catch (e) {
-        setError(e instanceof Error ? e.message : 'Could not save take.');
+        setError(e instanceof Error ? e.message : "Could not save take.");
       }
     };
 
@@ -182,7 +182,7 @@ export function useShadowing({
     try {
       recorder.start(250);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Recorder failed to start.');
+      setError(e instanceof Error ? e.message : "Recorder failed to start.");
       cleanupStream();
       setIsRecording(false);
       return;
@@ -195,7 +195,7 @@ export function useShadowing({
   const stop = useCallback(() => {
     const r = recorderRef.current;
     if (!r) return;
-    if (r.state !== 'inactive') {
+    if (r.state !== "inactive") {
       try {
         r.stop();
       } catch {
@@ -214,7 +214,7 @@ export function useShadowing({
     return () => {
       cancelledRef.current = true;
       const r = recorderRef.current;
-      if (r && r.state !== 'inactive') {
+      if (r && r.state !== "inactive") {
         try {
           r.stop();
         } catch {

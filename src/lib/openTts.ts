@@ -6,7 +6,12 @@
  *   coqui-tts:fa_custom (Persian) or larynx:en-us/ek-glow_tts
  */
 export class OpenTtsError extends Error {
-  constructor(public code: 'network' | 'other', msg: string) { super(msg); }
+  constructor(
+    public code: "network" | "other",
+    msg: string,
+  ) {
+    super(msg);
+  }
 }
 
 export async function synthesizeWithOpenTts(params: {
@@ -15,12 +20,15 @@ export async function synthesizeWithOpenTts(params: {
   voice: string;
 }): Promise<Blob> {
   const { baseUrl, text, voice } = params;
-  if (!baseUrl?.trim()) throw new OpenTtsError('other', 'OpenTTS URL مشخص نیست.');
-  if (!text?.trim()) throw new OpenTtsError('other', 'متن خالی است.');
-  const url = `${baseUrl.replace(/\/$/, '')}/api/tts?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`;
+  if (!baseUrl?.trim()) throw new OpenTtsError("other", "OpenTTS URL مشخص نیست.");
+  if (!text?.trim()) throw new OpenTtsError("other", "متن خالی است.");
+  const url = `${baseUrl.replace(/\/$/, "")}/api/tts?voice=${encodeURIComponent(voice)}&text=${encodeURIComponent(text)}`;
   let res: Response;
-  try { res = await fetch(url, { method: 'GET' }); }
-  catch (e) { throw new OpenTtsError('network', e instanceof Error ? e.message : 'network'); }
-  if (!res.ok) throw new OpenTtsError('other', `OpenTTS ${res.status}`);
+  try {
+    res = await fetch(url, { method: "GET" });
+  } catch (e) {
+    throw new OpenTtsError("network", e instanceof Error ? e.message : "network");
+  }
+  if (!res.ok) throw new OpenTtsError("other", `OpenTTS ${res.status}`);
   return res.blob();
 }

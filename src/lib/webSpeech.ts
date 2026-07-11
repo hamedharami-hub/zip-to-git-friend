@@ -22,13 +22,9 @@ export interface WebSpeechController {
 type AnyRecognition = any;
 
 function getRecognitionCtor(): AnyRecognition | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
   // Chrome/Edge/Safari ship `webkitSpeechRecognition`; spec name is `SpeechRecognition`.
-  return (
-    (window as any).SpeechRecognition ||
-    (window as any).webkitSpeechRecognition ||
-    null
-  );
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 }
 
 export function isWebSpeechSupported(): boolean {
@@ -64,29 +60,27 @@ export function __test_mergeTranscriptParts(finalText: string, interimText: stri
 export function startWebSpeech(opts: WebSpeechOptions = {}): WebSpeechController {
   const Ctor = getRecognitionCtor();
   if (!Ctor) {
-    throw new Error(
-      'Speech recognition is not supported in this browser. Try Chrome or Edge.',
-    );
+    throw new Error("Speech recognition is not supported in this browser. Try Chrome or Edge.");
   }
   const rec: AnyRecognition = new Ctor();
-  rec.lang = opts.lang ?? 'en-US';
+  rec.lang = opts.lang ?? "en-US";
   rec.interimResults = opts.interimResults ?? true;
   rec.continuous = true;
   rec.maxAlternatives = 1;
 
-  let finalText = '';
-  let latestInterim = '';
+  let finalText = "";
+  let latestInterim = "";
   let stopped = false;
   let resolveStop: ((r: WebSpeechResult) => void) | null = null;
   let rejectStop: ((e: Error) => void) | null = null;
 
   rec.onresult = (e: any) => {
-    let interim = '';
+    let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
       const res = e.results[i];
-      const txt = res[0]?.transcript ?? '';
+      const txt = res[0]?.transcript ?? "";
       if (res.isFinal) {
-        finalText += (finalText ? ' ' : '') + txt.trim();
+        finalText += (finalText ? " " : "") + txt.trim();
       } else {
         interim += txt;
       }
@@ -97,12 +91,17 @@ export function startWebSpeech(opts: WebSpeechOptions = {}): WebSpeechController
 
   rec.onerror = (e: any) => {
     if (stopped) return;
-    const code = e?.error ?? 'unknown';
+    const code = e?.error ?? "unknown";
     // 'no-speech' / 'aborted' are routine and shouldn't blow up the UI
-    if (code === 'no-speech' || code === 'aborted') return;
-    console.warn('[webSpeech] error', code, e);
-    if (code === 'not-allowed' || code === 'service-not-allowed') {
-      if (rejectStop) rejectStop(new Error('Microphone permission denied. If you are inside the Lovable editor preview, open the published URL or click the "Open in new tab" button — the editor iframe blocks microphone access.'));
+    if (code === "no-speech" || code === "aborted") return;
+    console.warn("[webSpeech] error", code, e);
+    if (code === "not-allowed" || code === "service-not-allowed") {
+      if (rejectStop)
+        rejectStop(
+          new Error(
+            'Microphone permission denied. If you are inside the Lovable editor preview, open the published URL or click the "Open in new tab" button — the editor iframe blocks microphone access.',
+          ),
+        );
       return;
     }
     if (rejectStop) rejectStop(new Error(`Speech recognition error: ${code}`));
@@ -120,9 +119,7 @@ export function startWebSpeech(opts: WebSpeechOptions = {}): WebSpeechController
   try {
     rec.start();
   } catch (e) {
-    throw new Error(
-      e instanceof Error ? e.message : 'Could not start speech recognition',
-    );
+    throw new Error(e instanceof Error ? e.message : "Could not start speech recognition");
   }
 
   return {

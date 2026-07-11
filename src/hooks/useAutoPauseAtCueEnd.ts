@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import type { SubtitleCue } from '@/types';
+import { useEffect, useRef } from "react";
+import type { SubtitleCue } from "@/types";
 
 interface Options {
   enabled: boolean;
@@ -39,8 +39,8 @@ export function useAutoPauseAtCueEnd(
       // clear the latch so the same cue won't immediately re-pause.
       pausedForCueRef.current = null;
     };
-    videoEl.addEventListener('play', onPlay);
-    return () => videoEl.removeEventListener('play', onPlay);
+    videoEl.addEventListener("play", onPlay);
+    return () => videoEl.removeEventListener("play", onPlay);
   }, [videoEl]);
 
   useEffect(() => {
@@ -51,10 +51,7 @@ export function useAutoPauseAtCueEnd(
       if (!v.paused) {
         const tMs = v.currentTime * 1000;
         // Pause exactly at (or just past) the cue end, once.
-        if (
-          tMs >= activeCue.endMs - 30 &&
-          pausedForCueRef.current !== activeCue.id
-        ) {
+        if (tMs >= activeCue.endMs - 30 && pausedForCueRef.current !== activeCue.id) {
           pausedForCueRef.current = activeCue.id;
           try {
             v.pause();

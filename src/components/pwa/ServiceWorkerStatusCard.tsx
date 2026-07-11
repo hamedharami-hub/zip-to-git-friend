@@ -72,12 +72,7 @@ export function ServiceWorkerStatusCard() {
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onCheck}
-          disabled={!s.enabled || checking}
-        >
+        <Button variant="outline" size="sm" onClick={onCheck} disabled={!s.enabled || checking}>
           {checking ? (
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
           ) : (

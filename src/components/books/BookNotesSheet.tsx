@@ -4,33 +4,15 @@
  * Each row jumps to its chapter (and roughly its scroll position for bookmarks).
  * Notes can be edited inline; entries can be deleted.
  */
-import { useMemo, useState } from 'react';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {
-  Bookmark,
-  BookmarkX,
-  StickyNote,
-  Trash2,
-  Pencil,
-  Check,
-  ArrowRight,
-} from 'lucide-react';
-import type { BookHighlight, BookBookmark, BookChapter } from '@/types';
-import {
-  HIGHLIGHT_CLASSES,
-  HIGHLIGHT_SWATCHES,
-  highlightColor,
-} from '@/hooks/useBookAnnotations';
-import { cn } from '@/lib/utils';
+import { useMemo, useState } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Bookmark, BookmarkX, StickyNote, Trash2, Pencil, Check, ArrowRight } from "lucide-react";
+import type { BookHighlight, BookBookmark, BookChapter } from "@/types";
+import { HIGHLIGHT_CLASSES, HIGHLIGHT_SWATCHES, highlightColor } from "@/hooks/useBookAnnotations";
+import { cn } from "@/lib/utils";
 
 interface Props {
   highlights: BookHighlight[];
@@ -69,7 +51,7 @@ export function BookNotesSheet({
           <StickyNote className="h-5 w-5" />
           {total > 0 && (
             <span className="absolute -top-0.5 -right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-semibold flex items-center justify-center">
-              {total > 99 ? '99+' : total}
+              {total > 99 ? "99+" : total}
             </span>
           )}
         </Button>
@@ -81,12 +63,8 @@ export function BookNotesSheet({
 
         <Tabs defaultValue="highlights" className="flex-1 flex flex-col min-h-0">
           <TabsList className="mx-5 mt-3 grid grid-cols-2">
-            <TabsTrigger value="highlights">
-              Highlights ({highlights.length})
-            </TabsTrigger>
-            <TabsTrigger value="bookmarks">
-              Bookmarks ({bookmarks.length})
-            </TabsTrigger>
+            <TabsTrigger value="highlights">Highlights ({highlights.length})</TabsTrigger>
+            <TabsTrigger value="bookmarks">Bookmarks ({bookmarks.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -104,9 +82,7 @@ export function BookNotesSheet({
                 <HighlightRow
                   key={h.id}
                   highlight={h}
-                  chapterTitle={
-                    chapters[h.chapterIndex]?.title ?? `Chapter ${h.chapterIndex + 1}`
-                  }
+                  chapterTitle={chapters[h.chapterIndex]?.title ?? `Chapter ${h.chapterIndex + 1}`}
                   isCurrent={h.chapterIndex === currentChapterIndex}
                   onJump={() => {
                     onJump(h.chapterIndex);
@@ -134,9 +110,7 @@ export function BookNotesSheet({
                 <BookmarkRow
                   key={b.id}
                   bookmark={b}
-                  chapterTitle={
-                    chapters[b.chapterIndex]?.title ?? `Chapter ${b.chapterIndex + 1}`
-                  }
+                  chapterTitle={chapters[b.chapterIndex]?.title ?? `Chapter ${b.chapterIndex + 1}`}
                   isCurrent={b.chapterIndex === currentChapterIndex}
                   onJump={() => {
                     onJump(b.chapterIndex, b.scrollRatio);
@@ -171,20 +145,18 @@ function HighlightRow({
   onUpdateNote: (n: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(highlight.note ?? '');
+  const [draft, setDraft] = useState(highlight.note ?? "");
   const color = highlightColor(highlight);
 
   const save = () => {
     const next = draft.trim();
-    if (next !== (highlight.note ?? '')) onUpdateNote(next);
+    if (next !== (highlight.note ?? "")) onUpdateNote(next);
     setEditing(false);
   };
 
   return (
     <article className="rounded-lg border border-border bg-card overflow-hidden">
-      <div className={cn('px-3 py-2 text-sm', HIGHLIGHT_CLASSES[color])}>
-        “{highlight.text}”
-      </div>
+      <div className={cn("px-3 py-2 text-sm", HIGHLIGHT_CLASSES[color])}>“{highlight.text}”</div>
       <div className="px-3 py-2 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <button
@@ -193,14 +165,10 @@ function HighlightRow({
             className="text-xs text-muted-foreground hover:text-primary truncate text-left flex-1 min-w-0 flex items-center gap-1.5"
             title={`Jump to ${chapterTitle}`}
           >
-            <span
-              className={cn('h-2 w-2 rounded-full shrink-0', HIGHLIGHT_SWATCHES[color])}
-            />
+            <span className={cn("h-2 w-2 rounded-full shrink-0", HIGHLIGHT_SWATCHES[color])} />
             <span className="truncate">{chapterTitle}</span>
             {isCurrent && (
-              <span className="text-[10px] uppercase tracking-wider text-primary/70">
-                here
-              </span>
+              <span className="text-[10px] uppercase tracking-wider text-primary/70">here</span>
             )}
             <ArrowRight className="h-3 w-3 shrink-0" />
           </button>
@@ -209,7 +177,7 @@ function HighlightRow({
             size="icon"
             className="h-7 w-7"
             onClick={() => (editing ? save() : setEditing(true))}
-            aria-label={editing ? 'Save note' : 'Edit note'}
+            aria-label={editing ? "Save note" : "Edit note"}
           >
             {editing ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
           </Button>
@@ -259,10 +227,10 @@ function BookmarkRow({
   const date = useMemo(() => {
     const d = new Date(bookmark.createdAt);
     return d.toLocaleDateString(undefined, {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }, [bookmark.createdAt]);
 
@@ -278,7 +246,7 @@ function BookmarkRow({
           <p className="text-sm truncate">{bookmark.label || chapterTitle}</p>
           <p className="text-[11px] text-muted-foreground truncate">
             {chapterTitle} · {Math.round(bookmark.scrollRatio * 100)}% · {date}
-            {isCurrent && ' · here'}
+            {isCurrent && " · here"}
           </p>
         </div>
       </button>
@@ -295,15 +263,7 @@ function BookmarkRow({
   );
 }
 
-function EmptyHint({
-  icon,
-  title,
-  hint,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  hint: string;
-}) {
+function EmptyHint({ icon, title, hint }: { icon: React.ReactNode; title: string; hint: string }) {
   return (
     <div className="text-center py-12 space-y-2">
       <div className="flex justify-center">{icon}</div>

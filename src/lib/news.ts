@@ -4,11 +4,11 @@
  * Wraps the four edge functions (RSS fetch, search, scrape, digest) and
  * the Supabase tables (`news_sources`, `news_articles`, `news_digests`).
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
-export type NewsSourceKind = 'rss' | 'topic' | 'site';
-export type DigestLength = 'short' | 'long' | 'max' | 'auto-max' | 'simple';
-export type DigestScope = 'topic' | 'site' | 'source';
+export type NewsSourceKind = "rss" | "topic" | "site";
+export type DigestLength = "short" | "long" | "max" | "auto-max" | "simple";
+export type DigestScope = "topic" | "site" | "source";
 
 export interface NewsSource {
   id: string;
@@ -102,23 +102,24 @@ function rowToSource(row: any): NewsSource {
 
 export async function listSources(): Promise<NewsSource[]> {
   const { data, error } = await supabase
-    .from('news_sources' as never)
-    .select('*')
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+    .from("news_sources" as never)
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return ((data as any[]) ?? []).map(rowToSource);
 }
 
 export async function addSource(
-  input: Partial<Omit<NewsSource, 'id' | 'userId' | 'createdAt' | 'updatedAt'>> & {
-    kind: NewsSourceKind; name: string;
+  input: Partial<Omit<NewsSource, "id" | "userId" | "createdAt" | "updatedAt">> & {
+    kind: NewsSourceKind;
+    name: string;
   },
 ): Promise<NewsSource> {
   const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not signed in.');
+  if (!userId) throw new Error("Not signed in.");
   const { data, error } = await supabase
-    .from('news_sources' as never)
+    .from("news_sources" as never)
     .insert({
       user_id: userId,
       kind: input.kind,
@@ -135,17 +136,26 @@ export async function addSource(
   return rowToSource(data);
 }
 
-export async function updateSource(id: string, patch: Partial<{ folderId: string | null; sortOrder: number; name: string }>): Promise<void> {
+export async function updateSource(
+  id: string,
+  patch: Partial<{ folderId: string | null; sortOrder: number; name: string }>,
+): Promise<void> {
   const update: Record<string, any> = {};
-  if ('folderId' in patch) update.folder_id = patch.folderId;
-  if ('sortOrder' in patch) update.sort_order = patch.sortOrder;
-  if ('name' in patch) update.name = patch.name;
-  const { error } = await supabase.from('news_sources' as never).update(update as never).eq('id', id);
+  if ("folderId" in patch) update.folder_id = patch.folderId;
+  if ("sortOrder" in patch) update.sort_order = patch.sortOrder;
+  if ("name" in patch) update.name = patch.name;
+  const { error } = await supabase
+    .from("news_sources" as never)
+    .update(update as never)
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteSource(id: string): Promise<void> {
-  const { error } = await supabase.from('news_sources' as never).delete().eq('id', id);
+  const { error } = await supabase
+    .from("news_sources" as never)
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -153,66 +163,112 @@ export async function deleteSource(id: string): Promise<void> {
 
 function rowToFolder(row: any): NewsFolder {
   return {
-    id: row.id, userId: row.user_id, name: row.name,
-    color: row.color, icon: row.icon, sortOrder: row.sort_order ?? 0,
-    createdAt: row.created_at, updatedAt: row.updated_at,
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    color: row.color,
+    icon: row.icon,
+    sortOrder: row.sort_order ?? 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
   };
 }
 
 export async function listFolders(): Promise<NewsFolder[]> {
   const { data, error } = await supabase
-    .from('news_folders' as never).select('*')
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+    .from("news_folders" as never)
+    .select("*")
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return ((data as any[]) ?? []).map(rowToFolder);
 }
 
-export async function createFolder(input: { name: string; color?: string | null; icon?: string | null }): Promise<NewsFolder> {
+export async function createFolder(input: {
+  name: string;
+  color?: string | null;
+  icon?: string | null;
+}): Promise<NewsFolder> {
   const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not signed in.');
-  const { data, error } = await supabase.from('news_folders' as never).insert({
-    user_id: userId, name: input.name, color: input.color ?? null, icon: input.icon ?? null,
-  } as never).select().single();
+  if (!userId) throw new Error("Not signed in.");
+  const { data, error } = await supabase
+    .from("news_folders" as never)
+    .insert({
+      user_id: userId,
+      name: input.name,
+      color: input.color ?? null,
+      icon: input.icon ?? null,
+    } as never)
+    .select()
+    .single();
   if (error) throw error;
   return rowToFolder(data);
 }
 
-export async function updateFolder(id: string, patch: Partial<{ name: string; color: string | null }>): Promise<void> {
-  const { error } = await supabase.from('news_folders' as never).update(patch as never).eq('id', id);
+export async function updateFolder(
+  id: string,
+  patch: Partial<{ name: string; color: string | null }>,
+): Promise<void> {
+  const { error } = await supabase
+    .from("news_folders" as never)
+    .update(patch as never)
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function deleteFolder(id: string): Promise<void> {
   // Move sources out first.
-  await supabase.from('news_sources' as never).update({ folder_id: null } as never).eq('folder_id', id);
-  const { error } = await supabase.from('news_folders' as never).delete().eq('id', id);
+  await supabase
+    .from("news_sources" as never)
+    .update({ folder_id: null } as never)
+    .eq("folder_id", id);
+  const { error } = await supabase
+    .from("news_folders" as never)
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
 // ─────────── Blocked domains ───────────
 
-export interface BlockedDomain { id: string; domain: string; createdAt: string; }
+export interface BlockedDomain {
+  id: string;
+  domain: string;
+  createdAt: string;
+}
 
 export async function listBlockedDomains(): Promise<BlockedDomain[]> {
-  const { data, error } = await supabase.from('news_blocked_domains' as never)
-    .select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from("news_blocked_domains" as never)
+    .select("*")
+    .order("created_at", { ascending: false });
   if (error) throw error;
-  return ((data as any[]) ?? []).map((r) => ({ id: r.id, domain: r.domain, createdAt: r.created_at }));
+  return ((data as any[]) ?? []).map((r) => ({
+    id: r.id,
+    domain: r.domain,
+    createdAt: r.created_at,
+  }));
 }
 
 export async function blockDomain(domain: string): Promise<void> {
   const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not signed in.');
-  const clean = domain.toLowerCase().replace(/^www\./, '').trim();
+  if (!userId) throw new Error("Not signed in.");
+  const clean = domain
+    .toLowerCase()
+    .replace(/^www\./, "")
+    .trim();
   if (!clean) return;
-  const { error } = await supabase.from('news_blocked_domains' as never)
-    .upsert({ user_id: userId, domain: clean } as never, { onConflict: 'user_id,domain' });
+  const { error } = await supabase
+    .from("news_blocked_domains" as never)
+    .upsert({ user_id: userId, domain: clean } as never, { onConflict: "user_id,domain" });
   if (error) throw error;
 }
 
 export async function unblockDomain(id: string): Promise<void> {
-  const { error } = await supabase.from('news_blocked_domains' as never).delete().eq('id', id);
+  const { error } = await supabase
+    .from("news_blocked_domains" as never)
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -224,11 +280,10 @@ export interface FetchedFeed {
 }
 
 export async function fetchRss(url: string, limit = 30): Promise<FetchedFeed> {
-  const { data, error } = await supabase.functions.invoke<FetchedFeed>(
-    'news-fetch-rss',
-    { body: { url, limit } },
-  );
-  if (error) throw new Error(extractErr(error, 'RSS fetch failed.'));
+  const { data, error } = await supabase.functions.invoke<FetchedFeed>("news-fetch-rss", {
+    body: { url, limit },
+  });
+  if (error) throw new Error(extractErr(error, "RSS fetch failed."));
   return data ?? { items: [] };
 }
 
@@ -242,11 +297,10 @@ export async function searchNews(opts: {
   /** Optional AI model id used by the edge function for headline summaries. */
   model?: string;
 }): Promise<FeedItem[]> {
-  const { data, error } = await supabase.functions.invoke<{ items: FeedItem[] }>(
-    'news-search',
-    { body: opts },
-  );
-  if (error) throw new Error(extractErr(error, 'News search failed.'));
+  const { data, error } = await supabase.functions.invoke<{ items: FeedItem[] }>("news-search", {
+    body: opts,
+  });
+  if (error) throw new Error(extractErr(error, "News search failed."));
   return data?.items ?? [];
 }
 
@@ -258,15 +312,17 @@ export async function fetchTrendingHeadlines(opts: {
   limit?: number;
   blockedDomains?: string[];
 }): Promise<FeedItem[]> {
-  const { data, error } = await supabase.functions.invoke<{ items: FeedItem[] }>(
-    'news-trending',
-    { body: opts },
-  );
-  if (error) throw new Error(extractErr(error, 'Trending fetch failed.'));
+  const { data, error } = await supabase.functions.invoke<{ items: FeedItem[] }>("news-trending", {
+    body: opts,
+  });
+  if (error) throw new Error(extractErr(error, "Trending fetch failed."));
   return data?.items ?? [];
 }
 
-export interface DiscoveredFeed { name: string; url: string; }
+export interface DiscoveredFeed {
+  name: string;
+  url: string;
+}
 export interface DiscoveredSite {
   siteName: string;
   domain: string;
@@ -278,15 +334,27 @@ export interface DiscoveryResult {
   sites: DiscoveredSite[];
 }
 
-const RSS_DISCOVERY_CACHE_KEY = 'news.rssDiscovery.v2';
+const RSS_DISCOVERY_CACHE_KEY = "news.rssDiscovery.v2";
 
-interface DiscoveryCacheEntry { topic: string; result: DiscoveryResult; cachedAt: number; }
+interface DiscoveryCacheEntry {
+  topic: string;
+  result: DiscoveryResult;
+  cachedAt: number;
+}
 
 function loadDiscoveryCache(): Record<string, DiscoveryCacheEntry> {
-  try { return JSON.parse(localStorage.getItem(RSS_DISCOVERY_CACHE_KEY) || '{}'); } catch { return {}; }
+  try {
+    return JSON.parse(localStorage.getItem(RSS_DISCOVERY_CACHE_KEY) || "{}");
+  } catch {
+    return {};
+  }
 }
 function saveDiscoveryCache(map: Record<string, DiscoveryCacheEntry>) {
-  try { localStorage.setItem(RSS_DISCOVERY_CACHE_KEY, JSON.stringify(map)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(RSS_DISCOVERY_CACHE_KEY, JSON.stringify(map));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function getCachedDiscovery(topic: string): DiscoveryResult | null {
@@ -295,7 +363,11 @@ export function getCachedDiscovery(topic: string): DiscoveryResult | null {
 }
 
 export async function discoverRss(opts: {
-  topic: string; region?: string; language?: string; limit?: number; forceRefresh?: boolean;
+  topic: string;
+  region?: string;
+  language?: string;
+  limit?: number;
+  forceRefresh?: boolean;
 }): Promise<DiscoveryResult> {
   const key = opts.topic.trim().toLowerCase();
   const cache = loadDiscoveryCache();
@@ -303,11 +375,16 @@ export async function discoverRss(opts: {
     const entry = cache[key];
     if (entry && Date.now() - entry.cachedAt < 24 * 3600 * 1000) return entry.result;
   }
-  const { data, error } = await supabase.functions.invoke<DiscoveryResult>('news-discover-rss', {
-    body: { topic: opts.topic, region: opts.region, language: opts.language, limit: opts.limit ?? 20 },
+  const { data, error } = await supabase.functions.invoke<DiscoveryResult>("news-discover-rss", {
+    body: {
+      topic: opts.topic,
+      region: opts.region,
+      language: opts.language,
+      limit: opts.limit ?? 20,
+    },
   });
-  if (error) throw new Error(extractErr(error, 'RSS discovery failed.'));
-  const result: DiscoveryResult = data ?? { googleNews: { name: opts.topic, url: '' }, sites: [] };
+  if (error) throw new Error(extractErr(error, "RSS discovery failed."));
+  const result: DiscoveryResult = data ?? { googleNews: { name: opts.topic, url: "" }, sites: [] };
   cache[key] = { topic: opts.topic, result, cachedAt: Date.now() };
   saveDiscoveryCache(cache);
   return result;
@@ -333,19 +410,16 @@ export async function scrapeArticle(
   url: string,
   fallback?: { excerpt?: string; imageUrl?: string; siteName?: string },
 ): Promise<ScrapedArticle> {
-  const { data, error } = await supabase.functions.invoke<ScrapedArticle>(
-    'news-scrape-article',
-    {
-      body: {
-        url,
-        fallbackExcerpt: fallback?.excerpt,
-        fallbackImageUrl: fallback?.imageUrl,
-        fallbackSiteName: fallback?.siteName,
-      },
+  const { data, error } = await supabase.functions.invoke<ScrapedArticle>("news-scrape-article", {
+    body: {
+      url,
+      fallbackExcerpt: fallback?.excerpt,
+      fallbackImageUrl: fallback?.imageUrl,
+      fallbackSiteName: fallback?.siteName,
     },
-  );
-  if (error) throw new Error(extractErr(error, 'Article scrape failed.'));
-  if (!data) throw new Error('Article scrape returned empty result.');
+  });
+  if (error) throw new Error(extractErr(error, "Article scrape failed."));
+  if (!data) throw new Error("Article scrape returned empty result.");
   return data;
 }
 
@@ -374,9 +448,9 @@ function rowToArticle(row: any): NewsArticle {
 
 export async function getArticleByUrl(url: string): Promise<NewsArticle | null> {
   const { data, error } = await supabase
-    .from('news_articles' as never)
-    .select('*')
-    .eq('url', url)
+    .from("news_articles" as never)
+    .select("*")
+    .eq("url", url)
     .maybeSingle();
   if (error) throw error;
   return data ? rowToArticle(data) : null;
@@ -384,9 +458,9 @@ export async function getArticleByUrl(url: string): Promise<NewsArticle | null> 
 
 export async function getArticleById(id: string): Promise<NewsArticle | null> {
   const { data, error } = await supabase
-    .from('news_articles' as never)
-    .select('*')
-    .eq('id', id)
+    .from("news_articles" as never)
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   return data ? rowToArticle(data) : null;
@@ -407,9 +481,9 @@ export async function upsertArticle(input: {
   wordCount?: number;
 }): Promise<NewsArticle> {
   const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not signed in.');
+  if (!userId) throw new Error("Not signed in.");
   const { data, error } = await supabase
-    .from('news_articles' as never)
+    .from("news_articles" as never)
     .upsert(
       {
         user_id: userId,
@@ -426,7 +500,7 @@ export async function upsertArticle(input: {
         published_at: input.publishedAt ?? null,
         word_count: input.wordCount ?? 0,
       } as never,
-      { onConflict: 'user_id,url' },
+      { onConflict: "user_id,url" },
     )
     .select()
     .single();
@@ -436,18 +510,18 @@ export async function upsertArticle(input: {
 
 export async function setArticleSaved(id: string, isSaved: boolean): Promise<void> {
   const { error } = await supabase
-    .from('news_articles' as never)
+    .from("news_articles" as never)
     .update({ is_saved: isSaved } as never)
-    .eq('id', id);
+    .eq("id", id);
   if (error) throw error;
 }
 
 export async function listSavedArticles(): Promise<NewsArticle[]> {
   const { data, error } = await supabase
-    .from('news_articles' as never)
-    .select('*')
-    .eq('is_saved', true)
-    .order('updated_at', { ascending: false })
+    .from("news_articles" as never)
+    .select("*")
+    .eq("is_saved", true)
+    .order("updated_at", { ascending: false })
     .limit(200);
   if (error) throw error;
   return ((data as any[]) ?? []).map(rowToArticle);
@@ -477,9 +551,9 @@ function rowToDigest(row: any): NewsDigest {
 
 export async function listDigests(): Promise<NewsDigest[]> {
   const { data, error } = await supabase
-    .from('news_digests' as never)
-    .select('*')
-    .order('created_at', { ascending: false })
+    .from("news_digests" as never)
+    .select("*")
+    .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
   return ((data as any[]) ?? []).map(rowToDigest);
@@ -487,16 +561,19 @@ export async function listDigests(): Promise<NewsDigest[]> {
 
 export async function getDigestById(id: string): Promise<NewsDigest | null> {
   const { data, error } = await supabase
-    .from('news_digests' as never)
-    .select('*')
-    .eq('id', id)
+    .from("news_digests" as never)
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   return data ? rowToDigest(data) : null;
 }
 
 export async function deleteDigest(id: string): Promise<void> {
-  const { error } = await supabase.from('news_digests' as never).delete().eq('id', id);
+  const { error } = await supabase
+    .from("news_digests" as never)
+    .delete()
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -515,7 +592,7 @@ export async function generateDigest(opts: {
   topic?: string;
   windowHours?: number;
   model?: string;
-  simplifyLevel?: 'a2-b1' | 'b1-b2';
+  simplifyLevel?: "a2-b1" | "b1-b2";
 }): Promise<NewsDigest> {
   const { data, error } = await supabase.functions.invoke<{
     title: string;
@@ -523,7 +600,7 @@ export async function generateDigest(opts: {
     contentHtml: string;
     wordCount: number;
     model: string;
-  }>('news-digest', {
+  }>("news-digest", {
     body: {
       articles: opts.articles,
       length: opts.length,
@@ -533,11 +610,11 @@ export async function generateDigest(opts: {
       simplifyLevel: opts.simplifyLevel,
     },
   });
-  if (error) throw new Error(extractErr(error, 'Digest generation failed.'));
-  if (!data) throw new Error('Digest returned empty.');
+  if (error) throw new Error(extractErr(error, "Digest generation failed."));
+  if (!data) throw new Error("Digest returned empty.");
 
   const userId = (await supabase.auth.getUser()).data.user?.id;
-  if (!userId) throw new Error('Not signed in.');
+  if (!userId) throw new Error("Not signed in.");
 
   const sources = opts.articles.map((a) => ({
     title: a.title,
@@ -546,7 +623,7 @@ export async function generateDigest(opts: {
   }));
 
   const { data: row, error: insErr } = await supabase
-    .from('news_digests' as never)
+    .from("news_digests" as never)
     .insert({
       user_id: userId,
       source_id: opts.sourceId ?? null,
@@ -583,29 +660,29 @@ export interface ImportedArticle {
 }
 
 export type ImportResult =
-  | { kind: 'article' | 'youtube'; article: ImportedArticle }
-  | { kind: 'youtube_channel'; channel: { kind: 'id' | 'handle' | 'user'; value: string } };
+  | { kind: "article" | "youtube"; article: ImportedArticle }
+  | { kind: "youtube_channel"; channel: { kind: "id" | "handle" | "user"; value: string } };
 
 export async function importUrl(url: string): Promise<ImportResult> {
-  const { data, error } = await supabase.functions.invoke<ImportResult>('news-import-url', {
+  const { data, error } = await supabase.functions.invoke<ImportResult>("news-import-url", {
     body: { url },
   });
-  if (error) throw new Error(extractErr(error, 'Import failed.'));
-  if (!data) throw new Error('Import returned empty result.');
+  if (error) throw new Error(extractErr(error, "Import failed."));
+  if (!data) throw new Error("Import returned empty result.");
   return data;
 }
 
 export async function youtubeChannelFeed(opts: {
   url?: string;
-  channel?: { kind: 'id' | 'handle' | 'user'; value: string };
+  channel?: { kind: "id" | "handle" | "user"; value: string };
 }): Promise<{ channelTitle: string; channelId: string; items: FeedItem[] }> {
   const { data, error } = await supabase.functions.invoke<{
     channelTitle: string;
     channelId: string;
     items: FeedItem[];
-  }>('news-youtube-channel', { body: opts });
-  if (error) throw new Error(extractErr(error, 'Channel fetch failed.'));
-  if (!data) throw new Error('Channel returned empty.');
+  }>("news-youtube-channel", { body: opts });
+  if (error) throw new Error(extractErr(error, "Channel fetch failed."));
+  if (!data) throw new Error("Channel returned empty.");
   return data;
 }
 
@@ -620,15 +697,26 @@ export interface CompareResult {
 }
 
 export async function compareRelatedArticles(opts: {
-  main: { title: string; siteName?: string | null; contentMd?: string | null; excerpt?: string | null };
-  related: Array<{ title: string; url: string; siteName?: string | null; excerpt?: string | null; contentMd?: string | null }>;
+  main: {
+    title: string;
+    siteName?: string | null;
+    contentMd?: string | null;
+    excerpt?: string | null;
+  };
+  related: Array<{
+    title: string;
+    url: string;
+    siteName?: string | null;
+    excerpt?: string | null;
+    contentMd?: string | null;
+  }>;
   model?: string;
 }): Promise<CompareResult> {
-  const { data, error } = await supabase.functions.invoke<CompareResult>('news-compare', {
+  const { data, error } = await supabase.functions.invoke<CompareResult>("news-compare", {
     body: opts,
   });
-  if (error) throw new Error(extractErr(error, 'AI compare failed.'));
-  if (!data) throw new Error('Compare returned empty.');
+  if (error) throw new Error(extractErr(error, "AI compare failed."));
+  if (!data) throw new Error("Compare returned empty.");
   return data;
 }
 
@@ -651,22 +739,20 @@ export async function formatForTelegram(opts: {
   model?: string;
 }): Promise<TelegramFormatResult> {
   const { data, error } = await supabase.functions.invoke<TelegramFormatResult>(
-    'news-telegram-format',
+    "news-telegram-format",
     { body: opts },
   );
-  if (error) throw new Error(extractErr(error, 'AI format failed.'));
-  if (!data) throw new Error('Format returned empty.');
+  if (error) throw new Error(extractErr(error, "AI format failed."));
+  if (!data) throw new Error("Format returned empty.");
   return data;
 }
-
-
 
 // ─────────── Helpers ───────────
 
 function extractErr(error: any, fallback: string): string {
   try {
     const ctx = error?.context;
-    if (ctx && typeof ctx.json === 'function') {
+    if (ctx && typeof ctx.json === "function") {
       // can't await here; just use message
     }
     return error?.message || fallback;
@@ -674,5 +760,3 @@ function extractErr(error: any, fallback: string): string {
     return fallback;
   }
 }
-
-

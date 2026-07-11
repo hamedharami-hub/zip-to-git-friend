@@ -23,8 +23,8 @@ export interface CachedScenario {
   sentenceIds: string[];
 }
 
-const DB_NAME = 'sentence-lab-scenarios';
-const STORE = 'scenarios';
+const DB_NAME = "sentence-lab-scenarios";
+const STORE = "scenarios";
 const VERSION = 1;
 
 function openDb(): Promise<IDBDatabase> {
@@ -33,8 +33,8 @@ function openDb(): Promise<IDBDatabase> {
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) {
-        const s = db.createObjectStore(STORE, { keyPath: 'id' });
-        s.createIndex('createdAt', 'createdAt');
+        const s = db.createObjectStore(STORE, { keyPath: "id" });
+        s.createIndex("createdAt", "createdAt");
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -45,7 +45,7 @@ function openDb(): Promise<IDBDatabase> {
 export async function saveScenario(s: CachedScenario): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
+    const tx = db.transaction(STORE, "readwrite");
     tx.objectStore(STORE).put(s);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -56,7 +56,7 @@ export async function saveScenario(s: CachedScenario): Promise<void> {
 export async function listScenarios(): Promise<CachedScenario[]> {
   const db = await openDb();
   const items = await new Promise<CachedScenario[]>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
+    const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).getAll();
     req.onsuccess = () => resolve((req.result as CachedScenario[]) ?? []);
     req.onerror = () => reject(req.error);
@@ -68,7 +68,7 @@ export async function listScenarios(): Promise<CachedScenario[]> {
 export async function getScenario(id: string): Promise<CachedScenario | null> {
   const db = await openDb();
   const item = await new Promise<CachedScenario | null>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readonly');
+    const tx = db.transaction(STORE, "readonly");
     const req = tx.objectStore(STORE).get(id);
     req.onsuccess = () => resolve((req.result as CachedScenario) ?? null);
     req.onerror = () => reject(req.error);
@@ -80,7 +80,7 @@ export async function getScenario(id: string): Promise<CachedScenario | null> {
 export async function deleteScenario(id: string): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
+    const tx = db.transaction(STORE, "readwrite");
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);

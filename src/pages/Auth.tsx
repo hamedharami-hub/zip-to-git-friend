@@ -24,11 +24,35 @@ const Auth = () => {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-  }, []);
-
-  useEffect(() => {
     if (!loading && user) navigate(nextPath, { replace: true });
   }, [user, loading, navigate, nextPath]);
+
+  const rememberPostAuthPath = () => {
+    try {
+      window.localStorage.setItem('llp-post-auth-path', nextPath);
+    } catch {
+      // Ignore storage failures; the callback will fall back to home.
+    }
+  };
+
+  const authCallbackUrl = () => `${window.location.origin}/auth/callback`;
+
+  const isInIframe = () => {
+    try {
+      return window.self !== window.top;
+    } catch {
+      return true;
+    }
+  };
+
+  const randomState = () => {
+    if (window.crypto?.getRandomValues) {
+      return Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  };
 
   const handleEmail = async (mode: 'signin' | 'signup') => {
     if (!email || !password) {
@@ -62,13 +86,32 @@ const Auth = () => {
     setSubmitting(true);
     try {
       // On mobile browsers, the popup flow often gets blocked or auto-closed,
-      // producing "Sign in was cancelled". Force a full-page redirect there.
+      // producing "Sign in was cancelled". Force a top-level redirect there.
       const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      rememberPostAuthPath();
+
+      if (isMobile && isInIframe()) {
+        const params = new URLSearchParams({
+          provider: 'google',
+          redirect_uri: authCallbackUrl(),
+          state: randomState(),
+          prompt: 'select_account',
+          display: 'page',
+        });
+        const redirectTo = `${window.location.origin}/~oauth/initiate?${params.toString()}`;
+        try {
+          window.top?.location.assign(redirectTo);
+        } catch {
+          window.location.assign(redirectTo);
+        }
+        return;
+      }
+
       const extraParams: Record<string, string> = { prompt: 'select_account' };
       if (isMobile) extraParams.display = 'page';
 
       const result = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: `${window.location.origin}${nextPath}`,
+        redirect_uri: authCallbackUrl(),
         extraParams,
       });
       if (result.error) {
@@ -81,6 +124,11 @@ const Auth = () => {
         throw result.error;
       }
       if (result.redirected) return; // browser will redirect
+      try {
+        window.localStorage.removeItem('llp-post-auth-path');
+      } catch {
+        // Ignore storage failures.
+      }
       navigate(nextPath, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Google sign-in failed.';

@@ -56,8 +56,8 @@ function RssDiscovery({
       setResult(fresh);
       if (fresh.sites.length === 0)
         toast.info("سایت اختصاصی پیدا نشد — از Google News یا Bing News استفاده کن.");
-    } catch (e: any) {
-      toast.error(e.message ?? "جستجو شکست خورد.");
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "جستجو شکست خورد.");
     } finally {
       setBusy(false);
     }
@@ -279,12 +279,21 @@ export function AddSourceDialog({
   onAdded,
   trigger,
   onInstantDigest,
+  open: openProp,
+  onOpenChange,
 }: {
   onAdded: (s: NewsSource) => void;
   trigger?: React.ReactNode;
   onInstantDigest?: (topicText: string, feedUrl: string, label: string) => Promise<void> | void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (value: boolean) => {
+    setInternalOpen(value);
+    onOpenChange?.(value);
+  };
   const [kind, setKind] = useState<NewsSourceKind>("rss");
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
@@ -323,8 +332,8 @@ export function AddSourceDialog({
       toast.success("منبع اضافه شد.");
       setOpen(false);
       reset();
-    } catch (e: any) {
-      toast.error(e.message ?? "Failed to add source.");
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "Failed to add source.");
     } finally {
       setBusy(false);
     }

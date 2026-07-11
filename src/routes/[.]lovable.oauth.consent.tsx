@@ -36,7 +36,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     const { data } = await supabase.auth.getSession();
     const next = location.pathname + location.searchStr;
     if (!data.session) {
-      throw redirect({ to: "/auth", search: { next } as never });
+      throw redirect({ href: `/auth?next=${encodeURIComponent(next)}` });
     }
   },
   loader: async ({ location }) => {
@@ -89,8 +89,8 @@ function Consent() {
       <div className="max-w-md w-full space-y-4 rounded-lg border p-6 bg-card">
         <h1 className="text-xl font-semibold">Connect {clientName} to your account</h1>
         <p className="text-sm text-muted-foreground">
-          This will let {clientName} use Sync Learn Player as you, including reading your books
-          and news articles.
+          This will let {clientName} use Sync Learn Player as you, including reading your books and
+          news articles.
         </p>
         {error && (
           <p role="alert" className="text-sm text-destructive">

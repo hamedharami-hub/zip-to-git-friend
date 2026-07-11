@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { loadNewsDisplayLang, saveNewsDisplayLang } from '@/lib/newsDisplayLang';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from "react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useArticleRewrite, type RewriteLength } from "@/hooks/useArticleRewrite";
+import { loadNewsDisplayLang, saveNewsDisplayLang } from "@/lib/newsDisplayLang";
+import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ExternalLink,
@@ -11,60 +12,55 @@ import {
   Bookmark,
   BookmarkCheck,
   MoreVertical,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { EmptyState } from '@/components/EmptyState';
-import { InteractiveBookText, type DisplayLang } from '@/components/books/InteractiveBookText';
-import { ChapterTTSPlayer } from '@/components/books/ChapterTTSPlayer';
-import { ReaderTTSQuickSettings } from '@/components/books/ReaderTTSQuickSettings';
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/EmptyState";
+import { InteractiveBookText, type DisplayLang } from "@/components/books/InteractiveBookText";
+import { ChapterTTSPlayer } from "@/components/books/ChapterTTSPlayer";
+import { ReaderTTSQuickSettings } from "@/components/books/ReaderTTSQuickSettings";
 
-import type { BookChapter } from '@/types';
+import type { BookChapter } from "@/types";
 import {
-  generateDigest,
   getArticleById,
   importUrl,
   scrapeArticle,
   setArticleSaved,
   upsertArticle,
   type NewsArticle,
-  type NewsDigest,
-} from '@/lib/news';
-import { supabase } from '@/integrations/supabase/client';
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
-import { batchAnalyzeChapter, extractAnalysableParagraphs } from '@/lib/batchAnalyzeChapter';
-import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
-import { emitChapterAnalyses } from '@/lib/chapterAnalysisBus';
-import { injectArticleImages } from '@/lib/injectArticleImages';
-import { toast } from 'sonner';
-import { cacheArticle, getCachedArticle, cacheRewrites, getCachedRewrites } from '@/lib/newsOfflineCache';
-import { NewsShareMenu } from '@/components/news/NewsShareMenu';
-import { NewsTypographyMenu } from '@/components/news/NewsTypographyMenu';
-import { NewsTocMenu } from '@/components/news/NewsTocMenu';
-import { usePinchFontStep } from '@/hooks/usePinchZoom';
-import { isSeen, markSeen } from '@/lib/seenArticles';
-import { LangCycleButton } from '@/components/news/LangCycleButton';
-import { ReadingModeControls } from '@/components/reader/ReadingModeControls';
-import { ArticleRewriteTabs } from '@/components/news/ArticleRewriteTabs';
-import type { BookAIModelRef } from '@/types';
+} from "@/lib/news";
+import { supabase } from "@/integrations/supabase/client";
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
+import { batchAnalyzeChapter, extractAnalysableParagraphs } from "@/lib/batchAnalyzeChapter";
+import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
+import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
+import { injectArticleImages } from "@/lib/injectArticleImages";
+import { toast } from "sonner";
+import { cacheArticle, getCachedArticle } from "@/lib/newsOfflineCache";
+import { NewsShareMenu } from "@/components/news/NewsShareMenu";
+import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
+import { NewsTocMenu } from "@/components/news/NewsTocMenu";
+import { usePinchFontStep } from "@/hooks/usePinchZoom";
+import { isSeen, markSeen } from "@/lib/seenArticles";
+import { LangCycleButton } from "@/components/news/LangCycleButton";
+import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
+import { ArticleRewriteTabs } from "@/components/news/ArticleRewriteTabs";
+import type { BookAIModelRef } from "@/types";
 
 function isYoutubeUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return /(^|\.)youtube\.com$/.test(u.hostname) || u.hostname === 'youtu.be';
-  } catch { return false; }
+    return /(^|\.)youtube\.com$/.test(u.hostname) || u.hostname === "youtu.be";
+  } catch {
+    return false;
+  }
 }
-
-type RewriteLength = 'long' | 'max' | 'auto-max' | 'simple';
-
-
-
 
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -73,40 +69,40 @@ const NewsArticleReader = () => {
     // Prefer going back so the user lands on the exact source/folder they were
     // browsing. Fall back to /news when there's no history (e.g. cold load).
     if (window.history.length > 1) navigate(-1);
-    else navigate('/news');
+    else navigate("/news");
   };
   const [article, setArticle] = useState<NewsArticle | null>(null);
   const [loading, setLoading] = useState(true);
   const [scraping, setScraping] = useState(false);
   usePageMeta({
-    title: article?.title ? `${article.title} — خبر` : 'خبر — Lingua',
-    description: article?.excerpt || article?.title || 'خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.',
-    ogType: 'article',
+    title: article?.title ? `${article.title} — خبر` : "خبر — Lingua",
+    description: article?.excerpt || article?.title || "خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.",
+    ogType: "article",
     image: article?.imageUrl || undefined,
   });
-  
 
-  // Rewrites cached per (article, length) in news_digests via source_articles.
-  const [rewrites, setRewrites] = useState<Record<RewriteLength, NewsDigest | undefined>>(
-    {} as Record<RewriteLength, NewsDigest | undefined>,
-  );
-  const [activeRewrite, setActiveRewrite] = useState<RewriteLength>('auto-max');
-  const [rewriteBusy, setRewriteBusy] = useState<RewriteLength | null>(null);
-  const [view, setView] = useState<'original' | 'rewrite'>('original');
+  const [view, setView] = useState<"original" | "rewrite">("original");
   const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [origTranslationCount, setOrigTranslationCount] = useState(0);
   const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [rwTranslationCount, setRwTranslationCount] = useState(0);
   // Persist language choice globally so re-opens / back navigation keep it.
-  useEffect(() => { saveNewsDisplayLang(origDisplayLang); }, [origDisplayLang]);
-  useEffect(() => { saveNewsDisplayLang(rwDisplayLang); }, [rwDisplayLang]);
-  const [faTtsText, setFaTtsText] = useState<string>('');
+  useEffect(() => {
+    saveNewsDisplayLang(origDisplayLang);
+  }, [origDisplayLang]);
+  useEffect(() => {
+    saveNewsDisplayLang(rwDisplayLang);
+  }, [rwDisplayLang]);
+  const [faTtsText, setFaTtsText] = useState<string>("");
   // Reader typography (font size + family) — persisted via NewsTypographyMenu.
-  const [typo, setTypo] = useState<{ sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }>(
-    { sizeClass: 'text-base', familyClass: 'font-sans' },
-  );
+  const [typo, setTypo] = useState<{
+    sizeClass: string;
+    familyClass: string;
+    familyStyle?: React.CSSProperties;
+  }>({ sizeClass: "text-base", familyClass: "font-sans" });
   const handleTypoChange = useCallback(
-    (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) => setTypo(v),
+    (v: { sizeClass: string; familyClass: string; familyStyle?: React.CSSProperties }) =>
+      setTypo(v),
     [],
   );
   const pinchScrollRef = useRef<HTMLDivElement | null>(null);
@@ -116,48 +112,26 @@ const NewsArticleReader = () => {
   const update = useSettingsStore((s) => s.update);
   // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
-    settings.newsBatchAnalysisModelRef
-      ?? settings.paragraphBatchModelRef
-      ?? settings.bookBatchAnalysisModelRef
-      ?? 'google/gemini-3.1-flash-lite-preview',
+    settings.newsBatchAnalysisModelRef ??
+      settings.paragraphBatchModelRef ??
+      settings.bookBatchAnalysisModelRef ??
+      "google/gemini-3.1-flash-lite-preview",
   );
   // Rewrite model (the "بازنویسی AI" tabs). Persisted globally so the next
   // article opens with the same choice.
   const newsRewriteRef = coerceBookModel(
-    settings.newsRewriteModelRef
-      ?? settings.bookRewriteModelRef
-      ?? 'google/gemini-3-flash-preview',
+    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
 
-  // Load existing rewrites for this article from news_digests (scope='source', single article).
-  const loadRewrites = async (a: NewsArticle) => {
-    // Hydrate from offline cache first so re-opens work without network.
-    const cached = getCachedRewrites(a.id);
-    if (cached) setRewrites(cached as Record<RewriteLength, NewsDigest | undefined>);
-    try {
-      const { data } = await supabase
-        .from('news_digests' as never)
-        .select('*')
-        .eq('topic', `article:${a.id}`)
-        .order('created_at', { ascending: false });
-      const map: Record<RewriteLength, NewsDigest | undefined> = {} as any;
-      for (const row of (data as any[]) ?? []) {
-        const d: NewsDigest = {
-          id: row.id, userId: row.user_id, sourceId: row.source_id,
-          length: row.length, scope: row.scope, topic: row.topic,
-          windowHours: row.window_hours, title: row.title,
-          contentMd: row.content_md, contentHtml: row.content_html,
-          sourceArticles: row.source_articles ?? [], wordCount: row.word_count,
-          model: row.model, createdAt: row.created_at, updatedAt: row.updated_at,
-        };
-        if ((d.length === 'long' || d.length === 'max' || d.length === 'auto-max' || d.length === 'simple') && !map[d.length as RewriteLength]) {
-          map[d.length as RewriteLength] = d;
-        }
-      }
-      setRewrites(map);
-      cacheRewrites(a.id, map);
-    } catch { /* offline: keep cached */ }
-  };
+  const {
+    rewrites,
+    activeRewrite,
+    rewriteBusy,
+    setActiveRewrite,
+    handleRewrite,
+    deleteRewrite,
+    loadRewrites,
+  } = useArticleRewrite({ article, modelRef: newsRewriteRef, settings, onViewChange: setView });
 
   useEffect(() => {
     if (!articleId) return;
@@ -177,7 +151,11 @@ const NewsArticleReader = () => {
           await loadRewrites(useArticle);
           const alreadySeen = isSeen(useArticle.url);
           // Only scrape when we have NO body at all and are online.
-          if (!useArticle.contentHtml && useArticle.contentMd !== '__SCRAPE_FAILED__' && navigator.onLine) {
+          if (
+            !useArticle.contentHtml &&
+            useArticle.contentMd !== "__SCRAPE_FAILED__" &&
+            navigator.onLine
+          ) {
             await runScrape(useArticle, false);
           }
           // Decide what to auto-generate on first open:
@@ -188,38 +166,42 @@ const NewsArticleReader = () => {
           if (wantSimple) {
             try {
               const { data: existingSimple } = await supabase
-                .from('news_digests' as never)
-                .select('id')
-                .eq('topic', `article:${useArticle.id}`)
-                .eq('length', 'simple')
+                .from("news_digests" as never)
+                .select("id")
+                .eq("topic", `article:${useArticle.id}`)
+                .eq("length", "simple")
                 .limit(1);
               const has = Array.isArray(existingSimple) && existingSimple.length > 0;
               if (!has && navigator.onLine) {
-                void handleRewrite('simple', false).catch(() => {});
+                void handleRewrite("simple", false).catch(() => {});
               } else {
                 // Already cached — switch to the simple tab on open.
-                setActiveRewrite('simple');
-                setView('rewrite');
+                setActiveRewrite("simple");
+                setView("rewrite");
               }
-            } catch { /* ignore */ }
+            } catch {
+              /* ignore */
+            }
             if (!alreadySeen) markSeen(useArticle.url);
           } else if (!alreadySeen && navigator.onLine) {
             try {
               const { data: existing } = await supabase
-                .from('news_digests' as never)
-                .select('id')
-                .eq('topic', `article:${useArticle.id}`)
+                .from("news_digests" as never)
+                .select("id")
+                .eq("topic", `article:${useArticle.id}`)
                 .limit(1);
               const hasAny = Array.isArray(existing) && existing.length > 0;
               if (!hasAny) {
-                void handleRewrite('auto-max', false).catch(() => {});
+                void handleRewrite("auto-max", false).catch(() => {});
               }
-            } catch { /* ignore */ }
+            } catch {
+              /* ignore */
+            }
             markSeen(useArticle.url);
           }
         }
-      } catch (e: any) {
-        if (!cached) toast.error(e.message ?? 'Failed to load article.');
+      } catch (e) {
+        if (!cached) toast.error(e instanceof Error ? e.message : "Failed to load article.");
       } finally {
         setLoading(false);
       }
@@ -231,17 +213,20 @@ const NewsArticleReader = () => {
   // and assemble a Persian TTS script from cached translations. Reuses the
   // same per-paragraph cache as the manual TranslateChapterButton, so this
   // only hits the AI when needed.
+  /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
     if (!article?.contentHtml) return;
     let cancelled = false;
     const controller = new AbortController();
 
-    const activeBookId = view === 'rewrite' && rewrites[activeRewrite]?.contentHtml
-      ? `news-rw-${article.id}-${activeRewrite}`
-      : `news-${article.id}`;
-    const activeHtml = view === 'rewrite' && rewrites[activeRewrite]?.contentHtml
-      ? rewrites[activeRewrite]!.contentHtml!
-      : article.contentHtml;
+    const activeBookId =
+      view === "rewrite" && rewrites[activeRewrite]?.contentHtml
+        ? `news-rw-${article.id}-${activeRewrite}`
+        : `news-${article.id}`;
+    const activeHtml =
+      view === "rewrite" && rewrites[activeRewrite]?.contentHtml
+        ? rewrites[activeRewrite]!.contentHtml!
+        : article.contentHtml;
     if (!activeHtml) return;
 
     const chapter: BookChapter = {
@@ -250,7 +235,7 @@ const NewsArticleReader = () => {
       index: 0,
       title: article.title,
       html: activeHtml,
-      text: '',
+      text: "",
       wordCount: 0,
     };
 
@@ -262,7 +247,7 @@ const NewsArticleReader = () => {
         const fa = cached?.translation?.trim();
         if (fa) out.push(fa);
       }
-      if (!cancelled) setFaTtsText(out.join('\n\n'));
+      if (!cancelled) setFaTtsText(out.join("\n\n"));
     };
 
     void (async () => {
@@ -292,8 +277,14 @@ const NewsArticleReader = () => {
       cancelled = true;
       controller.abort();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [article?.id, article?.contentHtml, view, activeRewrite, rewrites[activeRewrite]?.contentHtml]);
+  }, [
+    article?.id,
+    article?.contentHtml,
+    view,
+    activeRewrite,
+    rewrites[activeRewrite]?.contentHtml,
+  ]);
+  /* eslint-enable react-hooks/exhaustive-deps */
 
   const runScrape = async (a: NewsArticle, manual = true) => {
     setScraping(true);
@@ -301,7 +292,7 @@ const NewsArticleReader = () => {
       // YouTube videos: use importUrl (transcript → first-person AI article).
       if (isYoutubeUrl(a.url)) {
         const result = await importUrl(a.url);
-        if (result.kind === 'article' || result.kind === 'youtube') {
+        if (result.kind === "article" || result.kind === "youtube") {
           const art = result.article;
           const updated = await upsertArticle({
             sourceId: a.sourceId,
@@ -344,17 +335,17 @@ const NewsArticleReader = () => {
       setArticle(updated);
       cacheArticle(updated);
       if (scraped.blocked && manual) {
-        toast.info('این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.');
+        toast.info("این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.");
       }
-    } catch (e: any) {
-      if (manual) toast.error(e.message ?? 'Scrape failed.');
+    } catch (e) {
+      if (manual) toast.error(e instanceof Error ? e.message : "Scrape failed.");
       try {
         const failed = await upsertArticle({
           sourceId: a.sourceId,
           url: a.url,
           title: a.title,
           excerpt: a.excerpt,
-          contentMd: '__SCRAPE_FAILED__',
+          contentMd: "__SCRAPE_FAILED__",
           contentHtml: null,
           imageUrl: a.imageUrl,
           siteName: a.siteName,
@@ -363,7 +354,9 @@ const NewsArticleReader = () => {
           wordCount: 0,
         });
         setArticle(failed);
-      } catch {/* ignore */}
+      } catch {
+        /* ignore */
+      }
     } finally {
       setScraping(false);
     }
@@ -377,72 +370,9 @@ const NewsArticleReader = () => {
       const next2 = { ...article, isSaved: next };
       setArticle(next2);
       cacheArticle(next2);
-      toast.success(next ? 'خبر سیو شد.' : 'از سیوها حذف شد.');
-    } catch (e: any) {
-      toast.error(e.message ?? 'Save failed.');
-    }
-  };
-
-  const handleRewrite = async (length: RewriteLength, force = false) => {
-    if (!article) return;
-    if (!force && rewrites[length]) {
-      setActiveRewrite(length);
-      setView('rewrite');
-      return;
-    }
-    setRewriteBusy(length);
-    try {
-      const body = article.contentMd && article.contentMd !== '__SCRAPE_FAILED__'
-        ? article.contentMd
-        : article.excerpt ?? '';
-      if (!body.trim()) {
-        toast.error('متنی برای بازنویسی پیدا نشد.');
-        return;
-      }
-      const digest = await generateDigest({
-        articles: [{
-          title: article.title,
-          url: article.url,
-          siteName: article.siteName ?? undefined,
-          contentMd: body,
-          publishedAt: article.publishedAt ?? undefined,
-        }],
-        length,
-        scope: 'source',
-        sourceId: article.sourceId,
-        topic: `article:${article.id}`,
-        windowHours: 24,
-        model: newsRewriteRef.model,
-        simplifyLevel: length === 'simple' ? (settings.simplifyLevel ?? 'a2-b1') : undefined,
-      });
-      setRewrites((m) => {
-        const next = { ...m, [length]: digest };
-        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
-        return next;
-      });
-      setActiveRewrite(length);
-      setView('rewrite');
-      toast.success('بازنویسی آماده شد.');
-    } catch (e: any) {
-      toast.error(e.message ?? 'بازنویسی شکست خورد.');
-    } finally {
-      setRewriteBusy(null);
-    }
-  };
-
-  const deleteRewrite = async (length: RewriteLength) => {
-    const r = rewrites[length];
-    if (!r) return;
-    try {
-      await supabase.from('news_digests' as never).delete().eq('id', r.id);
-      setRewrites((m) => {
-        const next = { ...m, [length]: undefined };
-        if (article) cacheRewrites(article.id, next as Record<string, NewsDigest | undefined>);
-        return next;
-      });
-      toast.success('حذف شد.');
-    } catch (e: any) {
-      toast.error(e.message ?? 'Delete failed.');
+      toast.success(next ? "خبر سیو شد." : "از سیوها حذف شد.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Save failed.");
     }
   };
 
@@ -459,7 +389,9 @@ const NewsArticleReader = () => {
       <div className="min-h-screen bg-background text-foreground">
         <header className="border-b border-border">
           <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={goBack} aria-label="Back"><ArrowLeft className="h-5 w-5" /></Button>
+            <Button variant="ghost" size="icon" onClick={goBack} aria-label="Back">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <h1 className="text-lg font-semibold">News</h1>
           </div>
         </header>
@@ -471,7 +403,7 @@ const NewsArticleReader = () => {
   }
 
   const activeRewriteDoc = rewrites[activeRewrite];
-  const hasAnyRewrite = !!rewrites.long || !!rewrites.max || !!rewrites['auto-max'];
+  const hasAnyRewrite = !!rewrites.long || !!rewrites.max || !!rewrites["auto-max"];
 
   // Inject inline images from the original article into the rewritten HTML so
   // shorter/AI rewrites still show the photos at roughly the same positions.
@@ -490,7 +422,7 @@ const NewsArticleReader = () => {
         index: 0,
         title: article.title,
         html: article.contentHtml,
-        text: article.contentMd ?? '',
+        text: article.contentMd ?? "",
         wordCount: article.wordCount,
       }
     : undefined;
@@ -511,29 +443,30 @@ const NewsArticleReader = () => {
   // splits headings into their own utterance instead of merging them with
   // the next paragraph.
   const ttsText = (() => {
-    const md = view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd;
-    if (!md || md === '__SCRAPE_FAILED__') return article.excerpt ?? '';
-    return md
-      .replace(/```[\s\S]*?```/g, ' ')
-      .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-      .replace(/<[^>]+>/g, ' ')
-      // Strip leading markdown markers but keep the line content + line breaks.
-      .replace(/^[ \t]*[#>*_`~-]+[ \t]*/gm, '')
-      .replace(/[`*_~]+/g, '')
-      // Collapse spaces/tabs only — preserve newlines for block boundaries.
-      .replace(/[ \t]+/g, ' ')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim();
+    const md =
+      view === "rewrite" && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd;
+    if (!md || md === "__SCRAPE_FAILED__") return article.excerpt ?? "";
+    return (
+      md
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/<[^>]+>/g, " ")
+        // Strip leading markdown markers but keep the line content + line breaks.
+        .replace(/^[ \t]*[#>*_`~-]+[ \t]*/gm, "")
+        .replace(/[`*_~]+/g, "")
+        // Collapse spaces/tabs only — preserve newlines for block boundaries.
+        .replace(/[ \t]+/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
+        .trim()
+    );
   })();
-
-
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
       <header
         className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
       >
         {/* Single ultra-thin row — back + all controls inline, no title. */}
         <div className="flex items-center gap-0.5 px-2 py-1 overflow-x-auto">
@@ -547,21 +480,39 @@ const NewsArticleReader = () => {
           </button>
           <div className="flex-1" />
           <LangCycleButton
-            value={view === 'rewrite' ? rwDisplayLang : origDisplayLang}
-            onChange={view === 'rewrite' ? setRwDisplayLang : setOrigDisplayLang}
-            hasAnyTranslation={(view === 'rewrite' ? rwTranslationCount : origTranslationCount) > 0}
+            value={view === "rewrite" ? rwDisplayLang : origDisplayLang}
+            onChange={view === "rewrite" ? setRwDisplayLang : setOrigDisplayLang}
+            hasAnyTranslation={(view === "rewrite" ? rwTranslationCount : origTranslationCount) > 0}
           />
           <NewsTypographyMenu onChange={handleTypoChange} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTocMenu html={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')} />
+          <NewsTocMenu
+            html={
+              view === "rewrite" && rewriteHtmlWithImages
+                ? rewriteHtmlWithImages
+                : (article.contentHtml ?? "")
+            }
+          />
           <ReadingModeControls containerSelector="#news-reading-root" />
-          {(view === 'rewrite' ? rwChapter : origChapter) && (
+          {(view === "rewrite" ? rwChapter : origChapter) && (
             <NewsShareMenu
-              bookId={view === 'rewrite' ? rwChapter!.bookId : origChapter!.bookId}
+              bookId={view === "rewrite" ? rwChapter!.bookId : origChapter!.bookId}
               chapterIndex={0}
-              title={view === 'rewrite' && activeRewriteDoc ? (activeRewriteDoc.title || article.title) : article.title}
-              contentHtml={view === 'rewrite' && rewriteHtmlWithImages ? rewriteHtmlWithImages : (article.contentHtml ?? '')}
-              contentMd={view === 'rewrite' && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd}
+              title={
+                view === "rewrite" && activeRewriteDoc
+                  ? activeRewriteDoc.title || article.title
+                  : article.title
+              }
+              contentHtml={
+                view === "rewrite" && rewriteHtmlWithImages
+                  ? rewriteHtmlWithImages
+                  : (article.contentHtml ?? "")
+              }
+              contentMd={
+                view === "rewrite" && activeRewriteDoc
+                  ? activeRewriteDoc.contentMd
+                  : article.contentMd
+              }
               url={article.url}
               siteName={article.siteName}
               aiModel={newsModelRef.model}
@@ -576,15 +527,21 @@ const NewsArticleReader = () => {
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem onClick={toggleSave}>
                 {article.isSaved ? (
-                  <><BookmarkCheck className="h-4 w-4 me-2 text-primary" /> حذف از سیو</>
+                  <>
+                    <BookmarkCheck className="h-4 w-4 me-2 text-primary" /> حذف از سیو
+                  </>
                 ) : (
-                  <><Bookmark className="h-4 w-4 me-2" /> سیو</>
+                  <>
+                    <Bookmark className="h-4 w-4 me-2" /> سیو
+                  </>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => runScrape(article)} disabled={scraping}>
-                {scraping
-                  ? <Loader2 className="h-4 w-4 me-2 animate-spin" />
-                  : <RefreshCw className="h-4 w-4 me-2" />}
+                {scraping ? (
+                  <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 me-2" />
+                )}
                 بازخوانی
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
@@ -600,7 +557,17 @@ const NewsArticleReader = () => {
       {ttsText && (
         <ChapterTTSPlayer
           bookId={`news-${article.id}`}
-          chapterIndex={view === 'rewrite' ? (activeRewrite === 'max' ? 2 : activeRewrite === 'auto-max' ? 3 : activeRewrite === 'simple' ? 4 : 1) : 0}
+          chapterIndex={
+            view === "rewrite"
+              ? activeRewrite === "max"
+                ? 2
+                : activeRewrite === "auto-max"
+                  ? 3
+                  : activeRewrite === "simple"
+                    ? 4
+                    : 1
+              : 0
+          }
           chapterTitle={article.title}
           text={ttsText}
           textFa={faTtsText || undefined}
@@ -608,9 +575,17 @@ const NewsArticleReader = () => {
         />
       )}
 
-
-      <div className="flex-1 overflow-y-auto overscroll-contain" ref={pinchScrollRef} style={{ touchAction: 'pan-y' }}>
-        <main id="news-reading-root" data-reading-root className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12" style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}>
+      <div
+        className="flex-1 overflow-y-auto overscroll-contain"
+        ref={pinchScrollRef}
+        style={{ touchAction: "pan-y" }}
+      >
+        <main
+          id="news-reading-root"
+          data-reading-root
+          className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12"
+          style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}
+        >
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
@@ -625,13 +600,17 @@ const NewsArticleReader = () => {
                     alt=""
                     loading="lazy"
                     className="w-full max-h-[360px] object-cover rounded-xl mb-5 bg-muted"
-                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = "none";
+                    }}
                   />
                 )}
                 <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">{article.title}</h2>
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                   {article.siteName && <span>{article.siteName}</span>}
-                  {article.wordCount > 0 && <span>· ~{article.wordCount.toLocaleString()} words</span>}
+                  {article.wordCount > 0 && (
+                    <span>· ~{article.wordCount.toLocaleString()} words</span>
+                  )}
                 </div>
               </header>
 
@@ -640,24 +619,28 @@ const NewsArticleReader = () => {
                 <div className="mb-4 inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
                   <button
                     type="button"
-                    onClick={() => setView('original')}
-                    className={'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' +
-                      (view === 'original' ? 'bg-background shadow-sm' : 'text-muted-foreground')}
+                    onClick={() => setView("original")}
+                    className={
+                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors " +
+                      (view === "original" ? "bg-background shadow-sm" : "text-muted-foreground")
+                    }
                   >
                     اصل خبر
                   </button>
                   <button
                     type="button"
-                    onClick={() => setView('rewrite')}
-                    className={'px-3 py-1.5 text-xs font-medium rounded-md transition-colors ' +
-                      (view === 'rewrite' ? 'bg-background shadow-sm' : 'text-muted-foreground')}
+                    onClick={() => setView("rewrite")}
+                    className={
+                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors " +
+                      (view === "rewrite" ? "bg-background shadow-sm" : "text-muted-foreground")
+                    }
                   >
                     بازنویسی AI
                   </button>
                 </div>
               )}
 
-              {view === 'original' && (
+              {view === "original" && (
                 <InteractiveBookText
                   html={article.contentHtml}
                   bookId={`news-${article.id}`}
@@ -688,9 +671,7 @@ const NewsArticleReader = () => {
                 onModelChange={(ref: BookAIModelRef) => void update({ newsRewriteModelRef: ref })}
                 settings={settings}
               />
-
             </>
-
           ) : (
             <EmptyState
               icon={<Newspaper className="h-7 w-7" />}

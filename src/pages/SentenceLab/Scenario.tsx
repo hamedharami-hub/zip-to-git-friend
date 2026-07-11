@@ -40,6 +40,7 @@ import { isWebSpeechSupported, startWebSpeech, type WebSpeechController } from "
 import { getSentenceAudio } from "@/lib/sentenceAudio";
 import { BrowserTtsController, isBrowserTtsSupported } from "@/lib/browserTts";
 import { cn } from "@/lib/utils";
+import { BidiText } from "@/components/BidiText";
 
 interface RoleOption {
   user_role: string;
@@ -841,19 +842,19 @@ function ChatPane({
                     m.role === "user" ? "bg-primary text-primary-foreground" : "bg-card border",
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{m.content}</p>
+                  <BidiText className="whitespace-pre-wrap">{m.content}</BidiText>
 
                   {m.grammar_markers && m.grammar_markers.length > 0 && (
                     <div className="mt-1.5 space-y-0.5 border-t border-border/30 pt-1.5">
                       {m.grammar_markers.slice(0, 4).map((g, idx) => (
-                        <p key={idx} className="text-[10px] opacity-80">
+                        <BidiText key={idx} as="p" className="text-[10px] opacity-80">
                           <span className="line-through">{g.span}</span>
                           {" → "}
                           <span className="font-medium">{g.correction}</span>
                           {g.rule_label && (
                             <span className="ml-1 opacity-60">· {g.rule_label}</span>
                           )}
-                        </p>
+                        </BidiText>
                       ))}
                     </div>
                   )}
@@ -891,7 +892,7 @@ function ChatPane({
             {interim && (
               <div className="flex justify-end">
                 <div className="max-w-[85%] rounded-2xl border border-dashed px-3 py-2 text-sm italic text-muted-foreground">
-                  {interim}…
+                  <BidiText as="span">{interim}…</BidiText>
                 </div>
               </div>
             )}
@@ -1008,15 +1009,17 @@ function SaveSentenceDialog({
           <DialogTitle>Save this sentence?</DialogTitle>
         </DialogHeader>
         <div className="space-y-2">
-          <p className="rounded-md border bg-muted/30 p-2 text-sm italic">{msg?.content}</p>
+          <BidiText className="rounded-md border bg-muted/30 p-2 text-sm italic">
+            {msg?.content}
+          </BidiText>
           {msg?.grammar_markers && msg.grammar_markers.length > 0 && (
             <div className="space-y-0.5 text-[11px] text-muted-foreground">
               {msg.grammar_markers.map((g, i) => (
-                <p key={i}>
+                <BidiText key={i} as="p">
                   <span className="line-through">{g.span}</span>
                   {" → "}
                   <span className="font-medium text-foreground">{g.correction}</span>
-                </p>
+                </BidiText>
               ))}
             </div>
           )}

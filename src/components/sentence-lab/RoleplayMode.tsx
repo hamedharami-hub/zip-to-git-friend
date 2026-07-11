@@ -37,6 +37,7 @@ import { isWebSpeechSupported, startWebSpeech, type WebSpeechController } from "
 import { getSentenceAudio } from "@/lib/sentenceAudio";
 import { BrowserTtsController, isBrowserTtsSupported } from "@/lib/browserTts";
 import { cn } from "@/lib/utils";
+import { BidiText } from "@/components/BidiText";
 
 type Light = "idle" | "green" | "yellow" | "red";
 
@@ -504,19 +505,25 @@ export function RoleplayMode({
             )}
           </div>
           <p className="text-center text-xs text-muted-foreground min-h-[1.25rem]">
-            {recording
-              ? interim
-                ? `“${interim}”`
-                : "Listening…"
-              : busy
-                ? "Thinking…"
-                : aiSpeaking
-                  ? "AI is speaking…"
-                  : liveMode
-                    ? livePaused
-                      ? "Paused. Tap Resume to continue."
-                      : "Tap the mic to start speaking"
-                    : "Hold the mic to talk"}
+            {recording ? (
+              interim ? (
+                <BidiText as="span">“{interim}”</BidiText>
+              ) : (
+                "Listening…"
+              )
+            ) : busy ? (
+              "Thinking…"
+            ) : aiSpeaking ? (
+              "AI is speaking…"
+            ) : liveMode ? (
+              livePaused ? (
+                "Paused. Tap Resume to continue."
+              ) : (
+                "Tap the mic to start speaking"
+              )
+            ) : (
+              "Hold the mic to talk"
+            )}
           </p>
 
           {turns.length > 0 && (
@@ -611,17 +618,17 @@ function TurnRow({
           </Badge>
         )}
       </div>
-      <p className="mb-2 leading-relaxed">
+      <BidiText className="mb-2 leading-relaxed">
         <HighlightedTranscript
           text={turn.userTranscript}
           markers={turn.ai.grammar_markers ?? []}
           item={item}
         />
-      </p>
+      </BidiText>
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <p className="text-xs uppercase tracking-wide text-muted-foreground">AI</p>
-          <p>{turn.ai.ai_audio_response}</p>
+          <BidiText>{turn.ai.ai_audio_response}</BidiText>
         </div>
         <Button
           variant="ghost"
@@ -1063,9 +1070,9 @@ function DissectionModal({
                           )}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground italic mb-1">
+                      <BidiText className="text-xs text-muted-foreground italic mb-1">
                         “{t.userTranscript}”
-                      </p>
+                      </BidiText>
                       {!hasFeedback ? (
                         <p className="text-xs text-emerald-600 dark:text-emerald-400">
                           No issues detected.
@@ -1073,16 +1080,16 @@ function DissectionModal({
                       ) : (
                         <>
                           {t.ai.grammar_corrections.trim() && (
-                            <p className="text-xs">
+                            <BidiText className="text-xs">
                               <span className="font-medium">Grammar:</span>{" "}
                               {t.ai.grammar_corrections}
-                            </p>
+                            </BidiText>
                           )}
                           {t.ai.fluency_penalty_notes.trim() && (
-                            <p className="text-xs">
+                            <BidiText className="text-xs">
                               <span className="font-medium">Fluency:</span>{" "}
                               {t.ai.fluency_penalty_notes}
-                            </p>
+                            </BidiText>
                           )}
                         </>
                       )}

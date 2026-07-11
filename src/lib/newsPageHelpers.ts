@@ -8,6 +8,7 @@ export const RETURN_KEY = "news.return.v1";
 export type ReturnState = {
   sourceId: string | null;
   folderId: string | null;
+  allMode: boolean;
   url: string;
   scrollY: number;
 };

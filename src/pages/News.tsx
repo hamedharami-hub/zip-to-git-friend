@@ -156,7 +156,7 @@ const News = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [folderFeed, setFolderFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [folderLoading, setFolderLoading] = useState(false);
-  const [allMode, setAllMode] = useState(false);
+  const [allMode, setAllMode] = useState(initialReturn?.allMode ?? false);
   const [allFeed, setAllFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [allLoading, setAllLoading] = useState(false);
   const [feedLoading, setFeedLoading] = useState(false);
@@ -190,7 +190,7 @@ const News = () => {
   const [, setOfflineTick] = useState(0);
   const bumpOffline = useCallback(() => setOfflineTick((n) => n + 1), []);
   // After a back-navigation, scroll the previously opened headline into view once.
-  const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
+  const pendingScrollRef = useRef<ReturnState | null>(initialReturn);
 
   // If we arrived from /share?import_url=…, open the importer prefilled.
   const sharedUrl = params.get("import_url");
@@ -234,11 +234,19 @@ const News = () => {
         // source/folder is restored even if the user navigated back before
         // the lists were in memory.
         const ret = initialReturn;
-        if (ret?.folderId && f.some((x) => x.id === ret.folderId)) {
+        if (ret?.allMode) {
+          setAllMode(true);
+          setActiveSourceId(null);
+          setActiveFolderId(null);
+        } else if (ret?.folderId && f.some((x) => x.id === ret.folderId)) {
           setActiveFolderId(ret.folderId);
+          setActiveSourceId(null);
+          setAllMode(false);
         } else if (ret?.sourceId && s.some((x) => x.id === ret.sourceId)) {
           setActiveSourceId(ret.sourceId);
-        } else if (s.length && !activeSourceId && !activeFolderId) {
+          setActiveFolderId(null);
+          setAllMode(false);
+        } else if (s.length && !activeSourceId && !activeFolderId && !allMode) {
           setActiveSourceId(s[0].id);
         }
         void refreshSavedArticles();
@@ -246,7 +254,7 @@ const News = () => {
         toast.error((e as Error).message ?? "Failed to load news.");
       }
     })();
-  }, [user, activeSourceId, activeFolderId, initialReturn, refreshSavedArticles]);
+  }, [user, activeSourceId, activeFolderId, allMode, initialReturn, refreshSavedArticles]);
 
   const refreshFolders = useCallback(async () => {
     const [f, s] = await Promise.all([listFolders(), listSources()]);
@@ -365,16 +373,18 @@ const News = () => {
 
   // Restore scroll to the previously-opened headline after we return from an article.
   useEffect(() => {
-    const target = pendingScrollRef.current;
-    if (!target) return;
-    if (feedItems.length === 0 && folderFeed.length === 0) return;
-    const id = `news-item-${encodeURIComponent(target)}`;
+    const ret = pendingScrollRef.current;
+    if (!ret) return;
+    if (feedItems.length === 0 && folderFeed.length === 0 && allFeed.length === 0) return;
+    const id = `news-item-${encodeURIComponent(ret.url)}`;
     requestAnimationFrame(() => {
       const el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ block: "center", behavior: "auto" });
         el.classList.add("ring-2", "ring-primary/40");
         setTimeout(() => el.classList.remove("ring-2", "ring-primary/40"), 1600);
+      } else if (ret.scrollY) {
+        window.scrollTo({ top: ret.scrollY, behavior: "auto" });
       }
       pendingScrollRef.current = null;
       try {
@@ -383,7 +393,7 @@ const News = () => {
         /* ignore */
       }
     });
-  }, [feedItems, folderFeed]);
+  }, [feedItems, folderFeed, allFeed]);
 
   // ───── Aggregated folder feed ─────
   const loadFolderFromCache = useCallback(
@@ -634,6 +644,7 @@ const News = () => {
         const ret: ReturnState = {
           sourceId: activeSourceId,
           folderId: activeFolderId,
+          allMode,
           url: item.url,
           scrollY: window.scrollY,
         };
@@ -665,7 +676,7 @@ const News = () => {
         setOpenArticle(null);
       }
     },
-    [activeSource, activeSourceId, activeFolderId, navigate, selectMode],
+    [activeSource, activeSourceId, activeFolderId, allMode, navigate, selectMode],
   );
 
   const handleGenerateDigest = useCallback(async () => {

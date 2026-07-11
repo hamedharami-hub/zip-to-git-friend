@@ -8,6 +8,7 @@ import {
   formatTime,
   siteFromUrl,
   isRtlText,
+  isBlockedUrl,
   type ReturnState,
 } from "@/lib/newsPageHelpers";
 import {
@@ -158,7 +159,7 @@ const News = () => {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [folderFeed, setFolderFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [folderLoading, setFolderLoading] = useState(false);
-  const [allMode, setAllMode] = useState(false);
+  const [allMode, setAllMode] = useState(initialReturn?.allMode ?? false);
   const [allFeed, setAllFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [allLoading, setAllLoading] = useState(false);
   const [feedLoading, setFeedLoading] = useState(false);
@@ -194,7 +195,7 @@ const News = () => {
   const [, setOfflineTick] = useState(0);
   const bumpOffline = useCallback(() => setOfflineTick((n) => n + 1), []);
   // After a back-navigation, scroll the previously opened headline into view once.
-  const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
+  const pendingScrollRef = useRef<ReturnState | null>(initialReturn);
 
   // If we arrived from /share?import_url=…, open the importer prefilled.
   const sharedUrl = params.get("import_url");
@@ -238,11 +239,19 @@ const News = () => {
         // source/folder is restored even if the user navigated back before
         // the lists were in memory.
         const ret = initialReturn;
-        if (ret?.folderId && f.some((x) => x.id === ret.folderId)) {
+        if (ret?.allMode) {
+          setAllMode(true);
+          setActiveSourceId(null);
+          setActiveFolderId(null);
+        } else if (ret?.folderId && f.some((x) => x.id === ret.folderId)) {
           setActiveFolderId(ret.folderId);
+          setActiveSourceId(null);
+          setAllMode(false);
         } else if (ret?.sourceId && s.some((x) => x.id === ret.sourceId)) {
           setActiveSourceId(ret.sourceId);
-        } else if (s.length && !activeSourceId && !activeFolderId) {
+          setActiveFolderId(null);
+          setAllMode(false);
+        } else if (s.length && !activeSourceId && !activeFolderId && !allMode) {
           setActiveSourceId(s[0].id);
         }
         void refreshSavedArticles();
@@ -250,7 +259,7 @@ const News = () => {
         toast.error((e as Error).message ?? "Failed to load news.");
       }
     })();
-  }, [user, activeSourceId, activeFolderId, initialReturn, refreshSavedArticles]);
+  }, [user, activeSourceId, activeFolderId, allMode, initialReturn, refreshSavedArticles]);
 
   const refreshFolders = useCallback(async () => {
     const [f, s] = await Promise.all([listFolders(), listSources()]);
@@ -299,19 +308,11 @@ const News = () => {
     setFeedError(null);
     try {
       const blockedList = blocked.map((b) => b.domain);
-      const isBlockedUrl = (url: string) => {
-        try {
-          const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-          return blockedList.some((b) => host === b || host.endsWith("." + b));
-        } catch {
-          return false;
-        }
-      };
       let items: FeedItem[] = [];
       const searchModel = settings.newsSearchModelRef?.model;
       if (activeSource.kind === "rss" && activeSource.url) {
         const r = await fetchRss(activeSource.url, 30);
-        items = r.items.filter((it) => !isBlockedUrl(it.url));
+        items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
       } else if (activeSource.kind === "topic") {
         items = await searchNews({
           query: activeSource.topic ?? activeSource.name,
@@ -354,7 +355,9 @@ const News = () => {
         }
       }
       // Merge fresh items into the persistent cache so old titles never disappear.
-      const merged = mergeIntoCache(activeSource.id, items).filter((it) => !isBlockedUrl(it.url));
+      const merged = mergeIntoCache(activeSource.id, items).filter(
+        (it) => !isBlockedUrl(it.url, blockedList),
+      );
       setFeedItems(merged);
       if (items.length === 0 && merged.length === 0) {
         toast.info("خبر تازه‌ای پیدا نشد. بازه زمانی را تغییر بده.");
@@ -375,16 +378,18 @@ const News = () => {
 
   // Restore scroll to the previously-opened headline after we return from an article.
   useEffect(() => {
-    const target = pendingScrollRef.current;
-    if (!target) return;
-    if (feedItems.length === 0 && folderFeed.length === 0) return;
-    const id = `news-item-${encodeURIComponent(target)}`;
+    const ret = pendingScrollRef.current;
+    if (!ret) return;
+    if (feedItems.length === 0 && folderFeed.length === 0 && allFeed.length === 0) return;
+    const id = `news-item-${encodeURIComponent(ret.url)}`;
     requestAnimationFrame(() => {
       const el = document.getElementById(id);
       if (el) {
         el.scrollIntoView({ block: "center", behavior: "auto" });
         el.classList.add("ring-2", "ring-primary/40");
         setTimeout(() => el.classList.remove("ring-2", "ring-primary/40"), 1600);
+      } else if (ret.scrollY) {
+        window.scrollTo({ top: ret.scrollY, behavior: "auto" });
       }
       pendingScrollRef.current = null;
       try {
@@ -393,24 +398,16 @@ const News = () => {
         /* ignore */
       }
     });
-  }, [feedItems, folderFeed]);
+  }, [feedItems, folderFeed, allFeed]);
 
   // ───── Aggregated folder feed ─────
   const loadFolderFromCache = useCallback(
     (folderId: string) => {
       const sourcesInFolder = sources.filter((s) => s.folderId === folderId);
       const blockedList = blocked.map((b) => b.domain);
-      const isBlockedUrl = (url: string) => {
-        try {
-          const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-          return blockedList.some((b) => host === b || host.endsWith("." + b));
-        } catch {
-          return false;
-        }
-      };
       const all: Array<FeedItem & { _sourceName?: string }> = [];
       for (const s of sourcesInFolder) {
-        const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
+        const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url, blockedList));
         for (const it of cached) all.push({ ...it, _sourceName: s.name });
       }
       all.sort((a, b) => {
@@ -432,14 +429,6 @@ const News = () => {
     }
     setFolderLoading(true);
     const blockedList = blocked.map((b) => b.domain);
-    const isBlockedUrl = (url: string) => {
-      try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-        return blockedList.some((b) => host === b || host.endsWith("." + b));
-      } catch {
-        return false;
-      }
-    };
     try {
       let totalFetched = 0;
       let failed = 0;
@@ -451,7 +440,7 @@ const News = () => {
             const searchModel = settings.newsSearchModelRef?.model;
             if (src.kind === "rss" && src.url) {
               const r = await fetchRss(src.url, 30);
-              items = r.items.filter((it) => !isBlockedUrl(it.url));
+              items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
             } else if (src.kind === "topic") {
               items = await searchNews({
                 query: src.topic ?? src.name,
@@ -495,7 +484,7 @@ const News = () => {
             mergeIntoCache(src.id, items);
           } catch (err: Error | unknown) {
             failed += 1;
-            failures.push(`${src.name}: ${(err as Error).message ?? "خطا"}`);
+            failures.push(`${src.name}: ${(err as Error)?.message ?? "خطا"}`);
             console.error("[folder refresh] source failed", src.name, err);
           }
         }),
@@ -534,18 +523,10 @@ const News = () => {
   // ───── All-news aggregated view (across every source / folder) ─────
   const loadAllFromCache = useCallback(() => {
     const blockedList = blocked.map((b) => b.domain);
-    const isBlockedUrl = (url: string) => {
-      try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-        return blockedList.some((b) => host === b || host.endsWith("." + b));
-      } catch {
-        return false;
-      }
-    };
     const all: Array<FeedItem & { _sourceName?: string }> = [];
     const seenUrls = new Set<string>();
     for (const s of sources) {
-      const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
+      const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url, blockedList));
       for (const it of cached) {
         if (seenUrls.has(it.url)) continue;
         seenUrls.add(it.url);
@@ -567,14 +548,6 @@ const News = () => {
     }
     setAllLoading(true);
     const blockedList = blocked.map((b) => b.domain);
-    const isBlockedUrl = (url: string) => {
-      try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
-        return blockedList.some((b) => host === b || host.endsWith("." + b));
-      } catch {
-        return false;
-      }
-    };
     try {
       let totalFetched = 0;
       let failed = 0;
@@ -585,7 +558,7 @@ const News = () => {
             const searchModel = settings.newsSearchModelRef?.model;
             if (src.kind === "rss" && src.url) {
               const r = await fetchRss(src.url, 30);
-              items = r.items.filter((it) => !isBlockedUrl(it.url));
+              items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
             } else if (src.kind === "topic") {
               items = await searchNews({
                 query: src.topic ?? src.name,
@@ -656,7 +629,7 @@ const News = () => {
     } finally {
       setTrendingBusy(false);
     }
-  }, [activeSource, windowHours]);
+  }, [activeSource, windowHours, blocked]);
 
   const handleOpenArticle = useCallback(
     async (item: FeedItem) => {
@@ -676,6 +649,7 @@ const News = () => {
         const ret: ReturnState = {
           sourceId: activeSourceId,
           folderId: activeFolderId,
+          allMode,
           url: item.url,
           scrollY: window.scrollY,
         };
@@ -707,7 +681,7 @@ const News = () => {
         setOpenArticle(null);
       }
     },
-    [activeSource, activeSourceId, activeFolderId, navigate, selectMode],
+    [activeSource, activeSourceId, activeFolderId, allMode, navigate, selectMode],
   );
 
   const handleGenerateDigest = useCallback(async () => {
@@ -742,7 +716,7 @@ const News = () => {
     } finally {
       setDigestBusy(false);
     }
-  }, [feedItems, digestLength, activeSource, windowHours, navigate]);
+  }, [feedItems, digestLength, activeSource, windowHours, navigate, newsModelRef.model]);
 
   /** Quick-summary from a topic feed URL (Google News / Bing News RSS). */
   const handleInstantDigest = useCallback(

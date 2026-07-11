@@ -8,6 +8,7 @@ export const RETURN_KEY = "news.return.v1";
 export type ReturnState = {
   sourceId: string | null;
   folderId: string | null;
+  allMode: boolean;
   url: string;
   scrollY: number;
 };
@@ -44,6 +45,16 @@ export function siteFromUrl(url: string): string {
     return new URL(url).hostname.replace(/^www\./, "");
   } catch {
     return url;
+  }
+}
+
+/** Check if a URL belongs to a blocked domain (exact or subdomain match). */
+export function isBlockedUrl(url: string, blockedDomains: string[]): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    return blockedDomains.some((b) => host === b || host.endsWith("." + b));
+  } catch {
+    return false;
   }
 }
 

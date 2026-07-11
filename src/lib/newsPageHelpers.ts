@@ -47,6 +47,16 @@ export function siteFromUrl(url: string): string {
   }
 }
 
+/** Check if a URL belongs to a blocked domain (exact or subdomain match). */
+export function isBlockedUrl(url: string, blockedDomains: string[]): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+    return blockedDomains.some((b) => host === b || host.endsWith("." + b));
+  } catch {
+    return false;
+  }
+}
+
 /** Persian/Arabic script detection so titles render RTL with the Persian font. */
 const RTL_RE = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/;
 export function isRtlText(s?: string | null): boolean {

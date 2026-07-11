@@ -16,12 +16,12 @@ export function PullToRefreshIndicator({ progress, refreshing }: Props) {
       <div className="rounded-full bg-card border border-border shadow px-3 py-1.5 text-xs text-muted-foreground inline-flex items-center gap-2">
         <span
           className={
-            'inline-block h-3 w-3 rounded-full border-2 border-primary border-t-transparent ' +
-            (refreshing ? 'animate-spin' : '')
+            "inline-block h-3 w-3 rounded-full border-2 border-primary border-t-transparent " +
+            (refreshing ? "animate-spin" : "")
           }
           style={refreshing ? undefined : { transform: `rotate(${progress * 360}deg)` }}
         />
-        {refreshing ? 'Refreshing…' : 'Pull to refresh'}
+        {refreshing ? "Refreshing…" : "Pull to refresh"}
       </div>
     </div>
   );

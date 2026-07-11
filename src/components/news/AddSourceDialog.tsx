@@ -1,21 +1,28 @@
-import { useState } from 'react';
-import type React from 'react';
+import { useState } from "react";
+import type React from "react";
+import { Plus, Rss, Globe2, Search, Loader2, Sparkles, ChevronDown } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Plus, Rss, Globe2, Search, Loader2, Sparkles, ChevronDown,
-} from 'lucide-react';
-import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
-  DialogTrigger, DialogFooter,
-} from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import {
-  addSource, discoverRss, getCachedDiscovery,
-  type DiscoveryResult, type NewsSource, type NewsSourceKind,
-} from '@/lib/news';
+  addSource,
+  discoverRss,
+  getCachedDiscovery,
+  type DiscoveryResult,
+  type NewsSource,
+  type NewsSourceKind,
+} from "@/lib/news";
 
 function bingNewsRssUrl(topic: string): string {
   return `https://www.bing.com/news/search?q=${encodeURIComponent(topic)}&format=rss`;
@@ -28,9 +35,9 @@ function RssDiscovery({
   onPick: (feed: { name: string; url: string }) => void;
   onInstantDigest?: (topic: string, feedUrl: string, label: string) => Promise<void> | void;
 }) {
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState("");
   const [result, setResult] = useState<DiscoveryResult | null>(null);
-  const [searchedTopic, setSearchedTopic] = useState('');
+  const [searchedTopic, setSearchedTopic] = useState("");
   const [busy, setBusy] = useState(false);
   const [digestBusy, setDigestBusy] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
@@ -47,9 +54,10 @@ function RssDiscovery({
       if (cached && !forceRefresh) setResult(cached);
       const fresh = await discoverRss({ topic: t, forceRefresh });
       setResult(fresh);
-      if (fresh.sites.length === 0) toast.info('سایت اختصاصی پیدا نشد — از Google News یا Bing News استفاده کن.');
+      if (fresh.sites.length === 0)
+        toast.info("سایت اختصاصی پیدا نشد — از Google News یا Bing News استفاده کن.");
     } catch (e: any) {
-      toast.error(e.message ?? 'جستجو شکست خورد.');
+      toast.error(e.message ?? "جستجو شکست خورد.");
     } finally {
       setBusy(false);
     }
@@ -65,7 +73,7 @@ function RssDiscovery({
     }
   };
 
-  const bingUrl = searchedTopic ? bingNewsRssUrl(searchedTopic) : '';
+  const bingUrl = searchedTopic ? bingNewsRssUrl(searchedTopic) : "";
 
   return (
     <div className="space-y-2">
@@ -75,14 +83,26 @@ function RssDiscovery({
           value={topic}
           onChange={(e) => setTopic(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.preventDefault(); void handleSearch(false); }
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void handleSearch(false);
+            }
           }}
           className="h-8 text-sm"
         />
-        <Button type="button" size="sm" variant="secondary"
+        <Button
+          type="button"
+          size="sm"
+          variant="secondary"
           onClick={() => void handleSearch(false)}
-          disabled={busy || !topic.trim()} className="gap-1 shrink-0">
-          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
+          disabled={busy || !topic.trim()}
+          className="gap-1 shrink-0"
+        >
+          {busy ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Search className="h-3.5 w-3.5" />
+          )}
           جستجو
         </Button>
       </div>
@@ -99,21 +119,38 @@ function RssDiscovery({
               <li className="rounded-lg border border-primary/30 bg-primary/5 p-2 space-y-1.5">
                 <div className="flex items-center gap-1.5">
                   <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <div className="text-sm font-semibold truncate flex-1">Google News — {searchedTopic}</div>
+                  <div className="text-sm font-semibold truncate flex-1">
+                    Google News — {searchedTopic}
+                  </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">همه منابع، اخبار جدید و زنده</div>
+                <div className="text-[10px] text-muted-foreground">
+                  همه منابع، اخبار جدید و زنده
+                </div>
                 <div className="flex gap-1.5 pt-0.5">
-                  <Button type="button" size="sm" variant="secondary" className="h-7 text-xs gap-1 flex-1"
-                    onClick={() => onPick({ name: `Google News — ${searchedTopic}`, url: result.googleNews.url })}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 text-xs gap-1 flex-1"
+                    onClick={() =>
+                      onPick({ name: `Google News — ${searchedTopic}`, url: result.googleNews.url })
+                    }
+                  >
                     <Plus className="h-3 w-3" /> افزودن منبع
                   </Button>
                   {onInstantDigest && (
-                    <Button type="button" size="sm" className="h-7 text-xs gap-1 flex-1"
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="h-7 text-xs gap-1 flex-1"
                       disabled={digestBusy !== null}
-                      onClick={() => void runDigest('google', result.googleNews.url)}>
-                      {digestBusy === 'google'
-                        ? <Loader2 className="h-3 w-3 animate-spin" />
-                        : <Sparkles className="h-3 w-3" />}
+                      onClick={() => void runDigest("google", result.googleNews.url)}
+                    >
+                      {digestBusy === "google" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
                       خلاصه فوری
                     </Button>
                   )}
@@ -125,21 +162,37 @@ function RssDiscovery({
               <li className="rounded-lg border border-border bg-card p-2 space-y-1.5">
                 <div className="flex items-center gap-1.5">
                   <Globe2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <div className="text-sm font-semibold truncate flex-1">Bing News — {searchedTopic}</div>
+                  <div className="text-sm font-semibold truncate flex-1">
+                    Bing News — {searchedTopic}
+                  </div>
                 </div>
-                <div className="text-[10px] text-muted-foreground">منبع عمومی جایگزین (مایکروسافت)</div>
+                <div className="text-[10px] text-muted-foreground">
+                  منبع عمومی جایگزین (مایکروسافت)
+                </div>
                 <div className="flex gap-1.5 pt-0.5">
-                  <Button type="button" size="sm" variant="secondary" className="h-7 text-xs gap-1 flex-1"
-                    onClick={() => onPick({ name: `Bing News — ${searchedTopic}`, url: bingUrl })}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="h-7 text-xs gap-1 flex-1"
+                    onClick={() => onPick({ name: `Bing News — ${searchedTopic}`, url: bingUrl })}
+                  >
                     <Plus className="h-3 w-3" /> افزودن منبع
                   </Button>
                   {onInstantDigest && (
-                    <Button type="button" size="sm" variant="outline" className="h-7 text-xs gap-1 flex-1"
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1 flex-1"
                       disabled={digestBusy !== null}
-                      onClick={() => void runDigest('bing', bingUrl)}>
-                      {digestBusy === 'bing'
-                        ? <Loader2 className="h-3 w-3 animate-spin" />
-                        : <Sparkles className="h-3 w-3" />}
+                      onClick={() => void runDigest("bing", bingUrl)}
+                    >
+                      {digestBusy === "bing" ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3 w-3" />
+                      )}
                       خلاصه فوری
                     </Button>
                   )}
@@ -156,22 +209,36 @@ function RssDiscovery({
               const open = expanded[site.domain] ?? false;
               const hasMultiple = site.feeds.length > 1;
               return (
-                <li key={site.domain} className="rounded border border-transparent hover:border-border">
+                <li
+                  key={site.domain}
+                  className="rounded border border-transparent hover:border-border"
+                >
                   <div className="flex items-center gap-1 px-1">
-                    <button type="button"
+                    <button
+                      type="button"
                       onClick={() => onPick({ name: site.siteName, url: site.feeds[0].url })}
-                      className="flex-1 text-start rounded px-2 py-1.5 hover:bg-accent transition-colors min-w-0">
+                      className="flex-1 text-start rounded px-2 py-1.5 hover:bg-accent transition-colors min-w-0"
+                    >
                       <div className="text-sm font-medium truncate">{site.siteName}</div>
                       <div className="text-[10px] text-muted-foreground truncate" dir="ltr">
                         {site.domain} · {site.articleCount} خبر اخیر
-                        {hasMultiple ? ` · ${site.feeds.length} فید` : ''}
+                        {hasMultiple ? ` · ${site.feeds.length} فید` : ""}
                       </div>
                     </button>
                     {hasMultiple && (
-                      <Button type="button" variant="ghost" size="icon" className="h-7 w-7 shrink-0"
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 shrink-0"
                         onClick={() => setExpanded((e) => ({ ...e, [site.domain]: !open }))}
-                        title="نمایش فیدهای دیگر این سایت">
-                        {open ? <ChevronDown className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                        title="نمایش فیدهای دیگر این سایت"
+                      >
+                        {open ? (
+                          <ChevronDown className="h-3.5 w-3.5" />
+                        ) : (
+                          <Plus className="h-3.5 w-3.5" />
+                        )}
                       </Button>
                     )}
                   </div>
@@ -179,11 +246,17 @@ function RssDiscovery({
                     <ul className="ms-6 mb-1 space-y-0.5 border-s border-border ps-2">
                       {site.feeds.map((f) => (
                         <li key={f.url}>
-                          <button type="button"
-                            onClick={() => onPick({ name: `${site.siteName} — ${f.name}`, url: f.url })}
-                            className="w-full text-start rounded px-2 py-1 hover:bg-accent transition-colors">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              onPick({ name: `${site.siteName} — ${f.name}`, url: f.url })
+                            }
+                            className="w-full text-start rounded px-2 py-1 hover:bg-accent transition-colors"
+                          >
                             <div className="text-xs truncate">{f.name}</div>
-                            <div className="text-[10px] text-muted-foreground truncate" dir="ltr">{f.url}</div>
+                            <div className="text-[10px] text-muted-foreground truncate" dir="ltr">
+                              {f.url}
+                            </div>
                           </button>
                         </li>
                       ))}
@@ -212,52 +285,59 @@ export function AddSourceDialog({
   onInstantDigest?: (topicText: string, feedUrl: string, label: string) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
-  const [kind, setKind] = useState<NewsSourceKind>('rss');
-  const [name, setName] = useState('');
-  const [url, setUrl] = useState('');
-  const [topic, setTopic] = useState('');
+  const [kind, setKind] = useState<NewsSourceKind>("rss");
+  const [name, setName] = useState("");
+  const [url, setUrl] = useState("");
+  const [topic, setTopic] = useState("");
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
-    setKind('rss');
-    setName('');
-    setUrl('');
-    setTopic('');
+    setKind("rss");
+    setName("");
+    setUrl("");
+    setTopic("");
   };
 
   const handleSubmit = async () => {
     setBusy(true);
     try {
-      const finalName = name.trim() ||
-        (kind === 'topic'
+      const finalName =
+        name.trim() ||
+        (kind === "topic"
           ? topic.trim()
           : (() => {
               try {
-                return new URL(url).hostname.replace(/^www\./, '');
+                return new URL(url).hostname.replace(/^www\./, "");
               } catch {
-                return 'Untitled source';
+                return "Untitled source";
               }
             })());
       const created = await addSource({
         kind,
         name: finalName,
-        url: kind === 'topic' ? null : url.trim() || null,
-        topic: kind === 'rss' ? null : topic.trim() || null,
+        url: kind === "topic" ? null : url.trim() || null,
+        topic: kind === "rss" ? null : topic.trim() || null,
         language: null,
       });
       onAdded(created);
-      toast.success('منبع اضافه شد.');
+      toast.success("منبع اضافه شد.");
       setOpen(false);
       reset();
     } catch (e: any) {
-      toast.error(e.message ?? 'Failed to add source.');
+      toast.error(e.message ?? "Failed to add source.");
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        setOpen(v);
+        if (!v) reset();
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? (
           <Button size="sm" className="gap-1.5">
@@ -392,9 +472,9 @@ export function AddSourceDialog({
             onClick={handleSubmit}
             disabled={
               busy ||
-              (kind === 'rss' && !url.trim()) ||
-              (kind === 'topic' && !topic.trim()) ||
-              (kind === 'site' && !url.trim())
+              (kind === "rss" && !url.trim()) ||
+              (kind === "topic" && !topic.trim()) ||
+              (kind === "site" && !url.trim())
             }
             className="gap-1.5"
           >

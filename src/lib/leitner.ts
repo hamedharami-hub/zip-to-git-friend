@@ -1,5 +1,5 @@
-import type { LeitnerCard, LeitnerRating } from '@/types';
-import { applyRating, ratingFromBoolean, BOX_BASE_DAYS } from '@/lib/srs';
+import type { LeitnerCard, LeitnerRating } from "@/types";
+import { applyRating, ratingFromBoolean, BOX_BASE_DAYS } from "@/lib/srs";
 
 export const BOX_INTERVAL_DAYS: Record<1 | 2 | 3 | 4 | 5, number> = BOX_BASE_DAYS;
 
@@ -18,11 +18,7 @@ export function demote(): 1 {
 }
 
 /** Legacy helper kept for any old callers — delegates to FSRS-lite. */
-export function applyReview(
-  card: LeitnerCard,
-  correct: boolean,
-  now = Date.now(),
-): LeitnerCard {
+export function applyReview(card: LeitnerCard, correct: boolean, now = Date.now()): LeitnerCard {
   return applyRating(card, ratingFromBoolean(correct), now);
 }
 

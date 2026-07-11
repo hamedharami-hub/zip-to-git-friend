@@ -4,13 +4,13 @@
  * ebook. Headings get stable slug ids from `headingSlug()` in
  * InteractiveBookText, so the click handler can scroll directly to them.
  */
-import { useMemo, useState } from 'react';
-import { List } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { headingSlug } from '@/components/books/InteractiveBookText';
-import { cn } from '@/lib/utils';
+import { useMemo, useState } from "react";
+import { List } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { headingSlug } from "@/components/books/InteractiveBookText";
+import { cn } from "@/lib/utils";
 
 interface TocItem {
   level: 1 | 2 | 3;
@@ -21,14 +21,14 @@ interface TocItem {
 function extractToc(html: string): TocItem[] {
   if (!html) return [];
   try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    const nodes = doc.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const nodes = doc.querySelectorAll("h1, h2, h3, h4, h5, h6");
     const out: TocItem[] = [];
     nodes.forEach((el) => {
-      const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+      const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
       if (!text) return;
       const tag = el.tagName.toLowerCase();
-      const level: 1 | 2 | 3 = tag === 'h1' ? 1 : tag === 'h2' ? 2 : 3;
+      const level: 1 | 2 | 3 = tag === "h1" ? 1 : tag === "h2" ? 2 : 3;
       out.push({ level, text, slug: headingSlug(text) });
     });
     return out;
@@ -50,7 +50,7 @@ export function NewsTocMenu({ html }: Props) {
   const scrollTo = (slug: string) => {
     const el = document.getElementById(slug);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
       setOpen(false);
     }
   };
@@ -58,12 +58,7 @@ export function NewsTocMenu({ html }: Props) {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="فهرست بخش‌ها"
-          title="فهرست بخش‌ها"
-        >
+        <Button variant="ghost" size="icon" aria-label="فهرست بخش‌ها" title="فهرست بخش‌ها">
           <List className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
@@ -82,10 +77,10 @@ export function NewsTocMenu({ html }: Props) {
                   type="button"
                   onClick={() => scrollTo(it.slug)}
                   className={cn(
-                    'w-full text-start px-3 py-1.5 text-sm hover:bg-accent transition-colors',
-                    it.level === 1 && 'font-semibold',
-                    it.level === 2 && 'pl-5 text-foreground/90',
-                    it.level === 3 && 'pl-7 text-foreground/70 text-[13px]',
+                    "w-full text-start px-3 py-1.5 text-sm hover:bg-accent transition-colors",
+                    it.level === 1 && "font-semibold",
+                    it.level === 2 && "pl-5 text-foreground/90",
+                    it.level === 3 && "pl-7 text-foreground/70 text-[13px]",
                   )}
                 >
                   {it.text}

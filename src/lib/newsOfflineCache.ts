@@ -8,40 +8,51 @@
  * a prefetched article even when offline (otherwise the `upsertArticle`
  * call would fail and we'd have no `id` to navigate to).
  */
-import type { NewsArticle, NewsDigest, FeedItem } from '@/lib/news';
-import {
-  scrapeArticle,
-  upsertArticle,
-  importUrl,
-} from '@/lib/news';
+import type { NewsArticle, NewsDigest, FeedItem } from "@/lib/news";
+import { scrapeArticle, upsertArticle, importUrl } from "@/lib/news";
 
-const ARTICLE_PREFIX = 'news.cache.article.v1:';
-const REWRITES_PREFIX = 'news.cache.rewrites.v1:';
-const URL_INDEX_KEY = 'news.cache.urlIndex.v1';
+const ARTICLE_PREFIX = "news.cache.article.v1:";
+const REWRITES_PREFIX = "news.cache.rewrites.v1:";
+const URL_INDEX_KEY = "news.cache.urlIndex.v1";
 
 // ── Article body ─────────────────────────────────────────────────────────
 export function cacheArticle(a: NewsArticle): void {
   try {
     localStorage.setItem(ARTICLE_PREFIX + a.id, JSON.stringify(a));
     setUrlIndex(a.url, a.id);
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 }
 export function getCachedArticle(id: string): NewsArticle | null {
   try {
     const v = localStorage.getItem(ARTICLE_PREFIX + id);
     return v ? (JSON.parse(v) as NewsArticle) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // ── Rewrites ─────────────────────────────────────────────────────────────
-export function cacheRewrites(articleId: string, map: Record<string, NewsDigest | undefined>): void {
-  try { localStorage.setItem(REWRITES_PREFIX + articleId, JSON.stringify(map)); } catch { /* */ }
+export function cacheRewrites(
+  articleId: string,
+  map: Record<string, NewsDigest | undefined>,
+): void {
+  try {
+    localStorage.setItem(REWRITES_PREFIX + articleId, JSON.stringify(map));
+  } catch {
+    /* */
+  }
 }
-export function getCachedRewrites(articleId: string): Record<string, NewsDigest | undefined> | null {
+export function getCachedRewrites(
+  articleId: string,
+): Record<string, NewsDigest | undefined> | null {
   try {
     const v = localStorage.getItem(REWRITES_PREFIX + articleId);
     return v ? (JSON.parse(v) as Record<string, NewsDigest | undefined>) : null;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
 // ── URL → articleId index ───────────────────────────────────────────────
@@ -49,7 +60,9 @@ function readUrlIndex(): Record<string, string> {
   try {
     const v = localStorage.getItem(URL_INDEX_KEY);
     return v ? (JSON.parse(v) as Record<string, string>) : {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 }
 function setUrlIndex(url: string, id: string): void {
   try {
@@ -57,7 +70,9 @@ function setUrlIndex(url: string, id: string): void {
     if (map[url] === id) return;
     map[url] = id;
     localStorage.setItem(URL_INDEX_KEY, JSON.stringify(map));
-  } catch { /* */ }
+  } catch {
+    /* */
+  }
 }
 export function getCachedIdForUrl(url: string): string | null {
   return readUrlIndex()[url] ?? null;
@@ -66,15 +81,17 @@ export function isUrlCached(url: string): boolean {
   const id = getCachedIdForUrl(url);
   if (!id) return false;
   const a = getCachedArticle(id);
-  return !!a?.contentMd && a.contentMd !== '__SCRAPE_FAILED__';
+  return !!a?.contentMd && a.contentMd !== "__SCRAPE_FAILED__";
 }
 
 // ── Prefetch ─────────────────────────────────────────────────────────────
 function isYoutubeUrl(url: string): boolean {
   try {
     const u = new URL(url);
-    return /(^|\.)youtube\.com$/.test(u.hostname) || u.hostname === 'youtu.be';
-  } catch { return false; }
+    return /(^|\.)youtube\.com$/.test(u.hostname) || u.hostname === "youtu.be";
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -90,7 +107,7 @@ export async function prefetchArticleForOffline(
   const existingId = getCachedIdForUrl(item.url);
   if (!opts.force && existingId) {
     const ex = getCachedArticle(existingId);
-    if (ex?.contentMd && ex.contentMd !== '__SCRAPE_FAILED__') return ex;
+    if (ex?.contentMd && ex.contentMd !== "__SCRAPE_FAILED__") return ex;
   }
 
   // 1. Make sure the article row exists so we have a stable id.
@@ -109,7 +126,7 @@ export async function prefetchArticleForOffline(
   try {
     if (isYoutubeUrl(item.url)) {
       const result = await importUrl(item.url);
-      if (result.kind === 'article' || result.kind === 'youtube') {
+      if (result.kind === "article" || result.kind === "youtube") {
         const art = result.article;
         updated = await upsertArticle({
           sourceId: base.sourceId,
@@ -185,31 +202,32 @@ export async function prefetchManyForOffline(
   let done = 0;
   let failed = 0;
 
-  const report = (current?: string) =>
-    opts.onProgress?.({ done, total, failed, current });
+  const report = (current?: string) => opts.onProgress?.({ done, total, failed, current });
   report();
 
   const workers: Promise<void>[] = [];
   for (let w = 0; w < concurrency; w++) {
-    workers.push((async () => {
-      while (queue.length > 0) {
-        if (opts.signal?.aborted) return;
-        const item = queue.shift()!;
-        report(item.title);
-        try {
-          await prefetchArticleForOffline(item, {
-            sourceId: opts.sourceIdByUrl?.(item.url) ?? null,
-            force: opts.force,
-          });
-        } catch (e) {
-          failed += 1;
-          console.warn('[news offline] prefetch failed', item.url, e);
-        } finally {
-          done += 1;
+    workers.push(
+      (async () => {
+        while (queue.length > 0) {
+          if (opts.signal?.aborted) return;
+          const item = queue.shift()!;
           report(item.title);
+          try {
+            await prefetchArticleForOffline(item, {
+              sourceId: opts.sourceIdByUrl?.(item.url) ?? null,
+              force: opts.force,
+            });
+          } catch (e) {
+            failed += 1;
+            console.warn("[news offline] prefetch failed", item.url, e);
+          } finally {
+            done += 1;
+            report(item.title);
+          }
         }
-      }
-    })());
+      })(),
+    );
   }
   await Promise.all(workers);
   return { done, total, failed };

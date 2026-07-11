@@ -4,8 +4,7 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ReqBody {
@@ -36,8 +35,7 @@ const TOOL_DEF = {
   type: "function",
   function: {
     name: "examples",
-    description:
-      "Return the inferred grammar rule + 3 contextual example sentences.",
+    description: "Return the inferred grammar rule + 3 contextual example sentences.",
     parameters: {
       type: "object",
       properties: {
@@ -48,8 +46,7 @@ const TOOL_DEF = {
         },
         rule_explanation: {
           type: "string",
-          description:
-            "One sentence (max 25 words) explaining the rule simply.",
+          description: "One sentence (max 25 words) explaining the rule simply.",
         },
         examples: {
           type: "array",
@@ -98,18 +95,18 @@ Deno.serve(async (req) => {
   }
 
   if (!body.grammar_notes || typeof body.grammar_notes !== "string" || !body.grammar_notes.trim()) {
-    return new Response(
-      JSON.stringify({ error: "Missing 'grammar_notes' string" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Missing 'grammar_notes' string" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   let aiRes: Response;
@@ -121,7 +118,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: (typeof body.model === 'string' && body.model) || "google/gemini-3-flash-preview",
+        model: (typeof body.model === "string" && body.model) || "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: buildUserPrompt(body) },
@@ -180,7 +177,10 @@ Deno.serve(async (req) => {
   }
 
   const examples = Array.isArray(parsed.examples)
-    ? parsed.examples.map((s: unknown) => String(s).trim()).filter(Boolean).slice(0, 3)
+    ? parsed.examples
+        .map((s: unknown) => String(s).trim())
+        .filter(Boolean)
+        .slice(0, 3)
     : [];
 
   return new Response(

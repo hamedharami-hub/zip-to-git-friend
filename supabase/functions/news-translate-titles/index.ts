@@ -7,8 +7,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
@@ -53,14 +52,20 @@ serve(async (req) => {
     const { items, model } = await req.json();
     if (!Array.isArray(items) || items.length === 0) {
       return new Response(JSON.stringify({ error: "Missing 'items' array." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const cleaned = items.slice(0, MAX_ITEMS).map((it: any, i: number) => ({
-      id: String(it?.id ?? i),
-      title: String(it?.title ?? "").trim().slice(0, MAX_CHARS),
-      excerpt: it?.excerpt ? String(it.excerpt).trim().slice(0, MAX_CHARS) : "",
-    })).filter((x) => x.title);
+    const cleaned = items
+      .slice(0, MAX_ITEMS)
+      .map((it: any, i: number) => ({
+        id: String(it?.id ?? i),
+        title: String(it?.title ?? "")
+          .trim()
+          .slice(0, MAX_CHARS),
+        excerpt: it?.excerpt ? String(it.excerpt).trim().slice(0, MAX_CHARS) : "",
+      }))
+      .filter((x) => x.title);
 
     if (cleaned.length === 0) {
       return new Response(JSON.stringify({ results: [], model: DEFAULT_MODEL }), {
@@ -71,16 +76,20 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const chosenModel = typeof model === "string" && model ? model : DEFAULT_MODEL;
     const userPrompt =
       `Translate these ${cleaned.length} English news item(s) to Persian. Return one result per item, in the same order.\n\n` +
-      cleaned.map((it, i) =>
-        `--- ITEM ${i + 1} ---\nTITLE: ${it.title}${it.excerpt ? `\nEXCERPT: ${it.excerpt}` : ""}`
-      ).join("\n\n");
+      cleaned
+        .map(
+          (it, i) =>
+            `--- ITEM ${i + 1} ---\nTITLE: ${it.title}${it.excerpt ? `\nEXCERPT: ${it.excerpt}` : ""}`,
+        )
+        .join("\n\n");
 
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -98,19 +107,22 @@ serve(async (req) => {
 
     if (aiRes.status === 429) {
       return new Response(JSON.stringify({ error: "Rate limit reached." }), {
-        status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (aiRes.status === 402) {
       return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-        status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("[news-translate-titles] gateway error", aiRes.status, t);
       return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -118,13 +130,17 @@ serve(async (req) => {
     const argsStr = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
     if (!argsStr) {
       return new Response(JSON.stringify({ error: "AI returned no structured output." }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     let parsed: any;
-    try { parsed = JSON.parse(argsStr); } catch {
+    try {
+      parsed = JSON.parse(argsStr);
+    } catch {
       return new Response(JSON.stringify({ error: "Malformed AI output." }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const raw: any[] = Array.isArray(parsed.results) ? parsed.results : [];
@@ -142,8 +158,12 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("[news-translate-titles] error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

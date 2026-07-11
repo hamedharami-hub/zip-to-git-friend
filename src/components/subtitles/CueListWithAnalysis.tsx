@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import type { SubtitleCue } from '@/types';
-import { InteractiveSubtitle } from '@/components/ai/InteractiveSubtitle';
-import { AnalysisPanel } from '@/components/ai/AnalysisPanel';
-import { useVideoStore } from '@/store/videoStore';
-import { Volume2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { useEffect, useRef, useState } from "react";
+import type { SubtitleCue } from "@/types";
+import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
+import { AnalysisPanel } from "@/components/ai/AnalysisPanel";
+import { useVideoStore } from "@/store/videoStore";
+import { Volume2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface Props {
   videoId: string;
@@ -18,7 +18,7 @@ function formatTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 /**
@@ -47,14 +47,12 @@ export function CueListWithAnalysis({ videoId, cues, activeCueId }: Props) {
     if (selectedId || !activeCueId) return;
     const el = rowRefs.current[activeCueId];
     if (el && containerRef.current) {
-      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, [activeCueId, selectedId]);
 
   if (cues.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-6">No cues to show.</p>
-    );
+    return <p className="text-sm text-muted-foreground text-center py-6">No cues to show.</p>;
   }
 
   return (
@@ -78,14 +76,14 @@ export function CueListWithAnalysis({ videoId, cues, activeCueId }: Props) {
               type="button"
               onClick={() => handleJump(cue)}
               className={cn(
-                'w-full text-left px-3 py-2 text-sm transition-colors flex gap-3 items-start',
+                "w-full text-left px-3 py-2 text-sm transition-colors flex gap-3 items-start",
                 isSelected
-                  ? 'bg-primary/15 text-foreground'
+                  ? "bg-primary/15 text-foreground"
                   : isActive
-                    ? 'bg-primary/10 text-foreground'
-                    : 'hover:bg-muted/50 focus-visible:bg-muted/50',
+                    ? "bg-primary/10 text-foreground"
+                    : "hover:bg-muted/50 focus-visible:bg-muted/50",
               )}
-              aria-current={isActive ? 'true' : undefined}
+              aria-current={isActive ? "true" : undefined}
               aria-expanded={isSelected}
               aria-label={`Jump to cue at ${formatTime(cue.startMs)}`}
             >
@@ -119,12 +117,7 @@ export function CueListWithAnalysis({ videoId, cues, activeCueId }: Props) {
                     className="text-base leading-relaxed font-medium flex-1"
                   />
                 </div>
-                <AnalysisPanel
-                  videoId={videoId}
-                  cue={cue}
-                  autoRun={true}
-                  showTranslate
-                />
+                <AnalysisPanel videoId={videoId} cue={cue} autoRun={true} showTranslate />
               </div>
             )}
           </div>

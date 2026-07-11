@@ -5,8 +5,8 @@
  * offline (PWA / mobile / no network). Keys are `${sentenceId}::${lang}`.
  */
 
-const DB_NAME = 'sentence-lab-audio';
-const STORE = 'audio_blobs';
+const DB_NAME = "sentence-lab-audio";
+const STORE = "audio_blobs";
 const DB_VERSION = 1;
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -31,23 +31,20 @@ const cacheKey = (id: string, lang: string) => `${id}::${lang}`;
 
 /** Object URLs we created in this page session — keep alive, revoke on unload. */
 const liveUrls = new Map<string, string>();
-if (typeof window !== 'undefined') {
-  window.addEventListener('beforeunload', () => {
+if (typeof window !== "undefined") {
+  window.addEventListener("beforeunload", () => {
     liveUrls.forEach((u) => URL.revokeObjectURL(u));
     liveUrls.clear();
   });
 }
 
-export async function getOfflineAudioUrl(
-  sentenceId: string,
-  lang: string,
-): Promise<string | null> {
+export async function getOfflineAudioUrl(sentenceId: string, lang: string): Promise<string | null> {
   const k = cacheKey(sentenceId, lang);
   if (liveUrls.has(k)) return liveUrls.get(k)!;
   try {
     const db = await openDb();
     const blob = await new Promise<Blob | null>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
+      const tx = db.transaction(STORE, "readonly");
       const req = tx.objectStore(STORE).get(k);
       req.onsuccess = () => resolve((req.result as Blob | undefined) ?? null);
       req.onerror = () => reject(req.error);
@@ -57,7 +54,7 @@ export async function getOfflineAudioUrl(
     liveUrls.set(k, url);
     return url;
   } catch (e) {
-    console.warn('[audioOfflineCache] read error', e);
+    console.warn("[audioOfflineCache] read error", e);
     return null;
   }
 }
@@ -70,13 +67,13 @@ export async function saveOfflineAudio(
   try {
     const db = await openDb();
     await new Promise<void>((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readwrite');
+      const tx = db.transaction(STORE, "readwrite");
       tx.objectStore(STORE).put(blob, cacheKey(sentenceId, lang));
       tx.oncomplete = () => resolve();
       tx.onerror = () => reject(tx.error);
     });
   } catch (e) {
-    console.warn('[audioOfflineCache] write error', e);
+    console.warn("[audioOfflineCache] write error", e);
   }
 }
 
@@ -98,7 +95,7 @@ export async function downloadAndCache(
 export async function clearOfflineCache(): Promise<void> {
   const db = await openDb();
   await new Promise<void>((resolve, reject) => {
-    const tx = db.transaction(STORE, 'readwrite');
+    const tx = db.transaction(STORE, "readwrite");
     tx.objectStore(STORE).clear();
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
@@ -111,7 +108,7 @@ export async function getCacheSize(): Promise<{ count: number; bytes: number }> 
   try {
     const db = await openDb();
     return await new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
+      const tx = db.transaction(STORE, "readonly");
       const store = tx.objectStore(STORE);
       let count = 0;
       let bytes = 0;

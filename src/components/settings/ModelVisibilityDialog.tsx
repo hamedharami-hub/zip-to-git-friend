@@ -1,41 +1,49 @@
-import { useMemo, useState } from 'react';
-import { Settings as SettingsIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { useMemo, useState } from "react";
+import { Settings as SettingsIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
-  DialogTrigger, DialogFooter,
-} from '@/components/ui/dialog';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getAllGeminiModels,
   getAllGroqChatModels,
   getAllGroqWhisperModels,
   getAllGatewayModels,
-} from '@/lib/aiModels';
-import { useSettingsStore } from '@/store/settingsStore';
-import { toast } from 'sonner';
+} from "@/lib/aiModels";
+import { useSettingsStore } from "@/store/settingsStore";
+import { toast } from "sonner";
 
-type Provider = 'gemini' | 'groqChat' | 'groqWhisper' | 'gateway';
+type Provider = "gemini" | "groqChat" | "groqWhisper" | "gateway";
 
 const TABS: { key: Provider; label: string }[] = [
-  { key: 'gateway', label: 'Lovable AI' },
-  { key: 'gemini', label: 'Gemini' },
-  { key: 'groqChat', label: 'Groq Chat' },
-  { key: 'groqWhisper', label: 'Whisper' },
+  { key: "gateway", label: "Lovable AI" },
+  { key: "gemini", label: "Gemini" },
+  { key: "groqChat", label: "Groq Chat" },
+  { key: "groqWhisper", label: "Whisper" },
 ];
 
 export function ModelVisibilityDialog() {
   const { settings, update } = useSettingsStore();
   const [open, setOpen] = useState(false);
 
-  const all = useMemo(() => ({
-    gemini: getAllGeminiModels(settings),
-    groqChat: getAllGroqChatModels(settings),
-    groqWhisper: getAllGroqWhisperModels(settings),
-    gateway: getAllGatewayModels(settings),
-  }), [settings.customModels]);
+  const all = useMemo(
+    () => ({
+      gemini: getAllGeminiModels(settings),
+      groqChat: getAllGroqChatModels(settings),
+      groqWhisper: getAllGroqWhisperModels(settings),
+      gateway: getAllGatewayModels(settings),
+    }),
+    [settings.customModels],
+  );
 
   // Local mirror of the hidden lists so toggles feel instant.
   const [hidden, setHidden] = useState<Record<Provider, Set<string>>>(() => ({
@@ -66,7 +74,7 @@ export function ModelVisibilityDialog() {
         },
       },
     });
-    toast.success('فهرست مدل‌ها به‌روز شد.');
+    toast.success("فهرست مدل‌ها به‌روز شد.");
     setOpen(false);
   };
 
@@ -82,8 +90,8 @@ export function ModelVisibilityDialog() {
         <DialogHeader>
           <DialogTitle>مدل‌های قابل نمایش</DialogTitle>
           <DialogDescription>
-            تیک هر مدلی که می‌خواهی در منوهای انتخاب ببینی، روشن باشد.
-            مدل‌های بدون تیک از همه‌ی dropdown ها مخفی می‌شوند.
+            تیک هر مدلی که می‌خواهی در منوهای انتخاب ببینی، روشن باشد. مدل‌های بدون تیک از همه‌ی
+            dropdown ها مخفی می‌شوند.
           </DialogDescription>
         </DialogHeader>
 
@@ -118,7 +126,10 @@ export function ModelVisibilityDialog() {
                           />
                           <span className="flex-1 min-w-0">
                             <span className="block text-sm truncate">{m.label}</span>
-                            <span className="block text-[10px] text-muted-foreground truncate" dir="ltr">
+                            <span
+                              className="block text-[10px] text-muted-foreground truncate"
+                              dir="ltr"
+                            >
                               {m.value}
                             </span>
                           </span>
@@ -129,16 +140,23 @@ export function ModelVisibilityDialog() {
                 )}
                 <div className="flex gap-2 mt-2">
                   <Button
-                    type="button" size="sm" variant="ghost"
+                    type="button"
+                    size="sm"
+                    variant="ghost"
                     onClick={() => setHidden((p) => ({ ...p, [t.key]: new Set() }))}
                   >
                     انتخاب همه
                   </Button>
                   <Button
-                    type="button" size="sm" variant="ghost"
-                    onClick={() => setHidden((p) => ({
-                      ...p, [t.key]: new Set(list.map((m) => m.value)),
-                    }))}
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      setHidden((p) => ({
+                        ...p,
+                        [t.key]: new Set(list.map((m) => m.value)),
+                      }))
+                    }
                   >
                     حذف همه
                   </Button>
@@ -149,7 +167,9 @@ export function ModelVisibilityDialog() {
         </Tabs>
 
         <DialogFooter className="mt-4">
-          <Button variant="ghost" onClick={() => setOpen(false)}>انصراف</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>
+            انصراف
+          </Button>
           <Button onClick={save}>ذخیره</Button>
         </DialogFooter>
       </DialogContent>

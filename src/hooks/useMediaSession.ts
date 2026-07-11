@@ -12,7 +12,7 @@
  * book TTS we already use <audio src=blobUrl>, so the OS will continue
  * decoding audio in the background.
  */
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
 export interface MediaSessionMeta {
   title: string;
@@ -40,19 +40,19 @@ export function useMediaSession(
   // Push metadata + action handlers.
   useEffect(() => {
     if (!active) return;
-    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     if (!meta) return;
 
     try {
       navigator.mediaSession.metadata = new MediaMetadata({
         title: meta.title,
-        artist: meta.artist ?? '',
-        album: meta.album ?? '',
+        artist: meta.artist ?? "",
+        album: meta.album ?? "",
         artwork: meta.artwork
           ? [
-              { src: meta.artwork, sizes: '512x512', type: 'image/png' },
-              { src: meta.artwork, sizes: '256x256', type: 'image/png' },
-              { src: meta.artwork, sizes: '128x128', type: 'image/png' },
+              { src: meta.artwork, sizes: "512x512", type: "image/png" },
+              { src: meta.artwork, sizes: "256x256", type: "image/png" },
+              { src: meta.artwork, sizes: "128x128", type: "image/png" },
             ]
           : [],
       });
@@ -71,33 +71,32 @@ export function useMediaSession(
       }
     };
 
-    setHandler('play', handlers.onPlay ? () => handlers.onPlay?.() : null);
-    setHandler('pause', handlers.onPause ? () => handlers.onPause?.() : null);
+    setHandler("play", handlers.onPlay ? () => handlers.onPlay?.() : null);
+    setHandler("pause", handlers.onPause ? () => handlers.onPause?.() : null);
     setHandler(
-      'seekbackward',
-      handlers.onSeekBackward
-        ? (d) => handlers.onSeekBackward?.(d?.seekOffset ?? 10)
-        : null,
+      "seekbackward",
+      handlers.onSeekBackward ? (d) => handlers.onSeekBackward?.(d?.seekOffset ?? 10) : null,
     );
     setHandler(
-      'seekforward',
-      handlers.onSeekForward
-        ? (d) => handlers.onSeekForward?.(d?.seekOffset ?? 10)
-        : null,
+      "seekforward",
+      handlers.onSeekForward ? (d) => handlers.onSeekForward?.(d?.seekOffset ?? 10) : null,
     );
-    setHandler('previoustrack', handlers.onPreviousTrack ? () => handlers.onPreviousTrack?.() : null);
-    setHandler('nexttrack', handlers.onNextTrack ? () => handlers.onNextTrack?.() : null);
-    setHandler('stop', handlers.onStop ? () => handlers.onStop?.() : null);
+    setHandler(
+      "previoustrack",
+      handlers.onPreviousTrack ? () => handlers.onPreviousTrack?.() : null,
+    );
+    setHandler("nexttrack", handlers.onNextTrack ? () => handlers.onNextTrack?.() : null);
+    setHandler("stop", handlers.onStop ? () => handlers.onStop?.() : null);
 
     return () => {
       const allActions: MediaSessionAction[] = [
-        'play',
-        'pause',
-        'seekbackward',
-        'seekforward',
-        'previoustrack',
-        'nexttrack',
-        'stop',
+        "play",
+        "pause",
+        "seekbackward",
+        "seekforward",
+        "previoustrack",
+        "nexttrack",
+        "stop",
       ];
       for (const a of allActions) setHandler(a, null);
     };
@@ -107,12 +106,12 @@ export function useMediaSession(
   // Mirror the media element's playback state so the OS shows the right icon.
   useEffect(() => {
     if (!active) return;
-    if (typeof navigator === 'undefined' || !('mediaSession' in navigator)) return;
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     if (!mediaEl) return;
 
     const sync = () => {
       try {
-        navigator.mediaSession.playbackState = mediaEl.paused ? 'paused' : 'playing';
+        navigator.mediaSession.playbackState = mediaEl.paused ? "paused" : "playing";
       } catch {
         /* noop */
       }
@@ -130,12 +129,12 @@ export function useMediaSession(
     };
     sync();
     const events: (keyof HTMLMediaElementEventMap)[] = [
-      'play',
-      'pause',
-      'timeupdate',
-      'ratechange',
-      'durationchange',
-      'ended',
+      "play",
+      "pause",
+      "timeupdate",
+      "ratechange",
+      "durationchange",
+      "ended",
     ];
     events.forEach((e) => mediaEl.addEventListener(e, sync));
     return () => events.forEach((e) => mediaEl.removeEventListener(e, sync));
@@ -150,9 +149,9 @@ export function useMediaSession(
 export function useScreenWakeLock(active: boolean) {
   useEffect(() => {
     if (!active) return;
-    if (typeof navigator === 'undefined') return;
+    if (typeof navigator === "undefined") return;
     const anyNav = navigator as unknown as {
-      wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> };
+      wakeLock?: { request(type: "screen"): Promise<{ release(): Promise<void> }> };
     };
     if (!anyNav.wakeLock) return;
 
@@ -161,7 +160,7 @@ export function useScreenWakeLock(active: boolean) {
 
     const acquire = async () => {
       try {
-        lock = await anyNav.wakeLock!.request('screen');
+        lock = await anyNav.wakeLock!.request("screen");
       } catch {
         /* user gesture / permission missing */
       }
@@ -169,15 +168,15 @@ export function useScreenWakeLock(active: boolean) {
     void acquire();
 
     const onVisibility = () => {
-      if (document.visibilityState === 'visible' && !lock && !cancelled) {
+      if (document.visibilityState === "visible" && !lock && !cancelled) {
         void acquire();
       }
     };
-    document.addEventListener('visibilitychange', onVisibility);
+    document.addEventListener("visibilitychange", onVisibility);
 
     return () => {
       cancelled = true;
-      document.removeEventListener('visibilitychange', onVisibility);
+      document.removeEventListener("visibilitychange", onVisibility);
       lock?.release().catch(() => {});
       lock = null;
     };

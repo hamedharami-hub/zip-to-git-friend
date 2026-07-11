@@ -8,7 +8,7 @@
  * On finish, the parent passes the result map back into the reader so every
  * paragraph in view can lazy-render its translation + idiom underlines.
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -16,28 +16,28 @@ import {
   SheetTitle,
   SheetTrigger,
   SheetDescription,
-} from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { Label } from '@/components/ui/label';
+} from "@/components/ui/sheet";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Sparkles, Loader2, X, CheckCircle2, AlertTriangle } from 'lucide-react';
+} from "@/components/ui/select";
+import { Sparkles, Loader2, X, CheckCircle2, AlertTriangle } from "lucide-react";
 import {
   batchAnalyzeChapter,
   extractAnalysableParagraphs,
   type BatchProgress,
-} from '@/lib/batchAnalyzeChapter';
-import type { BookChapter, BookParagraphAnalysis } from '@/types';
-import { useOnline } from '@/hooks/useOnline';
-import { toast } from 'sonner';
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
+} from "@/lib/batchAnalyzeChapter";
+import type { BookChapter, BookParagraphAnalysis } from "@/types";
+import { useOnline } from "@/hooks/useOnline";
+import { toast } from "sonner";
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
 
 interface Props {
   bookId: string;
@@ -68,7 +68,9 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
   const online = useOnline();
   const settings = useSettingsStore((s) => s.settings);
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef ?? settings.bookBatchAnalysisModelRef ?? settings.bookBatchAnalysisModel,
+    settings.paragraphBatchModelRef ??
+      settings.bookBatchAnalysisModelRef ??
+      settings.bookBatchAnalysisModel,
   );
 
   // Stop any in-flight run when the component unmounts.
@@ -83,7 +85,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
   const handleStart = async () => {
     if (!chapter) return;
     if (!online) {
-      toast.error('Batch analysis requires an internet connection.');
+      toast.error("Batch analysis requires an internet connection.");
       return;
     }
     if (running) return;
@@ -119,7 +121,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
       const finalPhrasesOnly = stripVocab(final.results);
       onResults(finalPhrasesOnly);
       if (final.cancelled) {
-        toast('پردازش لغو شد.');
+        toast("پردازش لغو شد.");
       } else if (final.failed > 0) {
         toast.warning(
           `پایان: ${final.completed - final.skipped} پردازش شد، ${final.skipped} از کش، ${final.failed} ناموفق.`,
@@ -140,9 +142,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
   };
 
   const pct =
-    progress && progress.total > 0
-      ? Math.round((progress.completed / progress.total) * 100)
-      : 0;
+    progress && progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
   return (
     <Sheet open={open} onOpenChange={(v) => !running && setOpen(v)}>
@@ -176,7 +176,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
               </p>
               <p className="font-semibold leading-snug">{chapter.title}</p>
               <p className="text-xs text-muted-foreground">
-                {totalCandidates} paragraph{totalCandidates === 1 ? '' : 's'} ·{' '}
+                {totalCandidates} paragraph{totalCandidates === 1 ? "" : "s"} ·{" "}
                 {chapter.wordCount.toLocaleString()} words
               </p>
             </div>
@@ -185,9 +185,9 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
           )}
 
           <p className="text-xs text-muted-foreground">
-            AI model:{' '}
+            AI model:{" "}
             <span className="font-medium text-foreground">
-              {modelRef.provider === 'gateway' ? '' : `${modelRef.provider}: `}
+              {modelRef.provider === "gateway" ? "" : `${modelRef.provider}: `}
               {modelRef.model}
             </span>
             <br />
@@ -207,23 +207,23 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
               </div>
 
               <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                <Stat
-                  label="Cached"
-                  value={progress.skipped}
-                  tone="muted"
-                />
+                <Stat label="Cached" value={progress.skipped} tone="muted" />
                 <Stat
                   label="New"
                   value={Math.max(0, progress.completed - progress.skipped)}
                   tone="primary"
                 />
-                <Stat label="Failed" value={progress.failed} tone={progress.failed > 0 ? 'danger' : 'muted'} />
+                <Stat
+                  label="Failed"
+                  value={progress.failed}
+                  tone={progress.failed > 0 ? "danger" : "muted"}
+                />
               </div>
 
               {progress.inFlight > 0 && (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  {progress.inFlight} request{progress.inFlight === 1 ? '' : 's'} in flight…
+                  {progress.inFlight} request{progress.inFlight === 1 ? "" : "s"} in flight…
                 </p>
               )}
 
@@ -262,7 +262,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
                 className="flex-1 gap-1.5"
               >
                 <Sparkles className="h-4 w-4" />
-                {progress?.done ? 'اجرای دوباره' : 'شروع پردازش'}
+                {progress?.done ? "اجرای دوباره" : "شروع پردازش"}
               </Button>
             )}
           </div>
@@ -274,8 +274,8 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
           )}
 
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            Tip: results are cached on this device. Closing this panel won't lose
-            progress, and the same chapter won't be re-analyzed unless you press{' '}
+            Tip: results are cached on this device. Closing this panel won't lose progress, and the
+            same chapter won't be re-analyzed unless you press{" "}
             <span className="font-medium">Re-run</span>.
           </p>
         </div>
@@ -287,16 +287,16 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
 interface StatProps {
   label: string;
   value: number;
-  tone: 'muted' | 'primary' | 'danger';
+  tone: "muted" | "primary" | "danger";
 }
 
 function Stat({ label, value, tone }: StatProps) {
   const toneClass =
-    tone === 'primary'
-      ? 'text-primary'
-      : tone === 'danger'
-        ? 'text-destructive'
-        : 'text-muted-foreground';
+    tone === "primary"
+      ? "text-primary"
+      : tone === "danger"
+        ? "text-destructive"
+        : "text-muted-foreground";
   return (
     <div className="rounded-md border border-border bg-card/40 px-2 py-2">
       <div className={`text-lg font-semibold tabular-nums ${toneClass}`}>{value}</div>

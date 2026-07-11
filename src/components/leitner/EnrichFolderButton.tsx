@@ -9,13 +9,13 @@
  *
  * Runs in the background; user sees a single toast with progress.
  */
-import { useState } from 'react';
-import { Sparkles, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { useOnline } from '@/hooks/useOnline';
-import { toast } from 'sonner';
+import { useState } from "react";
+import { Sparkles, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { useOnline } from "@/hooks/useOnline";
+import { toast } from "sonner";
 
 interface Props {
   folderId: string;
@@ -40,17 +40,15 @@ export function EnrichFolderButton({ folderId, folderName }: Props) {
 
   const run = async () => {
     if (!online) {
-      toast.error('برای پردازش به اینترنت نیاز دارید.');
+      toast.error("برای پردازش به اینترنت نیاز دارید.");
       return;
     }
     if (folderCards.length === 0) {
-      toast.message('این فولدر خالی است.');
+      toast.message("این فولدر خالی است.");
       return;
     }
     setBusy(true);
-    const tid = toast.loading(
-      `پردازش "${folderName}" — ${folderCards.length} کارت…`,
-    );
+    const tid = toast.loading(`پردازش "${folderName}" — ${folderCards.length} کارت…`);
     try {
       const payload = folderCards.map((c) => ({
         id: c.id,
@@ -61,7 +59,7 @@ export function EnrichFolderButton({ folderId, folderName }: Props) {
         antonyms: c.antonyms,
       }));
 
-      const { data, error } = await supabase.functions.invoke('leitner-enrich-folder', {
+      const { data, error } = await supabase.functions.invoke("leitner-enrich-folder", {
         body: { cards: payload },
       });
 
@@ -92,7 +90,7 @@ export function EnrichFolderButton({ folderId, folderName }: Props) {
       }
       toast.success(`${applied} کارت غنی‌سازی شد.`, { id: tid });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : 'خطای ناشناخته';
+      const msg = e instanceof Error ? e.message : "خطای ناشناخته";
       toast.error(`پردازش ناموفق بود: ${msg}`, { id: tid });
     } finally {
       setBusy(false);

@@ -1,29 +1,44 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, BookOpen, Tag, AlertTriangle, Volume2,
-  RefreshCw, Headphones, Mic, BarChart3, Sparkles, TrendingUp,
-  Layers, Home, Wand2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Progress } from '@/components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useSentenceStore } from '@/store/sentenceStore';
-import { PodcastMode } from '@/components/sentence-lab/PodcastMode';
-import { RoleplayMode } from '@/components/sentence-lab/RoleplayMode';
-import { GamificationHUD } from '@/components/sentence-lab/GamificationHUD';
-import { FlagButton } from '@/components/sentence-lab/FlagButton';
-import { fetchCategoryBySlug, type SentenceCategory } from '@/lib/sentenceCategories';
-import { fetchPath, type SentencePath } from '@/lib/sentencePaths';
+  ArrowLeft,
+  Loader2,
+  BookOpen,
+  Tag,
+  AlertTriangle,
+  Volume2,
+  RefreshCw,
+  Headphones,
+  Mic,
+  BarChart3,
+  Sparkles,
+  TrendingUp,
+  Layers,
+  Home,
+  Wand2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useSentenceStore } from "@/store/sentenceStore";
+import { PodcastMode } from "@/components/sentence-lab/PodcastMode";
+import { RoleplayMode } from "@/components/sentence-lab/RoleplayMode";
+import { GamificationHUD } from "@/components/sentence-lab/GamificationHUD";
+import { FlagButton } from "@/components/sentence-lab/FlagButton";
+import { fetchCategoryBySlug, type SentenceCategory } from "@/lib/sentenceCategories";
+import { fetchPath, type SentencePath } from "@/lib/sentencePaths";
 import {
-  looksLikePhrase, getCachedExample, getAutoExample, type AutoExample,
-} from '@/lib/autoExample';
+  looksLikePhrase,
+  getCachedExample,
+  getAutoExample,
+  type AutoExample,
+} from "@/lib/autoExample";
 
-type Mode = 'drill' | 'roleplay';
+type Mode = "drill" | "roleplay";
 
 export default function SentenceDrillPage() {
   const params = useParams<{
@@ -32,19 +47,18 @@ export default function SentenceDrillPage() {
     level?: string;
     pathId?: string;
   }>();
-  const categorySlug = params.categorySlug ?? '';
-  const subSlug = params.subSlug ?? '';
-  const level = params.level ?? '';
-  const pathId = params.pathId ?? '';
+  const categorySlug = params.categorySlug ?? "";
+  const subSlug = params.subSlug ?? "";
+  const level = params.level ?? "";
+  const pathId = params.pathId ?? "";
   const navigate = useNavigate();
 
-  const { queue, currentIndex, loading, error, fetchDailyQueue, next } =
-    useSentenceStore();
+  const { queue, currentIndex, loading, error, fetchDailyQueue, next } = useSentenceStore();
 
   const [category, setCategory] = useState<SentenceCategory | null>(null);
   const [sub, setSub] = useState<SentenceCategory | null>(null);
   const [path, setPath] = useState<SentencePath | null>(null);
-  const [mode, setMode] = useState<Mode>('drill');
+  const [mode, setMode] = useState<Mode>("drill");
   const [harvested, setHarvested] = useState<string[]>([]);
 
   useEffect(() => {
@@ -52,11 +66,12 @@ export default function SentenceDrillPage() {
       if (pathId) {
         const p = await fetchPath(pathId);
         setPath(p);
-        setCategory(null); setSub(null);
+        setCategory(null);
+        setSub(null);
       } else {
         const c = await fetchCategoryBySlug(categorySlug);
         setCategory(c);
-        const s = subSlug && subSlug !== 'all' ? await fetchCategoryBySlug(subSlug) : null;
+        const s = subSlug && subSlug !== "all" ? await fetchCategoryBySlug(subSlug) : null;
         setSub(s);
         setPath(null);
       }
@@ -74,8 +89,8 @@ export default function SentenceDrillPage() {
       })();
       return;
     }
-    const subFilter = subSlug && subSlug !== 'all' ? subSlug : null;
-    const levelFilter = level && level !== 'all' ? level : null;
+    const subFilter = subSlug && subSlug !== "all" ? subSlug : null;
+    const levelFilter = level && level !== "all" ? level : null;
     void fetchDailyQueue({
       category: categorySlug || null,
       subcategory: subFilter,
@@ -89,14 +104,11 @@ export default function SentenceDrillPage() {
     [currentIndex, queue.length],
   );
 
-  const dueCount = useMemo(
-    () => queue.filter((q) => q.kind === 'due').length,
-    [queue],
-  );
+  const dueCount = useMemo(() => queue.filter((q) => q.kind === "due").length, [queue]);
   const newCount = queue.length - dueCount;
 
   const title = path?.name ?? sub?.name ?? category?.name ?? categorySlug;
-  const crumb = path ? 'Sentence Path' : (sub ? category?.name : 'Sentence Lab');
+  const crumb = path ? "Sentence Path" : sub ? category?.name : "Sentence Lab";
 
   const handleHarvest = (texts: string[]) => {
     setHarvested((prev) => {
@@ -120,7 +132,7 @@ export default function SentenceDrillPage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/')}
+              onClick={() => navigate("/")}
               aria-label="Back to home"
               className="h-8 w-8 shrink-0"
             >
@@ -133,7 +145,7 @@ export default function SentenceDrillPage() {
                 if (pathId) navigate(`/sentence-lab/path/${pathId}`);
                 else if (level) navigate(`/sentence-lab/${categorySlug}/${subSlug}`);
                 else if (sub) navigate(`/sentence-lab/${categorySlug}`);
-                else navigate('/sentence-lab');
+                else navigate("/sentence-lab");
               }}
               aria-label="Back"
               className="h-8 w-8 shrink-0"
@@ -141,12 +153,10 @@ export default function SentenceDrillPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {crumb}
-              </p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{crumb}</p>
               <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
                 {title}
-                {level && level !== 'all' && (
+                {level && level !== "all" && (
                   <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                     · {level}
                   </span>
@@ -157,7 +167,7 @@ export default function SentenceDrillPage() {
           <div className="flex items-center gap-2">
             <GamificationHUD compact />
             <span className="text-xs tabular-nums text-muted-foreground">
-              {queue.length ? `${currentIndex + 1}/${queue.length}` : '—'}
+              {queue.length ? `${currentIndex + 1}/${queue.length}` : "—"}
             </span>
             <Button
               variant="outline"
@@ -168,8 +178,8 @@ export default function SentenceDrillPage() {
                 } else {
                   fetchDailyQueue({
                     category: categorySlug || null,
-                    subcategory: subSlug && subSlug !== 'all' ? subSlug : null,
-                    cefrLevel: level && level !== 'all' ? level : null,
+                    subcategory: subSlug && subSlug !== "all" ? subSlug : null,
+                    cefrLevel: level && level !== "all" ? level : null,
                   });
                 }
               }}
@@ -177,15 +187,12 @@ export default function SentenceDrillPage() {
               aria-label="Refresh"
               className="h-8 w-8"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
         <div className="h-0.5 w-full bg-muted">
-          <div
-            className="h-0.5 bg-primary transition-all"
-            style={{ width: `${progressPct}%` }}
-          />
+          <div className="h-0.5 bg-primary transition-all" style={{ width: `${progressPct}%` }} />
         </div>
       </header>
 
@@ -196,15 +203,12 @@ export default function SentenceDrillPage() {
           </div>
         ) : error ? (
           <Card className="mx-auto max-w-md">
-            <CardContent className="py-8 text-center text-sm text-destructive">
-              {error}
-            </CardContent>
+            <CardContent className="py-8 text-center text-sm text-destructive">{error}</CardContent>
           </Card>
         ) : !current ? (
           <Card className="mx-auto max-w-md">
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No sentences here yet. Try the <strong>Import</strong> button on the
-              previous screen.
+              No sentences here yet. Try the <strong>Import</strong> button on the previous screen.
             </CardContent>
           </Card>
         ) : (
@@ -214,22 +218,22 @@ export default function SentenceDrillPage() {
               {/* Mode selector */}
               <div className="grid grid-cols-2 gap-2 rounded-xl border bg-card p-1">
                 <button
-                  onClick={() => setMode('drill')}
+                  onClick={() => setMode("drill")}
                   className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    mode === 'drill'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted/60'
+                    mode === "drill"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/60"
                   }`}
                 >
                   <Headphones className="h-4 w-4" />
                   Podcast Drill
                 </button>
                 <button
-                  onClick={() => setMode('roleplay')}
+                  onClick={() => setMode("roleplay")}
                   className={`flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                    mode === 'roleplay'
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-muted/60'
+                    mode === "roleplay"
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/60"
                   }`}
                 >
                   <Mic className="h-4 w-4" />
@@ -237,7 +241,7 @@ export default function SentenceDrillPage() {
                 </button>
               </div>
 
-              {mode === 'drill' ? (
+              {mode === "drill" ? (
                 <>
                   <PodcastMode />
                   <DrillCard item={current} onNext={next} />
@@ -303,7 +307,7 @@ function DrillCard({
   onNext,
   compact = false,
 }: {
-  item: ReturnType<typeof useSentenceStore.getState>['queue'][number];
+  item: ReturnType<typeof useSentenceStore.getState>["queue"][number];
   onNext: () => void;
   compact?: boolean;
 }) {
@@ -340,15 +344,15 @@ function DrillCard({
     }
   }
 
-  function speak(text: string, lang: 'en' | 'fa') {
+  function speak(text: string, lang: "en" | "fa") {
     try {
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = lang === 'fa' ? 'fa-IR' : 'en-US';
+      u.lang = lang === "fa" ? "fa-IR" : "en-US";
       u.rate = 0.95;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
     } catch (e) {
-      console.warn('TTS failed', e);
+      console.warn("TTS failed", e);
     }
   }
 
@@ -356,17 +360,23 @@ function DrillCard({
     <Card className="overflow-hidden">
       <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 pb-3">
         <div className="flex flex-wrap items-center gap-1.5">
-          <Badge variant={kind === 'new' ? 'default' : 'secondary'} className="text-[10px]">
-            {kind === 'new' ? 'New' : 'Review'}
+          <Badge variant={kind === "new" ? "default" : "secondary"} className="text-[10px]">
+            {kind === "new" ? "New" : "Review"}
           </Badge>
           {sentence.cefrLevel && (
-            <Badge variant="outline" className="text-[10px]">{sentence.cefrLevel}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {sentence.cefrLevel}
+            </Badge>
           )}
           {isPhrase && (
-            <Badge variant="outline" className="text-[10px]">عبارت</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              عبارت
+            </Badge>
           )}
           {sentence.examTaskType && (
-            <Badge variant="outline" className="text-[10px]">{sentence.examTaskType}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {sentence.examTaskType}
+            </Badge>
           )}
         </div>
         <div className="flex items-center gap-1">
@@ -389,14 +399,12 @@ function DrillCard({
         {sentence.persian && (
           <div dir="rtl" className="rounded-md bg-muted/40 p-3 text-right">
             <div className="mb-0.5 flex items-center justify-between">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                فارسی
-              </p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">فارسی</p>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-6 w-6"
-                onClick={() => speak(sentence.persian!, 'fa')}
+                onClick={() => speak(sentence.persian!, "fa")}
                 aria-label="پخش فارسی"
               >
                 <Volume2 className="h-3.5 w-3.5" />
@@ -409,16 +417,14 @@ function DrillCard({
         {/* 2) English — hidden until the learner has tried, then revealed */}
         <div className="rounded-md border bg-card p-3">
           <div className="mb-0.5 flex items-center justify-between">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              English
-            </p>
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">English</p>
             <div className="flex items-center gap-1">
               {revealEnglish && (
                 <Button
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6"
-                  onClick={() => speak(sentence.english, 'en')}
+                  onClick={() => speak(sentence.english, "en")}
                   aria-label="Play English"
                 >
                   <Volume2 className="h-3.5 w-3.5" />
@@ -437,8 +443,8 @@ function DrillCard({
             </div>
           </div>
           <p
-            className={`font-medium leading-snug ${compact ? 'text-base' : 'text-xl'} ${
-              !revealEnglish && sentence.persian ? 'select-none blur-sm' : ''
+            className={`font-medium leading-snug ${compact ? "text-base" : "text-xl"} ${
+              !revealEnglish && sentence.persian ? "select-none blur-sm" : ""
             }`}
             onClick={() => !revealEnglish && setRevealEnglish(true)}
           >
@@ -461,11 +467,7 @@ function DrillCard({
                   onClick={handleGenerateExample}
                   disabled={exampleLoading}
                 >
-                  {exampleLoading ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    'ساخت مثال'
-                  )}
+                  {exampleLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : "ساخت مثال"}
                 </Button>
               )}
             </div>
@@ -479,7 +481,7 @@ function DrillCard({
                       variant="ghost"
                       size="icon"
                       className="h-5 w-5"
-                      onClick={() => speak(example.persian, 'fa')}
+                      onClick={() => speak(example.persian, "fa")}
                       aria-label="پخش مثال فارسی"
                     >
                       <Volume2 className="h-3 w-3" />
@@ -497,7 +499,7 @@ function DrillCard({
                           variant="ghost"
                           size="icon"
                           className="h-5 w-5"
-                          onClick={() => speak(example.english, 'en')}
+                          onClick={() => speak(example.english, "en")}
                           aria-label="Play example English"
                         >
                           <Volume2 className="h-3 w-3" />
@@ -516,7 +518,7 @@ function DrillCard({
                   </div>
                   <p
                     className={`text-sm leading-snug ${
-                      !revealExampleEn ? 'select-none blur-sm' : ''
+                      !revealExampleEn ? "select-none blur-sm" : ""
                     }`}
                     onClick={() => !revealExampleEn && setRevealExampleEn(true)}
                   >
@@ -534,13 +536,15 @@ function DrillCard({
 
         {!compact && sentence.expectedIntent && (
           <div className="rounded-md border border-dashed p-2.5 text-xs">
-            <span className="font-medium">Intent:</span>{' '}
+            <span className="font-medium">Intent:</span>{" "}
             <span className="text-muted-foreground">{sentence.expectedIntent}</span>
           </div>
         )}
         <Separator />
         <div className="flex items-center justify-end">
-          <Button size="sm" onClick={onNext}>Next →</Button>
+          <Button size="sm" onClick={onNext}>
+            Next →
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -550,9 +554,15 @@ function DrillCard({
 /* ─────────────────────── Right-pane panels ─────────────────────── */
 
 function SessionPanel({
-  currentIndex, total, due, fresh,
+  currentIndex,
+  total,
+  due,
+  fresh,
 }: {
-  currentIndex: number; total: number; due: number; fresh: number;
+  currentIndex: number;
+  total: number;
+  due: number;
+  fresh: number;
 }) {
   const pct = total ? Math.round(((currentIndex + 1) / total) * 100) : 0;
   return (
@@ -590,7 +600,7 @@ function SessionPanel({
 function FsrsPanel({
   item,
 }: {
-  item: ReturnType<typeof useSentenceStore.getState>['queue'][number];
+  item: ReturnType<typeof useSentenceStore.getState>["queue"][number];
 }) {
   const { progress } = item;
   return (
@@ -608,10 +618,7 @@ function FsrsPanel({
             <Row label="Lapses" value={String(progress.lapses)} />
             <Row label="Stability" value={progress.stability.toFixed(1)} />
             <Row label="Difficulty" value={progress.difficulty.toFixed(1)} />
-            <Row
-              label="Next"
-              value={new Date(progress.nextReviewDate).toLocaleDateString()}
-            />
+            <Row label="Next" value={new Date(progress.nextReviewDate).toLocaleDateString()} />
           </>
         ) : (
           <p className="text-xs text-muted-foreground">First time seeing this sentence.</p>
@@ -629,7 +636,9 @@ function HarvestPanel({ items }: { items: string[] }) {
           <span className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" /> Harvested
           </span>
-          <Badge variant="secondary" className="text-[10px]">{items.length}</Badge>
+          <Badge variant="secondary" className="text-[10px]">
+            {items.length}
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -659,7 +668,7 @@ function HarvestPanel({ items }: { items: string[] }) {
 function ContextPanel({
   item,
 }: {
-  item: ReturnType<typeof useSentenceStore.getState>['queue'][number];
+  item: ReturnType<typeof useSentenceStore.getState>["queue"][number];
 }) {
   const { sentence } = item;
   const hasAny =
@@ -683,7 +692,9 @@ function ContextPanel({
             </p>
             <div className="flex flex-wrap gap-1">
               {sentence.grammarFocus.map((g) => (
-                <Badge key={g} variant="outline" className="text-[10px]">{g}</Badge>
+                <Badge key={g} variant="outline" className="text-[10px]">
+                  {g}
+                </Badge>
               ))}
             </div>
           </div>
@@ -695,7 +706,9 @@ function ContextPanel({
             </p>
             <div className="flex flex-wrap gap-1">
               {sentence.vocabularyTags.map((v) => (
-                <Badge key={v} variant="secondary" className="text-[10px]">{v}</Badge>
+                <Badge key={v} variant="secondary" className="text-[10px]">
+                  {v}
+                </Badge>
               ))}
             </div>
           </div>
@@ -706,7 +719,9 @@ function ContextPanel({
               <AlertTriangle className="h-3 w-3 text-amber-500" /> Pitfalls
             </p>
             <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
-              {sentence.commonMistakes.map((m, i) => <li key={i}>{m}</li>)}
+              {sentence.commonMistakes.map((m, i) => (
+                <li key={i}>{m}</li>
+              ))}
             </ul>
           </div>
         )}

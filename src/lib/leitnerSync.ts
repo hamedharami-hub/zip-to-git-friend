@@ -1,17 +1,22 @@
-import { supabase } from '@/integrations/supabase/client';
-import type { LeitnerCard } from '@/types';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { useLeitnerFolderStore } from '@/store/leitnerFolderStore';
-import { saveLeitnerCard, deleteLeitnerCard, getAllLeitnerCards, saveLeitnerFolder } from '@/lib/db';
-import { normalizeFront, nextReviewFor } from '@/lib/leitner';
-import { setFolderSyncUser, pullFolders } from '@/lib/leitnerFolderSync';
-import { toast } from 'sonner';
+import { supabase } from "@/integrations/supabase/client";
+import type { LeitnerCard } from "@/types";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { useLeitnerFolderStore } from "@/store/leitnerFolderStore";
+import {
+  saveLeitnerCard,
+  deleteLeitnerCard,
+  getAllLeitnerCards,
+  saveLeitnerFolder,
+} from "@/lib/db";
+import { normalizeFront, nextReviewFor } from "@/lib/leitner";
+import { setFolderSyncUser, pullFolders } from "@/lib/leitnerFolderSync";
+import { toast } from "sonner";
 
 /**
  * App identifier — change per project (e.g., "video", "news").
  * Cards from different apps live in the same table and merge per-user.
  */
-export const SOURCE_APP = 'video';
+export const SOURCE_APP = "video";
 
 interface RemoteRow {
   id: string;
@@ -66,14 +71,12 @@ function rowToCard(r: RemoteRow): LeitnerCard {
     sourceEndMs: r.source_end_ms ?? undefined,
     sourceUrl: r.source_url ?? undefined,
     sourceTitle: r.source_title ?? undefined,
-    sourceKind: (r.source_app as LeitnerCard['sourceKind']) ?? undefined,
+    sourceKind: (r.source_app as LeitnerCard["sourceKind"]) ?? undefined,
     lastIntervalMs: r.last_interval_ms ?? undefined,
     lapseCount: r.lapse_count ?? 0,
-    easeFactor: typeof r.ease_factor === 'number' ? r.ease_factor : 2.0,
-    reviewLog: Array.isArray(r.review_log)
-      ? (r.review_log as LeitnerCard['reviewLog'])
-      : [],
-    cefr: (r.cefr as LeitnerCard['cefr']) ?? undefined,
+    easeFactor: typeof r.ease_factor === "number" ? r.ease_factor : 2.0,
+    reviewLog: Array.isArray(r.review_log) ? (r.review_log as LeitnerCard["reviewLog"]) : [],
+    cefr: (r.cefr as LeitnerCard["cefr"]) ?? undefined,
     partOfSpeech: r.part_of_speech ?? undefined,
     starred: r.starred ?? false,
     synonyms: Array.isArray(r.synonyms) ? r.synonyms : [],
@@ -119,13 +122,10 @@ let currentUserId: string | null = null;
 
 /** Pull-merge: fetch remote cards and reconcile with local IndexedDB. */
 export async function pullAndMerge(userId: string): Promise<void> {
-  const { data, error } = await supabase
-    .from('leitner_cards')
-    .select('*')
-    .eq('user_id', userId);
+  const { data, error } = await supabase.from("leitner_cards").select("*").eq("user_id", userId);
   if (error) {
-    console.error('pullAndMerge failed', error);
-    toast.error('Sync failed — could not fetch your cards.');
+    console.error("pullAndMerge failed", error);
+    toast.error("Sync failed — could not fetch your cards.");
     return;
   }
   const remoteRows = (data ?? []) as RemoteRow[];
@@ -148,10 +148,10 @@ export async function pullAndMerge(userId: string): Promise<void> {
   }
   if (toUpsert.length > 0) {
     const { error: upErr } = await supabase
-      .from('leitner_cards')
+      .from("leitner_cards")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .upsert(toUpsert as any, { onConflict: 'user_id,front_normalized' });
-    if (upErr) console.error('pushNew failed', upErr);
+      .upsert(toUpsert as any, { onConflict: "user_id,front_normalized" });
+    if (upErr) console.error("pushNew failed", upErr);
   }
 
   // 2. Pull remote cards into local IndexedDB (latest wins by updated_at vs local lastReviewed/createdAt)
@@ -180,21 +180,21 @@ export async function pushCard(card: LeitnerCard): Promise<void> {
   if (!currentUserId) return;
   const row = cardToRow(card, currentUserId);
   const { error } = await supabase
-    .from('leitner_cards')
+    .from("leitner_cards")
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    .upsert(row as any, { onConflict: 'user_id,front_normalized' });
-  if (error) console.error('pushCard failed', error);
+    .upsert(row as any, { onConflict: "user_id,front_normalized" });
+  if (error) console.error("pushCard failed", error);
 }
 
 /** Delete a card on the cloud (by client_id). */
 export async function deleteRemoteCard(clientId: string): Promise<void> {
   if (!currentUserId) return;
   const { error } = await supabase
-    .from('leitner_cards')
+    .from("leitner_cards")
     .delete()
-    .eq('user_id', currentUserId)
-    .eq('client_id', clientId);
-  if (error) console.error('deleteRemoteCard failed', error);
+    .eq("user_id", currentUserId)
+    .eq("client_id", clientId);
+  if (error) console.error("deleteRemoteCard failed", error);
 }
 
 /** Subscribe to realtime updates for the current user. */
@@ -203,10 +203,10 @@ function subscribeRealtime(userId: string) {
   realtimeChannel = supabase
     .channel(`leitner-${userId}`)
     .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'leitner_cards', filter: `user_id=eq.${userId}` },
+      "postgres_changes",
+      { event: "*", schema: "public", table: "leitner_cards", filter: `user_id=eq.${userId}` },
       async (payload) => {
-        if (payload.eventType === 'DELETE') {
+        if (payload.eventType === "DELETE") {
           const old = payload.old as Partial<RemoteRow>;
           const id = (old.client_id as string) || (old.id as string);
           if (id) {
@@ -248,7 +248,7 @@ export async function startSync(userId: string): Promise<void> {
     for (const f of remoteFolders) await saveLeitnerFolder(f);
     await useLeitnerFolderStore.getState().load();
   } catch (e) {
-    console.error('folder sync failed', e);
+    console.error("folder sync failed", e);
   }
 
   subscribeRealtime(userId);
@@ -256,9 +256,9 @@ export async function startSync(userId: string): Promise<void> {
     const after = (await getAllLeitnerCards()).length;
     const diff = after - before;
     if (diff > 0) {
-      toast.success(`Synced ${diff} card${diff === 1 ? '' : 's'} from your account.`);
+      toast.success(`Synced ${diff} card${diff === 1 ? "" : "s"} from your account.`);
     } else {
-      toast.success('Cards synced.');
+      toast.success("Cards synced.");
     }
   }
 }

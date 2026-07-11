@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import type { SubtitleCue, SubtitleTrack } from '@/types';
+import { useEffect, useRef, useState } from "react";
+import type { SubtitleCue, SubtitleTrack } from "@/types";
 
 /**
  * Binary search for the cue containing `adjustedMs`. `hint` is the last
@@ -7,11 +7,7 @@ import type { SubtitleCue, SubtitleTrack } from '@/types';
  * away, we short-circuit to O(1). Falls back to O(log n) binary search
  * when the hint misses (seek, jump, restart).
  */
-function findCueIndex(
-  cues: SubtitleCue[],
-  adjustedMs: number,
-  hint: number,
-): number {
+function findCueIndex(cues: SubtitleCue[], adjustedMs: number, hint: number): number {
   if (cues.length === 0) return -1;
   // Fast path: hint cue still active.
   if (hint >= 0 && hint < cues.length) {
@@ -93,11 +89,11 @@ export function useActiveCues(
       pIdxRef.current = -1;
       sIdxRef.current = -1;
     };
-    videoEl.addEventListener('seeking', onSeek);
+    videoEl.addEventListener("seeking", onSeek);
 
     return () => {
       cancelAnimationFrame(raf);
-      videoEl.removeEventListener('seeking', onSeek);
+      videoEl.removeEventListener("seeking", onSeek);
     };
   }, [videoEl, primary, secondary]);
 

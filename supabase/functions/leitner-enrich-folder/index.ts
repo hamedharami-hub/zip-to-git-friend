@@ -16,8 +16,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const MODEL = "google/gemini-3-flash-preview";
@@ -117,26 +116,29 @@ async function enrichBatch(apiKey: string, cards: CardIn[]) {
   const items = Array.isArray(parsed?.items) ? parsed.items : [];
 
   // Normalise — strip empty strings; cap arrays.
-  return items.map((it: any) => ({
-    id: String(it.id ?? "").trim(),
-    back: typeof it.back === "string" && it.back.trim() ? it.back.trim().slice(0, 200) : undefined,
-    exampleSentence:
-      typeof it.exampleSentence === "string" && it.exampleSentence.trim()
-        ? it.exampleSentence.trim().slice(0, 240)
+  return items
+    .map((it: any) => ({
+      id: String(it.id ?? "").trim(),
+      back:
+        typeof it.back === "string" && it.back.trim() ? it.back.trim().slice(0, 200) : undefined,
+      exampleSentence:
+        typeof it.exampleSentence === "string" && it.exampleSentence.trim()
+          ? it.exampleSentence.trim().slice(0, 240)
+          : undefined,
+      synonyms: Array.isArray(it.synonyms)
+        ? it.synonyms
+            .filter((x: any) => typeof x === "string" && x.trim())
+            .map((x: string) => x.trim())
+            .slice(0, 8)
         : undefined,
-    synonyms: Array.isArray(it.synonyms)
-      ? it.synonyms
-          .filter((x: any) => typeof x === "string" && x.trim())
-          .map((x: string) => x.trim())
-          .slice(0, 8)
-      : undefined,
-    antonyms: Array.isArray(it.antonyms)
-      ? it.antonyms
-          .filter((x: any) => typeof x === "string" && x.trim())
-          .map((x: string) => x.trim())
-          .slice(0, 6)
-      : undefined,
-  })).filter((x: any) => x.id);
+      antonyms: Array.isArray(it.antonyms)
+        ? it.antonyms
+            .filter((x: any) => typeof x === "string" && x.trim())
+            .map((x: string) => x.trim())
+            .slice(0, 6)
+        : undefined,
+    }))
+    .filter((x: any) => x.id);
 }
 
 serve(async (req) => {
@@ -155,10 +157,10 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Process in small batches so a single bad card doesn't kill the run

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { getAnalysis } from '@/lib/db';
+import { useEffect, useState } from "react";
+import { getAnalysis } from "@/lib/db";
 
 /**
  * Returns the cached AI translation for a given (videoId, cueId), if any.

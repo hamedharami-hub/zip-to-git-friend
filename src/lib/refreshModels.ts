@@ -4,7 +4,7 @@
  * Stores the merged lists in `settings.customModels` so the pickers
  * automatically show the latest models without an app update.
  */
-import type { AppSettings } from '@/types';
+import type { AppSettings } from "@/types";
 
 export interface RefreshResult {
   geminiCount: number;
@@ -29,8 +29,10 @@ interface GroqModel {
   context_window?: number;
 }
 
-async function fetchGroqModels(apiKey: string): Promise<{ chat: ModelEntry[]; whisper: ModelEntry[] }> {
-  const res = await fetch('https://api.groq.com/openai/v1/models', {
+async function fetchGroqModels(
+  apiKey: string,
+): Promise<{ chat: ModelEntry[]; whisper: ModelEntry[] }> {
+  const res = await fetch("https://api.groq.com/openai/v1/models", {
     headers: { Authorization: `Bearer ${apiKey}` },
   });
   if (!res.ok) throw new Error(`Groq /models failed (${res.status})`);
@@ -47,7 +49,7 @@ async function fetchGroqModels(apiKey: string): Promise<{ chat: ModelEntry[]; wh
     const lower = id.toLowerCase();
 
     // Whisper (transcription) models.
-    if (lower.includes('whisper')) {
+    if (lower.includes("whisper")) {
       whisper.push({
         value: id,
         label: id,
@@ -58,11 +60,11 @@ async function fetchGroqModels(apiKey: string): Promise<{ chat: ModelEntry[]; wh
 
     // Skip non-chat (TTS, guard, embeddings, vision-only, etc.).
     if (
-      lower.includes('tts') ||
-      lower.includes('playai') ||
-      lower.includes('guard') ||
-      lower.includes('embed') ||
-      lower.includes('compound')
+      lower.includes("tts") ||
+      lower.includes("playai") ||
+      lower.includes("guard") ||
+      lower.includes("embed") ||
+      lower.includes("compound")
     ) {
       continue;
     }
@@ -99,18 +101,18 @@ async function fetchGeminiModels(apiKey: string): Promise<ModelEntry[]> {
 
   const out: ModelEntry[] = [];
   for (const m of list) {
-    const id = m.name?.replace(/^models\//, '');
+    const id = m.name?.replace(/^models\//, "");
     if (!id) continue;
     const methods = m.supportedGenerationMethods ?? [];
     // Only chat/text-capable models.
-    if (!methods.some((x) => x.toLowerCase().includes('generatecontent'))) continue;
+    if (!methods.some((x) => x.toLowerCase().includes("generatecontent"))) continue;
     // Skip embeddings/aqa/tuning.
     const lower = id.toLowerCase();
-    if (lower.includes('embedding') || lower.includes('aqa')) continue;
+    if (lower.includes("embedding") || lower.includes("aqa")) continue;
     out.push({
       value: id,
       label: m.displayName || id,
-      hint: m.description?.split('\n')[0]?.slice(0, 80),
+      hint: m.description?.split("\n")[0]?.slice(0, 80),
     });
   }
   out.sort((a, b) => a.value.localeCompare(b.value));
@@ -120,10 +122,10 @@ async function fetchGeminiModels(apiKey: string): Promise<ModelEntry[]> {
 // ─── Public API ────────────────────────────────────────────────────────────
 
 export async function refreshAllModels(
-  settings: Pick<AppSettings, 'geminiApiKey' | 'groqApiKey' | 'customModels'>,
+  settings: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
 ): Promise<{ patch: Partial<AppSettings>; result: RefreshResult }> {
   const errors: string[] = [];
-  const next: NonNullable<AppSettings['customModels']> = {
+  const next: NonNullable<AppSettings["customModels"]> = {
     ...(settings.customModels ?? {}),
   };
 
@@ -146,7 +148,7 @@ export async function refreshAllModels(
         }),
     );
   } else {
-    errors.push('Gemini: no API key');
+    errors.push("Gemini: no API key");
   }
 
   if (settings.groqApiKey?.trim()) {
@@ -163,7 +165,7 @@ export async function refreshAllModels(
         }),
     );
   } else {
-    errors.push('Groq: no API key');
+    errors.push("Groq: no API key");
   }
 
   await Promise.all(tasks);

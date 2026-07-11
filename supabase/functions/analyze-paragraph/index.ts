@@ -13,8 +13,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
@@ -60,8 +59,7 @@ const tools = [
         properties: {
           translation: {
             type: "string",
-            description:
-              "Natural, fluent, accurate Persian translation of the entire paragraph.",
+            description: "Natural, fluent, accurate Persian translation of the entire paragraph.",
           },
           vocabulary: {
             type: "array",
@@ -70,16 +68,21 @@ const tools = [
             items: {
               type: "object",
               properties: {
-                word: { type: "string", description: "The single English word as it appears (lemma form preferred)." },
-                translation: { type: "string", description: "Concise Persian meaning in this context." },
+                word: {
+                  type: "string",
+                  description: "The single English word as it appears (lemma form preferred).",
+                },
+                translation: {
+                  type: "string",
+                  description: "Concise Persian meaning in this context.",
+                },
                 partOfSpeech: {
                   type: "string",
                   enum: ["noun", "verb", "adjective", "adverb", "phrase", "other"],
                 },
                 example: {
                   type: "string",
-                  description:
-                    "Optional short English example sentence using the word.",
+                  description: "Optional short English example sentence using the word.",
                 },
               },
               required: ["word", "translation"],
@@ -98,7 +101,10 @@ const tools = [
                   description:
                     "The English phrase (2+ words) EXACTLY as it appears in the paragraph, same wording and word order.",
                 },
-                meaning: { type: "string", description: "Persian meaning / explanation in this context." },
+                meaning: {
+                  type: "string",
+                  description: "Persian meaning / explanation in this context.",
+                },
                 literalTranslation: {
                   type: "string",
                   description: "Optional literal Persian rendering for contrast.",
@@ -125,10 +131,10 @@ serve(async (req) => {
     const { paragraph, model } = await req.json();
 
     if (typeof paragraph !== "string" || !paragraph.trim()) {
-      return new Response(
-        JSON.stringify({ error: "Missing 'paragraph' string in body." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Missing 'paragraph' string in body." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Trim + soft cap to avoid blowing up tokens on rogue inputs.
@@ -136,10 +142,10 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const chosenModel = typeof model === "string" && model ? model : DEFAULT_MODEL;
@@ -156,8 +162,7 @@ serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content:
-              `Analyze this English paragraph for a Persian learner. Call the tool with the result.\n\nParagraph:\n"""\n${text}\n"""`,
+            content: `Analyze this English paragraph for a Persian learner. Call the tool with the result.\n\nParagraph:\n"""\n${text}\n"""`,
           },
         ],
         tools,
@@ -182,17 +187,20 @@ serve(async (req) => {
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("[analyze-paragraph] gateway error", aiRes.status, t);
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await aiRes.json();
     const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
     const argsStr = toolCall?.function?.arguments;
     if (!argsStr) {
-      console.error("[analyze-paragraph] no tool_calls in response", JSON.stringify(data).slice(0, 500));
+      console.error(
+        "[analyze-paragraph] no tool_calls in response",
+        JSON.stringify(data).slice(0, 500),
+      );
       return new Response(
         JSON.stringify({ error: "AI response did not include structured output." }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -204,10 +212,10 @@ serve(async (req) => {
       parsed = JSON.parse(argsStr);
     } catch (e) {
       console.error("[analyze-paragraph] failed to parse tool args", argsStr.slice(0, 300));
-      return new Response(
-        JSON.stringify({ error: "AI returned malformed structured output." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI returned malformed structured output." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Defensive normalization.
@@ -215,7 +223,9 @@ serve(async (req) => {
       translation: typeof parsed.translation === "string" ? parsed.translation.trim() : "",
       vocabulary: Array.isArray(parsed.vocabulary)
         ? parsed.vocabulary
-            .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
+            .filter(
+              (v: any) => v && typeof v.word === "string" && typeof v.translation === "string",
+            )
             .map((v: any) => ({
               word: String(v.word).trim(),
               translation: String(v.translation).trim(),

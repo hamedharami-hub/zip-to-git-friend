@@ -58,7 +58,7 @@ function pickAttr(xml: string, tag: string, attr: string): string | undefined {
 const RTL_RE = /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
 
 function shouldTranslateTitle(title: string): boolean {
-  const clean = (title ?? '').trim();
+  const clean = (title ?? "").trim();
   if (!clean) return false;
   // Keep Persian / RTL headlines in their original script.
   if (RTL_RE.test(clean)) return false;
@@ -67,7 +67,7 @@ function shouldTranslateTitle(title: string): boolean {
 }
 
 async function translateTitles(items: FeedItem[]): Promise<FeedItem[]> {
-  const apiKey = Deno.env.get('LOVABLE_API_KEY');
+  const apiKey = Deno.env.get("LOVABLE_API_KEY");
   const targets = items
     .map((item, index) => ({ item, index }))
     .filter(({ item }) => shouldTranslateTitle(item.title));
@@ -75,42 +75,45 @@ async function translateTitles(items: FeedItem[]): Promise<FeedItem[]> {
 
   try {
     const payload = targets.map(({ item, index }) => ({ id: index, title: item.title }));
-    const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: 'google/gemini-3.1-flash-lite-preview',
+        model: "google/gemini-3.1-flash-lite-preview",
         messages: [
           {
-            role: 'system',
-            content: 'Translate non-English news headlines into natural concise English. If a title is already English, keep it nearly unchanged. Return JSON only via the provided tool.',
+            role: "system",
+            content:
+              "Translate non-English news headlines into natural concise English. If a title is already English, keep it nearly unchanged. Return JSON only via the provided tool.",
           },
-          { role: 'user', content: JSON.stringify(payload) },
+          { role: "user", content: JSON.stringify(payload) },
         ],
-        tools: [{
-          type: 'function',
-          function: {
-            name: 'return_titles',
-            description: 'Return English titles by id.',
-            parameters: {
-              type: 'object',
-              properties: {
-                titles: {
-                  type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: { id: { type: 'integer' }, title: { type: 'string' } },
-                    required: ['id', 'title'],
-                    additionalProperties: false,
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "return_titles",
+              description: "Return English titles by id.",
+              parameters: {
+                type: "object",
+                properties: {
+                  titles: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: { id: { type: "integer" }, title: { type: "string" } },
+                      required: ["id", "title"],
+                      additionalProperties: false,
+                    },
                   },
                 },
+                required: ["titles"],
+                additionalProperties: false,
               },
-              required: ['titles'],
-              additionalProperties: false,
             },
           },
-        }],
-        tool_choice: { type: 'function', function: { name: 'return_titles' } },
+        ],
+        tool_choice: { type: "function", function: { name: "return_titles" } },
       }),
     });
     if (!res.ok) return items;
@@ -120,7 +123,7 @@ async function translateTitles(items: FeedItem[]): Promise<FeedItem[]> {
     const parsed = JSON.parse(argsStr);
     const map = new Map<number, string>();
     for (const row of parsed?.titles ?? []) {
-      if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+      if (typeof row?.id === "number" && typeof row?.title === "string" && row.title.trim()) {
         map.set(row.id, row.title.trim());
       }
     }
@@ -132,9 +135,7 @@ async function translateTitles(items: FeedItem[]): Promise<FeedItem[]> {
 
 function parseFeed(xml: string): FeedItem[] {
   const isAtom = /<feed[\s>]/i.test(xml);
-  const itemRe = isAtom
-    ? /<entry[\s>][\s\S]*?<\/entry>/gi
-    : /<item[\s>][\s\S]*?<\/item>/gi;
+  const itemRe = isAtom ? /<entry[\s>][\s\S]*?<\/entry>/gi : /<item[\s>][\s\S]*?<\/item>/gi;
   const items: FeedItem[] = [];
   const blocks = xml.match(itemRe) ?? [];
   for (const block of blocks) {
@@ -153,15 +154,10 @@ function parseFeed(xml: string): FeedItem[] {
       pick(block, "content") ??
       "";
     const excerpt = stripTags(description).slice(0, 400);
-    const author = stripTags(
-      pick(block, "dc:creator") ?? pick(block, "author") ?? "",
-    );
+    const author = stripTags(pick(block, "dc:creator") ?? pick(block, "author") ?? "");
     const publishedAt =
-      pick(block, "pubDate") ??
-      pick(block, "published") ??
-      pick(block, "updated") ??
-      undefined;
-    const sourceTag = pick(block, 'source') ?? '';
+      pick(block, "pubDate") ?? pick(block, "published") ?? pick(block, "updated") ?? undefined;
+    const sourceTag = pick(block, "source") ?? "";
     const siteName = stripTags(sourceTag) || undefined;
     let imageUrl =
       pickAttr(block, "media:content", "url") ??
@@ -177,9 +173,7 @@ function parseFeed(xml: string): FeedItem[] {
       excerpt,
       author: author || undefined,
       siteName,
-      publishedAt: publishedAt
-        ? new Date(publishedAt).toISOString()
-        : undefined,
+      publishedAt: publishedAt ? new Date(publishedAt).toISOString() : undefined,
       imageUrl,
     });
   }
@@ -231,13 +225,10 @@ serve(async (req) => {
           "",
       ) || undefined;
 
-    return new Response(
-      JSON.stringify({ feedTitle, items }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
+    return new Response(JSON.stringify({ feedTitle, items }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("news-fetch-rss error", e);
     return new Response(

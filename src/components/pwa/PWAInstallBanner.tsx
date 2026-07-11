@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Download, Sparkles, X, Share, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { Download, Sparkles, X, Share, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,11 +8,11 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { useInstallPrompt } from '@/hooks/useInstallPrompt';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import { useInstallPrompt } from "@/hooks/useInstallPrompt";
+import { toast } from "sonner";
 
-const DISMISS_KEY = 'pwa-install-banner-dismissed-v1';
+const DISMISS_KEY = "pwa-install-banner-dismissed-v1";
 const SHOW_DELAY_MS = 1500;
 
 /**
@@ -29,7 +29,7 @@ export function PWAInstallBanner() {
     if (isStandalone) return;
     let dismissed = false;
     try {
-      dismissed = localStorage.getItem(DISMISS_KEY) === '1';
+      dismissed = localStorage.getItem(DISMISS_KEY) === "1";
     } catch {
       /* storage unavailable */
     }
@@ -45,7 +45,7 @@ export function PWAInstallBanner() {
   const dismiss = () => {
     setVisible(false);
     try {
-      localStorage.setItem(DISMISS_KEY, '1');
+      localStorage.setItem(DISMISS_KEY, "1");
     } catch {
       /* ignore */
     }
@@ -57,10 +57,10 @@ export function PWAInstallBanner() {
       return;
     }
     const outcome = await promptInstall();
-    if (outcome === 'accepted') {
-      toast.success('App installed.');
+    if (outcome === "accepted") {
+      toast.success("App installed.");
       dismiss();
-    } else if (outcome === 'unavailable') {
+    } else if (outcome === "unavailable") {
       setIosOpen(true);
     }
   };
@@ -84,7 +84,7 @@ export function PWAInstallBanner() {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <Button size="sm" onClick={onInstall} className="gap-1.5">
                 <Download className="h-4 w-4" aria-hidden="true" />
-                {isIOS && !canInstall ? 'Add to Home Screen' : 'Install app'}
+                {isIOS && !canInstall ? "Add to Home Screen" : "Install app"}
               </Button>
               <Button size="sm" variant="ghost" onClick={dismiss}>
                 Maybe later
@@ -108,8 +108,8 @@ export function PWAInstallBanner() {
           <DialogHeader>
             <DialogTitle>Install on iOS</DialogTitle>
             <DialogDescription>
-              Safari doesn't have a built-in install button. Add this app to your home screen
-              in two steps:
+              Safari doesn't have a built-in install button. Add this app to your home screen in two
+              steps:
             </DialogDescription>
           </DialogHeader>
           <ol className="space-y-3 text-sm">
@@ -118,8 +118,7 @@ export function PWAInstallBanner() {
                 1
               </span>
               <span className="flex items-center gap-1.5">
-                Tap the <Share className="h-4 w-4 inline" /> Share button at the bottom of
-                Safari.
+                Tap the <Share className="h-4 w-4 inline" /> Share button at the bottom of Safari.
               </span>
             </li>
             <li className="flex items-start gap-3">

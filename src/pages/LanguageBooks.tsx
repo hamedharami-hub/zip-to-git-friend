@@ -1,20 +1,23 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Trash2, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useBookStore } from '@/store/bookStore';
-import { EmptyState } from '@/components/EmptyState';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { CreateLanguageBookDialog } from '@/components/books/CreateLanguageBookDialog';
-import { AddLanguageChapterDialog } from '@/components/books/AddLanguageChapterDialog';
-import { generateGradientCover } from '@/lib/manualBook';
-import { isLanguageBook } from '@/lib/languageBook';
-import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Sparkles, Trash2, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useBookStore } from "@/store/bookStore";
+import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CreateLanguageBookDialog } from "@/components/books/CreateLanguageBookDialog";
+import { AddLanguageChapterDialog } from "@/components/books/AddLanguageChapterDialog";
+import { generateGradientCover } from "@/lib/manualBook";
+import { isLanguageBook } from "@/lib/languageBook";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const LanguageBooks = () => {
-  usePageMeta({ title: 'Language Books — Language Learning Player', description: 'کتاب‌های زبان — مرور و مطالعه‌ی دوره‌های زبانی.' });
+  usePageMeta({
+    title: "Language Books — Language Learning Player",
+    description: "کتاب‌های زبان — مرور و مطالعه‌ی دوره‌های زبانی.",
+  });
   const books = useBookStore((s) => s.books);
   const load = useBookStore((s) => s.load);
   const remove = useBookStore((s) => s.remove);
@@ -28,15 +31,13 @@ const LanguageBooks = () => {
       await remove(id);
       toast.success(`Deleted "${title}".`);
     } catch (err) {
-      console.error('[LanguageBooks] delete failed', err);
-      toast.error('Could not delete this book.');
+      console.error("[LanguageBooks] delete failed", err);
+      toast.error("Could not delete this book.");
     }
   };
 
   const sorted = useMemo(() => {
-    return books
-      .filter(isLanguageBook)
-      .sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+    return books.filter(isLanguageBook).sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
   }, [books]);
 
   return (
@@ -68,11 +69,9 @@ const LanguageBooks = () => {
           <>
             <div className="mb-6 flex items-baseline justify-between">
               <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">
-                {sorted.length} {sorted.length === 1 ? 'book' : 'books'}
+                {sorted.length} {sorted.length === 1 ? "book" : "books"}
               </h2>
-              <p className="text-xs text-muted-foreground">
-                Tap a cover to start reading
-              </p>
+              <p className="text-xs text-muted-foreground">Tap a cover to start reading</p>
             </div>
 
             <ul className="grid gap-x-5 gap-y-8 sm:gap-x-7 sm:gap-y-10 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
@@ -88,8 +87,7 @@ const LanguageBooks = () => {
                       : 0,
                   ),
                 );
-                const cover =
-                  b.coverDataUrl ?? generateGradientCover(b.title, b.author);
+                const cover = b.coverDataUrl ?? generateGradientCover(b.title, b.author);
 
                 return (
                   <li key={b.id} className="group relative">
@@ -101,16 +99,16 @@ const LanguageBooks = () => {
                       <div className="relative">
                         <div
                           className={cn(
-                            'aspect-[2/3] rounded-md overflow-hidden bg-muted',
-                            'shadow-[0_10px_25px_-12px_hsl(var(--foreground)/0.35)]',
-                            'transition-all duration-300 ease-out',
-                            'group-hover:-translate-y-1 group-hover:shadow-[0_18px_35px_-12px_hsl(var(--foreground)/0.45)]',
-                            'group-focus-within:ring-2 group-focus-within:ring-ring',
+                            "aspect-[2/3] rounded-md overflow-hidden bg-muted",
+                            "shadow-[0_10px_25px_-12px_hsl(var(--foreground)/0.35)]",
+                            "transition-all duration-300 ease-out",
+                            "group-hover:-translate-y-1 group-hover:shadow-[0_18px_35px_-12px_hsl(var(--foreground)/0.45)]",
+                            "group-focus-within:ring-2 group-focus-within:ring-ring",
                           )}
                           style={{
                             backgroundImage: `url("${cover}")`,
-                            backgroundSize: 'cover',
-                            backgroundPosition: 'center',
+                            backgroundSize: "cover",
+                            backgroundPosition: "center",
                           }}
                         >
                           <div
@@ -118,7 +116,7 @@ const LanguageBooks = () => {
                             className="absolute inset-0 pointer-events-none"
                             style={{
                               background:
-                                'linear-gradient(90deg, hsl(0 0% 0% / 0.18) 0, transparent 6%), linear-gradient(180deg, transparent 70%, hsl(0 0% 0% / 0.25) 100%)',
+                                "linear-gradient(90deg, hsl(0 0% 0% / 0.18) 0, transparent 6%), linear-gradient(180deg, transparent 70%, hsl(0 0% 0% / 0.25) 100%)",
                             }}
                           />
                         </div>
@@ -156,9 +154,9 @@ const LanguageBooks = () => {
                         <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70 pt-0.5">
                           {b.chapterCount > 0
                             ? `${b.chapterCount} ch${
-                                inProgress ? ` · ${Math.round(progress * 100)}%` : ''
+                                inProgress ? ` · ${Math.round(progress * 100)}%` : ""
                               }`
-                            : 'Empty'}
+                            : "Empty"}
                         </p>
                       </div>
                     </Link>

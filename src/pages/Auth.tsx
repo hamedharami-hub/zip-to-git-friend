@@ -1,26 +1,29 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, LogIn, Mail } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { supabase } from '@/integrations/supabase/client';
-import { lovable } from '@/integrations/lovable';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { ArrowLeft, Loader2, LogIn, Mail } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 const Auth = () => {
-  usePageMeta({ title: 'Sign in — Language Learning Player', description: 'ورود / ثبت‌نام — دسترسی به پروفایل و همگام‌سازی ابری.' });
+  usePageMeta({
+    title: "Sign in — Language Learning Player",
+    description: "ورود / ثبت‌نام — دسترسی به پروفایل و همگام‌سازی ابری.",
+  });
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const rawNext = searchParams.get('next') ?? '';
+  const rawNext = searchParams.get("next") ?? "";
   // Only accept same-origin relative paths for the post-auth redirect.
-  const nextPath = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const nextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -29,7 +32,7 @@ const Auth = () => {
 
   const rememberPostAuthPath = () => {
     try {
-      window.localStorage.setItem('llp-post-auth-path', nextPath);
+      window.localStorage.setItem("llp-post-auth-path", nextPath);
     } catch {
       // Ignore storage failures; the callback will fall back to home.
     }
@@ -48,34 +51,34 @@ const Auth = () => {
   const randomState = () => {
     if (window.crypto?.getRandomValues) {
       return Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('');
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
     }
     return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   };
 
-  const handleEmail = async (mode: 'signin' | 'signup') => {
+  const handleEmail = async (mode: "signin" | "signup") => {
     if (!email || !password) {
-      toast.error('Email and password are required.');
+      toast.error("Email and password are required.");
       return;
     }
     setSubmitting(true);
     try {
-      if (mode === 'signup') {
+      if (mode === "signup") {
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
         });
         if (error) throw error;
-        toast.success('Account created. Check your email to confirm (if required).');
+        toast.success("Account created. Check your email to confirm (if required).");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        toast.success('Signed in.');
+        toast.success("Signed in.");
       }
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Authentication failed.';
+      const msg = e instanceof Error ? e.message : "Authentication failed.";
       toast.error(msg);
     } finally {
       setSubmitting(false);
@@ -92,11 +95,11 @@ const Auth = () => {
 
       if (isMobile && isInIframe()) {
         const params = new URLSearchParams({
-          provider: 'google',
+          provider: "google",
           redirect_uri: authCallbackUrl(),
           state: randomState(),
-          prompt: 'select_account',
-          display: 'page',
+          prompt: "select_account",
+          display: "page",
         });
         const redirectTo = `${window.location.origin}/~oauth/initiate?${params.toString()}`;
         try {
@@ -107,15 +110,16 @@ const Auth = () => {
         return;
       }
 
-      const extraParams: Record<string, string> = { prompt: 'select_account' };
-      if (isMobile) extraParams.display = 'page';
+      const extraParams: Record<string, string> = { prompt: "select_account" };
+      if (isMobile) extraParams.display = "page";
 
-      const result = await lovable.auth.signInWithOAuth('google', {
+      const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: authCallbackUrl(),
         extraParams,
       });
       if (result.error) {
-        const msg = (result.error instanceof Error ? result.error.message : String(result.error)) || '';
+        const msg =
+          (result.error instanceof Error ? result.error.message : String(result.error)) || "";
         // Silently ignore popup-close cancellations — user just closed it.
         if (/cancel|closed|popup/i.test(msg)) {
           setSubmitting(false);
@@ -125,13 +129,13 @@ const Auth = () => {
       }
       if (result.redirected) return; // browser will redirect
       try {
-        window.localStorage.removeItem('llp-post-auth-path');
+        window.localStorage.removeItem("llp-post-auth-path");
       } catch {
         // Ignore storage failures.
       }
       navigate(nextPath, { replace: true });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Google sign-in failed.';
+      const msg = e instanceof Error ? e.message : "Google sign-in failed.";
       if (!/cancel|closed|popup/i.test(msg)) toast.error(msg);
       setSubmitting(false);
     }
@@ -161,12 +165,7 @@ const Auth = () => {
           </p>
         </div>
 
-        <Button
-          variant="outline"
-          className="w-full"
-          onClick={handleGoogle}
-          disabled={submitting}
-        >
+        <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={submitting}>
           <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" aria-hidden="true">
             <path
               fill="#EA4335"
@@ -188,7 +187,7 @@ const Auth = () => {
             <TabsTrigger value="signup">Create account</TabsTrigger>
           </TabsList>
 
-          {(['signin', 'signup'] as const).map((mode) => (
+          {(["signin", "signup"] as const).map((mode) => (
             <TabsContent key={mode} value={mode} className="space-y-3 mt-4">
               <div className="space-y-1.5">
                 <Label htmlFor={`${mode}-email`}>Email</Label>
@@ -205,22 +204,18 @@ const Auth = () => {
                 <Input
                   id={`${mode}-password`}
                   type="password"
-                  autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              <Button
-                className="w-full"
-                onClick={() => handleEmail(mode)}
-                disabled={submitting}
-              >
+              <Button className="w-full" onClick={() => handleEmail(mode)} disabled={submitting}>
                 {submitting ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
                   <Mail className="h-4 w-4 mr-2" />
                 )}
-                {mode === 'signup' ? 'Create account' : 'Sign in'}
+                {mode === "signup" ? "Create account" : "Sign in"}
               </Button>
             </TabsContent>
           ))}

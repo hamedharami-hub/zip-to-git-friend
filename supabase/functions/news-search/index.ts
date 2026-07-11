@@ -20,8 +20,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const FIRECRAWL_V2 = "https://api.firecrawl.dev/v2";
@@ -46,7 +45,7 @@ interface SearchItem {
 const RTL_RE = /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
 
 function shouldTranslateTitle(title: string): boolean {
-  const clean = (title ?? '').trim();
+  const clean = (title ?? "").trim();
   if (!clean) return false;
   // Keep Persian / RTL headlines in their original script.
   if (RTL_RE.test(clean)) return false;
@@ -88,7 +87,10 @@ function pick(xml: string, tag: string): string | undefined {
   return m ? m[1].trim() : undefined;
 }
 
-function regionToParams(region?: string, language?: string): {
+function regionToParams(
+  region?: string,
+  language?: string,
+): {
   hl: string;
   gl: string;
   ceid: string;
@@ -112,8 +114,7 @@ function regionToParams(region?: string, language?: string): {
 const BROWSER_HEADERS: Record<string, string> = {
   "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-  Accept:
-    "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
+  Accept: "application/rss+xml, application/xml;q=0.9, text/xml;q=0.9, text/html;q=0.8, */*;q=0.5",
   "Accept-Language": "en-AU,en;q=0.9",
   "Accept-Encoding": "gzip, deflate",
   "Cache-Control": "no-cache",
@@ -194,7 +195,10 @@ async function resolveRealUrl(url: string, timeoutMs = 4000): Promise<string> {
       method: "GET",
       redirect: "follow",
       signal: ctrl.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36" },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      },
     });
     clearTimeout(t);
     return res.url || url;
@@ -273,7 +277,11 @@ async function summarizeWithGemini(opts: {
   const argsStr = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!argsStr) return {};
   let parsed: any;
-  try { parsed = JSON.parse(argsStr); } catch { return {}; }
+  try {
+    parsed = JSON.parse(argsStr);
+  } catch {
+    return {};
+  }
   const map: Record<string, string> = {};
   for (const s of parsed?.summaries ?? []) {
     if (typeof s?.id === "number" && typeof s?.excerpt === "string") {
@@ -283,44 +291,53 @@ async function summarizeWithGemini(opts: {
   return map;
 }
 
-async function translateTitlesWithGemini(apiKey: string, items: SearchItem[]): Promise<Record<string, string>> {
+async function translateTitlesWithGemini(
+  apiKey: string,
+  items: SearchItem[],
+): Promise<Record<string, string>> {
   const list = items
     .map((it, i) => ({ id: i, title: it.title }))
     .filter((it) => shouldTranslateTitle(it.title));
   if (list.length === 0) return {};
-  const res = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: 'google/gemini-3.1-flash-lite-preview',
+      model: "google/gemini-3.1-flash-lite-preview",
       messages: [
-        { role: 'system', content: 'Translate non-English news headlines into concise natural English. Return JSON only via the tool.' },
-        { role: 'user', content: JSON.stringify(list) },
+        {
+          role: "system",
+          content:
+            "Translate non-English news headlines into concise natural English. Return JSON only via the tool.",
+        },
+        { role: "user", content: JSON.stringify(list) },
       ],
-      tools: [{
-        type: 'function',
-        function: {
-          name: 'return_titles',
-          description: 'Return translated English titles by id.',
-          parameters: {
-            type: 'object',
-            properties: {
-              titles: {
-                type: 'array',
-                items: {
-                  type: 'object',
-                  properties: { id: { type: 'integer' }, title: { type: 'string' } },
-                  required: ['id', 'title'],
-                  additionalProperties: false,
+      tools: [
+        {
+          type: "function",
+          function: {
+            name: "return_titles",
+            description: "Return translated English titles by id.",
+            parameters: {
+              type: "object",
+              properties: {
+                titles: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: { id: { type: "integer" }, title: { type: "string" } },
+                    required: ["id", "title"],
+                    additionalProperties: false,
+                  },
                 },
               },
+              required: ["titles"],
+              additionalProperties: false,
             },
-            required: ['titles'],
-            additionalProperties: false,
           },
         },
-      }],
-      tool_choice: { type: 'function', function: { name: 'return_titles' } },
+      ],
+      tool_choice: { type: "function", function: { name: "return_titles" } },
     }),
   });
   if (!res.ok) return {};
@@ -330,7 +347,7 @@ async function translateTitlesWithGemini(apiKey: string, items: SearchItem[]): P
   const parsed = JSON.parse(argsStr);
   const out: Record<string, string> = {};
   for (const row of parsed?.titles ?? []) {
-    if (typeof row?.id === 'number' && typeof row?.title === 'string' && row.title.trim()) {
+    if (typeof row?.id === "number" && typeof row?.title === "string" && row.title.trim()) {
       out[String(row.id)] = row.title.trim();
     }
   }
@@ -368,14 +385,18 @@ async function searchWithRss(opts: {
   let translatedTitles: Record<string, string> = {};
   if (opts.lovableKey) {
     try {
-      summaries = await summarizeWithGemini({ apiKey: opts.lovableKey, items: resolved, model: opts.model });
+      summaries = await summarizeWithGemini({
+        apiKey: opts.lovableKey,
+        items: resolved,
+        model: opts.model,
+      });
     } catch (e) {
       console.warn("summarize error:", e);
     }
     try {
       translatedTitles = await translateTitlesWithGemini(opts.lovableKey, resolved);
     } catch (e) {
-      console.warn('title translate error:', e);
+      console.warn("title translate error:", e);
     }
   }
 
@@ -417,10 +438,7 @@ async function searchWithFirecrawl(opts: {
     throw err;
   }
   const raw: any[] =
-    (Array.isArray(data?.data) && data.data) ||
-    data?.web?.results ||
-    data?.web ||
-    [];
+    (Array.isArray(data?.data) && data.data) || data?.web?.results || data?.web || [];
   return raw
     .filter((r) => r?.url || r?.link)
     .map((r) => ({
@@ -449,14 +467,19 @@ serve(async (req) => {
     } = body ?? {};
     const blockedSet = new Set<string>(
       (Array.isArray(blockedDomains) ? blockedDomains : [])
-        .map((d: string) => String(d ?? '').toLowerCase().replace(/^www\./, '').trim())
+        .map((d: string) =>
+          String(d ?? "")
+            .toLowerCase()
+            .replace(/^www\./, "")
+            .trim(),
+        )
         .filter(Boolean),
     );
     const isBlocked = (url: string) => {
-      const host = siteFromUrl(url)?.toLowerCase() ?? '';
+      const host = siteFromUrl(url)?.toLowerCase() ?? "";
       if (!host) return false;
       for (const b of blockedSet) {
-        if (host === b || host.endsWith('.' + b)) return true;
+        if (host === b || host.endsWith("." + b)) return true;
       }
       return false;
     };
@@ -519,9 +542,12 @@ serve(async (req) => {
       JSON.stringify({
         items,
         source: usedSource,
-        warning: items.length === 0
-          ? (firecrawlError ? `جستجو نتیجه نداشت (${firecrawlError})` : "نتیجه‌ای یافت نشد.")
-          : undefined,
+        warning:
+          items.length === 0
+            ? firecrawlError
+              ? `جستجو نتیجه نداشت (${firecrawlError})`
+              : "نتیجه‌ای یافت نشد."
+            : undefined,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

@@ -28,7 +28,7 @@ export interface BrowserTtsVoice {
 }
 
 export function isBrowserTtsSupported(): boolean {
-  return typeof window !== 'undefined' && 'speechSynthesis' in window;
+  return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
 /** List installed voices. Some engines populate them lazily; we wait once. */
@@ -55,7 +55,7 @@ export function listVoices(): Promise<BrowserTtsVoice[]> {
       return;
     }
     // Voices may load async — wait one event, then resolve regardless.
-    synth.addEventListener('voiceschanged', collect, { once: true });
+    synth.addEventListener("voiceschanged", collect, { once: true });
     setTimeout(collect, 1500);
   });
 }
@@ -73,9 +73,12 @@ function lookupVoice(id: string | null): SpeechSynthesisVoice | null {
  *  merged with the next paragraph. Inside each block we then split at
  *  sentence boundaries. */
 function chunkText(text: string, maxLen = 250): string[] {
-  const cleaned = (text ?? '').replace(/\r\n?/g, '\n').trim();
+  const cleaned = (text ?? "").replace(/\r\n?/g, "\n").trim();
   if (!cleaned) return [];
-  const blocks = cleaned.split(/\n{2,}/g).map((b) => b.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const blocks = cleaned
+    .split(/\n{2,}/g)
+    .map((b) => b.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
   const out: string[] = [];
   for (const block of blocks) {
     // Short blocks (typically headings) stay as a single chunk so they're
@@ -85,12 +88,12 @@ function chunkText(text: string, maxLen = 250): string[] {
       continue;
     }
     const sentences = block.match(/[^.!?؟。]+[.!?؟。]+|[^.!?؟。]+$/g) ?? [block];
-    let buf = '';
+    let buf = "";
     const pushLong = (text: string) => {
       const words = text.match(/\S+/g) ?? [];
-      let part = '';
+      let part = "";
       for (const w of words) {
-        if ((part + ' ' + w).trim().length > maxLen && part) {
+        if ((part + " " + w).trim().length > maxLen && part) {
           out.push(part.trim());
           part = w;
         } else {
@@ -105,12 +108,12 @@ function chunkText(text: string, maxLen = 250): string[] {
       if (trimmed.length > maxLen) {
         if (buf) {
           out.push(buf.trim());
-          buf = '';
+          buf = "";
         }
         pushLong(trimmed);
         continue;
       }
-      if ((buf + ' ' + trimmed).trim().length > maxLen && buf) {
+      if ((buf + " " + trimmed).trim().length > maxLen && buf) {
         out.push(buf.trim());
         buf = trimmed;
       } else {
@@ -121,7 +124,6 @@ function chunkText(text: string, maxLen = 250): string[] {
   }
   return out;
 }
-
 
 export interface BrowserTtsOptions {
   voiceId?: string | null;
@@ -148,7 +150,10 @@ export class BrowserTtsController {
   private finished = false;
   private currentIndex = 0;
 
-  constructor(private text: string, private opts: BrowserTtsOptions = {}) {
+  constructor(
+    private text: string,
+    private opts: BrowserTtsOptions = {},
+  ) {
     this.chunks = chunkText(text);
   }
 
@@ -188,7 +193,7 @@ export class BrowserTtsController {
     this.utterances = this.chunks.slice(startIdx).map((c, j) => {
       const i = startIdx + j;
       const u = new SpeechSynthesisUtterance(c);
-      u.lang = this.opts.lang ?? 'en-US';
+      u.lang = this.opts.lang ?? "en-US";
       if (voice) {
         u.voice = voice;
         u.lang = voice.lang;
@@ -207,7 +212,7 @@ export class BrowserTtsController {
         }
       };
       u.onerror = (e) => {
-        if (e.error === 'interrupted' || e.error === 'canceled') return;
+        if (e.error === "interrupted" || e.error === "canceled") return;
         this.opts.onError?.(e);
       };
       return u;

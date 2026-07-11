@@ -2,7 +2,7 @@
  * Gamification primitives: XP, level, streak, hearts, daily quests.
  * All state lives in `user_gamification` + `daily_quests` (RLS-protected).
  */
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface GamificationState {
   userId: string;
@@ -35,7 +35,7 @@ const MAX_HEARTS = 5;
 /** XP needed to reach a given level (Duolingo-style cumulative curve). */
 export function xpForLevel(level: number): number {
   // 0 → L1, 50 → L2, 150 → L3, 300 → L4 ...
-  return Math.round(50 * level * (level - 1) / 2 + 50 * (level - 1));
+  return Math.round((50 * level * (level - 1)) / 2 + 50 * (level - 1));
 }
 export function levelFromXp(xp: number): number {
   let level = 1;
@@ -46,7 +46,14 @@ export function xpProgress(xp: number) {
   const level = levelFromXp(xp);
   const cur = xpForLevel(level);
   const nxt = xpForLevel(level + 1);
-  return { level, cur, nxt, into: xp - cur, span: nxt - cur, pct: ((xp - cur) / (nxt - cur)) * 100 };
+  return {
+    level,
+    cur,
+    nxt,
+    into: xp - cur,
+    span: nxt - cur,
+    pct: ((xp - cur) / (nxt - cur)) * 100,
+  };
 }
 
 function mapState(row: any): GamificationState {
@@ -81,7 +88,7 @@ function mapQuest(row: any): DailyQuest {
 }
 
 export async function getOrCreateState(): Promise<GamificationState | null> {
-  const { data, error } = await supabase.rpc('gamif_ensure_state');
+  const { data, error } = await supabase.rpc("gamif_ensure_state");
   if (error || !data) return null;
   return mapState(data);
 }
@@ -96,11 +103,16 @@ export const XP_BY_GRADE: Record<string, number> = {
 
 /** Apply a grade outcome via server-side RPC. */
 export async function recordGrade(opts: {
-  grade: 'again' | 'hard' | 'good' | 'easy';
+  grade: "again" | "hard" | "good" | "easy";
   combo: number;
-}): Promise<{ state: GamificationState | null; xpEarned: number; leveledUp: boolean; lostHeart: boolean }> {
+}): Promise<{
+  state: GamificationState | null;
+  xpEarned: number;
+  leveledUp: boolean;
+  lostHeart: boolean;
+}> {
   const prev = await getOrCreateState();
-  const { data, error } = await supabase.rpc('gamif_record_grade', {
+  const { data, error } = await supabase.rpc("gamif_record_grade", {
     _grade: opts.grade,
     _combo: opts.combo,
   });
@@ -113,12 +125,12 @@ export async function recordGrade(opts: {
   const lostHeart = prev ? next.hearts < prev.hearts : false;
 
   // Quest progress: review_n (still writable by the user on daily_quests)
-  void incrementQuestProgress('review_count', 1);
-  if (opts.grade === 'good' || opts.grade === 'easy') {
-    void incrementQuestProgress('correct_count', 1);
+  void incrementQuestProgress("review_count", 1);
+  if (opts.grade === "good" || opts.grade === "easy") {
+    void incrementQuestProgress("correct_count", 1);
   }
   if (opts.combo >= 10) {
-    void incrementQuestProgress('combo_10', 1);
+    void incrementQuestProgress("combo_10", 1);
   }
 
   return { state: next, xpEarned, leveledUp, lostHeart };
@@ -127,9 +139,27 @@ export async function recordGrade(opts: {
 /* ─────────────── Daily quests ─────────────── */
 
 const QUEST_TEMPLATES = [
-  { key: 'review_count', title: 'بازی‌گرم!', description: '۲۰ جمله را مرور کن', target: 20, rewardXp: 30 },
-  { key: 'correct_count', title: 'دقت بالا', description: '۱۵ جواب خوب یا عالی بده', target: 15, rewardXp: 25 },
-  { key: 'combo_10', title: 'کمبوی طلایی', description: 'یک Combo ×۱۰ بساز', target: 1, rewardXp: 40 },
+  {
+    key: "review_count",
+    title: "بازی‌گرم!",
+    description: "۲۰ جمله را مرور کن",
+    target: 20,
+    rewardXp: 30,
+  },
+  {
+    key: "correct_count",
+    title: "دقت بالا",
+    description: "۱۵ جواب خوب یا عالی بده",
+    target: 15,
+    rewardXp: 25,
+  },
+  {
+    key: "combo_10",
+    title: "کمبوی طلایی",
+    description: "یک Combo ×۱۰ بساز",
+    target: 1,
+    rewardXp: 40,
+  },
 ];
 
 function endOfDayISO(): string {
@@ -143,10 +173,10 @@ export async function ensureDailyQuests(): Promise<DailyQuest[]> {
   const userId = auth.user?.id;
   if (!userId) return [];
   const { data } = await supabase
-    .from('daily_quests')
-    .select('*')
-    .eq('user_id', userId)
-    .gte('expires_at', new Date().toISOString());
+    .from("daily_quests")
+    .select("*")
+    .eq("user_id", userId)
+    .gte("expires_at", new Date().toISOString());
   if (data && data.length > 0) return data.map(mapQuest);
   const rows = QUEST_TEMPLATES.map((t) => ({
     user_id: userId,
@@ -157,7 +187,7 @@ export async function ensureDailyQuests(): Promise<DailyQuest[]> {
     reward_xp: t.rewardXp,
     expires_at: endOfDayISO(),
   }));
-  const { data: created } = await supabase.from('daily_quests').insert(rows).select();
+  const { data: created } = await supabase.from("daily_quests").insert(rows).select();
   return (created ?? []).map(mapQuest);
 }
 
@@ -166,25 +196,22 @@ export async function incrementQuestProgress(questKey: string, by = 1): Promise<
   const userId = auth.user?.id;
   if (!userId) return;
   const { data: rows } = await supabase
-    .from('daily_quests')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('quest_key', questKey)
-    .eq('completed', false)
-    .gte('expires_at', new Date().toISOString())
+    .from("daily_quests")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("quest_key", questKey)
+    .eq("completed", false)
+    .gte("expires_at", new Date().toISOString())
     .limit(1);
   const row = rows?.[0];
   if (!row) return;
   const newProgress = row.progress + by;
   const completed = newProgress >= row.target;
-  await supabase
-    .from('daily_quests')
-    .update({ progress: newProgress, completed })
-    .eq('id', row.id);
+  await supabase.from("daily_quests").update({ progress: newProgress, completed }).eq("id", row.id);
 }
 
 export async function claimQuest(questId: string): Promise<GamificationState | null> {
-  const { data, error } = await supabase.rpc('gamif_claim_quest', { _quest_id: questId });
+  const { data, error } = await supabase.rpc("gamif_claim_quest", { _quest_id: questId });
   if (error || !data) return getOrCreateState();
   return mapState(data);
 }

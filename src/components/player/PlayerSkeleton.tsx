@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from "@/components/ui/skeleton";
 
 /** Skeleton that mimics the Player layout so the route swap feels instant. */
 export function PlayerSkeleton() {

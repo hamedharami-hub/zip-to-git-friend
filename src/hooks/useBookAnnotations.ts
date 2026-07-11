@@ -5,7 +5,7 @@
  * are reader-page only and we want fast local updates without a full refresh
  * of the library list.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import {
   saveHighlight,
   deleteHighlight,
@@ -13,10 +13,10 @@ import {
   saveBookmark,
   deleteBookmark,
   getBookmarksForBook,
-} from '@/lib/bookDb';
-import type { BookHighlight, BookBookmark } from '@/types';
+} from "@/lib/bookDb";
+import type { BookHighlight, BookBookmark } from "@/types";
 
-export type HighlightColor = 'yellow' | 'green' | 'pink';
+export type HighlightColor = "yellow" | "green" | "pink";
 
 export interface CreateHighlightInput {
   bookId: string;
@@ -56,25 +56,22 @@ export function useBookAnnotations(bookId: string | null) {
     };
   }, [bookId]);
 
-  const addHighlight = useCallback(
-    async (input: CreateHighlightInput): Promise<BookHighlight> => {
-      const row: BookHighlight = {
-        id: crypto.randomUUID(),
-        bookId: input.bookId,
-        chapterIndex: input.chapterIndex,
-        text: input.text,
-        note: input.note,
-        // Pack the colour into the locator string when no locator is provided so
-        // we don't have to extend the schema for a cosmetic field.
-        locator: input.locator ?? `color:${input.color}`,
-        createdAt: Date.now(),
-      };
-      await saveHighlight(row);
-      setHighlights((prev) => [row, ...prev]);
-      return row;
-    },
-    [],
-  );
+  const addHighlight = useCallback(async (input: CreateHighlightInput): Promise<BookHighlight> => {
+    const row: BookHighlight = {
+      id: crypto.randomUUID(),
+      bookId: input.bookId,
+      chapterIndex: input.chapterIndex,
+      text: input.text,
+      note: input.note,
+      // Pack the colour into the locator string when no locator is provided so
+      // we don't have to extend the schema for a cosmetic field.
+      locator: input.locator ?? `color:${input.color}`,
+      createdAt: Date.now(),
+    };
+    await saveHighlight(row);
+    setHighlights((prev) => [row, ...prev]);
+    return row;
+  }, []);
 
   const removeHighlight = useCallback(async (id: string) => {
     await deleteHighlight(id);
@@ -133,19 +130,19 @@ export function useBookAnnotations(bookId: string | null) {
 
 /** Extract the colour packed into a highlight's locator. */
 export function highlightColor(h: BookHighlight): HighlightColor {
-  const m = /^color:(yellow|green|pink)$/.exec(h.locator ?? '');
-  return (m?.[1] as HighlightColor | undefined) ?? 'yellow';
+  const m = /^color:(yellow|green|pink)$/.exec(h.locator ?? "");
+  return (m?.[1] as HighlightColor | undefined) ?? "yellow";
 }
 
 /** Tailwind classes for the three supported highlight colours. */
 export const HIGHLIGHT_CLASSES: Record<HighlightColor, string> = {
-  yellow: 'bg-yellow-300/40 dark:bg-yellow-400/30',
-  green: 'bg-green-300/40 dark:bg-green-400/30',
-  pink: 'bg-pink-300/40 dark:bg-pink-400/30',
+  yellow: "bg-yellow-300/40 dark:bg-yellow-400/30",
+  green: "bg-green-300/40 dark:bg-green-400/30",
+  pink: "bg-pink-300/40 dark:bg-pink-400/30",
 };
 
 export const HIGHLIGHT_SWATCHES: Record<HighlightColor, string> = {
-  yellow: 'bg-yellow-400',
-  green: 'bg-green-500',
-  pink: 'bg-pink-500',
+  yellow: "bg-yellow-400",
+  green: "bg-green-500",
+  pink: "bg-pink-500",
 };

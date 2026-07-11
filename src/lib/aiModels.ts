@@ -7,14 +7,22 @@ import type {
   BookAIModelRef,
   BookAIProvider,
   AppSettings,
-} from '@/types';
+} from "@/types";
 
 export const BOOK_ANALYSIS_MODELS: { value: BookAnalysisModel; label: string; hint?: string }[] = [
-  { value: 'google/gemini-3-flash-preview', label: 'Gemini 3 Flash', hint: 'Default — fast & accurate' },
-  { value: 'google/gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite', hint: 'Cheapest & fastest' },
-  { value: 'openai/gpt-5', label: 'GPT-5', hint: 'OpenAI flagship' },
-  { value: 'openai/gpt-5-mini', label: 'GPT-5 Mini', hint: 'Balanced OpenAI' },
-  { value: 'openai/gpt-5-nano', label: 'GPT-5 Nano', hint: 'Fastest OpenAI' },
+  {
+    value: "google/gemini-3-flash-preview",
+    label: "Gemini 3 Flash",
+    hint: "Default — fast & accurate",
+  },
+  {
+    value: "google/gemini-3.1-flash-lite-preview",
+    label: "Gemini 3.1 Flash Lite",
+    hint: "Cheapest & fastest",
+  },
+  { value: "openai/gpt-5", label: "GPT-5", hint: "OpenAI flagship" },
+  { value: "openai/gpt-5-mini", label: "GPT-5 Mini", hint: "Balanced OpenAI" },
+  { value: "openai/gpt-5-nano", label: "GPT-5 Nano", hint: "Fastest OpenAI" },
 ];
 
 export interface ModelOption {
@@ -24,20 +32,24 @@ export interface ModelOption {
 }
 
 export const GEMINI_MODELS: { value: GeminiModel; label: string; hint?: string }[] = [
-  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash', hint: 'Default — fast & capable' },
-  { value: 'gemini-3.1-flash-lite-preview', label: 'Gemini 3.1 Flash Lite', hint: 'Cheapest & fastest' },
+  { value: "gemini-3-flash-preview", label: "Gemini 3 Flash", hint: "Default — fast & capable" },
+  {
+    value: "gemini-3.1-flash-lite-preview",
+    label: "Gemini 3.1 Flash Lite",
+    hint: "Cheapest & fastest",
+  },
 ];
 
 export const GROQ_CHAT_MODELS: { value: GroqChatModel; label: string; hint?: string }[] = [
-  { value: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B Versatile', hint: 'Best Groq quality' },
-  { value: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B Instant', hint: 'Fastest' },
-  { value: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B', hint: 'Heavy reasoning' },
-  { value: 'openai/gpt-oss-20b', label: 'GPT-OSS 20B', hint: 'Lighter' },
+  { value: "llama-3.3-70b-versatile", label: "Llama 3.3 70B Versatile", hint: "Best Groq quality" },
+  { value: "llama-3.1-8b-instant", label: "Llama 3.1 8B Instant", hint: "Fastest" },
+  { value: "openai/gpt-oss-120b", label: "GPT-OSS 120B", hint: "Heavy reasoning" },
+  { value: "openai/gpt-oss-20b", label: "GPT-OSS 20B", hint: "Lighter" },
 ];
 
 export const GROQ_WHISPER_MODELS: { value: GroqWhisperModel; label: string; hint?: string }[] = [
-  { value: 'whisper-large-v3-turbo', label: 'Whisper Large v3 Turbo', hint: 'Fastest' },
-  { value: 'whisper-large-v3', label: 'Whisper Large v3', hint: 'Most accurate' },
+  { value: "whisper-large-v3-turbo", label: "Whisper Large v3 Turbo", hint: "Fastest" },
+  { value: "whisper-large-v3", label: "Whisper Large v3", hint: "Most accurate" },
 ];
 
 /** Merge built-in defaults with any custom (refreshed) entries from settings.
@@ -63,50 +75,53 @@ function applyHidden(
 }
 
 /** Build the FULL list (no hidden filter) — used by the visibility editor. */
-export function getAllGeminiModels(s?: Pick<AppSettings, 'customModels'>) {
+export function getAllGeminiModels(s?: Pick<AppSettings, "customModels">) {
   return mergeModels(GEMINI_MODELS, s?.customModels?.gemini);
 }
-export function getAllGroqChatModels(s?: Pick<AppSettings, 'customModels'>) {
+export function getAllGroqChatModels(s?: Pick<AppSettings, "customModels">) {
   return mergeModels(GROQ_CHAT_MODELS, s?.customModels?.groqChat);
 }
-export function getAllGroqWhisperModels(s?: Pick<AppSettings, 'customModels'>) {
+export function getAllGroqWhisperModels(s?: Pick<AppSettings, "customModels">) {
   return mergeModels(GROQ_WHISPER_MODELS, s?.customModels?.groqWhisper);
 }
-export function getAllGatewayModels(s?: Pick<AppSettings, 'customModels'>) {
+export function getAllGatewayModels(s?: Pick<AppSettings, "customModels">) {
   return mergeModels(BOOK_ANALYSIS_MODELS, s?.customModels?.gateway);
 }
 
 /** Gemini chat models — built-ins merged with refreshed list, minus hidden. */
 export function getGeminiModels(
-  settings?: Pick<AppSettings, 'customModels'>,
+  settings?: Pick<AppSettings, "customModels">,
 ): { value: string; label: string; hint?: string }[] {
   return applyHidden(getAllGeminiModels(settings), settings?.customModels?.hidden?.gemini);
 }
 
 /** Groq chat models — built-ins merged with refreshed list, minus hidden. */
 export function getGroqChatModels(
-  settings?: Pick<AppSettings, 'customModels'>,
+  settings?: Pick<AppSettings, "customModels">,
 ): { value: string; label: string; hint?: string }[] {
   return applyHidden(getAllGroqChatModels(settings), settings?.customModels?.hidden?.groqChat);
 }
 
 /** Groq Whisper models — built-ins merged with refreshed list, minus hidden. */
 export function getGroqWhisperModels(
-  settings?: Pick<AppSettings, 'customModels'>,
+  settings?: Pick<AppSettings, "customModels">,
 ): { value: string; label: string; hint?: string }[] {
-  return applyHidden(getAllGroqWhisperModels(settings), settings?.customModels?.hidden?.groqWhisper);
+  return applyHidden(
+    getAllGroqWhisperModels(settings),
+    settings?.customModels?.hidden?.groqWhisper,
+  );
 }
 
 /** Gateway (Lovable AI) models — built-ins merged with refreshed list, minus hidden. */
 export function getGatewayModels(
-  settings?: Pick<AppSettings, 'customModels'>,
+  settings?: Pick<AppSettings, "customModels">,
 ): { value: string; label: string; hint?: string }[] {
   return applyHidden(getAllGatewayModels(settings), settings?.customModels?.hidden?.gateway);
 }
 
 /** Build a flat list of "provider:model" options for chat-style tasks. */
 export function chatModelOptions(
-  settings?: Pick<AppSettings, 'customModels'>,
+  settings?: Pick<AppSettings, "customModels">,
 ): { value: string; label: string; hint?: string }[] {
   return [
     ...getGeminiModels(settings).map((m) => ({
@@ -127,8 +142,11 @@ export function choiceToValue(c: AIModelChoice): string {
 }
 
 export function valueToChoice(v: string): AIModelChoice {
-  const [provider, ...rest] = v.split(':');
-  return { provider: provider as 'gemini' | 'groq', model: rest.join(':') as AIModelChoice['model'] };
+  const [provider, ...rest] = v.split(":");
+  return {
+    provider: provider as "gemini" | "groq",
+    model: rest.join(":") as AIModelChoice["model"],
+  };
 }
 
 // ─── Book AI: provider-aware model resolution ──────────────────────────────
@@ -140,7 +158,7 @@ export interface BookModelOption {
   model: string;
   label: string;
   hint?: string;
-  group: 'Lovable AI (free)' | 'Gemini (your key)' | 'Groq (your key)';
+  group: "Lovable AI (free)" | "Gemini (your key)" | "Groq (your key)";
 }
 
 export function bookRefToValue(ref: BookAIModelRef): string {
@@ -149,25 +167,25 @@ export function bookRefToValue(ref: BookAIModelRef): string {
 
 export function bookValueToRef(v: string): BookAIModelRef {
   // Accept legacy plain gateway model ids like `google/gemini-3-flash-preview`.
-  if (!v.includes(':') || v.startsWith('google/') || v.startsWith('openai/')) {
-    return { provider: 'gateway', model: v };
+  if (!v.includes(":") || v.startsWith("google/") || v.startsWith("openai/")) {
+    return { provider: "gateway", model: v };
   }
-  const [provider, ...rest] = v.split(':');
-  const model = rest.join(':');
-  if (provider === 'gemini' || provider === 'groq' || provider === 'gateway') {
+  const [provider, ...rest] = v.split(":");
+  const model = rest.join(":");
+  if (provider === "gemini" || provider === "groq" || provider === "gateway") {
     return { provider, model };
   }
-  return { provider: 'gateway', model: v };
+  return { provider: "gateway", model: v };
 }
 
 /** Coerce a settings field that may be a legacy string into a BookAIModelRef. */
 export function coerceBookModel(
   v: BookAIModelRef | BookAnalysisModel | string | undefined,
-  fallback: BookAIModelRef = { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
+  fallback: BookAIModelRef = { provider: "gateway", model: "google/gemini-3-flash-preview" },
 ): BookAIModelRef {
   if (!v) return fallback;
-  if (typeof v === 'string') return bookValueToRef(v);
-  if (typeof v === 'object' && 'provider' in v && 'model' in v) return v;
+  if (typeof v === "string") return bookValueToRef(v);
+  if (typeof v === "object" && "provider" in v && "model" in v) return v;
   return fallback;
 }
 
@@ -175,7 +193,7 @@ export function coerceBookModel(
  *  the user has entered in Settings. Lovable AI Gateway is always included.
  *  Merges in any refreshed model lists from settings.customModels. */
 export function getAvailableBookModels(
-  settings: Pick<AppSettings, 'geminiApiKey' | 'groqApiKey' | 'customModels'>,
+  settings: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
 ): BookModelOption[] {
   const out: BookModelOption[] = [];
 
@@ -183,11 +201,11 @@ export function getAvailableBookModels(
   for (const m of getGatewayModels(settings)) {
     out.push({
       value: `gateway:${m.value}`,
-      provider: 'gateway',
+      provider: "gateway",
       model: m.value,
       label: m.label,
       hint: m.hint,
-      group: 'Lovable AI (free)',
+      group: "Lovable AI (free)",
     });
   }
 
@@ -196,11 +214,11 @@ export function getAvailableBookModels(
     for (const m of getGeminiModels(settings)) {
       out.push({
         value: `gemini:${m.value}`,
-        provider: 'gemini',
+        provider: "gemini",
         model: m.value,
         label: m.label,
         hint: m.hint,
-        group: 'Gemini (your key)',
+        group: "Gemini (your key)",
       });
     }
   }
@@ -210,11 +228,11 @@ export function getAvailableBookModels(
     for (const m of getGroqChatModels(settings)) {
       out.push({
         value: `groq:${m.value}`,
-        provider: 'groq',
+        provider: "groq",
         model: m.value,
         label: m.label,
         hint: m.hint,
-        group: 'Groq (your key)',
+        group: "Groq (your key)",
       });
     }
   }

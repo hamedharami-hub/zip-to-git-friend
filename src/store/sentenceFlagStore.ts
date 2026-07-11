@@ -2,14 +2,14 @@
  * In-memory cache of the user's sentence flags so podcast/drill UIs
  * can render the flag badge instantly and toggle it optimistically.
  */
-import { create } from 'zustand';
+import { create } from "zustand";
 import {
   fetchAllFlags,
   upsertFlag,
   removeFlag,
   type SentenceFlag,
   type FlagColor,
-} from '@/lib/sentenceFlags';
+} from "@/lib/sentenceFlags";
 
 interface FlagState {
   flags: Record<string, SentenceFlag>;
@@ -35,7 +35,7 @@ export const useSentenceFlagStore = create<FlagState>((set, get) => ({
       for (const f of list) map[f.sentenceId] = f;
       set({ flags: map, loaded: true, loading: false });
     } catch (e) {
-      console.error('[flagStore] load failed', e);
+      console.error("[flagStore] load failed", e);
       set({ loading: false });
     }
   },
@@ -57,7 +57,7 @@ export const useSentenceFlagStore = create<FlagState>((set, get) => ({
       const saved = await upsertFlag({ sentenceId, color, label });
       if (saved) set({ flags: { ...get().flags, [sentenceId]: saved } });
     } catch (e) {
-      console.error('[flagStore] setFlag failed', e);
+      console.error("[flagStore] setFlag failed", e);
     }
   },
 
@@ -68,7 +68,7 @@ export const useSentenceFlagStore = create<FlagState>((set, get) => ({
     try {
       await removeFlag(sentenceId);
     } catch (e) {
-      console.error('[flagStore] clearFlag failed', e);
+      console.error("[flagStore] clearFlag failed", e);
     }
   },
 

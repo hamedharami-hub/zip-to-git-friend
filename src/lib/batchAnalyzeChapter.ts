@@ -8,17 +8,17 @@
  *   - progress events with completed / skipped (cached) / failed counters
  *   - cooperative cancellation via AbortSignal
  */
-import type { BookChapter, BookParagraphAnalysis, BookAIModelRef } from '@/types';
+import type { BookChapter, BookParagraphAnalysis, BookAIModelRef } from "@/types";
 import {
   bookAnalysisErrorMessage,
   getCachedParagraphAnalysis,
   hashParagraph,
-} from './bookAnalysis';
-import { analyzeParagraphRouted } from './bookAiRouter';
-import { splitIntoShortChunks } from './paragraphSplit';
-import { supabase } from '@/integrations/supabase/client';
-import { saveParagraphAnalysisShared } from '@/lib/paragraphAnalysisCloud';
-import { paragraphAnalysisKey } from '@/lib/bookDb';
+} from "./bookAnalysis";
+import { analyzeParagraphRouted } from "./bookAiRouter";
+import { splitIntoShortChunks } from "./paragraphSplit";
+import { supabase } from "@/integrations/supabase/client";
+import { saveParagraphAnalysisShared } from "@/lib/paragraphAnalysisCloud";
+import { paragraphAnalysisKey } from "@/lib/bookDb";
 
 export interface BatchProgress {
   total: number;
@@ -62,7 +62,7 @@ interface Item {
 
 /** Extract analysable paragraphs from a chapter's HTML. */
 export function extractAnalysableParagraphs(chapter: BookChapter): Item[] {
-  const doc = new DOMParser().parseFromString(chapter.html, 'text/html');
+  const doc = new DOMParser().parseFromString(chapter.html, "text/html");
   const root = doc.body ?? doc.documentElement;
   const items: Item[] = [];
   const seen = new Set<string>();
@@ -70,8 +70,8 @@ export function extractAnalysableParagraphs(chapter: BookChapter): Item[] {
   // Walk top-level p / blockquote / li that look like prose, then split each
   // one with the SAME chunker the renderer uses, so every visible paragraph
   // maps 1:1 to its cached analysis.
-  root.querySelectorAll('h1, h2, h3, h4, h5, h6, p, blockquote, li').forEach((el) => {
-    const raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+  root.querySelectorAll("h1, h2, h3, h4, h5, h6, p, blockquote, li").forEach((el) => {
+    const raw = (el.textContent ?? "").replace(/\s+/g, " ").trim();
     if (!raw) return;
     const isHeading = /^h[1-6]$/i.test(el.tagName);
     // Headings: translate as a single unit (don't chunk) and skip the
@@ -102,7 +102,7 @@ export async function batchAnalyzeChapter(
 ): Promise<BatchProgress> {
   const { concurrency = 3, signal, onProgress, model, modelRef } = options;
   const effectiveRef: BookAIModelRef | undefined =
-    modelRef ?? (model ? { provider: 'gateway', model } : undefined);
+    modelRef ?? (model ? { provider: "gateway", model } : undefined);
   const items = extractAnalysableParagraphs(chapter);
 
   const state: BatchProgress = {
@@ -147,8 +147,7 @@ export async function batchAnalyzeChapter(
   const remaining = items.filter((it) => !state.results[it.hash]);
 
   // ─── Fast path: gateway provider → batch endpoint (10 paragraphs/call) ──
-  const useBatch =
-    !effectiveRef || effectiveRef.provider === 'gateway';
+  const useBatch = !effectiveRef || effectiveRef.provider === "gateway";
 
   if (useBatch && remaining.length > 0) {
     const BATCH_SIZE = 10;
@@ -173,11 +172,10 @@ export async function batchAnalyzeChapter(
         try {
           const { data, error } = await supabase.functions.invoke<{
             results: Array<
-              | { translation: string; vocabulary: never[]; idioms: never[] }
-              | { error: string }
+              { translation: string; vocabulary: never[]; idioms: never[] } | { error: string }
             >;
             model: string;
-          }>('analyze-paragraphs-batch', {
+          }>("analyze-paragraphs-batch", {
             body: { paragraphs: chunk.map((c) => c.text), model: batchModel },
           });
           if (error) {
@@ -187,14 +185,14 @@ export async function batchAnalyzeChapter(
             throw error;
           }
           const results = data?.results ?? [];
-          const modelLabel = data?.model ?? 'gateway-batch';
+          const modelLabel = data?.model ?? "gateway-batch";
           for (let i = 0; i < chunk.length; i++) {
             const item = chunk[i];
             const r = results[i] as
               | { translation: string; vocabulary: never[]; idioms: never[] }
               | { error: string }
               | undefined;
-            if (!r || 'error' in r) {
+            if (!r || "error" in r) {
               state.failed += 1;
               continue;
             }
@@ -203,7 +201,7 @@ export async function batchAnalyzeChapter(
               bookId,
               chapterIndex: chapter.index,
               paragraphHash: item.hash,
-              translation: r.translation ?? '',
+              translation: r.translation ?? "",
               vocabulary: r.vocabulary ?? [],
               idioms: r.idioms ?? [],
               analyzedAt: Date.now(),
@@ -248,7 +246,9 @@ export async function batchAnalyzeChapter(
       state.inFlight += 1;
       emit();
       try {
-        const result = await analyzeParagraphRouted(bookId, chapter.index, item.text, { modelRef: effectiveRef });
+        const result = await analyzeParagraphRouted(bookId, chapter.index, item.text, {
+          modelRef: effectiveRef,
+        });
         state.results[item.hash] = result;
         state.completed += 1;
       } catch (e) {
@@ -256,7 +256,7 @@ export async function batchAnalyzeChapter(
         state.lastError = bookAnalysisErrorMessage(e);
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const code = (e as any)?.code;
-        if (code === 'payment') {
+        if (code === "payment") {
           cursor = remaining.length;
         }
       } finally {
@@ -266,7 +266,10 @@ export async function batchAnalyzeChapter(
       if (signal?.aborted) return;
     }
   };
-  const pool = Array.from({ length: Math.max(1, Math.min(concurrency, remaining.length || 1)) }, worker);
+  const pool = Array.from(
+    { length: Math.max(1, Math.min(concurrency, remaining.length || 1)) },
+    worker,
+  );
   await Promise.all(pool);
 
   state.cancelled = !!signal?.aborted;

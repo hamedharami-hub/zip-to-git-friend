@@ -1,68 +1,124 @@
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 import {
-  RETURN_KEY, WINDOW_OPTIONS, formatTime, siteFromUrl, isRtlText,
+  RETURN_KEY,
+  WINDOW_OPTIONS,
+  formatTime,
+  siteFromUrl,
+  isRtlText,
   type ReturnState,
-} from '@/lib/newsPageHelpers';
+} from "@/lib/newsPageHelpers";
 import {
-  ArrowLeft, Newspaper, Plus, Rss, Globe2, Search, Trash2, Loader2,
-  Sparkles, Clock, RefreshCw, TrendingUp, ChevronDown, ChevronRight,
-  FolderPlus, Folder, Ban, Bookmark, BookmarkCheck, Settings as SettingsIcon,
-  X, Languages, Download, CheckSquare, Square,
-} from 'lucide-react';
-import {
-  prefetchManyForOffline,
-  isUrlCached,
-  getCachedIdForUrl,
-} from '@/lib/newsOfflineCache';
+  ArrowLeft,
+  Newspaper,
+  Plus,
+  Rss,
+  Globe2,
+  Search,
+  Trash2,
+  Loader2,
+  Sparkles,
+  Clock,
+  RefreshCw,
+  TrendingUp,
+  ChevronDown,
+  ChevronRight,
+  FolderPlus,
+  Folder,
+  Ban,
+  Bookmark,
+  BookmarkCheck,
+  Settings as SettingsIcon,
+  X,
+  Languages,
+  Download,
+  CheckSquare,
+  Square,
+} from "lucide-react";
+import { prefetchManyForOffline, isUrlCached, getCachedIdForUrl } from "@/lib/newsOfflineCache";
 import {
   useTitleTranslations,
   translateTitlesBatch,
   type TranslatableItem,
-} from '@/lib/newsTitleTranslations';
-import { ImportUrlDialog } from '@/components/news/ImportUrlDialog';
-import { AddSourceDialog } from '@/components/news/AddSourceDialog';
-import { SourcesTree } from '@/components/news/SourcesTree';
-import { FolderAggregatedView, AllAggregatedView } from '@/components/news/NewsAggregatedViews';
-import { ManageNewsDialog } from '@/components/news/ManageNewsDialog';
-import { InstallButton } from '@/components/pwa/InstallButton';
-import { loadCachedFeed, mergeIntoCache } from '@/lib/newsFeedCache';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+} from "@/lib/newsTitleTranslations";
+import { ImportUrlDialog } from "@/components/news/ImportUrlDialog";
+import { AddSourceDialog } from "@/components/news/AddSourceDialog";
+import { SourcesTree } from "@/components/news/SourcesTree";
+import { FolderAggregatedView, AllAggregatedView } from "@/components/news/NewsAggregatedViews";
+import { ManageNewsDialog } from "@/components/news/ManageNewsDialog";
+import { InstallButton } from "@/components/pwa/InstallButton";
+import { loadCachedFeed, mergeIntoCache } from "@/lib/newsFeedCache";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
-  DialogTrigger, DialogFooter,
-} from '@/components/ui/dialog';
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
-  DropdownMenuSeparator, DropdownMenuLabel,
-} from '@/components/ui/dropdown-menu';
-import { EmptyState } from '@/components/EmptyState';
-import { AccountButton } from '@/components/auth/AccountButton';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { EmptyState } from "@/components/EmptyState";
+import { AccountButton } from "@/components/auth/AccountButton";
+import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import {
-  addSource, deleteSource, updateSource, discoverRss, fetchRss, fetchTrendingHeadlines,
-  generateDigest, getCachedDiscovery, listDigests, listSavedArticles, listSources, searchNews,
-  setArticleSaved, upsertArticle,
-  listFolders, createFolder, deleteFolder, updateFolder,
-  listBlockedDomains, blockDomain, unblockDomain,
-  type DiscoveryResult, type DiscoveredSite, type FeedItem, type NewsArticle,
-  type NewsDigest, type NewsSource, type NewsSourceKind, type NewsFolder, type BlockedDomain,
-} from '@/lib/news';
-import { useSettingsStore } from '@/store/settingsStore';
-import { coerceBookModel } from '@/lib/aiModels';
-import { useLongPress } from '@/hooks/useLongPress';
-import { isSeen, markSeen, subscribeSeen } from '@/lib/seenArticles';
-import { CheckCircle2 } from 'lucide-react';
-
+  addSource,
+  deleteSource,
+  updateSource,
+  discoverRss,
+  fetchRss,
+  fetchTrendingHeadlines,
+  generateDigest,
+  getCachedDiscovery,
+  listDigests,
+  listSavedArticles,
+  listSources,
+  searchNews,
+  setArticleSaved,
+  upsertArticle,
+  listFolders,
+  createFolder,
+  deleteFolder,
+  updateFolder,
+  listBlockedDomains,
+  blockDomain,
+  unblockDomain,
+  type DiscoveryResult,
+  type DiscoveredSite,
+  type FeedItem,
+  type NewsArticle,
+  type NewsDigest,
+  type NewsSource,
+  type NewsSourceKind,
+  type NewsFolder,
+  type BlockedDomain,
+} from "@/lib/news";
+import { useSettingsStore } from "@/store/settingsStore";
+import { coerceBookModel } from "@/lib/aiModels";
+import { useLongPress } from "@/hooks/useLongPress";
+import { isSeen, markSeen, subscribeSeen } from "@/lib/seenArticles";
+import { CheckCircle2 } from "lucide-react";
 
 const News = () => {
   const navigate = useNavigate();
@@ -71,7 +127,7 @@ const News = () => {
 
   const settings = useSettingsStore((s) => s.settings);
   const newsModelRef = coerceBookModel(
-    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? 'google/gemini-3-flash-preview',
+    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
 
   const [sources, setSources] = useState<NewsSource[]>([]);
@@ -85,11 +141,17 @@ const News = () => {
   const initialReturn = useMemo<ReturnState | null>(() => {
     try {
       const raw = sessionStorage.getItem(RETURN_KEY);
-      return raw ? JSON.parse(raw) as ReturnState : null;
-    } catch { return null; }
+      return raw ? (JSON.parse(raw) as ReturnState) : null;
+    } catch {
+      return null;
+    }
   }, []);
-  const [activeSourceId, setActiveSourceId] = useState<string | null>(initialReturn?.sourceId ?? null);
-  const [activeFolderId, setActiveFolderId] = useState<string | null>(initialReturn?.folderId ?? null);
+  const [activeSourceId, setActiveSourceId] = useState<string | null>(
+    initialReturn?.sourceId ?? null,
+  );
+  const [activeFolderId, setActiveFolderId] = useState<string | null>(
+    initialReturn?.folderId ?? null,
+  );
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [folderFeed, setFolderFeed] = useState<Array<FeedItem & { _sourceName?: string }>>([]);
   const [folderLoading, setFolderLoading] = useState(false);
@@ -98,8 +160,8 @@ const News = () => {
   const [allLoading, setAllLoading] = useState(false);
   const [feedLoading, setFeedLoading] = useState(false);
   const [feedError, setFeedError] = useState<string | null>(null);
-  const [windowHours, setWindowHours] = useState<string>('24');
-  const [digestLength, setDigestLength] = useState<'long' | 'max'>('long');
+  const [windowHours, setWindowHours] = useState<string>("24");
+  const [digestLength, setDigestLength] = useState<"long" | "max">("long");
   const [digestBusy, setDigestBusy] = useState(false);
   const [openArticle, setOpenArticle] = useState<string | null>(null);
   const [trendingBusy, setTrendingBusy] = useState(false);
@@ -113,7 +175,12 @@ const News = () => {
   const [trProgress, setTrProgress] = useState<{ done: number; total: number } | null>(null);
   // Offline prefetch (download articles for offline reading).
   const [dlBusy, setDlBusy] = useState(false);
-  const [dlProgress, setDlProgress] = useState<{ done: number; total: number; failed: number; current?: string } | null>(null);
+  const [dlProgress, setDlProgress] = useState<{
+    done: number;
+    total: number;
+    failed: number;
+    current?: string;
+  } | null>(null);
   const dlAbortRef = useRef<AbortController | null>(null);
   // Multi-select mode for choosing specific articles to prefetch.
   const [selectMode, setSelectMode] = useState(false);
@@ -123,20 +190,19 @@ const News = () => {
   const bumpOffline = useCallback(() => setOfflineTick((n) => n + 1), []);
   // After a back-navigation, scroll the previously opened headline into view once.
   const pendingScrollRef = useRef<string | null>(initialReturn?.url ?? null);
-  
-  
 
   // If we arrived from /share?import_url=…, open the importer prefilled.
-  const sharedUrl = params.get('import_url');
+  const sharedUrl = params.get("import_url");
 
   usePageMeta({
-    title: 'News reader — Language learning',
-    description: 'خواندن، ترجمه و خلاصه‌سازی خبر با هوش مصنوعی — فیدهای RSS، جستجو موضوعی و حالت آفلاین.',
+    title: "News reader — Language learning",
+    description:
+      "خواندن، ترجمه و خلاصه‌سازی خبر با هوش مصنوعی — فیدهای RSS، جستجو موضوعی و حالت آفلاین.",
   });
 
   useEffect(() => {
     if (sharedUrl) {
-      toast.success('لینک از اپ دیگه دریافت شد — در حال آماده‌سازی…');
+      toast.success("لینک از اپ دیگه دریافت شد — در حال آماده‌سازی…");
     }
   }, [sharedUrl]);
 
@@ -144,7 +210,9 @@ const News = () => {
     try {
       const a = await listSavedArticles();
       setSavedArticles(a);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -152,7 +220,10 @@ const News = () => {
     void (async () => {
       try {
         const [s, d, f, b] = await Promise.all([
-          listSources(), listDigests(), listFolders(), listBlockedDomains(),
+          listSources(),
+          listDigests(),
+          listFolders(),
+          listBlockedDomains(),
         ]);
         setSources(s);
         setDigests(d);
@@ -171,15 +242,15 @@ const News = () => {
         }
         void refreshSavedArticles();
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to load news.');
+        toast.error(e.message ?? "Failed to load news.");
       }
     })();
   }, [user, activeSourceId, activeFolderId, initialReturn, refreshSavedArticles]);
 
-
   const refreshFolders = useCallback(async () => {
     const [f, s] = await Promise.all([listFolders(), listSources()]);
-    setFolders(f); setSources(s);
+    setFolders(f);
+    setSources(s);
   }, []);
   const refreshBlocked = useCallback(async () => {
     setBlocked(await listBlockedDomains());
@@ -225,16 +296,18 @@ const News = () => {
       const blockedList = blocked.map((b) => b.domain);
       const isBlockedUrl = (url: string) => {
         try {
-          const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-          return blockedList.some((b) => host === b || host.endsWith('.' + b));
-        } catch { return false; }
+          const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+          return blockedList.some((b) => host === b || host.endsWith("." + b));
+        } catch {
+          return false;
+        }
       };
       let items: FeedItem[] = [];
       const searchModel = settings.newsSearchModelRef?.model;
-      if (activeSource.kind === 'rss' && activeSource.url) {
+      if (activeSource.kind === "rss" && activeSource.url) {
         const r = await fetchRss(activeSource.url, 30);
         items = r.items.filter((it) => !isBlockedUrl(it.url));
-      } else if (activeSource.kind === 'topic') {
+      } else if (activeSource.kind === "topic") {
         items = await searchNews({
           query: activeSource.topic ?? activeSource.name,
           hours: Number(windowHours),
@@ -255,9 +328,9 @@ const News = () => {
             model: searchModel,
           });
         }
-      } else if (activeSource.kind === 'site' && activeSource.url) {
+      } else if (activeSource.kind === "site" && activeSource.url) {
         items = await searchNews({
-          query: activeSource.topic ?? '',
+          query: activeSource.topic ?? "",
           site: activeSource.url,
           hours: Number(windowHours),
           limit: 15,
@@ -266,7 +339,7 @@ const News = () => {
         });
         if (items.length === 0) {
           items = await searchNews({
-            query: activeSource.topic ?? '',
+            query: activeSource.topic ?? "",
             site: activeSource.url,
             hours: 720,
             limit: 10,
@@ -279,10 +352,10 @@ const News = () => {
       const merged = mergeIntoCache(activeSource.id, items).filter((it) => !isBlockedUrl(it.url));
       setFeedItems(merged);
       if (items.length === 0 && merged.length === 0) {
-        toast.info('خبر تازه‌ای پیدا نشد. بازه زمانی را تغییر بده.');
+        toast.info("خبر تازه‌ای پیدا نشد. بازه زمانی را تغییر بده.");
       }
     } catch (e: any) {
-      setFeedError(e.message ?? 'Failed to load feed.');
+      setFeedError(e.message ?? "Failed to load feed.");
       // Keep showing cached items even on failure.
       if (cached.length > 0) setFeedItems(cached);
     } finally {
@@ -304,38 +377,46 @@ const News = () => {
     requestAnimationFrame(() => {
       const el = document.getElementById(id);
       if (el) {
-        el.scrollIntoView({ block: 'center', behavior: 'auto' });
-        el.classList.add('ring-2', 'ring-primary/40');
-        setTimeout(() => el.classList.remove('ring-2', 'ring-primary/40'), 1600);
+        el.scrollIntoView({ block: "center", behavior: "auto" });
+        el.classList.add("ring-2", "ring-primary/40");
+        setTimeout(() => el.classList.remove("ring-2", "ring-primary/40"), 1600);
       }
       pendingScrollRef.current = null;
-      try { sessionStorage.removeItem(RETURN_KEY); } catch { /* ignore */ }
+      try {
+        sessionStorage.removeItem(RETURN_KEY);
+      } catch {
+        /* ignore */
+      }
     });
   }, [feedItems, folderFeed]);
 
-
   // ───── Aggregated folder feed ─────
-  const loadFolderFromCache = useCallback((folderId: string) => {
-    const sourcesInFolder = sources.filter((s) => s.folderId === folderId);
-    const blockedList = blocked.map((b) => b.domain);
-    const isBlockedUrl = (url: string) => {
-      try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-        return blockedList.some((b) => host === b || host.endsWith('.' + b));
-      } catch { return false; }
-    };
-    const all: Array<FeedItem & { _sourceName?: string }> = [];
-    for (const s of sourcesInFolder) {
-      const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
-      for (const it of cached) all.push({ ...it, _sourceName: s.name });
-    }
-    all.sort((a, b) => {
-      const aT = Date.parse(a.publishedAt ?? '') || 0;
-      const bT = Date.parse(b.publishedAt ?? '') || 0;
-      return bT - aT;
-    });
-    setFolderFeed(all);
-  }, [sources, blocked]);
+  const loadFolderFromCache = useCallback(
+    (folderId: string) => {
+      const sourcesInFolder = sources.filter((s) => s.folderId === folderId);
+      const blockedList = blocked.map((b) => b.domain);
+      const isBlockedUrl = (url: string) => {
+        try {
+          const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+          return blockedList.some((b) => host === b || host.endsWith("." + b));
+        } catch {
+          return false;
+        }
+      };
+      const all: Array<FeedItem & { _sourceName?: string }> = [];
+      for (const s of sourcesInFolder) {
+        const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url));
+        for (const it of cached) all.push({ ...it, _sourceName: s.name });
+      }
+      all.sort((a, b) => {
+        const aT = Date.parse(a.publishedAt ?? "") || 0;
+        const bT = Date.parse(b.publishedAt ?? "") || 0;
+        return bT - aT;
+      });
+      setFolderFeed(all);
+    },
+    [sources, blocked],
+  );
 
   const refreshFolderFeed = useCallback(async () => {
     if (!activeFolderId) return;
@@ -348,84 +429,98 @@ const News = () => {
     const blockedList = blocked.map((b) => b.domain);
     const isBlockedUrl = (url: string) => {
       try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-        return blockedList.some((b) => host === b || host.endsWith('.' + b));
-      } catch { return false; }
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+        return blockedList.some((b) => host === b || host.endsWith("." + b));
+      } catch {
+        return false;
+      }
     };
     try {
       let totalFetched = 0;
       let failed = 0;
       const failures: string[] = [];
-      await Promise.all(sourcesInFolder.map(async (src) => {
-        try {
-          let items: FeedItem[] = [];
-          const searchModel = settings.newsSearchModelRef?.model;
-          if (src.kind === 'rss' && src.url) {
-            const r = await fetchRss(src.url, 30);
-            items = r.items.filter((it) => !isBlockedUrl(it.url));
-          } else if (src.kind === 'topic') {
-            items = await searchNews({
-              query: src.topic ?? src.name,
-              hours: Number(windowHours),
-              limit: 15,
-              language: src.language ?? undefined,
-              blockedDomains: blockedList,
-              model: searchModel,
-            });
-            if (items.length === 0) {
+      await Promise.all(
+        sourcesInFolder.map(async (src) => {
+          try {
+            let items: FeedItem[] = [];
+            const searchModel = settings.newsSearchModelRef?.model;
+            if (src.kind === "rss" && src.url) {
+              const r = await fetchRss(src.url, 30);
+              items = r.items.filter((it) => !isBlockedUrl(it.url));
+            } else if (src.kind === "topic") {
               items = await searchNews({
                 query: src.topic ?? src.name,
-                hours: 720,
-                limit: 10,
+                hours: Number(windowHours),
+                limit: 15,
                 language: src.language ?? undefined,
                 blockedDomains: blockedList,
                 model: searchModel,
               });
-            }
-          } else if (src.kind === 'site' && src.url) {
-            items = await searchNews({
-              query: src.topic ?? '',
-              site: src.url,
-              hours: Number(windowHours),
-              limit: 15,
-              blockedDomains: blockedList,
-              model: searchModel,
-            });
-            if (items.length === 0) {
+              if (items.length === 0) {
+                items = await searchNews({
+                  query: src.topic ?? src.name,
+                  hours: 720,
+                  limit: 10,
+                  language: src.language ?? undefined,
+                  blockedDomains: blockedList,
+                  model: searchModel,
+                });
+              }
+            } else if (src.kind === "site" && src.url) {
               items = await searchNews({
-                query: src.topic ?? '',
+                query: src.topic ?? "",
                 site: src.url,
-                hours: 720,
-                limit: 10,
+                hours: Number(windowHours),
+                limit: 15,
                 blockedDomains: blockedList,
                 model: searchModel,
               });
+              if (items.length === 0) {
+                items = await searchNews({
+                  query: src.topic ?? "",
+                  site: src.url,
+                  hours: 720,
+                  limit: 10,
+                  blockedDomains: blockedList,
+                  model: searchModel,
+                });
+              }
             }
+            totalFetched += items.length;
+            mergeIntoCache(src.id, items);
+          } catch (err: any) {
+            failed += 1;
+            failures.push(`${src.name}: ${err?.message ?? "خطا"}`);
+            console.error("[folder refresh] source failed", src.name, err);
           }
-          totalFetched += items.length;
-          mergeIntoCache(src.id, items);
-        } catch (err: any) {
-          failed += 1;
-          failures.push(`${src.name}: ${err?.message ?? 'خطا'}`);
-          console.error('[folder refresh] source failed', src.name, err);
-        }
-      }));
+        }),
+      );
       loadFolderFromCache(activeFolderId);
       if (failed === sourcesInFolder.length && sourcesInFolder.length > 0) {
-        toast.error(`به‌روزرسانی همه‌ی ${failed} منبع شکست خورد. بازه زمانی را بیشتر کن یا منابع را بررسی کن.`);
-        console.error('[folder refresh] all sources failed:', failures);
+        toast.error(
+          `به‌روزرسانی همه‌ی ${failed} منبع شکست خورد. بازه زمانی را بیشتر کن یا منابع را بررسی کن.`,
+        );
+        console.error("[folder refresh] all sources failed:", failures);
       } else if (totalFetched === 0) {
-        toast.info('هیچ خبر جدیدی در این بازه زمانی پیدا نشد. بازه را بیشتر کن.');
+        toast.info("هیچ خبر جدیدی در این بازه زمانی پیدا نشد. بازه را بیشتر کن.");
       } else {
-        toast.success(`فید پوشه به‌روز شد. ${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ''}.`);
+        toast.success(
+          `فید پوشه به‌روز شد. ${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ""}.`,
+        );
       }
     } catch (e: any) {
-      toast.error(e.message ?? 'به‌روزرسانی پوشه شکست خورد.');
+      toast.error(e.message ?? "به‌روزرسانی پوشه شکست خورد.");
     } finally {
       setFolderLoading(false);
     }
-  }, [activeFolderId, sources, blocked, windowHours, loadFolderFromCache, settings.newsSearchModelRef]);
-
+  }, [
+    activeFolderId,
+    sources,
+    blocked,
+    windowHours,
+    loadFolderFromCache,
+    settings.newsSearchModelRef,
+  ]);
 
   useEffect(() => {
     if (activeFolderId) loadFolderFromCache(activeFolderId);
@@ -436,9 +531,11 @@ const News = () => {
     const blockedList = blocked.map((b) => b.domain);
     const isBlockedUrl = (url: string) => {
       try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-        return blockedList.some((b) => host === b || host.endsWith('.' + b));
-      } catch { return false; }
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+        return blockedList.some((b) => host === b || host.endsWith("." + b));
+      } catch {
+        return false;
+      }
     };
     const all: Array<FeedItem & { _sourceName?: string }> = [];
     const seenUrls = new Set<string>();
@@ -451,69 +548,78 @@ const News = () => {
       }
     }
     all.sort((a, b) => {
-      const aT = Date.parse(a.publishedAt ?? '') || 0;
-      const bT = Date.parse(b.publishedAt ?? '') || 0;
+      const aT = Date.parse(a.publishedAt ?? "") || 0;
+      const bT = Date.parse(b.publishedAt ?? "") || 0;
       return bT - aT;
     });
     setAllFeed(all);
   }, [sources, blocked]);
 
   const refreshAllFeed = useCallback(async () => {
-    if (sources.length === 0) { setAllFeed([]); return; }
+    if (sources.length === 0) {
+      setAllFeed([]);
+      return;
+    }
     setAllLoading(true);
     const blockedList = blocked.map((b) => b.domain);
     const isBlockedUrl = (url: string) => {
       try {
-        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-        return blockedList.some((b) => host === b || host.endsWith('.' + b));
-      } catch { return false; }
+        const host = new URL(url).hostname.toLowerCase().replace(/^www\./, "");
+        return blockedList.some((b) => host === b || host.endsWith("." + b));
+      } catch {
+        return false;
+      }
     };
     try {
       let totalFetched = 0;
       let failed = 0;
-      await Promise.all(sources.map(async (src) => {
-        try {
-          let items: FeedItem[] = [];
-          const searchModel = settings.newsSearchModelRef?.model;
-          if (src.kind === 'rss' && src.url) {
-            const r = await fetchRss(src.url, 30);
-            items = r.items.filter((it) => !isBlockedUrl(it.url));
-          } else if (src.kind === 'topic') {
-            items = await searchNews({
-              query: src.topic ?? src.name,
-              hours: Number(windowHours),
-              limit: 15,
-              language: src.language ?? undefined,
-              blockedDomains: blockedList,
-              model: searchModel,
-            });
-          } else if (src.kind === 'site' && src.url) {
-            items = await searchNews({
-              query: src.topic ?? '',
-              site: src.url,
-              hours: Number(windowHours),
-              limit: 15,
-              blockedDomains: blockedList,
-              model: searchModel,
-            });
+      await Promise.all(
+        sources.map(async (src) => {
+          try {
+            let items: FeedItem[] = [];
+            const searchModel = settings.newsSearchModelRef?.model;
+            if (src.kind === "rss" && src.url) {
+              const r = await fetchRss(src.url, 30);
+              items = r.items.filter((it) => !isBlockedUrl(it.url));
+            } else if (src.kind === "topic") {
+              items = await searchNews({
+                query: src.topic ?? src.name,
+                hours: Number(windowHours),
+                limit: 15,
+                language: src.language ?? undefined,
+                blockedDomains: blockedList,
+                model: searchModel,
+              });
+            } else if (src.kind === "site" && src.url) {
+              items = await searchNews({
+                query: src.topic ?? "",
+                site: src.url,
+                hours: Number(windowHours),
+                limit: 15,
+                blockedDomains: blockedList,
+                model: searchModel,
+              });
+            }
+            totalFetched += items.length;
+            mergeIntoCache(src.id, items);
+          } catch (err) {
+            failed += 1;
+            console.error("[all refresh] source failed", src.name, err);
           }
-          totalFetched += items.length;
-          mergeIntoCache(src.id, items);
-        } catch (err) {
-          failed += 1;
-          console.error('[all refresh] source failed', src.name, err);
-        }
-      }));
+        }),
+      );
       loadAllFromCache();
       if (failed === sources.length) {
         toast.error(`به‌روزرسانی همه‌ی ${failed} منبع شکست خورد.`);
       } else if (totalFetched === 0) {
-        toast.info('خبر جدیدی پیدا نشد.');
+        toast.info("خبر جدیدی پیدا نشد.");
       } else {
-        toast.success(`${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ''}.`);
+        toast.success(
+          `${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ""}.`,
+        );
       }
     } catch (e: any) {
-      toast.error(e.message ?? 'به‌روزرسانی شکست خورد.');
+      toast.error(e.message ?? "به‌روزرسانی شکست خورد.");
     } finally {
       setAllLoading(false);
     }
@@ -522,9 +628,6 @@ const News = () => {
   useEffect(() => {
     if (allMode) loadAllFromCache();
   }, [allMode, loadAllFromCache]);
-
-
-
 
   const handleTrending = useCallback(async () => {
     setTrendingBusy(true);
@@ -538,13 +641,13 @@ const News = () => {
         blockedDomains: blocked.map((b) => b.domain),
       });
       if (items.length === 0) {
-        toast.info('عنوان داغی پیدا نشد.');
+        toast.info("عنوان داغی پیدا نشد.");
       } else {
         setFeedItems(items);
         if (activeSource) mergeIntoCache(activeSource.id, items);
       }
     } catch (e: any) {
-      toast.error(e.message ?? 'Trending fetch failed.');
+      toast.error(e.message ?? "Trending fetch failed.");
     } finally {
       setTrendingBusy(false);
     }
@@ -556,7 +659,8 @@ const News = () => {
       if (selectMode) {
         setSelectedUrls((prev) => {
           const next = new Set(prev);
-          if (next.has(item.url)) next.delete(item.url); else next.add(item.url);
+          if (next.has(item.url)) next.delete(item.url);
+          else next.add(item.url);
           return next;
         });
         return;
@@ -571,7 +675,9 @@ const News = () => {
           scrollY: window.scrollY,
         };
         sessionStorage.setItem(RETURN_KEY, JSON.stringify(ret));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       markSeen(item.url);
       try {
         const article = await upsertArticle({
@@ -590,29 +696,24 @@ const News = () => {
         if (cachedId) {
           navigate(`/news/article/${cachedId}`);
         } else {
-          toast.error(e.message ?? 'Failed to open article.');
+          toast.error(e.message ?? "Failed to open article.");
         }
       } finally {
         setOpenArticle(null);
       }
-
     },
     [activeSource, activeSourceId, activeFolderId, navigate, selectMode],
   );
 
   const handleGenerateDigest = useCallback(async () => {
     if (feedItems.length === 0) {
-      toast.error('No articles to summarise yet.');
+      toast.error("No articles to summarise yet.");
       return;
     }
     setDigestBusy(true);
     try {
       const scope =
-        activeSource?.kind === 'rss'
-          ? 'source'
-          : activeSource?.kind === 'site'
-          ? 'site'
-          : 'topic';
+        activeSource?.kind === "rss" ? "source" : activeSource?.kind === "site" ? "site" : "topic";
       const digest = await generateDigest({
         articles: feedItems.map((it) => ({
           title: it.title,
@@ -629,10 +730,10 @@ const News = () => {
         model: newsModelRef.model,
       });
       setDigests((prev) => [digest, ...prev]);
-      toast.success('خلاصه آماده شد.');
+      toast.success("خلاصه آماده شد.");
       navigate(`/news/digest/${digest.id}`);
     } catch (e: any) {
-      toast.error(e.message ?? 'Digest generation failed.');
+      toast.error(e.message ?? "Digest generation failed.");
     } finally {
       setDigestBusy(false);
     }
@@ -644,10 +745,10 @@ const News = () => {
       try {
         const r = await fetchRss(feedUrl, 20);
         if (!r.items.length) {
-          toast.error('خبری در این فید پیدا نشد.');
+          toast.error("خبری در این فید پیدا نشد.");
           return;
         }
-        toast.info('در حال ساخت خلاصه از خبرهای زنده…');
+        toast.info("در حال ساخت خلاصه از خبرهای زنده…");
         const digest = await generateDigest({
           articles: r.items.slice(0, 15).map((it) => ({
             title: it.title,
@@ -656,23 +757,23 @@ const News = () => {
             excerpt: it.excerpt,
             publishedAt: it.publishedAt,
           })),
-          length: 'long',
-          scope: 'topic',
+          length: "long",
+          scope: "topic",
           topic: topicText,
           windowHours: 24,
           model: newsModelRef.model,
         });
         setDigests((prev) => [digest, ...prev]);
-        toast.success(`خلاصه «${topicText}» از ${label === 'bing' ? 'Bing News' : 'Google News'} آماده شد.`);
+        toast.success(
+          `خلاصه «${topicText}» از ${label === "bing" ? "Bing News" : "Google News"} آماده شد.`,
+        );
         navigate(`/news/digest/${digest.id}`);
       } catch (e: any) {
-        toast.error(e.message ?? 'ساخت خلاصه شکست خورد.');
+        toast.error(e.message ?? "ساخت خلاصه شکست خورد.");
       }
     },
     [navigate, newsModelRef.model],
   );
-
-
 
   const handleDeleteSource = useCallback(
     async (id: string) => {
@@ -684,7 +785,7 @@ const News = () => {
           setFeedItems([]);
         }
       } catch (e: any) {
-        toast.error(e.message ?? 'Failed to delete.');
+        toast.error(e.message ?? "Failed to delete.");
       }
     },
     [activeSourceId],
@@ -700,7 +801,7 @@ const News = () => {
       excerpt: it.excerpt,
     }));
     if (items.length === 0) {
-      toast.info('خبری برای ترجمه نیست. اول فید را بارگذاری کن.');
+      toast.info("خبری برای ترجمه نیست. اول فید را بارگذاری کن.");
       return;
     }
     setTrBusy(true);
@@ -711,14 +812,14 @@ const News = () => {
         onProgress: (snap) => setTrProgress({ done: snap.done, total: snap.total }),
       });
       if (res.translated === 0 && res.failed === 0) {
-        toast.info('همه‌ی عنوان‌ها از قبل ترجمه شده‌اند یا فارسی هستند.');
+        toast.info("همه‌ی عنوان‌ها از قبل ترجمه شده‌اند یا فارسی هستند.");
       } else if (res.failed > 0) {
         toast.error(`${res.translated} عنوان ترجمه شد · ${res.failed} ناموفق`);
       } else {
         toast.success(`${res.translated} عنوان ترجمه شد.`);
       }
     } catch (e: any) {
-      toast.error(e?.message ?? 'ترجمه با خطا مواجه شد.');
+      toast.error(e?.message ?? "ترجمه با خطا مواجه شد.");
     } finally {
       setTrBusy(false);
       setTimeout(() => setTrProgress(null), 1500);
@@ -727,66 +828,76 @@ const News = () => {
 
   // Pre-download articles so the English processed text can be read offline.
   // `mode`: 'last10' | 'last50' | 'last100' | 'all' | 'selected'.
-  const handlePrefetchOffline = useCallback(async (
-    mode: 'last10' | 'last50' | 'last100' | 'all' | 'selected',
-  ) => {
-    const activeList = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
-    let pool: Array<FeedItem & { _sourceName?: string }> = activeList;
-    if (mode === 'selected') {
-      if (selectedUrls.size === 0) {
-        toast.info('هیچ خبری انتخاب نشده. اول چند خبر را تیک بزن.');
+  const handlePrefetchOffline = useCallback(
+    async (mode: "last10" | "last50" | "last100" | "all" | "selected") => {
+      const activeList = allMode ? allFeed : activeFolderId ? folderFeed : feedItems;
+      let pool: Array<FeedItem & { _sourceName?: string }> = activeList;
+      if (mode === "selected") {
+        if (selectedUrls.size === 0) {
+          toast.info("هیچ خبری انتخاب نشده. اول چند خبر را تیک بزن.");
+          return;
+        }
+        pool = activeList.filter((it) => selectedUrls.has(it.url));
+      } else if (mode === "last10") pool = activeList.slice(0, 10);
+      else if (mode === "last50") pool = activeList.slice(0, 50);
+      else if (mode === "last100") pool = activeList.slice(0, 100);
+
+      if (pool.length === 0) {
+        toast.info("خبری برای دانلود نیست. اول فید را بارگذاری کن.");
         return;
       }
-      pool = activeList.filter((it) => selectedUrls.has(it.url));
-    } else if (mode === 'last10') pool = activeList.slice(0, 10);
-    else if (mode === 'last50') pool = activeList.slice(0, 50);
-    else if (mode === 'last100') pool = activeList.slice(0, 100);
-
-    if (pool.length === 0) {
-      toast.info('خبری برای دانلود نیست. اول فید را بارگذاری کن.');
-      return;
-    }
-    // Skip items already cached so re-runs are cheap.
-    const todo = pool.filter((it) => !isUrlCached(it.url));
-    if (todo.length === 0) {
-      toast.success(`همه‌ی ${pool.length} خبر از قبل دانلود شده‌اند.`);
-      return;
-    }
-
-    const ctrl = new AbortController();
-    dlAbortRef.current = ctrl;
-    setDlBusy(true);
-    setDlProgress({ done: 0, total: todo.length, failed: 0 });
-    try {
-      const sourceIdByUrl = (url: string) => {
-        if (activeSourceId) return activeSourceId;
-        // For folder/all views we just upsert with no source (item.url has the source domain).
-        return null;
-      };
-      const res = await prefetchManyForOffline(todo, {
-        sourceIdByUrl,
-        concurrency: 2,
-        signal: ctrl.signal,
-        onProgress: (p) => setDlProgress(p),
-      });
-      bumpOffline();
-      if (res.failed > 0) {
-        toast.error(`${res.done - res.failed} خبر دانلود شد · ${res.failed} ناموفق`);
-      } else {
-        toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
+      // Skip items already cached so re-runs are cheap.
+      const todo = pool.filter((it) => !isUrlCached(it.url));
+      if (todo.length === 0) {
+        toast.success(`همه‌ی ${pool.length} خبر از قبل دانلود شده‌اند.`);
+        return;
       }
-    } catch (e: any) {
-      toast.error(e?.message ?? 'دانلود آفلاین با خطا مواجه شد.');
-    } finally {
-      setDlBusy(false);
-      dlAbortRef.current = null;
-      setTimeout(() => setDlProgress(null), 1500);
-      if (mode === 'selected') {
-        setSelectedUrls(new Set());
-        setSelectMode(false);
+
+      const ctrl = new AbortController();
+      dlAbortRef.current = ctrl;
+      setDlBusy(true);
+      setDlProgress({ done: 0, total: todo.length, failed: 0 });
+      try {
+        const sourceIdByUrl = (url: string) => {
+          if (activeSourceId) return activeSourceId;
+          // For folder/all views we just upsert with no source (item.url has the source domain).
+          return null;
+        };
+        const res = await prefetchManyForOffline(todo, {
+          sourceIdByUrl,
+          concurrency: 2,
+          signal: ctrl.signal,
+          onProgress: (p) => setDlProgress(p),
+        });
+        bumpOffline();
+        if (res.failed > 0) {
+          toast.error(`${res.done - res.failed} خبر دانلود شد · ${res.failed} ناموفق`);
+        } else {
+          toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
+        }
+      } catch (e: any) {
+        toast.error(e?.message ?? "دانلود آفلاین با خطا مواجه شد.");
+      } finally {
+        setDlBusy(false);
+        dlAbortRef.current = null;
+        setTimeout(() => setDlProgress(null), 1500);
+        if (mode === "selected") {
+          setSelectedUrls(new Set());
+          setSelectMode(false);
+        }
       }
-    }
-  }, [allMode, allFeed, activeFolderId, folderFeed, feedItems, selectedUrls, activeSourceId, bumpOffline]);
+    },
+    [
+      allMode,
+      allFeed,
+      activeFolderId,
+      folderFeed,
+      feedItems,
+      selectedUrls,
+      activeSourceId,
+      bumpOffline,
+    ],
+  );
 
   const cancelPrefetch = useCallback(() => {
     dlAbortRef.current?.abort();
@@ -795,12 +906,11 @@ const News = () => {
   const toggleSelectUrl = useCallback((url: string) => {
     setSelectedUrls((prev) => {
       const next = new Set(prev);
-      if (next.has(url)) next.delete(url); else next.add(url);
+      if (next.has(url)) next.delete(url);
+      else next.add(url);
       return next;
     });
   }, []);
-
-
 
   if (!user) {
     return (
@@ -853,7 +963,7 @@ const News = () => {
               onClose={() => {
                 if (sharedUrl) {
                   const next = new URLSearchParams(params);
-                  next.delete('import_url');
+                  next.delete("import_url");
                   setParams(next, { replace: true });
                 }
               }}
@@ -885,48 +995,69 @@ const News = () => {
               <div className="flex items-center gap-1">
                 <span className="text-[11px] text-muted-foreground">{sources.length}</span>
                 <Button
-                  size="icon" variant="ghost" className="h-6 w-6"
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
                   onClick={handleTranslateVisibleTitles}
                   disabled={trBusy}
                   title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
                 >
-                  {trBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Languages className="h-3.5 w-3.5" />}
+                  {trBusy ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Languages className="h-3.5 w-3.5" />
+                  )}
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="icon" variant="ghost" className="h-6 w-6"
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
                       disabled={dlBusy}
-                      title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)">
-                      {dlBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+                      title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)"
+                    >
+                      {dlBusy ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Download className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last10')}>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last10")}>
                       ۱۰ خبر آخر
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last50')}>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last50")}>
                       ۵۰ خبر آخر
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline('last100')}>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last100")}>
                       ۱۰۰ خبر آخر
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline('all')}>
+                    <DropdownMenuItem onClick={() => handlePrefetchOffline("all")}>
                       همه‌ی این لیست
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => { setSelectMode((v) => !v); if (selectMode) setSelectedUrls(new Set()); }}
+                      onClick={() => {
+                        setSelectMode((v) => !v);
+                        if (selectMode) setSelectedUrls(new Set());
+                      }}
                     >
                       {selectMode ? (
-                        <><Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب</>
+                        <>
+                          <Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب
+                        </>
                       ) : (
-                        <><CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…</>
+                        <>
+                          <CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…
+                        </>
                       )}
                     </DropdownMenuItem>
                     {selectMode && (
                       <DropdownMenuItem
-                        onClick={() => handlePrefetchOffline('selected')}
+                        onClick={() => handlePrefetchOffline("selected")}
                         disabled={selectedUrls.size === 0}
                       >
                         <Download className="h-3.5 w-3.5 me-2" />
@@ -935,8 +1066,13 @@ const News = () => {
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button size="icon" variant="ghost" className="h-6 w-6"
-                  onClick={() => setManageOpen(true)} title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => setManageOpen(true)}
+                  title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده"
+                >
                   <SettingsIcon className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -952,7 +1088,7 @@ const News = () => {
                 <Loader2 className="h-3 w-3 animate-spin shrink-0" />
                 <span className="truncate flex-1">
                   دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
-                  {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ''}
+                  {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ""}
                 </span>
                 {dlBusy && (
                   <button onClick={cancelPrefetch} className="text-destructive hover:underline">
@@ -969,12 +1105,16 @@ const News = () => {
             )}
             <button
               type="button"
-              onClick={() => { setAllMode(true); setActiveFolderId(null); setActiveSourceId(null); }}
+              onClick={() => {
+                setAllMode(true);
+                setActiveFolderId(null);
+                setActiveSourceId(null);
+              }}
               className={
-                'mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors ' +
+                "mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors " +
                 (allMode
-                  ? 'border-primary/30 bg-primary/10 text-foreground shadow-sm'
-                  : 'border-border/60 bg-card/60 hover:bg-accent text-foreground/90')
+                  ? "border-primary/30 bg-primary/10 text-foreground shadow-sm"
+                  : "border-border/60 bg-card/60 hover:bg-accent text-foreground/90")
               }
             >
               <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
@@ -997,22 +1137,32 @@ const News = () => {
                 activeFolderId={activeFolderId}
                 collapsed={expandedFolders}
                 onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
-                onPickFolder={(id) => { setActiveFolderId(id); setActiveSourceId(null); setAllMode(false); }}
-                onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); setAllMode(false); }}
+                onPickFolder={(id) => {
+                  setActiveFolderId(id);
+                  setActiveSourceId(null);
+                  setAllMode(false);
+                }}
+                onPickSource={(id) => {
+                  setActiveSourceId(id);
+                  setActiveFolderId(null);
+                  setAllMode(false);
+                }}
                 onDeleteSource={handleDeleteSource}
                 onMoveSource={async (sourceId, folderId) => {
                   await updateSource(sourceId, { folderId });
-                  setSources((prev) => prev.map((s) => s.id === sourceId ? { ...s, folderId } : s));
+                  setSources((prev) =>
+                    prev.map((s) => (s.id === sourceId ? { ...s, folderId } : s)),
+                  );
                 }}
                 onRenameSource={async (id, name) => {
                   await updateSource(id, { name });
-                  setSources((prev) => prev.map((s) => s.id === id ? { ...s, name } : s));
-                  toast.success('نام منبع به‌روز شد.');
+                  setSources((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+                  toast.success("نام منبع به‌روز شد.");
                 }}
                 onRenameFolder={async (id, name) => {
                   await updateFolder(id, { name });
-                  setFolders((prev) => prev.map((f) => f.id === id ? { ...f, name } : f));
-                  toast.success('نام پوشه به‌روز شد.');
+                  setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+                  toast.success("نام پوشه به‌روز شد.");
                 }}
               />
             )}
@@ -1028,11 +1178,11 @@ const News = () => {
                 onClick={() => setShowSaved((v) => !v)}
                 className="text-[10px] text-primary hover:underline"
               >
-                {showSaved ? 'بستن' : `نمایش (${savedArticles.length})`}
+                {showSaved ? "بستن" : `نمایش (${savedArticles.length})`}
               </button>
             </div>
-            {showSaved && (
-              savedArticles.length === 0 ? (
+            {showSaved &&
+              (savedArticles.length === 0 ? (
                 <p className="text-xs text-muted-foreground px-1">هنوز خبری سیو نکرده‌ای.</p>
               ) : (
                 <ul className="space-y-1 max-h-64 overflow-y-auto">
@@ -1050,8 +1200,7 @@ const News = () => {
                     </li>
                   ))}
                 </ul>
-              )
-            )}
+              ))}
           </section>
 
           <section>
@@ -1070,7 +1219,8 @@ const News = () => {
                     >
                       <span className="block truncate font-medium">{d.title}</span>
                       <span className="block text-[11px] text-muted-foreground">
-                        {d.length === 'max' ? 'حداکثری' : d.length === 'long' ? 'بلند' : 'کوتاه'} · {formatTime(d.createdAt)}
+                        {d.length === "max" ? "حداکثری" : d.length === "long" ? "بلند" : "کوتاه"} ·{" "}
+                        {formatTime(d.createdAt)}
                       </span>
                     </Link>
                   </li>
@@ -1096,7 +1246,10 @@ const News = () => {
               loading={folderLoading}
               onRefresh={refreshFolderFeed}
               onOpenItem={handleOpenArticle}
-              onPickSource={(id) => { setActiveSourceId(id); setActiveFolderId(null); }}
+              onPickSource={(id) => {
+                setActiveSourceId(id);
+                setActiveFolderId(null);
+              }}
               sources={sources}
             />
           ) : !activeSource ? (
@@ -1125,9 +1278,9 @@ const News = () => {
               <div className="rounded-xl border border-border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-3 flex-wrap">
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {activeSource.kind === 'rss' ? (
+                    {activeSource.kind === "rss" ? (
                       <Rss className="h-4 w-4 text-primary shrink-0" />
-                    ) : activeSource.kind === 'site' ? (
+                    ) : activeSource.kind === "site" ? (
                       <Globe2 className="h-4 w-4 text-primary shrink-0" />
                     ) : (
                       <Search className="h-4 w-4 text-primary shrink-0" />
@@ -1176,7 +1329,7 @@ const News = () => {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  {activeSource.kind !== 'rss' && (
+                  {activeSource.kind !== "rss" && (
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
                       <Select value={windowHours} onValueChange={setWindowHours}>
@@ -1194,7 +1347,10 @@ const News = () => {
                     </div>
                   )}
                   <div className="flex items-center gap-1.5 ms-auto">
-                    <Tabs value={digestLength} onValueChange={(v) => setDigestLength(v as 'long' | 'max')}>
+                    <Tabs
+                      value={digestLength}
+                      onValueChange={(v) => setDigestLength(v as "long" | "max")}
+                    >
                       <TabsList className="h-8">
                         <TabsTrigger value="long" className="text-xs">
                           خلاصه بلند
@@ -1242,92 +1398,113 @@ const News = () => {
                     const cached = isUrlCached(item.url);
                     const picked = selectedUrls.has(item.url);
                     return (
-                    <li key={item.url} id={`news-item-${encodeURIComponent(item.url)}`} className="scroll-mt-24 rounded-xl transition-shadow">
-
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArticle(item)}
-                        disabled={openArticle === item.url}
-                        className={
-                          'group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all ' +
-                          (picked ? 'border-primary ring-2 ring-primary/30 ' : 'border-border ') +
-                          (seen ? 'opacity-60' : '')
-                        }
+                      <li
+                        key={item.url}
+                        id={`news-item-${encodeURIComponent(item.url)}`}
+                        className="scroll-mt-24 rounded-xl transition-shadow"
                       >
-                        <div className="flex gap-3">
-                          {selectMode && (
-                            <div className="shrink-0 self-start mt-1" aria-hidden>
-                              {picked
-                                ? <CheckSquare className="h-5 w-5 text-primary" />
-                                : <Square className="h-5 w-5 text-muted-foreground" />}
-                            </div>
-                          )}
-                          {cached && !selectMode && (
-                            <div className="shrink-0 self-start mt-1" title="برای حالت آفلاین ذخیره شده">
-                              <Download className="h-3.5 w-3.5 text-primary" />
-                            </div>
-                          )}
-                          {item.imageUrl && (
-                            <img
-                              src={item.imageUrl}
-                              alt=""
-                              loading="lazy"
-                              className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <div className="flex-1 min-w-0">
-                            <h3
-                              dir={isRtlText(item.title) ? 'rtl' : 'ltr'}
-                              lang={isRtlText(item.title) ? 'fa' : undefined}
-                              className={
-                                'font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors ' +
-                                (isRtlText(item.title) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start ' : '') +
-                                (seen ? 'font-normal text-muted-foreground' : '')
-                              }>
-                              {seen && <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />}
-                              {item.title}
-                            </h3>
-                            {titleTr[item.url]?.titleFa && (
-                              <p dir="rtl" lang="fa"
-                                className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90">
-                                {titleTr[item.url].titleFa}
-                              </p>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenArticle(item)}
+                          disabled={openArticle === item.url}
+                          className={
+                            "group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all " +
+                            (picked ? "border-primary ring-2 ring-primary/30 " : "border-border ") +
+                            (seen ? "opacity-60" : "")
+                          }
+                        >
+                          <div className="flex gap-3">
+                            {selectMode && (
+                              <div className="shrink-0 self-start mt-1" aria-hidden>
+                                {picked ? (
+                                  <CheckSquare className="h-5 w-5 text-primary" />
+                                ) : (
+                                  <Square className="h-5 w-5 text-muted-foreground" />
+                                )}
+                              </div>
                             )}
-                            {item.excerpt && (
-                              <p
-                                dir={isRtlText(item.excerpt) ? 'rtl' : 'ltr'}
-                                lang={isRtlText(item.excerpt) ? 'fa' : undefined}
+                            {cached && !selectMode && (
+                              <div
+                                className="shrink-0 self-start mt-1"
+                                title="برای حالت آفلاین ذخیره شده"
+                              >
+                                <Download className="h-3.5 w-3.5 text-primary" />
+                              </div>
+                            )}
+                            {item.imageUrl && (
+                              <img
+                                src={item.imageUrl}
+                                alt=""
+                                loading="lazy"
+                                className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = "none";
+                                }}
+                              />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <h3
+                                dir={isRtlText(item.title) ? "rtl" : "ltr"}
+                                lang={isRtlText(item.title) ? "fa" : undefined}
                                 className={
-                                  'text-sm text-muted-foreground mt-1 line-clamp-2 ' +
-                                  (isRtlText(item.excerpt) ? 'font-[Vazirmatn,system-ui,sans-serif] text-start' : '')
-                                }>
-                                {item.excerpt}
-                              </p>
-                            )}
-                            <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
-                              {(item.siteName || siteFromUrl(item.url)) && (
-                                <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
-                                  <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
-                                  <span className="truncate">{item.siteName ?? siteFromUrl(item.url)}</span>
-                                </span>
+                                  "font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors " +
+                                  (isRtlText(item.title)
+                                    ? "font-[Vazirmatn,system-ui,sans-serif] text-start "
+                                    : "") +
+                                  (seen ? "font-normal text-muted-foreground" : "")
+                                }
+                              >
+                                {seen && (
+                                  <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />
+                                )}
+                                {item.title}
+                              </h3>
+                              {titleTr[item.url]?.titleFa && (
+                                <p
+                                  dir="rtl"
+                                  lang="fa"
+                                  className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90"
+                                >
+                                  {titleTr[item.url].titleFa}
+                                </p>
                               )}
-                              {item.publishedAt && (
-                                <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
-                                  <Clock className="me-1 h-3 w-3" />
-                                  {formatTime(item.publishedAt)}
-                                </span>
+                              {item.excerpt && (
+                                <p
+                                  dir={isRtlText(item.excerpt) ? "rtl" : "ltr"}
+                                  lang={isRtlText(item.excerpt) ? "fa" : undefined}
+                                  className={
+                                    "text-sm text-muted-foreground mt-1 line-clamp-2 " +
+                                    (isRtlText(item.excerpt)
+                                      ? "font-[Vazirmatn,system-ui,sans-serif] text-start"
+                                      : "")
+                                  }
+                                >
+                                  {item.excerpt}
+                                </p>
                               )}
-                              {openArticle === item.url && (
-                                <Loader2 className="h-3 w-3 animate-spin ms-auto" />
-                              )}
+                              <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
+                                {(item.siteName || siteFromUrl(item.url)) && (
+                                  <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
+                                    <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
+                                    <span className="truncate">
+                                      {item.siteName ?? siteFromUrl(item.url)}
+                                    </span>
+                                  </span>
+                                )}
+                                {item.publishedAt && (
+                                  <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
+                                    <Clock className="me-1 h-3 w-3" />
+                                    {formatTime(item.publishedAt)}
+                                  </span>
+                                )}
+                                {openArticle === item.url && (
+                                  <Loader2 className="h-3 w-3 animate-spin ms-auto" />
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </button>
-                    </li>
+                        </button>
+                      </li>
                     );
                   })}
                 </ul>
@@ -1348,9 +1525,5 @@ const News = () => {
     </div>
   );
 };
-
-
-
-
 
 export default News;

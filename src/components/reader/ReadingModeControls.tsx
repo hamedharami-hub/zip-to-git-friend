@@ -3,11 +3,11 @@
  * ambient controllers (bionic, focus, auto-scroll) bound to a container
  * selector, and the Eye-Comfort overlay.
  */
-import { ReadingModeSheet } from './ReadingModeSheet';
-import { BionicApplier } from './BionicApplier';
-import { FocusOverlay } from './FocusOverlay';
-import { AutoScrollController } from './AutoScrollController';
-import { EyeComfortLayer } from './EyeComfortLayer';
+import { ReadingModeSheet } from "./ReadingModeSheet";
+import { BionicApplier } from "./BionicApplier";
+import { FocusOverlay } from "./FocusOverlay";
+import { AutoScrollController } from "./AutoScrollController";
+import { EyeComfortLayer } from "./EyeComfortLayer";
 
 interface Props {
   containerSelector: string;

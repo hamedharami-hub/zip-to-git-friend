@@ -10,14 +10,14 @@
  * called at most once per phrase per browser.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface AutoExample {
   english: string;
   persian: string;
 }
 
-const STORAGE_KEY = 'sentenceLab.autoExamples.v1';
+const STORAGE_KEY = "sentenceLab.autoExamples.v1";
 const inflight = new Map<string, Promise<AutoExample | null>>();
 
 function loadCache(): Record<string, AutoExample> {
@@ -71,17 +71,14 @@ export async function getAutoExample(
 
   const task = (async () => {
     try {
-      const { data, error } = await supabase.functions.invoke(
-        'sentence-auto-example',
-        {
-          body: {
-            sentence_id: sentenceId,
-            english,
-            persian: persian ?? null,
-            model,
-          },
+      const { data, error } = await supabase.functions.invoke("sentence-auto-example", {
+        body: {
+          sentence_id: sentenceId,
+          english,
+          persian: persian ?? null,
+          model,
         },
-      );
+      });
       if (error) throw error;
       const example = (data as { example?: AutoExample })?.example;
       if (!example?.english || !example?.persian) return null;
@@ -90,7 +87,7 @@ export async function getAutoExample(
       saveCache(cache);
       return example;
     } catch (e) {
-      console.warn('[autoExample] generation failed', sentenceId, e);
+      console.warn("[autoExample] generation failed", sentenceId, e);
       return null;
     } finally {
       inflight.delete(sentenceId);

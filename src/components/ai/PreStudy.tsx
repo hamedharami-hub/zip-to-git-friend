@@ -1,16 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
-import { GraduationCap, X, Loader2, Volume2, Check, EyeOff, ChevronRight, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { useOnline } from '@/hooks/useOnline';
-import { useAllWordStatus, setWordStatusGlobal, statusLabel } from '@/hooks/useWordStatus';
-import { runTranslate, aiErrorMessage, getApiKeyFor } from '@/lib/ai';
-import { getWordTranslation, saveWordTranslation } from '@/lib/db';
-import { toast } from 'sonner';
-import { ensureAutoFolder } from '@/lib/leitnerAutoFolder';
+import { useEffect, useMemo, useState } from "react";
+import {
+  GraduationCap,
+  X,
+  Loader2,
+  Volume2,
+  Check,
+  EyeOff,
+  ChevronRight,
+  ArrowLeft,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { useOnline } from "@/hooks/useOnline";
+import { useAllWordStatus, setWordStatusGlobal, statusLabel } from "@/hooks/useWordStatus";
+import { runTranslate, aiErrorMessage, getApiKeyFor } from "@/lib/ai";
+import { getWordTranslation, saveWordTranslation } from "@/lib/db";
+import { toast } from "sonner";
+import { ensureAutoFolder } from "@/lib/leitnerAutoFolder";
 
 interface Props {
   videoId: string;
@@ -25,30 +34,164 @@ interface CandidateWord {
 }
 
 const STOPWORDS = new Set([
-  'the', 'a', 'an', 'and', 'or', 'but', 'so', 'if', 'of', 'in', 'on', 'at', 'to', 'for', 'with',
-  'is', 'are', 'was', 'were', 'be', 'been', 'being', 'am', 'do', 'does', 'did', 'doing', 'done',
-  'have', 'has', 'had', 'having', 'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might',
-  'must', 'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
-  'my', 'your', 'his', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
-  'this', 'that', 'these', 'those', 'there', 'here', 'where', 'when', 'why', 'how', 'who', 'whom',
-  'what', 'which', 'whose', 'as', 'than', 'then', 'just', 'not', 'no', 'yes', 'also', 'too',
-  's', 't', 're', 've', 'll', 'd', 'm', 'don', 'doesn', 'didn', 'isn', 'aren', 'wasn', 'weren',
-  'won', 'wouldn', 'shouldn', 'couldn', 'haven', 'hasn', 'hadn', 'into', 'from', 'by', 'about',
-  'up', 'down', 'out', 'off', 'over', 'under', 'again', 'further', 'now', 'very', 'all', 'any',
-  'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'only', 'own', 'same',
-  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "so",
+  "if",
+  "of",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "with",
+  "is",
+  "are",
+  "was",
+  "were",
+  "be",
+  "been",
+  "being",
+  "am",
+  "do",
+  "does",
+  "did",
+  "doing",
+  "done",
+  "have",
+  "has",
+  "had",
+  "having",
+  "will",
+  "would",
+  "shall",
+  "should",
+  "can",
+  "could",
+  "may",
+  "might",
+  "must",
+  "i",
+  "you",
+  "he",
+  "she",
+  "it",
+  "we",
+  "they",
+  "me",
+  "him",
+  "her",
+  "us",
+  "them",
+  "my",
+  "your",
+  "his",
+  "its",
+  "our",
+  "their",
+  "mine",
+  "yours",
+  "hers",
+  "ours",
+  "theirs",
+  "this",
+  "that",
+  "these",
+  "those",
+  "there",
+  "here",
+  "where",
+  "when",
+  "why",
+  "how",
+  "who",
+  "whom",
+  "what",
+  "which",
+  "whose",
+  "as",
+  "than",
+  "then",
+  "just",
+  "not",
+  "no",
+  "yes",
+  "also",
+  "too",
+  "s",
+  "t",
+  "re",
+  "ve",
+  "ll",
+  "d",
+  "m",
+  "don",
+  "doesn",
+  "didn",
+  "isn",
+  "aren",
+  "wasn",
+  "weren",
+  "won",
+  "wouldn",
+  "shouldn",
+  "couldn",
+  "haven",
+  "hasn",
+  "hadn",
+  "into",
+  "from",
+  "by",
+  "about",
+  "up",
+  "down",
+  "out",
+  "off",
+  "over",
+  "under",
+  "again",
+  "further",
+  "now",
+  "very",
+  "all",
+  "any",
+  "both",
+  "each",
+  "few",
+  "more",
+  "most",
+  "other",
+  "some",
+  "such",
+  "only",
+  "own",
+  "same",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
 ]);
 
 function cleanWord(w: string): string {
-  return w.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, '').toLowerCase();
+  return w.replace(/^[^A-Za-z]+|[^A-Za-z]+$/g, "").toLowerCase();
 }
 
 function speak(word: string) {
   try {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(word);
-    u.lang = 'en-US';
+    u.lang = "en-US";
     u.rate = 0.9;
     window.speechSynthesis.speak(u);
   } catch {
@@ -84,8 +227,8 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
         if (STOPWORDS.has(w)) continue;
         if (seen.has(w)) continue;
         seen.add(w);
-        const st = statusMap[w] ?? 'new';
-        if (st === 'known' || st === 'ignored') continue;
+        const st = statusMap[w] ?? "new";
+        if (st === "known" || st === "ignored") continue;
         const cur = counts.get(w);
         if (cur) cur.count += 1;
         else counts.set(w, { count: 1, example: cue.text });
@@ -120,13 +263,18 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
       if (!getApiKeyFor(choice, settings) || !online) return;
       setLoadingT(true);
       try {
-        const t = await runTranslate(current.word, choice, settings, current.exampleCue ?? current.word);
+        const t = await runTranslate(
+          current.word,
+          choice,
+          settings,
+          current.exampleCue ?? current.word,
+        );
         if (cancelled) return;
-        const trimmed = t.trim().replace(/^["'`]|["'`]$/g, '');
+        const trimmed = t.trim().replace(/^["'`]|["'`]$/g, "");
         setTranslation(trimmed);
         void saveWordTranslation(current.word, trimmed);
       } catch (e) {
-        if (!cancelled) console.warn('Pre-study translate failed', aiErrorMessage(e));
+        if (!cancelled) console.warn("Pre-study translate failed", aiErrorMessage(e));
       } finally {
         if (!cancelled) setLoadingT(false);
       }
@@ -138,7 +286,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
 
   const next = () => {
     if (idx + 1 >= candidates.length) {
-      toast.success('Pre-study complete!');
+      toast.success("Pre-study complete!");
       setOpen(false);
       setIdx(0);
     } else {
@@ -146,7 +294,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
     }
   };
 
-  const markAndNext = async (status: 'learning' | 'known' | 'ignored') => {
+  const markAndNext = async (status: "learning" | "known" | "ignored") => {
     if (!current) return;
     await setWordStatusGlobal(current.word, status);
     next();
@@ -155,20 +303,20 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
   const addToLeitnerAndNext = async () => {
     if (!current) return;
     if (!translation) {
-      toast.error('No translation yet — try again in a moment.');
+      toast.error("No translation yet — try again in a moment.");
       return;
     }
-    await setWordStatusGlobal(current.word, 'learning');
-    const folderId = await ensureAutoFolder({ kind: 'video', sourceRef: videoId });
+    await setWordStatusGlobal(current.word, "learning");
+    const folderId = await ensureAutoFolder({ kind: "video", sourceRef: videoId });
     const r = await addCard({
       front: current.word,
       back: translation,
       sourceVideoId: videoId,
       folderId,
-      sourceKind: 'video',
+      sourceKind: "video",
       exampleSentence: current.exampleCue,
     });
-    if (r === 'duplicate') toast(`Already in Leitner: ${current.word}`);
+    if (r === "duplicate") toast(`Already in Leitner: ${current.word}`);
     else toast.success(`Added: ${current.word}`);
     next();
   };
@@ -212,7 +360,9 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
           <p className="text-sm text-muted-foreground">
             Every meaningful word in this video is already marked as Known or Ignored. Great job!
           </p>
-          <Button onClick={() => setOpen(false)} className="w-full">Close</Button>
+          <Button onClick={() => setOpen(false)} className="w-full">
+            Close
+          </Button>
         </div>
       </div>
     );
@@ -241,13 +391,18 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
         <div className="text-center py-4 space-y-3">
           <div className="flex items-center justify-center gap-2">
             <p className="text-3xl sm:text-4xl font-bold tracking-tight">{current.word}</p>
-            <Button size="icon" variant="ghost" className="h-9 w-9" onClick={() => speak(current.word)}>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-9 w-9"
+              onClick={() => speak(current.word)}
+            >
               <Volume2 className="h-4 w-4" />
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Appears <span className="font-semibold text-foreground">{current.count}×</span>{' '}
-            in this video · {totalWordsInVideo} unique words total
+            Appears <span className="font-semibold text-foreground">{current.count}×</span> in this
+            video · {totalWordsInVideo} unique words total
           </p>
           <div className="min-h-[2.5rem] rounded-lg bg-muted/40 px-3 py-2 text-sm" dir="auto">
             {loadingT ? (
@@ -259,10 +414,10 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
             ) : (
               <span className="text-muted-foreground text-xs">
                 {!getApiKeyFor(settings.translateModel, settings)
-                  ? 'Add an AI API key in Settings to see translations.'
+                  ? "Add an AI API key in Settings to see translations."
                   : !online
-                  ? 'Offline — translations unavailable.'
-                  : 'No translation yet.'}
+                    ? "Offline — translations unavailable."
+                    : "No translation yet."}
               </span>
             )}
           </div>
@@ -272,20 +427,19 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
             </p>
           )}
           <p className="text-[10px] text-muted-foreground">
-            Current status: {statusLabel(statusMap[current.word] ?? 'new')}
+            Current status: {statusLabel(statusMap[current.word] ?? "new")}
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <Button onClick={() => markAndNext('known')} variant="outline">
-            <Check className="h-4 w-4 mr-1.5 text-green-500" />
-            I know it
+          <Button onClick={() => markAndNext("known")} variant="outline">
+            <Check className="h-4 w-4 mr-1.5 text-green-500" />I know it
           </Button>
           <Button onClick={addToLeitnerAndNext} disabled={!translation}>
             <GraduationCap className="h-4 w-4 mr-1.5" />
             Learn it
           </Button>
-          <Button onClick={() => markAndNext('ignored')} variant="ghost" size="sm">
+          <Button onClick={() => markAndNext("ignored")} variant="ghost" size="sm">
             <EyeOff className="h-3.5 w-3.5 mr-1.5" />
             Ignore
           </Button>
@@ -305,9 +459,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
           >
             <ArrowLeft className="h-3.5 w-3.5 mr-1" /> Previous
           </Button>
-          <span className="text-[10px] text-muted-foreground">
-            {pct}% through pre-study
-          </span>
+          <span className="text-[10px] text-muted-foreground">{pct}% through pre-study</span>
         </div>
       </div>
     </div>

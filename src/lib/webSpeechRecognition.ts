@@ -9,12 +9,8 @@
 type SR = typeof window extends { SpeechRecognition: infer T } ? T : any;
 
 function getSpeechRecognition(): any {
-  if (typeof window === 'undefined') return null;
-  return (
-    (window as any).SpeechRecognition ||
-    (window as any).webkitSpeechRecognition ||
-    null
-  );
+  if (typeof window === "undefined") return null;
+  return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 }
 
 export function isSpeechRecognitionSupported(): boolean {
@@ -37,19 +33,19 @@ export interface RecognitionOptions {
 export function startRecognition(opts: RecognitionOptions): RecognitionHandle | null {
   const SR = getSpeechRecognition();
   if (!SR) {
-    opts.onError?.('Speech recognition not supported in this browser');
+    opts.onError?.("Speech recognition not supported in this browser");
     return null;
   }
   const rec = new SR();
-  rec.lang = opts.lang ?? 'en-US';
+  rec.lang = opts.lang ?? "en-US";
   rec.continuous = false;
   rec.interimResults = true;
   rec.maxAlternatives = 1;
 
-  let finalText = '';
+  let finalText = "";
 
   rec.onresult = (event: any) => {
-    let interim = '';
+    let interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
       const r = event.results[i];
       if (r.isFinal) {
@@ -62,7 +58,7 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
   };
 
   rec.onerror = (e: any) => {
-    opts.onError?.(e?.error ?? 'unknown');
+    opts.onError?.(e?.error ?? "unknown");
   };
 
   rec.onend = () => {
@@ -73,16 +69,20 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
   try {
     rec.start();
   } catch (e: any) {
-    opts.onError?.(e?.message ?? 'Failed to start');
+    opts.onError?.(e?.message ?? "Failed to start");
     return null;
   }
 
   return {
     stop: () => {
-      try { rec.stop(); } catch {}
+      try {
+        rec.stop();
+      } catch {}
     },
     abort: () => {
-      try { rec.abort(); } catch {}
+      try {
+        rec.abort();
+      } catch {}
     },
   };
 }

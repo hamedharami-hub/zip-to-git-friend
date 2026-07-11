@@ -1,15 +1,15 @@
-import { useEffect, useRef, useState } from 'react';
-import { X, Play, Pause, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useVideoStore } from '@/store/videoStore';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useActiveCues } from '@/hooks/useVideoSync';
-import { InteractiveSubtitle } from '@/components/ai/InteractiveSubtitle';
-import { KaraokeSubtitle } from '@/components/subtitles/KaraokeSubtitle';
-import { AnalysisPanel } from '@/components/ai/AnalysisPanel';
-import { Button } from '@/components/ui/button';
-import { BlindListenBar } from './BlindListenBar';
-import { useBlindListen } from '@/hooks/useBlindListen';
+import { useEffect, useRef, useState } from "react";
+import { X, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
+import { useVideoStore } from "@/store/videoStore";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useActiveCues } from "@/hooks/useVideoSync";
+import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
+import { KaraokeSubtitle } from "@/components/subtitles/KaraokeSubtitle";
+import { AnalysisPanel } from "@/components/ai/AnalysisPanel";
+import { Button } from "@/components/ui/button";
+import { BlindListenBar } from "./BlindListenBar";
+import { useBlindListen } from "@/hooks/useBlindListen";
 
 interface Props {
   videoId: string;
@@ -39,10 +39,10 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
   const blind = useBlindListen(videoRef.current, activePrimary, primary?.cues ?? []);
   const hideSubtitleText = blind.enabled && !blind.isRevealed;
 
-  const [feedback, setFeedback] = useState<'play' | 'pause' | 'prev' | 'next' | null>(null);
+  const [feedback, setFeedback] = useState<"play" | "pause" | "prev" | "next" | null>(null);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);
-  const lastTapRef = useRef<{ time: number; zone: 'left' | 'mid' | 'right' } | null>(null);
+  const lastTapRef = useRef<{ time: number; zone: "left" | "mid" | "right" } | null>(null);
 
   // Initialize from saved state.
   useEffect(() => {
@@ -81,7 +81,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
   // Lock body scroll while immersive.
   useEffect(() => {
     const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
@@ -89,7 +89,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
 
   if (!current) return null;
 
-  const flashFeedback = (kind: 'play' | 'pause' | 'prev' | 'next') => {
+  const flashFeedback = (kind: "play" | "pause" | "prev" | "next") => {
     setFeedback(kind);
     if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = window.setTimeout(() => setFeedback(null), 500);
@@ -100,20 +100,20 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
     if (!v) return;
     if (v.paused) {
       v.play().catch(() => {});
-      flashFeedback('play');
+      flashFeedback("play");
     } else {
       v.pause();
-      flashFeedback('pause');
+      flashFeedback("pause");
     }
   };
 
-  const jumpToCue = (direction: 'prev' | 'next') => {
+  const jumpToCue = (direction: "prev" | "next") => {
     const v = videoRef.current;
     const cues = primary?.cues ?? [];
     if (!v || cues.length === 0) return;
     const tMs = v.currentTime * 1000;
-    let target: typeof cues[number] | undefined;
-    if (direction === 'next') {
+    let target: (typeof cues)[number] | undefined;
+    if (direction === "next") {
       target = cues.find((c) => c.startMs > tMs + 50);
     } else {
       for (let i = cues.length - 1; i >= 0; i--) {
@@ -135,8 +135,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const ratio = x / rect.width;
-    const zone: 'left' | 'mid' | 'right' =
-      ratio < 0.25 ? 'left' : ratio > 0.75 ? 'right' : 'mid';
+    const zone: "left" | "mid" | "right" = ratio < 0.25 ? "left" : ratio > 0.75 ? "right" : "mid";
 
     const now = Date.now();
     const last = lastTapRef.current;
@@ -148,13 +147,13 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
         tapTimerRef.current = null;
       }
       lastTapRef.current = null;
-      if (zone === 'mid') togglePlay();
-      else if (zone === 'right') {
-        jumpToCue('next');
-        flashFeedback('next');
+      if (zone === "mid") togglePlay();
+      else if (zone === "right") {
+        jumpToCue("next");
+        flashFeedback("next");
       } else {
-        jumpToCue('prev');
-        flashFeedback('prev');
+        jumpToCue("prev");
+        flashFeedback("prev");
       }
       return;
     }
@@ -208,10 +207,10 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
         {feedback && (
           <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
             <div className="rounded-full bg-black/55 text-white p-4 animate-in fade-in zoom-in duration-150">
-              {feedback === 'play' && <Play className="h-8 w-8" />}
-              {feedback === 'pause' && <Pause className="h-8 w-8" />}
-              {feedback === 'next' && <ChevronRight className="h-8 w-8" />}
-              {feedback === 'prev' && <ChevronLeft className="h-8 w-8" />}
+              {feedback === "play" && <Play className="h-8 w-8" />}
+              {feedback === "pause" && <Pause className="h-8 w-8" />}
+              {feedback === "next" && <ChevronRight className="h-8 w-8" />}
+              {feedback === "prev" && <ChevronLeft className="h-8 w-8" />}
             </div>
           </div>
         )}
@@ -223,7 +222,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
           {activePrimary ? (
             hideSubtitleText ? (
               <p className="text-center tracking-widest text-white/50 text-base select-none leading-tight">
-                •••  •••  •••
+                ••• ••• •••
               </p>
             ) : activePrimary.words && activePrimary.words.length > 0 ? (
               <KaraokeSubtitle
@@ -249,7 +248,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
             <p
               dir="auto"
               className="text-center text-[14px] sm:text-[15px] leading-tight tracking-tight"
-              style={{ color: 'hsl(var(--primary))' }}
+              style={{ color: "hsl(var(--primary))" }}
             >
               {activeSecondary.text}
             </p>
@@ -273,7 +272,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
               onClick={() => setAnalysisOpen((v) => !v)}
               className="text-[11px] text-white/80 hover:text-white px-2 py-0.5 rounded border border-white/15 shrink-0"
             >
-              {analysisOpen ? 'بستن تحلیل' : 'تحلیل'}
+              {analysisOpen ? "بستن تحلیل" : "تحلیل"}
             </button>
           )}
         </div>

@@ -1,7 +1,7 @@
-import { memo, useEffect, useMemo } from 'react';
-import { List, useListRef, type RowComponentProps } from 'react-window';
-import type { SubtitleCue } from '@/types';
-import { cn } from '@/lib/utils';
+import { memo, useEffect, useMemo } from "react";
+import { List, useListRef, type RowComponentProps } from "react-window";
+import type { SubtitleCue } from "@/types";
+import { cn } from "@/lib/utils";
 
 interface Props {
   cues: SubtitleCue[];
@@ -18,7 +18,7 @@ function formatTime(ms: number): string {
   const totalSec = Math.floor(ms / 1000);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 interface RowData {
@@ -44,12 +44,10 @@ function CueRow({
       style={style}
       onClick={() => onJump?.(cue)}
       className={cn(
-        'w-full text-left px-3 py-2 text-sm border-b border-border/50 transition-colors flex gap-3 items-start',
-        active
-          ? 'bg-primary/10 text-foreground'
-          : 'hover:bg-muted/50 focus-visible:bg-muted/50',
+        "w-full text-left px-3 py-2 text-sm border-b border-border/50 transition-colors flex gap-3 items-start",
+        active ? "bg-primary/10 text-foreground" : "hover:bg-muted/50 focus-visible:bg-muted/50",
       )}
-      aria-current={active ? 'true' : undefined}
+      aria-current={active ? "true" : undefined}
       aria-label={`Jump to cue at ${formatTime(cue.startMs)}`}
     >
       <span className="text-xs tabular-nums text-muted-foreground shrink-0 w-12 pt-0.5">
@@ -60,13 +58,7 @@ function CueRow({
   );
 }
 
-function VirtualRow({
-  index,
-  style,
-  cues,
-  activeCueId,
-  onJump,
-}: RowComponentProps<RowData>) {
+function VirtualRow({ index, style, cues, activeCueId, onJump }: RowComponentProps<RowData>) {
   const cue = cues[index];
   return <CueRow cue={cue} active={activeCueId === cue.id} style={style} onJump={onJump} />;
 }
@@ -91,13 +83,11 @@ export const SubtitleCueList = memo(function SubtitleCueList({
   useEffect(() => {
     if (!activeCueId || cues.length <= VIRTUALIZE_THRESHOLD) return;
     const idx = cues.findIndex((c) => c.id === activeCueId);
-    if (idx >= 0) listRef.current?.scrollToRow({ index: idx, align: 'smart' });
+    if (idx >= 0) listRef.current?.scrollToRow({ index: idx, align: "smart" });
   }, [activeCueId, cues, listRef]);
 
   if (cues.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-6">No cues to show.</p>
-    );
+    return <p className="text-sm text-muted-foreground text-center py-6">No cues to show.</p>;
   }
 
   if (cues.length > VIRTUALIZE_THRESHOLD) {
@@ -110,7 +100,7 @@ export const SubtitleCueList = memo(function SubtitleCueList({
           rowHeight={ROW_HEIGHT}
           rowProps={rowProps}
           overscanCount={4}
-          style={{ height: '100%' }}
+          style={{ height: "100%" }}
         />
       </div>
     );
@@ -118,17 +108,9 @@ export const SubtitleCueList = memo(function SubtitleCueList({
 
   // Small list: regular DOM with native auto-scroll.
   return (
-    <div
-      className="overflow-y-auto rounded border border-border"
-      style={{ maxHeight: height }}
-    >
+    <div className="overflow-y-auto rounded border border-border" style={{ maxHeight: height }}>
       {cues.map((cue) => (
-        <CueRow
-          key={cue.id}
-          cue={cue}
-          active={activeCueId === cue.id}
-          onJump={onJump}
-        />
+        <CueRow key={cue.id} cue={cue} active={activeCueId === cue.id} onJump={onJump} />
       ))}
     </div>
   );

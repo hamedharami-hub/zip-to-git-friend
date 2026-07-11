@@ -7,21 +7,21 @@
  * HTML as a hidden JSON tag so the reader can re-render them as underlined
  * targets without an extra DB column.
  */
-import { supabase } from '@/integrations/supabase/client';
-import { appendChapter, saveChapter, chapterKey } from '@/lib/bookDb';
-import { useBookStore } from '@/store/bookStore';
-import { generateGradientCover, pastedTextToChapter } from '@/lib/manualBook';
-import type { Book, BookChapter } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import { appendChapter, saveChapter, chapterKey } from "@/lib/bookDb";
+import { useBookStore } from "@/store/bookStore";
+import { generateGradientCover, pastedTextToChapter } from "@/lib/manualBook";
+import type { Book, BookChapter } from "@/types";
 
-export const LANG_BOOK_SUFFIX = '.langbook';
+export const LANG_BOOK_SUFFIX = ".langbook";
 
-export function isLanguageBook(b: Pick<Book, 'fileName'>): boolean {
+export function isLanguageBook(b: Pick<Book, "fileName">): boolean {
   return !!b.fileName && b.fileName.toLowerCase().endsWith(LANG_BOOK_SUFFIX);
 }
 
 /** Hidden marker we embed in chapter HTML to remember the target items. */
-const TARGET_TAG_OPEN = '<!--LANG_TARGETS:';
-const TARGET_TAG_CLOSE = ':END-->';
+const TARGET_TAG_OPEN = "<!--LANG_TARGETS:";
+const TARGET_TAG_CLOSE = ":END-->";
 
 export function encodeTargetsInHtml(items: string[], html: string): string {
   if (!items.length) return html;
@@ -71,21 +71,19 @@ export interface LanguageChapterAIResult {
 
 export async function generateLanguageChapter(input: {
   items: string[];
-  mode: 'guided' | 'auto';
+  mode: "guided" | "auto";
   outline?: string;
   targetWordCount?: number;
 }): Promise<LanguageChapterAIResult> {
   const { data, error } = await supabase.functions.invoke<LanguageChapterAIResult>(
-    'generate-language-chapter',
+    "generate-language-chapter",
     { body: input },
   );
   if (error) {
-    const msg = (error as any)?.context?.error
-      || (error as any)?.message
-      || 'AI request failed.';
-    throw new Error(typeof msg === 'string' ? msg : 'AI request failed.');
+    const msg = (error as any)?.context?.error || (error as any)?.message || "AI request failed.";
+    throw new Error(typeof msg === "string" ? msg : "AI request failed.");
   }
-  if (!data) throw new Error('Empty AI response.');
+  if (!data) throw new Error("Empty AI response.");
   return data;
 }
 
@@ -116,10 +114,10 @@ export function buildLanguageChapterHtml(
   let html = parsed.html;
   if (notes && notes.trim()) {
     const safe = notes
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\n+/g, '<br/>');
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/\n+/g, "<br/>");
     html = `${html}\n<hr/>\n<blockquote>${safe}</blockquote>`;
   }
   html = encodeTargetsInHtml(items, html);
@@ -127,13 +125,10 @@ export function buildLanguageChapterHtml(
 }
 
 /** Create a brand-new language book (and optional first chapter). Returns the book id. */
-export async function createLanguageBook(
-  input: CreateLanguageBookInput,
-): Promise<string> {
+export async function createLanguageBook(input: CreateLanguageBookInput): Promise<string> {
   const upsert = useBookStore.getState().upsert;
   const id = crypto.randomUUID();
-  const cover =
-    input.coverDataUrl ?? generateGradientCover(input.title, input.author);
+  const cover = input.coverDataUrl ?? generateGradientCover(input.title, input.author);
 
   let chapterCount = 0;
 
@@ -142,7 +137,7 @@ export async function createLanguageBook(
     const built = buildLanguageChapterHtml(
       aiResult.story,
       items,
-      [aiResult.teachingNotes, userNotes].filter(Boolean).join('\n\n'),
+      [aiResult.teachingNotes, userNotes].filter(Boolean).join("\n\n"),
     );
     await appendChapter(id, {
       title: chapTitle.trim() || aiResult.title,
@@ -158,7 +153,7 @@ export async function createLanguageBook(
       id,
       title: input.title.trim(),
       author: input.author?.trim() || undefined,
-      language: input.language?.trim() || 'en',
+      language: input.language?.trim() || "en",
       fileName: `${input.title.trim()}${LANG_BOOK_SUFFIX}`,
       chapterCount,
       lastChapterIndex: 0,
@@ -187,7 +182,7 @@ export async function appendLanguageChapter(
   const built = buildLanguageChapterHtml(
     input.aiResult.story,
     input.items,
-    [input.aiResult.teachingNotes, input.userNotes].filter(Boolean).join('\n\n'),
+    [input.aiResult.teachingNotes, input.userNotes].filter(Boolean).join("\n\n"),
   );
   const created = await appendChapter(book.id, {
     title: input.title.trim() || input.aiResult.title,
@@ -212,7 +207,7 @@ export async function updateLanguageChapter(
   index: number,
   patch: { story?: string; items?: string[]; notes?: string; title?: string },
 ): Promise<void> {
-  const { getChapter } = await import('@/lib/bookDb');
+  const { getChapter } = await import("@/lib/bookDb");
   const existing = await getChapter(bookId, index);
   if (!existing) return;
   const text = (patch.story ?? existing.text).trim();

@@ -4,10 +4,10 @@
  *
  * Cost-aware: cached forever per URL; batches up to 25 items per AI call.
  */
-import { useEffect, useState } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
-const STORAGE_KEY = 'news.titleTranslations.v1';
+const STORAGE_KEY = "news.titleTranslations.v1";
 const BATCH_SIZE = 25;
 
 export interface TitleTranslation {
@@ -21,14 +21,22 @@ let memory: Store = (() => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     return raw ? (JSON.parse(raw) as Store) : {};
-  } catch { return {}; }
+  } catch {
+    return {};
+  }
 })();
 
 const listeners = new Set<() => void>();
-function emit() { for (const fn of listeners) fn(); }
+function emit() {
+  for (const fn of listeners) fn();
+}
 
 function persist() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(memory)); } catch { /* */ }
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(memory));
+  } catch {
+    /* */
+  }
 }
 
 export function getCachedTitleTranslation(url: string): TitleTranslation | undefined {
@@ -100,7 +108,7 @@ export async function translateTitlesBatch(
     try {
       const { data, error } = await supabase.functions.invoke<{
         results: Array<{ id: string; titleFa: string; excerptFa?: string }>;
-      }>('news-translate-titles', {
+      }>("news-translate-titles", {
         body: {
           items: slice.map((it) => ({ id: it.url, title: it.title, excerpt: it.excerpt })),
           model: opts.model,
@@ -117,7 +125,7 @@ export async function translateTitlesBatch(
       emit();
       done += slice.length;
     } catch (e) {
-      console.error('[translateTitlesBatch] batch failed', e);
+      console.error("[translateTitlesBatch] batch failed", e);
       failed += slice.length;
     }
     opts.onProgress?.({ done, total, failed });
@@ -129,6 +137,10 @@ export async function translateTitlesBatch(
 /** Wipe the entire cache (useful for a "reset" option). */
 export function clearTitleTranslations() {
   memory = {};
-  try { localStorage.removeItem(STORAGE_KEY); } catch { /* */ }
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+  } catch {
+    /* */
+  }
   emit();
 }

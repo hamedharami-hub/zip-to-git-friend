@@ -12,8 +12,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 const DEFAULT_MODEL = "google/gemini-3-flash-preview";
@@ -27,10 +26,10 @@ const STYLE_INSTRUCTIONS: Record<string, string> = {
     "Distill the chapter into 6–12 KEY POINTS. Each point is one focused sentence in clear modern English. Keep the order of ideas from the chapter. Use a markdown bullet list.",
   simplified:
     "REWRITE the chapter in SIMPLIFIED English (CEFR B1 level). Same ideas, same order, but shorter sentences, common vocabulary, and no idioms. Length ≈ 60% of the original.",
- everyday_simple:
-   "REWRITE the chapter in SIMPLE, EVERYDAY SPOKEN English (CEFR A2–B1) — the exact language a native speaker uses when CHATTING with friends, family or colleagues in daily life. AUDIENCE: imagine a curious adult Iranian who knows ALMOST NOTHING about the chapter's topic and whose English is lower-intermediate. Explain things the way you would to a smart friend who has never heard of the subject. Whenever you introduce a person, place, organisation, technical term, jargon word, theory, historical event or acronym for the first time, ADD a short in-line explanation in your own words (a relative clause or quick 'which means …' aside) so the reader instantly understands who/what it is and why it matters. Unpack abbreviations on first use. If the chapter assumes background the reader probably lacks, make it explicit in one short sentence. NEVER assume prior knowledge. VOCABULARY RULE: aggressively prefer the top ~2000 high-frequency everyday words. Replace any formal/academic/Latinate word with its everyday counterpart ('utilise' → 'use', 'purchase' → 'buy', 'commence' → 'start', 'demonstrate' → 'show', 'subsequently' → 'later', 'approximately' → 'about', 'numerous' → 'a lot of', 'attempt' → 'try', 'require' → 'need', 'assist' → 'help', 'sufficient' → 'enough'). PHRASAL VERBS & IDIOMS RULE: use the high-frequency phrasal verbs, idioms, collocations and discourse markers that show up in real conversation as often as the meaning allows (at least a handful per section): 'find out', 'turn out', 'come up with', 'figure out', 'end up', 'work out', 'set up', 'pull off', 'look into', 'put up with', 'on the other hand', 'at the end of the day', 'to be honest', 'the thing is', 'long story short', 'a big deal', 'keep an eye on', 'pretty much', 'kind of', 'a bunch of'. SENTENCE-BUILDING RULE: break long, dense source sentences into 2–3 short simple sentences. Prefer SVO order and simple connectors ('and', 'but', 'so', 'because') over stacked relative clauses. RHYTHM: short clear sentences (≤ 15 words on average), contractions ('it's', 'don't', 'we'll'). CRITICAL — DO NOT SUMMARISE OR SHORTEN. Preserve EVERY single fact, name, number, date, place, quote, example, statistic and idea in the same order. Adding short clarifying asides for context is REQUIRED and does not count as adding facts — but nothing is allowed to drop. Output length ≥ original length (≥ 100% of original word count; longer is fine because of the added micro-explanations). Pure prose paragraphs, no headings beyond what the source uses, no bullet lists.",
- everyday_simple_b2:
-   "REWRITE the chapter in CLEAR, NATURAL SPOKEN English (CEFR B1–B2) — the language a native speaker uses in real conversation. AUDIENCE: imagine a curious adult Iranian who knows little about the chapter's topic and whose English is intermediate. Whenever you introduce a person, place, organisation, technical term, jargon word, theory, historical event or acronym for the first time, add a brief in-line explanation (relative clause or 'which means …' aside) so the reader immediately knows who/what it is and why it matters. Spell out abbreviations on first use. Make any assumed background explicit in one short sentence. Never assume prior knowledge. VOCABULARY RULE: prefer common, conversational words; drop formal/Latinate vocabulary when an everyday equivalent exists. PHRASAL VERBS & IDIOMS RULE: lean heavily on the high-frequency phrasal verbs, idioms, collocations and discourse markers from real conversation ('find out', 'turn out', 'end up', 'come up with', 'figure out', 'work out', 'set up', 'put up with', 'on the other hand', 'to be honest', 'the thing is', 'long story short', 'a big deal', 'keep an eye on', 'pretty much'). SENTENCE-BUILDING RULE: break long dense sentences into shorter ones; prefer simple connectors over stacked relative clauses. Use contractions throughout. CRITICAL — DO NOT SUMMARISE OR SHORTEN. Preserve EVERY fact, name, number, date, place, quote, example and idea in the original order. Adding short clarifying asides for context is REQUIRED and does not count as adding facts — but nothing is allowed to drop. Output length ≥ original length (≥ 100% of original word count; longer is fine because of the added micro-explanations). Pure prose, no bullet lists.",
+  everyday_simple:
+    "REWRITE the chapter in SIMPLE, EVERYDAY SPOKEN English (CEFR A2–B1) — the exact language a native speaker uses when CHATTING with friends, family or colleagues in daily life. AUDIENCE: imagine a curious adult Iranian who knows ALMOST NOTHING about the chapter's topic and whose English is lower-intermediate. Explain things the way you would to a smart friend who has never heard of the subject. Whenever you introduce a person, place, organisation, technical term, jargon word, theory, historical event or acronym for the first time, ADD a short in-line explanation in your own words (a relative clause or quick 'which means …' aside) so the reader instantly understands who/what it is and why it matters. Unpack abbreviations on first use. If the chapter assumes background the reader probably lacks, make it explicit in one short sentence. NEVER assume prior knowledge. VOCABULARY RULE: aggressively prefer the top ~2000 high-frequency everyday words. Replace any formal/academic/Latinate word with its everyday counterpart ('utilise' → 'use', 'purchase' → 'buy', 'commence' → 'start', 'demonstrate' → 'show', 'subsequently' → 'later', 'approximately' → 'about', 'numerous' → 'a lot of', 'attempt' → 'try', 'require' → 'need', 'assist' → 'help', 'sufficient' → 'enough'). PHRASAL VERBS & IDIOMS RULE: use the high-frequency phrasal verbs, idioms, collocations and discourse markers that show up in real conversation as often as the meaning allows (at least a handful per section): 'find out', 'turn out', 'come up with', 'figure out', 'end up', 'work out', 'set up', 'pull off', 'look into', 'put up with', 'on the other hand', 'at the end of the day', 'to be honest', 'the thing is', 'long story short', 'a big deal', 'keep an eye on', 'pretty much', 'kind of', 'a bunch of'. SENTENCE-BUILDING RULE: break long, dense source sentences into 2–3 short simple sentences. Prefer SVO order and simple connectors ('and', 'but', 'so', 'because') over stacked relative clauses. RHYTHM: short clear sentences (≤ 15 words on average), contractions ('it's', 'don't', 'we'll'). CRITICAL — DO NOT SUMMARISE OR SHORTEN. Preserve EVERY single fact, name, number, date, place, quote, example, statistic and idea in the same order. Adding short clarifying asides for context is REQUIRED and does not count as adding facts — but nothing is allowed to drop. Output length ≥ original length (≥ 100% of original word count; longer is fine because of the added micro-explanations). Pure prose paragraphs, no headings beyond what the source uses, no bullet lists.",
+  everyday_simple_b2:
+    "REWRITE the chapter in CLEAR, NATURAL SPOKEN English (CEFR B1–B2) — the language a native speaker uses in real conversation. AUDIENCE: imagine a curious adult Iranian who knows little about the chapter's topic and whose English is intermediate. Whenever you introduce a person, place, organisation, technical term, jargon word, theory, historical event or acronym for the first time, add a brief in-line explanation (relative clause or 'which means …' aside) so the reader immediately knows who/what it is and why it matters. Spell out abbreviations on first use. Make any assumed background explicit in one short sentence. Never assume prior knowledge. VOCABULARY RULE: prefer common, conversational words; drop formal/Latinate vocabulary when an everyday equivalent exists. PHRASAL VERBS & IDIOMS RULE: lean heavily on the high-frequency phrasal verbs, idioms, collocations and discourse markers from real conversation ('find out', 'turn out', 'end up', 'come up with', 'figure out', 'work out', 'set up', 'put up with', 'on the other hand', 'to be honest', 'the thing is', 'long story short', 'a big deal', 'keep an eye on', 'pretty much'). SENTENCE-BUILDING RULE: break long dense sentences into shorter ones; prefer simple connectors over stacked relative clauses. Use contractions throughout. CRITICAL — DO NOT SUMMARISE OR SHORTEN. Preserve EVERY fact, name, number, date, place, quote, example and idea in the original order. Adding short clarifying asides for context is REQUIRED and does not count as adding facts — but nothing is allowed to drop. Output length ≥ original length (≥ 100% of original word count; longer is fine because of the added micro-explanations). Pure prose, no bullet lists.",
   key_quotes:
     "Extract 5–10 of the MOST POWERFUL or MOST QUOTABLE sentences from the chapter — verbatim, exactly as written. Render each as a markdown blockquote on its own line. After each quote add ONE short italic line (≤ 15 words) explaining why it matters.",
   review_questions:
@@ -86,9 +85,7 @@ const tools = [
 /** Tiny markdown → safe HTML converter (paragraphs, headings, lists, blockquotes, bold/italic). */
 function mdToHtml(md: string): string {
   const escape = (s: string) =>
-    s.replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;");
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   const inline = (s: string) =>
     escape(s)
       .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
@@ -144,11 +141,7 @@ function mdToHtml(md: string): string {
     }
     // Paragraph (collect until blank line)
     const buf: string[] = [];
-    while (
-      i < lines.length &&
-      lines[i].trim() &&
-      !/^(#{1,6}\s|>|[-*]\s|\d+\.\s)/.test(lines[i])
-    ) {
+    while (i < lines.length && lines[i].trim() && !/^(#{1,6}\s|>|[-*]\s|\d+\.\s)/.test(lines[i])) {
       buf.push(lines[i]);
       i++;
     }
@@ -166,16 +159,16 @@ serve(async (req) => {
     const { chapterText, chapterTitle, style, model } = await req.json();
 
     if (typeof chapterText !== "string" || !chapterText.trim()) {
-      return new Response(
-        JSON.stringify({ error: "Missing 'chapterText'." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "Missing 'chapterText'." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     if (typeof style !== "string" || !STYLE_INSTRUCTIONS[style]) {
-      return new Response(
-        JSON.stringify({ error: `Unknown style '${style}'.` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `Unknown style '${style}'.` }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Soft cap input to keep tokens reasonable.
@@ -184,10 +177,10 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const chosenModel = typeof model === "string" && model ? model : DEFAULT_MODEL;
@@ -205,8 +198,7 @@ serve(async (req) => {
           { role: "system", content: SYSTEM_PROMPT },
           {
             role: "user",
-            content:
-              `STYLE: ${style}\nINSTRUCTIONS: ${styleInstr}\n\nCHAPTER TITLE: ${title || "(untitled)"}\n\nCHAPTER TEXT:\n"""\n${text}\n"""\n\nCall the tool with the rewrite.`,
+            content: `STYLE: ${style}\nINSTRUCTIONS: ${styleInstr}\n\nCHAPTER TITLE: ${title || "(untitled)"}\n\nCHAPTER TEXT:\n"""\n${text}\n"""\n\nCall the tool with the rewrite.`,
           },
         ],
         tools,
@@ -229,10 +221,10 @@ serve(async (req) => {
     if (!aiRes.ok) {
       const t = await aiRes.text();
       console.error("[rewrite-chapter] gateway error", aiRes.status, t);
-      return new Response(
-        JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: `AI gateway error (${aiRes.status}).` }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const data = await aiRes.json();
@@ -249,19 +241,19 @@ serve(async (req) => {
     try {
       parsed = JSON.parse(argsStr);
     } catch {
-      return new Response(
-        JSON.stringify({ error: "AI returned malformed structured output." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI returned malformed structured output." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const markdown = String(parsed.markdown ?? "").trim();
     const plain = String(parsed.text ?? "").trim();
     if (!markdown || !plain) {
-      return new Response(
-        JSON.stringify({ error: "AI returned empty rewrite." }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-      );
+      return new Response(JSON.stringify({ error: "AI returned empty rewrite." }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
     const html = mdToHtml(markdown);
     const wordCount =
@@ -269,10 +261,9 @@ serve(async (req) => {
         ? Math.round(parsed.wordCount)
         : plain.split(/\s+/).filter(Boolean).length;
 
-    return new Response(
-      JSON.stringify({ html, text: plain, wordCount, model: chosenModel }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ html, text: plain, wordCount, model: chosenModel }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("[rewrite-chapter] error", e);
     return new Response(

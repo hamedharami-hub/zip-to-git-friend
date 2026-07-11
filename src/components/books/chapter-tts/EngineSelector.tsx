@@ -8,17 +8,17 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import type { Engine } from './constants';
+} from "@/components/ui/select";
+import type { Engine } from "./constants";
 
 const OPTIONS: ReadonlyArray<{ id: Engine; label: string }> = [
-  { id: 'browser', label: 'Browser' },
-  { id: 'gemini', label: 'Gemini' },
-  { id: 'elevenlabs', label: 'ElevenLabs' },
-  { id: 'azure', label: 'Azure' },
-  { id: 'huggingface', label: 'HF' },
-  { id: 'playht', label: 'Play.ht' },
-  { id: 'opentts', label: 'OpenTTS' },
+  { id: "browser", label: "Browser" },
+  { id: "gemini", label: "Gemini" },
+  { id: "elevenlabs", label: "ElevenLabs" },
+  { id: "azure", label: "Azure" },
+  { id: "huggingface", label: "HF" },
+  { id: "playht", label: "Play.ht" },
+  { id: "opentts", label: "OpenTTS" },
 ];
 
 interface Props {
@@ -35,11 +35,7 @@ export function EngineSelector({ engine, onChange, browserSupported }: Props) {
       </SelectTrigger>
       <SelectContent>
         {OPTIONS.map((t) => (
-          <SelectItem
-            key={t.id}
-            value={t.id}
-            disabled={t.id === 'browser' && !browserSupported}
-          >
+          <SelectItem key={t.id} value={t.id} disabled={t.id === "browser" && !browserSupported}>
             {t.label}
           </SelectItem>
         ))}

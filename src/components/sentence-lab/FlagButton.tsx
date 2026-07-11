@@ -1,42 +1,44 @@
-import { useState } from 'react';
-import { Flag } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  Popover, PopoverContent, PopoverTrigger,
-} from '@/components/ui/popover';
-import { Input } from '@/components/ui/input';
-import { useSentenceFlagStore } from '@/store/sentenceFlagStore';
-import {
-  FLAG_COLORS, FLAG_COLOR_META, type FlagColor,
-} from '@/lib/sentenceFlags';
-import { cn } from '@/lib/utils';
+import { useState } from "react";
+import { Flag } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Input } from "@/components/ui/input";
+import { useSentenceFlagStore } from "@/store/sentenceFlagStore";
+import { FLAG_COLORS, FLAG_COLOR_META, type FlagColor } from "@/lib/sentenceFlags";
+import { cn } from "@/lib/utils";
 
 interface Props {
   sentenceId: string;
-  size?: 'sm' | 'md';
+  size?: "sm" | "md";
   className?: string;
 }
 
-export function FlagButton({ sentenceId, size = 'md', className }: Props) {
+export function FlagButton({ sentenceId, size = "md", className }: Props) {
   const flag = useSentenceFlagStore((s) => s.flags[sentenceId]);
   const setFlag = useSentenceFlagStore((s) => s.setFlag);
   const clearFlag = useSentenceFlagStore((s) => s.clearFlag);
   const [open, setOpen] = useState(false);
-  const [label, setLabel] = useState(flag?.label ?? '');
+  const [label, setLabel] = useState(flag?.label ?? "");
 
-  const dim = size === 'sm' ? 'h-7 w-7' : 'h-8 w-8';
-  const icon = size === 'sm' ? 'h-3.5 w-3.5' : 'h-4 w-4';
+  const dim = size === "sm" ? "h-7 w-7" : "h-8 w-8";
+  const icon = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
   const activeColor = flag ? FLAG_COLOR_META[flag.color].hex : undefined;
 
   return (
-    <Popover open={open} onOpenChange={(o) => { setOpen(o); if (o) setLabel(flag?.label ?? ''); }}>
+    <Popover
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (o) setLabel(flag?.label ?? "");
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
           size="icon"
           className={cn(dim, className)}
           aria-label="Flag sentence"
-          title={flag ? `پرچم: ${flag.label || FLAG_COLOR_META[flag.color].label}` : 'افزودن پرچم'}
+          title={flag ? `پرچم: ${flag.label || FLAG_COLOR_META[flag.color].label}` : "افزودن پرچم"}
         >
           <Flag
             className={icon}
@@ -54,14 +56,16 @@ export function FlagButton({ sentenceId, size = 'md', className }: Props) {
               return (
                 <button
                   key={c}
-                  onClick={() => { void setFlag(sentenceId, c, label || null); }}
+                  onClick={() => {
+                    void setFlag(sentenceId, c, label || null);
+                  }}
                   className={cn(
-                    'flex flex-col items-center gap-1 rounded-md border p-2 transition-colors hover:bg-muted',
-                    active && 'border-primary ring-2 ring-primary/30',
+                    "flex flex-col items-center gap-1 rounded-md border p-2 transition-colors hover:bg-muted",
+                    active && "border-primary ring-2 ring-primary/30",
                   )}
                   title={meta.label}
                 >
-                  <span className={cn('h-5 w-5 rounded-full', meta.bg)} />
+                  <span className={cn("h-5 w-5 rounded-full", meta.bg)} />
                   <span className="text-[9px] text-muted-foreground">{meta.label}</span>
                 </button>
               );
@@ -74,7 +78,7 @@ export function FlagButton({ sentenceId, size = 'md', className }: Props) {
             value={label}
             onChange={(e) => setLabel(e.target.value)}
             onBlur={() => {
-              if (flag && (label || '') !== (flag.label || '')) {
+              if (flag && (label || "") !== (flag.label || "")) {
                 void setFlag(sentenceId, flag.color, label || null);
               }
             }}
@@ -88,7 +92,10 @@ export function FlagButton({ sentenceId, size = 'md', className }: Props) {
             variant="ghost"
             size="sm"
             className="w-full text-xs text-destructive"
-            onClick={() => { void clearFlag(sentenceId); setOpen(false); }}
+            onClick={() => {
+              void clearFlag(sentenceId);
+              setOpen(false);
+            }}
           >
             حذف پرچم
           </Button>

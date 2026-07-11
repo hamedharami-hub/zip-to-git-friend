@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from "@/components/ui/skeleton";
 
 /** Skeleton tile matching the video card layout used on Home. */
 export function VideoCardSkeleton() {

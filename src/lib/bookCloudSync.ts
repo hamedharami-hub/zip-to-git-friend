@@ -15,8 +15,8 @@
  * Anonymous users keep working in pure offline mode — every cloud function
  * here returns silently when there is no `user_id`.
  */
-import { supabase } from '@/integrations/supabase/client';
-import type { Book, BookChapter } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import type { Book, BookChapter } from "@/types";
 import {
   getAllBooks,
   getBook,
@@ -25,9 +25,9 @@ import {
   saveBook,
   saveBookBlob,
   saveChapters,
-} from '@/lib/bookDb';
+} from "@/lib/bookDb";
 
-const BUCKET = 'book-files';
+const BUCKET = "book-files";
 
 // ─── helpers ───────────────────────────────────────────────────────────
 
@@ -78,7 +78,7 @@ function cloudRowToBook(row: CloudBookRow): Book {
     title: row.title,
     author: row.author ?? undefined,
     language: row.language ?? undefined,
-    fileName: row.file_name ?? '',
+    fileName: row.file_name ?? "",
     chapterCount: row.chapter_count,
     lastChapterIndex: row.last_chapter_index,
     lastScrollRatio: row.last_scroll_ratio,
@@ -93,7 +93,7 @@ function cloudRowToChapter(row: CloudChapterRow, clientBookId: string): BookChap
     id: `${clientBookId}:${row.chapter_index}`,
     bookId: clientBookId,
     index: row.chapter_index,
-    title: row.title ?? '',
+    title: row.title ?? "",
     html: row.html,
     text: row.text,
     wordCount: row.word_count,
@@ -117,7 +117,7 @@ export async function uploadBookToCloud(
   // 1. Upsert metadata row (returns the cloud UUID needed for chapters).
   const path = storagePathFor(userId, book.id);
   const { data: meta, error: metaErr } = await supabase
-    .from('books')
+    .from("books")
     .upsert(
       {
         user_id: userId,
@@ -132,13 +132,13 @@ export async function uploadBookToCloud(
         cover_url: book.coverDataUrl ?? null,
         storage_path: path,
       },
-      { onConflict: 'user_id,client_id' },
+      { onConflict: "user_id,client_id" },
     )
-    .select('id, storage_path')
+    .select("id, storage_path")
     .single();
 
   if (metaErr || !meta) {
-    console.warn('[bookCloudSync] upsert metadata failed', metaErr);
+    console.warn("[bookCloudSync] upsert metadata failed", metaErr);
     return;
   }
 
@@ -156,12 +156,12 @@ export async function uploadBookToCloud(
         word_count: c.wordCount,
       }));
       const { error: chErr } = await supabase
-        .from('book_chapters')
-        .upsert(rows, { onConflict: 'book_id,chapter_index' });
-      if (chErr) console.warn('[bookCloudSync] upsert chapters failed', chErr);
+        .from("book_chapters")
+        .upsert(rows, { onConflict: "book_id,chapter_index" });
+      if (chErr) console.warn("[bookCloudSync] upsert chapters failed", chErr);
     }
   } catch (e) {
-    console.warn('[bookCloudSync] chapters error', e);
+    console.warn("[bookCloudSync] chapters error", e);
   }
 
   // 3. Upload the original EPUB blob (only if not already uploaded).
@@ -176,17 +176,15 @@ export async function uploadBookToCloud(
     if (needsUpload) {
       const blob = await getBookBlob(book.id);
       if (blob) {
-        const { error: upErr } = await supabase.storage
-          .from(BUCKET)
-          .upload(path, blob, {
-            contentType: 'application/epub+zip',
-            upsert: true,
-          });
-        if (upErr) console.warn('[bookCloudSync] upload blob failed', upErr);
+        const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, blob, {
+          contentType: "application/epub+zip",
+          upsert: true,
+        });
+        if (upErr) console.warn("[bookCloudSync] upload blob failed", upErr);
       }
     }
   } catch (e) {
-    console.warn('[bookCloudSync] blob sync error', e);
+    console.warn("[bookCloudSync] blob sync error", e);
   }
 }
 
@@ -195,14 +193,14 @@ export async function pushBookProgress(book: Book): Promise<void> {
   const userId = await currentUserId();
   if (!userId) return;
   const { error } = await supabase
-    .from('books')
+    .from("books")
     .update({
       last_chapter_index: book.lastChapterIndex,
       last_scroll_ratio: book.lastScrollRatio,
     })
-    .eq('user_id', userId)
-    .eq('client_id', book.id);
-  if (error) console.warn('[bookCloudSync] push progress failed', error);
+    .eq("user_id", userId)
+    .eq("client_id", book.id);
+  if (error) console.warn("[bookCloudSync] push progress failed", error);
 }
 
 // ─── pull ──────────────────────────────────────────────────────────────
@@ -220,13 +218,13 @@ export async function pullBooksFromCloud(): Promise<number> {
   if (!userId) return 0;
 
   const { data: cloudBooks, error } = await supabase
-    .from('books')
-    .select('*')
-    .eq('user_id', userId)
-    .order('updated_at', { ascending: false });
+    .from("books")
+    .select("*")
+    .eq("user_id", userId)
+    .order("updated_at", { ascending: false });
 
   if (error || !cloudBooks) {
-    console.warn('[bookCloudSync] list books failed', error);
+    console.warn("[bookCloudSync] list books failed", error);
     return 0;
   }
 
@@ -277,18 +275,16 @@ async function pullSingleBook(row: CloudBookRow): Promise<void> {
   // Chapters.
   try {
     const { data: chRows, error: chErr } = await supabase
-      .from('book_chapters')
-      .select('*')
-      .eq('book_id', row.id)
-      .order('chapter_index', { ascending: true });
+      .from("book_chapters")
+      .select("*")
+      .eq("book_id", row.id)
+      .order("chapter_index", { ascending: true });
     if (!chErr && chRows) {
-      const chapters = (chRows as CloudChapterRow[]).map((c) =>
-        cloudRowToChapter(c, remote.id),
-      );
+      const chapters = (chRows as CloudChapterRow[]).map((c) => cloudRowToChapter(c, remote.id));
       if (chapters.length) await saveChapters(chapters);
     }
   } catch (e) {
-    console.warn('[bookCloudSync] pull chapters failed', e);
+    console.warn("[bookCloudSync] pull chapters failed", e);
   }
 
   // EPUB blob — best-effort, non-blocking.
@@ -301,7 +297,7 @@ async function pullSingleBook(row: CloudBookRow): Promise<void> {
         await saveBookBlob(remote.id, blob);
       }
     } catch (e) {
-      console.warn('[bookCloudSync] pull blob failed', e);
+      console.warn("[bookCloudSync] pull blob failed", e);
     }
   }
 }
@@ -314,18 +310,21 @@ export async function deleteBookFromCloud(clientId: string): Promise<void> {
 
   // Find row first to get storage_path.
   const { data: row } = await supabase
-    .from('books')
-    .select('id, storage_path')
-    .eq('user_id', userId)
-    .eq('client_id', clientId)
+    .from("books")
+    .select("id, storage_path")
+    .eq("user_id", userId)
+    .eq("client_id", clientId)
     .maybeSingle();
 
   if (!row) return;
 
   if (row.storage_path) {
-    await supabase.storage.from(BUCKET).remove([row.storage_path]).catch(() => null);
+    await supabase.storage
+      .from(BUCKET)
+      .remove([row.storage_path])
+      .catch(() => null);
   }
-  await supabase.from('books').delete().eq('id', row.id);
+  await supabase.from("books").delete().eq("id", row.id);
   // book_chapters cascade via FK.
 }
 
@@ -346,9 +345,9 @@ export async function syncBooksWithCloud(): Promise<{
 
   // After pulling, push any local books that don't have a matching cloud row.
   const { data: cloudBooks } = await supabase
-    .from('books')
-    .select('client_id')
-    .eq('user_id', userId);
+    .from("books")
+    .select("client_id")
+    .eq("user_id", userId);
   const cloudIds = new Set((cloudBooks ?? []).map((r) => r.client_id));
 
   const localBooks = await getAllBooks();

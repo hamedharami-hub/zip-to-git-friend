@@ -5,8 +5,7 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ReqBody {
@@ -77,8 +76,7 @@ const TOOL_DEF = {
   type: "function",
   function: {
     name: "respond",
-    description:
-      "Reply in character AND grade the user's transcript. Always call this tool.",
+    description: "Reply in character AND grade the user's transcript. Always call this tool.",
     parameters: {
       type: "object",
       properties: {
@@ -180,18 +178,18 @@ Deno.serve(async (req) => {
   }
 
   if (!body.transcript || typeof body.transcript !== "string") {
-    return new Response(
-      JSON.stringify({ error: "Missing 'transcript' string" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "Missing 'transcript' string" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
-    return new Response(
-      JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ error: "LOVABLE_API_KEY is not configured." }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 
   const messages: { role: string; content: string }[] = [
@@ -215,7 +213,7 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: (typeof body.model === 'string' && body.model) || "google/gemini-3-flash-preview",
+        model: (typeof body.model === "string" && body.model) || "google/gemini-3-flash-preview",
         messages,
         tools: [TOOL_DEF],
         tool_choice: { type: "function", function: { name: "respond" } },
@@ -256,7 +254,10 @@ Deno.serve(async (req) => {
   const call = data?.choices?.[0]?.message?.tool_calls?.[0];
   const argStr = call?.function?.arguments;
   if (!argStr) {
-    console.error("[sentence-roleplay] no tool call in response", JSON.stringify(data).slice(0, 500));
+    console.error(
+      "[sentence-roleplay] no tool call in response",
+      JSON.stringify(data).slice(0, 500),
+    );
     return new Response(JSON.stringify({ error: "AI did not return structured output." }), {
       status: 502,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

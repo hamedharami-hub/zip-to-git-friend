@@ -1,6 +1,6 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   Upload,
   Settings as SettingsIcon,
@@ -10,8 +10,8 @@ import {
   Play,
   ArrowLeft,
   Package,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   getAllVideos,
   saveVideo,
@@ -19,29 +19,33 @@ import {
   saveVideoBlob,
   setAppState,
   getAppState,
-} from '@/lib/db';
-import type { Video } from '@/types';
-import { toast } from 'sonner';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { VideoGridSkeleton } from '@/components/VideoCardSkeleton';
-import { InstallButton } from '@/components/pwa/InstallButton';
-import { PWAInstallBanner } from '@/components/pwa/PWAInstallBanner';
-import { EmptyState } from '@/components/EmptyState';
-import { useOnline } from '@/hooks/useOnline';
-import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
-import { PodcastHeroDecor } from '@/components/audio/PodcastHeroDecor';
-import { importLLP } from '@/lib/llpPack';
-import { validateMediaFile } from '@/lib/fileValidation';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
+} from "@/lib/db";
+import type { Video } from "@/types";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { VideoGridSkeleton } from "@/components/VideoCardSkeleton";
+import { InstallButton } from "@/components/pwa/InstallButton";
+import { PWAInstallBanner } from "@/components/pwa/PWAInstallBanner";
+import { EmptyState } from "@/components/EmptyState";
+import { useOnline } from "@/hooks/useOnline";
+import { AccountButton, SyncBadge } from "@/components/auth/AccountButton";
+import { PodcastHeroDecor } from "@/components/audio/PodcastHeroDecor";
+import { importLLP } from "@/lib/llpPack";
+import { validateMediaFile } from "@/lib/fileValidation";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2);
 }
 
 const Audio = () => {
-  usePageMeta({ title: 'Audio Library — Language Learning Player', description: 'کتابخانه‌ی صوتی — پخش پادکست، آهنگ و فایل‌های صوتی برای شادویینگ و تمرین شنیداری.' });
+  usePageMeta({
+    title: "Audio Library — Language Learning Player",
+    description:
+      "کتابخانه‌ی صوتی — پخش پادکست، آهنگ و فایل‌های صوتی برای شادویینگ و تمرین شنیداری.",
+  });
   const [items, setItems] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastId, setLastId] = useState<string | null>(null);
@@ -51,9 +55,9 @@ const Audio = () => {
   const navigate = useNavigate();
 
   const handleImportLLP = async (file: File) => {
-    const v = validateMediaFile(file, 'llp');
+    const v = validateMediaFile(file, "llp");
     if (!v.ok) {
-      toast.error(v.reason ?? 'Invalid pack file.');
+      toast.error(v.reason ?? "Invalid pack file.");
       return;
     }
     try {
@@ -61,27 +65,27 @@ const Audio = () => {
       toast.success(
         `Imported "${result.title}" — ${result.tracks} track(s), ${result.analyses} analyses, ${result.leitnerCards} cards.`,
       );
-      await setAppState('lastAudioId', result.videoId);
-      await setAppState('lastVideoId', result.videoId);
+      await setAppState("lastAudioId", result.videoId);
+      await setAppState("lastVideoId", result.videoId);
       navigate(`/player/${result.videoId}`);
     } catch (e) {
       console.error(e);
-      toast.error(e instanceof Error ? e.message : 'Failed to import .llp pack.');
+      toast.error(e instanceof Error ? e.message : "Failed to import .llp pack.");
     }
   };
 
   const ptr = usePullToRefresh({
     onRefresh: async () => {
       await refresh();
-      toast.success('Library refreshed.');
+      toast.success("Library refreshed.");
     },
   });
 
   const refresh = async () => {
     const all = await getAllVideos();
-    const audioOnly = all.filter((v) => v.mediaType === 'audio');
+    const audioOnly = all.filter((v) => v.mediaType === "audio");
     setItems(audioOnly.sort((a, b) => b.createdAt - a.createdAt));
-    const last = await getAppState<string>('lastAudioId');
+    const last = await getAppState<string>("lastAudioId");
     setLastId(last);
     setLoading(false);
   };
@@ -91,16 +95,16 @@ const Audio = () => {
   }, []);
 
   const handleUpload = async (file: File) => {
-    const v = validateMediaFile(file, 'audio');
+    const v = validateMediaFile(file, "audio");
     if (!v.ok) {
-      toast.error(v.reason ?? 'Invalid audio file.');
+      toast.error(v.reason ?? "Invalid audio file.");
       return;
     }
     const id = uuid();
     const blobUrl = URL.createObjectURL(file);
     const duration = await new Promise<number>((resolve) => {
-      const a = document.createElement('audio');
-      a.preload = 'metadata';
+      const a = document.createElement("audio");
+      a.preload = "metadata";
       a.src = blobUrl;
       a.onloadedmetadata = () => resolve(a.duration || 0);
       a.onerror = () => resolve(0);
@@ -108,7 +112,7 @@ const Audio = () => {
 
     const item: Video = {
       id,
-      title: file.name.replace(/\.[^.]+$/, ''),
+      title: file.name.replace(/\.[^.]+$/, ""),
       fileName: file.name,
       blobUrl,
       duration,
@@ -116,34 +120,34 @@ const Audio = () => {
       volume: 1,
       playbackSpeed: 1,
       createdAt: Date.now(),
-      mediaType: 'audio',
-      mimeType: file.type || 'audio/mpeg',
+      mediaType: "audio",
+      mimeType: file.type || "audio/mpeg",
     };
     try {
       await saveVideoBlob(id, file);
     } catch (e) {
-      console.error('Failed to persist audio blob', e);
-      toast.warning('Could not cache audio file. You may need to re-attach after reload.');
+      console.error("Failed to persist audio blob", e);
+      toast.warning("Could not cache audio file. You may need to re-attach after reload.");
     }
     await saveVideo(item);
-    await setAppState('lastAudioId', id);
-    await setAppState('lastVideoId', id);
-    toast.success('Audio added — opening player.');
+    await setAppState("lastAudioId", id);
+    await setAppState("lastVideoId", id);
+    toast.success("Audio added — opening player.");
     navigate(`/player/${id}`);
   };
 
   const handleDelete = async (id: string) => {
     await deleteVideo(id);
     if (lastId === id) {
-      await setAppState('lastAudioId', null);
+      await setAppState("lastAudioId", null);
       setLastId(null);
     }
-    toast.success('Audio deleted.');
+    toast.success("Audio deleted.");
     refresh();
   };
 
   const lastItem = useMemo(
-    () => (lastId ? items.find((v) => v.id === lastId) ?? null : null),
+    () => (lastId ? (items.find((v) => v.id === lastId) ?? null) : null),
     [lastId, items],
   );
 
@@ -196,7 +200,7 @@ const Audio = () => {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleUpload(f);
-              e.target.value = '';
+              e.target.value = "";
             }}
             aria-label="Upload audio file"
           />
@@ -208,7 +212,7 @@ const Audio = () => {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleImportLLP(f);
-              e.target.value = '';
+              e.target.value = "";
             }}
             aria-label="Import .llp pack"
           />
@@ -241,8 +245,8 @@ const Audio = () => {
                 <p className="text-xs text-muted-foreground">Continue listening</p>
                 <p className="font-semibold truncate">{lastItem.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  Resume from {formatDur(lastItem.lastPosition)} ·{' '}
-                  {formatDur(lastItem.duration)} total
+                  Resume from {formatDur(lastItem.lastPosition)} · {formatDur(lastItem.duration)}{" "}
+                  total
                 </p>
               </div>
             </Link>
@@ -317,10 +321,10 @@ const Audio = () => {
 };
 
 function formatDur(s: number) {
-  if (!s) return '—';
+  if (!s) return "—";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
 export default Audio;

@@ -12,8 +12,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface FeedItem {
@@ -49,9 +48,10 @@ function pickAttr(xml: string, tag: string, attr: string): string | undefined {
   return m ? m[1] : undefined;
 }
 
-async function resolveChannelId(
-  channel: { kind: "id" | "handle" | "user"; value: string },
-): Promise<string | null> {
+async function resolveChannelId(channel: {
+  kind: "id" | "handle" | "user";
+  value: string;
+}): Promise<string | null> {
   if (channel.kind === "id") return channel.value;
   // Scrape the channel page for the canonical channel_id.
   const path =
@@ -104,21 +104,24 @@ serve(async (req) => {
       const c = youtubeChannelHandle(url);
       if (!c) {
         return new Response(JSON.stringify({ error: "Not a YouTube channel URL." }), {
-          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       channel = c;
     }
     if (!channel) {
       return new Response(JSON.stringify({ error: "channel or url required" }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const channelId = await resolveChannelId(channel);
     if (!channelId) {
       return new Response(JSON.stringify({ error: "Could not resolve channel id." }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -126,11 +129,14 @@ serve(async (req) => {
     const fRes = await fetch(feedUrl);
     if (!fRes.ok) {
       return new Response(JSON.stringify({ error: `Channel feed fetch failed (${fRes.status})` }), {
-        status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     const xml = await fRes.text();
-    const channelTitle = decode(pick(xml.replace(/<entry[\s\S]*$/, ""), "title") ?? "YouTube channel");
+    const channelTitle = decode(
+      pick(xml.replace(/<entry[\s\S]*$/, ""), "title") ?? "YouTube channel",
+    );
     const entries = xml.match(/<entry[\s>][\s\S]*?<\/entry>/gi) ?? [];
     const items: FeedItem[] = [];
     for (const block of entries) {
@@ -139,8 +145,7 @@ serve(async (req) => {
       if (!link) continue;
       const author = decode(pick(block, "name") ?? "");
       const published = pick(block, "published");
-      const description =
-        decode(pick(block, "media:description") ?? pick(block, "summary") ?? "");
+      const description = decode(pick(block, "media:description") ?? pick(block, "summary") ?? "");
       const thumb =
         pickAttr(block, "media:thumbnail", "url") ??
         (() => {
@@ -158,14 +163,18 @@ serve(async (req) => {
       });
     }
 
-    return new Response(
-      JSON.stringify({ channelTitle, channelId, items }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-    );
+    return new Response(JSON.stringify({ channelTitle, channelId, items }), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   } catch (e) {
     console.error("news-youtube-channel error", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });

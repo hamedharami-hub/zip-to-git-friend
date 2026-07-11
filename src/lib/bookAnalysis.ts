@@ -4,22 +4,20 @@
  * Caches results per (bookId, chapterIndex, paragraphHash) inside the book DB
  * so repeated views of the same paragraph never re-hit the AI gateway.
  */
-import { supabase } from '@/integrations/supabase/client';
-import type { BookParagraphAnalysis, IdiomItem, VocabItem } from '@/types';
-import {
-  paragraphAnalysisKey,
-} from '@/lib/bookDb';
+import { supabase } from "@/integrations/supabase/client";
+import type { BookParagraphAnalysis, IdiomItem, VocabItem } from "@/types";
+import { paragraphAnalysisKey } from "@/lib/bookDb";
 import {
   getCachedParagraphAnalysisShared,
   saveParagraphAnalysisShared,
-} from '@/lib/paragraphAnalysisCloud';
+} from "@/lib/paragraphAnalysisCloud";
 
 export class BookAnalysisError extends Error {
-  code: 'rate_limit' | 'payment' | 'network' | 'invalid' | 'unknown';
-  constructor(code: BookAnalysisError['code'], message: string) {
+  code: "rate_limit" | "payment" | "network" | "invalid" | "unknown";
+  constructor(code: BookAnalysisError["code"], message: string) {
     super(message);
     this.code = code;
-    this.name = 'BookAnalysisError';
+    this.name = "BookAnalysisError";
   }
 }
 
@@ -73,17 +71,16 @@ export async function analyzeParagraph(
     if (cached) return cached;
   }
 
-  const { data, error } = await supabase.functions.invoke<AnalysisResponse>(
-    'analyze-paragraph',
-    { body: { paragraph: text, model: options.model } },
-  );
+  const { data, error } = await supabase.functions.invoke<AnalysisResponse>("analyze-paragraph", {
+    body: { paragraph: text, model: options.model },
+  });
 
   if (error) {
     // Supabase's FunctionsHttpError exposes status via error.context.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const ctx = (error as any).context as Response | undefined;
     const status = ctx?.status;
-    let message = error.message || 'Analysis failed.';
+    let message = error.message || "Analysis failed.";
     try {
       if (ctx) {
         const cloned = ctx.clone();
@@ -93,13 +90,13 @@ export async function analyzeParagraph(
     } catch {
       /* swallow */
     }
-    if (status === 429) throw new BookAnalysisError('rate_limit', message);
-    if (status === 402) throw new BookAnalysisError('payment', message);
-    throw new BookAnalysisError('network', message);
+    if (status === 429) throw new BookAnalysisError("rate_limit", message);
+    if (status === 402) throw new BookAnalysisError("payment", message);
+    throw new BookAnalysisError("network", message);
   }
 
   if (!data || data.error) {
-    throw new BookAnalysisError('invalid', data?.error ?? 'Empty response from AI.');
+    throw new BookAnalysisError("invalid", data?.error ?? "Empty response from AI.");
   }
 
   const record: BookParagraphAnalysis = {
@@ -107,28 +104,28 @@ export async function analyzeParagraph(
     bookId,
     chapterIndex,
     paragraphHash: hash,
-    translation: (data.translation ?? '').trim(),
+    translation: (data.translation ?? "").trim(),
     vocabulary: data.vocabulary ?? [],
     idioms: data.idioms ?? [],
     analyzedAt: Date.now(),
-    model: data.model ?? 'unknown',
+    model: data.model ?? "unknown",
   };
 
   await saveParagraphAnalysisShared(record);
   return record;
 }
 
-export function bookAnalysisErrorMessage(e: unknown, fallback = 'Analysis failed.'): string {
+export function bookAnalysisErrorMessage(e: unknown, fallback = "Analysis failed."): string {
   if (e instanceof BookAnalysisError) {
     switch (e.code) {
-      case 'rate_limit':
-        return 'AI rate limit reached. Try again in a few seconds.';
-      case 'payment':
-        return 'AI credits exhausted. Add funds in workspace settings.';
-      case 'network':
-        return e.message || 'Network error contacting AI.';
-      case 'invalid':
-        return e.message || 'AI returned an unexpected response.';
+      case "rate_limit":
+        return "AI rate limit reached. Try again in a few seconds.";
+      case "payment":
+        return "AI credits exhausted. Add funds in workspace settings.";
+      case "network":
+        return e.message || "Network error contacting AI.";
+      case "invalid":
+        return e.message || "AI returned an unexpected response.";
       default:
         return e.message || fallback;
     }

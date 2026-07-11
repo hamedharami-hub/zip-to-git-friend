@@ -1,4 +1,4 @@
-import { Cloud, Droplet, Music, Sparkles } from 'lucide-react';
+import { Cloud, Droplet, Music, Sparkles } from "lucide-react";
 
 /**
  * Decorative animated header for the podcast/audio library page.
@@ -65,7 +65,7 @@ function Character({
       style={{
         left,
         top,
-        animation: 'podcast-bob 3.4s ease-in-out infinite',
+        animation: "podcast-bob 3.4s ease-in-out infinite",
         animationDelay: delay,
       }}
     >
@@ -75,7 +75,7 @@ function Character({
 }
 
 function Eyes({ small = false }: { small?: boolean }) {
-  const dot = small ? 'h-0.5 w-0.5' : 'h-1 w-1';
+  const dot = small ? "h-0.5 w-0.5" : "h-1 w-1";
   return (
     <div className="absolute inset-0 flex items-center justify-center gap-1 mt-1">
       <span className={`${dot} rounded-full bg-foreground`} />

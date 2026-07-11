@@ -1,15 +1,15 @@
-import type { SegmentAnalysis } from '@/types';
+import type { SegmentAnalysis } from "@/types";
 
 export class GroqChatError extends Error {
-  code: 'missing_key' | 'rate_limit' | 'auth' | 'invalid_response' | 'network' | 'unknown';
-  constructor(code: GroqChatError['code'], message: string) {
+  code: "missing_key" | "rate_limit" | "auth" | "invalid_response" | "network" | "unknown";
+  constructor(code: GroqChatError["code"], message: string) {
     super(message);
     this.code = code;
-    this.name = 'GroqChatError';
+    this.name = "GroqChatError";
   }
 }
 
-const ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
+const ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 
 interface GroqChatChoice {
   message?: { content?: string };
@@ -24,48 +24,48 @@ async function callGroqChat(
   model: string,
   jsonMode = false,
 ): Promise<string> {
-  if (!apiKey) throw new GroqChatError('missing_key', 'Groq API key is not set.');
+  if (!apiKey) throw new GroqChatError("missing_key", "Groq API key is not set.");
 
   let res: Response;
   try {
     res = await fetch(ENDPOINT, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: 'user', content: prompt }],
+        messages: [{ role: "user", content: prompt }],
         temperature: 0.1,
         top_p: 0.9,
-        ...(jsonMode ? { response_format: { type: 'json_object' } } : {}),
+        ...(jsonMode ? { response_format: { type: "json_object" } } : {}),
       }),
     });
   } catch {
-    throw new GroqChatError('network', 'Network error contacting Groq.');
+    throw new GroqChatError("network", "Network error contacting Groq.");
   }
 
-  if (res.status === 429) throw new GroqChatError('rate_limit', 'Groq rate limit hit.');
+  if (res.status === 429) throw new GroqChatError("rate_limit", "Groq rate limit hit.");
   if (res.status === 401 || res.status === 403)
-    throw new GroqChatError('auth', 'Groq rejected the API key.');
-  if (!res.ok) throw new GroqChatError('unknown', `Groq error (${res.status}).`);
+    throw new GroqChatError("auth", "Groq rejected the API key.");
+  if (!res.ok) throw new GroqChatError("unknown", `Groq error (${res.status}).`);
 
   let data: GroqChatResponse;
   try {
     data = await res.json();
   } catch {
-    throw new GroqChatError('invalid_response', 'Groq returned non-JSON.');
+    throw new GroqChatError("invalid_response", "Groq returned non-JSON.");
   }
-  const text = data?.choices?.[0]?.message?.content ?? '';
-  if (!text) throw new GroqChatError('invalid_response', 'Groq returned empty content.');
+  const text = data?.choices?.[0]?.message?.content ?? "";
+  if (!text) throw new GroqChatError("invalid_response", "Groq returned empty content.");
   return text;
 }
 
 function stripFences(s: string): string {
   let t = s.trim();
-  if (t.startsWith('```')) {
-    t = t.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '');
+  if (t.startsWith("```")) {
+    t = t.replace(/^```(?:json)?\s*/i, "").replace(/```\s*$/i, "");
   }
   return t.trim();
 }
@@ -116,17 +116,17 @@ export async function analyzeSegmentGroq(
     parsed = JSON.parse(cleaned);
   } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (!m) throw new GroqChatError('invalid_response', 'Could not parse JSON from Groq.');
+    if (!m) throw new GroqChatError("invalid_response", "Could not parse JSON from Groq.");
     try {
       parsed = JSON.parse(m[0]);
     } catch {
-      throw new GroqChatError('invalid_response', 'Could not parse JSON from Groq.');
+      throw new GroqChatError("invalid_response", "Could not parse JSON from Groq.");
     }
   }
 
   const vocabulary = Array.isArray(parsed?.vocabulary)
     ? (parsed.vocabulary as Array<Record<string, unknown>>)
-        .filter((v) => v && typeof v.word === 'string' && typeof v.translation === 'string')
+        .filter((v) => v && typeof v.word === "string" && typeof v.translation === "string")
         .map((v) => ({
           word: String(v.word),
           translation: String(v.translation),
@@ -136,7 +136,7 @@ export async function analyzeSegmentGroq(
     : [];
   const idioms = Array.isArray(parsed?.idioms)
     ? (parsed.idioms as Array<Record<string, unknown>>)
-        .filter((i) => i && typeof i.phrase === 'string' && typeof i.meaning === 'string')
+        .filter((i) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
         .map((i) => ({
           phrase: String(i.phrase),
           meaning: String(i.meaning),
@@ -148,7 +148,7 @@ export async function analyzeSegmentGroq(
     vocabulary,
     idioms,
     translation:
-      typeof (parsed as { translation?: unknown }).translation === 'string'
+      typeof (parsed as { translation?: unknown }).translation === "string"
         ? String((parsed as { translation?: unknown }).translation).trim()
         : undefined,
     analyzedAt: Date.now(),
@@ -169,8 +169,8 @@ export async function analyzeSegmentsBatchGroq(
   if (cues.length === 0) return out;
 
   const lines = cues
-    .map((c, i) => `[${i + 1}] "${c.text.replace(/"/g, '\\"').replace(/\n/g, ' ')}"`)
-    .join('\n');
+    .map((c, i) => `[${i + 1}] "${c.text.replace(/"/g, '\\"').replace(/\n/g, " ")}"`)
+    .join("\n");
 
   const prompt = `You are an expert English-to-Persian language learning assistant for an adult Iranian learner.
 
@@ -210,15 +210,17 @@ ${lines}`;
     parsed = JSON.parse(cleaned);
   } catch {
     const m = cleaned.match(/\{[\s\S]*\}/);
-    if (!m) throw new GroqChatError('invalid_response', 'Could not parse batch JSON from Groq.');
+    if (!m) throw new GroqChatError("invalid_response", "Could not parse batch JSON from Groq.");
     try {
       parsed = JSON.parse(m[0]);
     } catch {
-      throw new GroqChatError('invalid_response', 'Could not parse batch JSON from Groq.');
+      throw new GroqChatError("invalid_response", "Could not parse batch JSON from Groq.");
     }
   }
 
-  const results = Array.isArray(parsed?.results) ? (parsed.results as Array<Record<string, unknown>>) : [];
+  const results = Array.isArray(parsed?.results)
+    ? (parsed.results as Array<Record<string, unknown>>)
+    : [];
   for (const r of results) {
     const n = Number(r?.n);
     if (!Number.isFinite(n) || n < 1 || n > cues.length) continue;
@@ -227,7 +229,7 @@ ${lines}`;
 
     const vocabulary = Array.isArray(r?.vocabulary)
       ? (r.vocabulary as Array<Record<string, unknown>>)
-          .filter((v) => v && typeof v.word === 'string' && typeof v.translation === 'string')
+          .filter((v) => v && typeof v.word === "string" && typeof v.translation === "string")
           .map((v) => ({
             word: String(v.word),
             translation: String(v.translation),
@@ -237,7 +239,7 @@ ${lines}`;
       : [];
     const idioms = Array.isArray(r?.idioms)
       ? (r.idioms as Array<Record<string, unknown>>)
-          .filter((i) => i && typeof i.phrase === 'string' && typeof i.meaning === 'string')
+          .filter((i) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
           .map((i) => ({
             phrase: String(i.phrase),
             meaning: String(i.meaning),
@@ -249,7 +251,7 @@ ${lines}`;
       vocabulary,
       idioms,
       translation:
-        typeof (r as { translation?: unknown }).translation === 'string'
+        typeof (r as { translation?: unknown }).translation === "string"
           ? String((r as { translation?: unknown }).translation).trim()
           : undefined,
       analyzedAt: Date.now(),
@@ -259,7 +261,6 @@ ${lines}`;
 
   return out;
 }
-
 
 export async function quickTranslateGroq(
   text: string,
@@ -276,5 +277,7 @@ Rules: Output ONLY the Persian translation (1–4 words). NO English. NO quotes.
 Rules: Output ONLY the Persian translation. NO English. NO quotes. NO parentheses. NO explanation.
 Text: ${text}`;
   const raw = await callGroqChat(prompt, apiKey, model);
-  return stripFences(raw).trim().replace(/^["'`(\[]+|["'`)\]]+$/g, '');
+  return stripFences(raw)
+    .trim()
+    .replace(/^["'`(\[]+|["'`)\]]+$/g, "");
 }

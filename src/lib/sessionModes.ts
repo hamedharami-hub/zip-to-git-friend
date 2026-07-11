@@ -1,14 +1,10 @@
 /**
  * Helpers for the new study modes: Multiple Choice, Type-the-answer, Cloze deletion.
  */
-import type { LeitnerCard } from '@/types';
+import type { LeitnerCard } from "@/types";
 
 /** Pick `n` random distractor backs from `pool` excluding the correct one. */
-export function pickDistractors(
-  pool: LeitnerCard[],
-  correct: LeitnerCard,
-  n = 3,
-): string[] {
+export function pickDistractors(pool: LeitnerCard[], correct: LeitnerCard, n = 3): string[] {
   const seen = new Set<string>([correct.back.trim().toLowerCase()]);
   const candidates = pool
     .filter((c) => c.id !== correct.id && c.back && c.back.trim())
@@ -40,10 +36,10 @@ export function shuffled<T>(xs: T[]): T[] {
 export function normalizeAnswer(s: string): string {
   return s
     .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9\u0600-\u06ff\s]/gi, '')
-    .replace(/\s+/g, ' ')
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\u0600-\u06ff\s]/gi, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -81,7 +77,7 @@ export function buildCloze(card: LeitnerCard): { masked: string; answer: string 
   const sentence = card.exampleSentence?.trim();
   const word = card.front.trim();
   if (!sentence || !word) return null;
-  const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+  const re = new RegExp(`\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
   if (!re.test(sentence)) return null;
-  return { masked: sentence.replace(re, '____'), answer: word };
+  return { masked: sentence.replace(re, "____"), answer: word };
 }

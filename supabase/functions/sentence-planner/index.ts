@@ -3,8 +3,8 @@
 // Output: { title, scenario, steps: [{ stepIndex, prompt_fa, prompt_en, target_english, hint?, sourceSentenceId? }] }
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface InSentence {
@@ -23,29 +23,32 @@ interface PlannerRequest {
 }
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const body = (await req.json()) as PlannerRequest;
     if (!body?.sentences || !Array.isArray(body.sentences) || body.sentences.length === 0) {
-      return new Response(JSON.stringify({ error: 'sentences[] required' }), {
+      return new Response(JSON.stringify({ error: "sentences[] required" }), {
         status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY missing' }), {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY missing" }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const sentenceList = body.sentences
       .slice(0, 25)
-      .map((s, i) => `${i + 1}. [${s.id}] (${s.category ?? '-'}/${s.subcategory ?? '-'}) ${s.english}${s.persian ? ` — ${s.persian}` : ''}`)
-      .join('\n');
+      .map(
+        (s, i) =>
+          `${i + 1}. [${s.id}] (${s.category ?? "-"}/${s.subcategory ?? "-"}) ${s.english}${s.persian ? ` — ${s.persian}` : ""}`,
+      )
+      .join("\n");
 
     const sys = `You are an English-coach scenario builder for Persian-speaking IELTS/OET learners.
 Build ONE coherent real-life scenario (3-8 turns) that naturally weaves the GIVEN target sentences into the dialogue.
@@ -53,8 +56,8 @@ Each step has a Persian prompt the learner sees, an English coaching hint, and t
 You MUST reuse target sentences from the list when natural. Pick the source sentence id when used.
 Return ONLY valid JSON.`;
 
-    const user = `Topic: ${body.topic ?? 'general'}
-Role: ${body.role ?? 'learner'}
+    const user = `Topic: ${body.topic ?? "general"}
+Role: ${body.role ?? "learner"}
 
 Target sentences (use as many as fit naturally; prefer 4-7):
 ${sentenceList}
@@ -75,49 +78,49 @@ Output JSON shape:
   ]
 }`;
 
-    const resp = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
       headers: {
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: body.model || 'google/gemini-2.5-flash',
+        model: body.model || "google/gemini-2.5-flash",
         messages: [
-          { role: 'system', content: sys },
-          { role: 'user', content: user },
+          { role: "system", content: sys },
+          { role: "user", content: user },
         ],
-        response_format: { type: 'json_object' },
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!resp.ok) {
       const errText = await resp.text();
-      return new Response(JSON.stringify({ error: 'AI gateway error', detail: errText }), {
+      return new Response(JSON.stringify({ error: "AI gateway error", detail: errText }), {
         status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     const data = await resp.json();
-    const content = data?.choices?.[0]?.message?.content ?? '{}';
+    const content = data?.choices?.[0]?.message?.content ?? "{}";
     let parsed: any;
     try {
       parsed = JSON.parse(content);
     } catch {
-      return new Response(JSON.stringify({ error: 'Invalid AI JSON', raw: content }), {
+      return new Response(JSON.stringify({ error: "Invalid AI JSON", raw: content }), {
         status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify(parsed), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e?.message ?? 'unknown' }), {
+    return new Response(JSON.stringify({ error: e?.message ?? "unknown" }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

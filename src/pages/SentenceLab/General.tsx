@@ -1,36 +1,47 @@
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft, Loader2, Plus, Sparkles, Sprout, Briefcase,
-  MessageCircle, Folder, Trash2,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  fetchTopCategories, type CategoryWithStats,
-} from '@/lib/sentenceCategories';
-import {
-  fetchPaths, deletePath, type SentencePath,
-} from '@/lib/sentencePaths';
-import { CustomPathDialog } from '@/components/sentence-lab/CustomPathDialog';
-import { toast } from '@/hooks/use-toast';
+  ArrowLeft,
+  Loader2,
+  Plus,
+  Sparkles,
+  Sprout,
+  Briefcase,
+  MessageCircle,
+  Folder,
+  Trash2,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fetchTopCategories, type CategoryWithStats } from "@/lib/sentenceCategories";
+import { fetchPaths, deletePath, type SentencePath } from "@/lib/sentencePaths";
+import { CustomPathDialog } from "@/components/sentence-lab/CustomPathDialog";
+import { toast } from "@/hooks/use-toast";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  Sparkles, Sprout, Briefcase, MessageCircle, Folder,
+  Sparkles,
+  Sprout,
+  Briefcase,
+  MessageCircle,
+  Folder,
 };
 
 const COLOR_BG: Record<string, string> = {
-  emerald: 'from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 text-emerald-400',
-  amber: 'from-amber-500/20 to-amber-500/5 border-amber-500/30 text-amber-400',
-  rose: 'from-rose-500/20 to-rose-500/5 border-rose-500/30 text-rose-400',
-  violet: 'from-violet-500/20 to-violet-500/5 border-violet-500/30 text-violet-400',
-  sky: 'from-sky-500/20 to-sky-500/5 border-sky-500/30 text-sky-400',
+  emerald: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/30 text-emerald-400",
+  amber: "from-amber-500/20 to-amber-500/5 border-amber-500/30 text-amber-400",
+  rose: "from-rose-500/20 to-rose-500/5 border-rose-500/30 text-rose-400",
+  violet: "from-violet-500/20 to-violet-500/5 border-violet-500/30 text-violet-400",
+  sky: "from-sky-500/20 to-sky-500/5 border-sky-500/30 text-sky-400",
 };
 
 const GENERAL_BROWSE_SLUGS = new Set([
-  'general', 'business', 'aussie_life', 'professional', 'grammar',
+  "general",
+  "business",
+  "aussie_life",
+  "professional",
+  "grammar",
 ]);
 
 export default function SentenceGeneralPage() {
@@ -43,29 +54,28 @@ export default function SentenceGeneralPage() {
   async function load() {
     setLoading(true);
     try {
-      const [p, c] = await Promise.all([
-        fetchPaths('general'),
-        fetchTopCategories(),
-      ]);
+      const [p, c] = await Promise.all([fetchPaths("general"), fetchTopCategories()]);
       setPaths(p);
       setCats(c.filter((x) => GENERAL_BROWSE_SLUGS.has(x.slug)));
     } catch (e: any) {
-      toast({ title: 'Failed to load', description: e?.message, variant: 'destructive' });
+      toast({ title: "Failed to load", description: e?.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
   async function handleDelete(p: SentencePath) {
     if (!confirm(`حذف "${p.name}"؟`)) return;
     try {
       await deletePath(p.id);
-      toast({ title: 'حذف شد' });
+      toast({ title: "حذف شد" });
       void load();
     } catch (e: any) {
-      toast({ title: 'خطا', description: e?.message, variant: 'destructive' });
+      toast({ title: "خطا", description: e?.message, variant: "destructive" });
     }
   }
 
@@ -74,11 +84,18 @@ export default function SentenceGeneralPage() {
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/sentence-lab')} aria-label="Back">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/sentence-lab")}
+              aria-label="Back"
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Sentence Lab</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Sentence Lab
+              </p>
               <h1 className="text-base font-semibold leading-none">General English</h1>
             </div>
           </div>
@@ -103,14 +120,16 @@ export default function SentenceGeneralPage() {
 
             <TabsContent value="paths" className="space-y-3">
               {paths.length === 0 ? (
-                <Card><CardContent className="py-8 text-center text-sm text-muted-foreground">
-                  هنوز مسیری ساخته نشده.
-                </CardContent></Card>
+                <Card>
+                  <CardContent className="py-8 text-center text-sm text-muted-foreground">
+                    هنوز مسیری ساخته نشده.
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-2">
                   {paths.map((p) => {
-                    const Icon = ICONS[p.icon ?? 'Sparkles'] ?? Sparkles;
-                    const color = COLOR_BG[p.color ?? 'sky'] ?? COLOR_BG.sky;
+                    const Icon = ICONS[p.icon ?? "Sparkles"] ?? Sparkles;
+                    const color = COLOR_BG[p.color ?? "sky"] ?? COLOR_BG.sky;
                     const totalCount = p.recipe.reduce((s, r) => s + r.count, 0);
                     return (
                       <div
@@ -123,16 +142,23 @@ export default function SentenceGeneralPage() {
                               <Icon className="h-5 w-5" />
                             </div>
                             {p.isBuiltin ? (
-                              <Badge variant="secondary" className="text-[10px]">Built-in</Badge>
+                              <Badge variant="secondary" className="text-[10px]">
+                                Built-in
+                              </Badge>
                             ) : (
-                              <Badge variant="outline" className="text-[10px]">Custom</Badge>
+                              <Badge variant="outline" className="text-[10px]">
+                                Custom
+                              </Badge>
                             )}
                           </div>
                           <h3 className="mt-3 text-base font-semibold leading-tight text-foreground">
                             {p.name}
                           </h3>
                           {p.description && (
-                            <p className="mt-1 text-xs text-muted-foreground line-clamp-2" dir="rtl">
+                            <p
+                              className="mt-1 text-xs text-muted-foreground line-clamp-2"
+                              dir="rtl"
+                            >
                               {p.description}
                             </p>
                           )}
@@ -193,7 +219,10 @@ export default function SentenceGeneralPage() {
       <CustomPathDialog
         open={showCustom}
         onOpenChange={setShowCustom}
-        onCreated={() => { setShowCustom(false); void load(); }}
+        onCreated={() => {
+          setShowCustom(false);
+          void load();
+        }}
       />
     </div>
   );

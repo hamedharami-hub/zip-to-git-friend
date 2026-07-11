@@ -6,8 +6,8 @@
  * Pure browser code — uses WebAudio decoding (works on the same blob URLs
  * stored in IndexedDB). Falls back gracefully when sources aren't available.
  */
-import { supabase } from '@/integrations/supabase/client';
-import { getVideoBlob } from '@/lib/db';
+import { supabase } from "@/integrations/supabase/client";
+import { getVideoBlob } from "@/lib/db";
 
 const SIGNED_URL_TTL = 60 * 60 * 24 * 365; // 1 year
 
@@ -42,10 +42,10 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   const writeStr = (off: number, s: string) => {
     for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i));
   };
-  writeStr(0, 'RIFF');
+  writeStr(0, "RIFF");
   v.setUint32(4, 36 + dataLen, true);
-  writeStr(8, 'WAVE');
-  writeStr(12, 'fmt ');
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
   v.setUint32(16, 16, true);
   v.setUint16(20, 1, true);
   v.setUint16(22, 1, true);
@@ -53,14 +53,14 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   v.setUint32(28, sampleRate * 2, true);
   v.setUint16(32, 2, true);
   v.setUint16(34, 16, true);
-  writeStr(36, 'data');
+  writeStr(36, "data");
   v.setUint32(40, dataLen, true);
   let offset = 44;
   for (let i = 0; i < samples.length; i++, offset += 2) {
     const s = Math.max(-1, Math.min(1, samples[i]));
     v.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
   }
-  return new Blob([buffer], { type: 'audio/wav' });
+  return new Blob([buffer], { type: "audio/wav" });
 }
 
 export interface ExtractInput {
@@ -81,14 +81,7 @@ export interface ExtractInput {
  * Returns a signed URL or `null` on failure (silent — the card just keeps TTS).
  */
 export async function extractAndUploadClip(input: ExtractInput): Promise<string | null> {
-  const {
-    videoId,
-    startMs,
-    endMs,
-    cardId,
-    maxDurationMs = 5000,
-    paddingMs = 200,
-  } = input;
+  const { videoId, startMs, endMs, cardId, maxDurationMs = 5000, paddingMs = 200 } = input;
   if (endMs <= startMs) return null;
 
   try {
@@ -97,12 +90,12 @@ export async function extractAndUploadClip(input: ExtractInput): Promise<string 
 
     const { samples, sampleRate } = await decode(blob);
     const safeStart = Math.max(0, startMs - paddingMs);
-    const safeEnd = Math.min(samples.length / sampleRate * 1000, endMs + paddingMs);
+    const safeEnd = Math.min((samples.length / sampleRate) * 1000, endMs + paddingMs);
     const duration = Math.min(maxDurationMs, safeEnd - safeStart);
     if (duration <= 100) return null;
 
     const startSample = Math.floor((safeStart / 1000) * sampleRate);
-    const endSample = Math.floor((safeStart + duration) / 1000 * sampleRate);
+    const endSample = Math.floor(((safeStart + duration) / 1000) * sampleRate);
     const slice = samples.subarray(startSample, endSample);
     const wav = encodeWav(slice, sampleRate);
 
@@ -113,18 +106,18 @@ export async function extractAndUploadClip(input: ExtractInput): Promise<string 
 
     const path = `${uid}/${cardId}.wav`;
     const { error: upErr } = await supabase.storage
-      .from('leitner-audio')
-      .upload(path, wav, { contentType: 'audio/wav', upsert: true });
+      .from("leitner-audio")
+      .upload(path, wav, { contentType: "audio/wav", upsert: true });
     if (upErr) {
-      console.error('clip upload failed', upErr);
+      console.error("clip upload failed", upErr);
       return null;
     }
     const { data: signed } = await supabase.storage
-      .from('leitner-audio')
+      .from("leitner-audio")
       .createSignedUrl(path, SIGNED_URL_TTL);
     return signed?.signedUrl ?? null;
   } catch (e) {
-    console.error('extractAndUploadClip failed', e);
+    console.error("extractAndUploadClip failed", e);
     return null;
   }
 }

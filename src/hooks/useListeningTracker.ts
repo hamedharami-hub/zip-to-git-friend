@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { addListeningSeconds } from '@/lib/db';
+import { useEffect, useRef } from "react";
+import { addListeningSeconds } from "@/lib/db";
 
 /**
  * Tracks how long the user actively listens/watches a media element and
@@ -27,11 +27,7 @@ export function useListeningTracker(media: HTMLMediaElement | null) {
 
     const tick = () => {
       const now = performance.now();
-      if (
-        !media.paused &&
-        media.readyState >= 2 &&
-        document.visibilityState === 'visible'
-      ) {
+      if (!media.paused && media.readyState >= 2 && document.visibilityState === "visible") {
         if (lastTickRef.current !== null) {
           const dt = (now - lastTickRef.current) / 1000;
           // Cap dt at 2s to avoid huge jumps (tab backgrounded etc.)
@@ -48,13 +44,13 @@ export function useListeningTracker(media: HTMLMediaElement | null) {
     raf = requestAnimationFrame(tick);
 
     const onHide = () => flush();
-    document.addEventListener('visibilitychange', onHide);
-    window.addEventListener('pagehide', onHide);
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("pagehide", onHide);
 
     return () => {
       cancelAnimationFrame(raf);
-      document.removeEventListener('visibilitychange', onHide);
-      window.removeEventListener('pagehide', onHide);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("pagehide", onHide);
       flush();
     };
   }, [media]);

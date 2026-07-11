@@ -10,14 +10,14 @@
  * Consumer = `ChapterTTSPlayer` (opens itself and seeks to the matching chunk).
  */
 
-export type ParagraphSpeechAction = 'play-one' | 'play-from' | 'stop';
+export type ParagraphSpeechAction = "play-one" | "play-from" | "stop";
 
 export interface ParagraphSpeechRequest {
   action: ParagraphSpeechAction;
   /** Plain text of the paragraph the user long-pressed. Empty for 'stop'. */
   text: string;
   /** Language hint when the user picked the Persian translation. */
-  lang?: 'en' | 'fa';
+  lang?: "en" | "fa";
 }
 
 type Listener = (req: ParagraphSpeechRequest) => void;
@@ -54,6 +54,10 @@ export function emitParagraphSpeechRequest(
   const set = listeners.get(key(bookId, chapterIndex));
   if (!set || set.size === 0) return;
   for (const fn of set) {
-    try { fn(req); } catch { /* ignore */ }
+    try {
+      fn(req);
+    } catch {
+      /* ignore */
+    }
   }
 }

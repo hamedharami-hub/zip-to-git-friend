@@ -1,17 +1,17 @@
-import { useRef, useState } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { toast } from 'sonner';
-import { parseEpub } from '@/lib/epubParser';
-import { saveBookBlob, saveChapters } from '@/lib/bookDb';
-import { useBookStore } from '@/store/bookStore';
+import { useRef, useState } from "react";
+import { Upload, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
+import { parseEpub } from "@/lib/epubParser";
+import { saveBookBlob, saveChapters } from "@/lib/bookDb";
+import { useBookStore } from "@/store/bookStore";
 
 const MAX_BYTES = 50 * 1024 * 1024; // 50 MB — generous; epubs are usually <10 MB.
 
 interface Props {
   /** Render style: 'button' for header use, 'card' for empty-state CTA. */
-  variant?: 'button' | 'card';
+  variant?: "button" | "card";
   /** When provided, exposes the internal trigger button so a parent menu can
    *  open the OS file picker programmatically. The visible button is hidden. */
   triggerRef?: React.RefObject<HTMLButtonElement>;
@@ -23,16 +23,16 @@ interface Props {
  * - Parses chapters with progress
  * - Saves: blob → metadata → chapters
  */
-export function BookUploader({ variant = 'button', triggerRef }: Props) {
+export function BookUploader({ variant = "button", triggerRef }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const upsertBook = useBookStore((s) => s.upsert);
   const [busy, setBusy] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [label, setLabel] = useState<string>('');
+  const [label, setLabel] = useState<string>("");
 
   async function handleFile(file: File) {
     if (!/\.epub$/i.test(file.name)) {
-      toast.error('Only .epub files are supported.');
+      toast.error("Only .epub files are supported.");
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -42,7 +42,7 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
 
     setBusy(true);
     setProgress(2);
-    setLabel('Opening file…');
+    setLabel("Opening file…");
 
     const bookId = crypto.randomUUID();
     try {
@@ -55,7 +55,7 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
       });
 
       if (parsed.chapters.length === 0) {
-        throw new Error('No readable chapters found in this EPUB.');
+        throw new Error("No readable chapters found in this EPUB.");
       }
 
       await saveChapters(parsed.chapters);
@@ -74,15 +74,15 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
 
       toast.success(`Imported "${parsed.book.title}" — ${parsed.chapters.length} chapters.`);
     } catch (err) {
-      console.error('[BookUploader] failed', err);
+      console.error("[BookUploader] failed", err);
       toast.error(
-        err instanceof Error ? err.message : 'Could not parse this EPUB. Try another file.',
+        err instanceof Error ? err.message : "Could not parse this EPUB. Try another file.",
       );
     } finally {
       setBusy(false);
       setProgress(0);
-      setLabel('');
-      if (inputRef.current) inputRef.current.value = '';
+      setLabel("");
+      if (inputRef.current) inputRef.current.value = "";
     }
   }
 
@@ -101,16 +101,16 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
         }}
       />
 
-      {variant === 'card' ? (
+      {variant === "card" ? (
         <Button
           ref={triggerRef}
           onClick={trigger}
           disabled={busy}
           size="lg"
-          className={`gap-2 ${triggerRef ? 'sr-only' : ''}`}
+          className={`gap-2 ${triggerRef ? "sr-only" : ""}`}
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {busy ? 'Importing…' : 'Upload EPUB'}
+          {busy ? "Importing…" : "Upload EPUB"}
         </Button>
       ) : (
         <Button
@@ -119,10 +119,10 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
           disabled={busy}
           variant="outline"
           size="sm"
-          className={`gap-2 ${triggerRef ? 'sr-only' : ''}`}
+          className={`gap-2 ${triggerRef ? "sr-only" : ""}`}
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-          {busy ? 'Importing…' : 'Upload EPUB'}
+          {busy ? "Importing…" : "Upload EPUB"}
         </Button>
       )}
 
@@ -138,9 +138,7 @@ export function BookUploader({ variant = 'button', triggerRef }: Props) {
               <span className="text-muted-foreground">{progress}%</span>
             </div>
             <Progress value={progress} />
-            {label && (
-              <p className="text-xs text-muted-foreground truncate">{label}</p>
-            )}
+            {label && <p className="text-xs text-muted-foreground truncate">{label}</p>}
           </div>
         </div>
       )}

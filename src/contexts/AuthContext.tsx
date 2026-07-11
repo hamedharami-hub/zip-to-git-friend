@@ -1,8 +1,8 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useBookStore } from '@/store/bookStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
+import { useBookStore } from "@/store/bookStore";
+import { useSettingsStore } from "@/store/settingsStore";
 
 interface AuthState {
   user: User | null;
@@ -30,7 +30,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(s?.user ?? null);
       // Whenever the user signs in or refreshes, pull their cloud library.
       // Defer so we don't block the auth callback.
-      if (s?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION' || event === 'TOKEN_REFRESHED')) {
+      if (
+        s?.user &&
+        (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED")
+      ) {
         setTimeout(() => {
           void useBookStore.getState().syncWithCloud();
           void useSettingsStore.getState().syncWithCloud();

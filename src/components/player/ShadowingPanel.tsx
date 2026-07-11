@@ -12,7 +12,7 @@
  * recording so the user can hear themselves cleanly without bleed-through.
  */
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic,
   Square,
@@ -23,11 +23,11 @@ import {
   ChevronDown,
   ChevronUp,
   Sparkles,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useShadowing } from '@/hooks/useShadowing';
-import { useVideoStore } from '@/store/videoStore';
-import { useSettingsStore } from '@/store/settingsStore';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useShadowing } from "@/hooks/useShadowing";
+import { useVideoStore } from "@/store/videoStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import {
   diffTokens,
   formatTakeDuration,
@@ -35,47 +35,47 @@ import {
   deleteTake,
   updateTake,
   type DiffOp,
-} from '@/lib/shadowing';
-import type { ShadowingTake, SubtitleCue } from '@/types';
-import { GroqError } from '@/lib/groq';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+} from "@/lib/shadowing";
+import type { ShadowingTake, SubtitleCue } from "@/types";
+import { GroqError } from "@/lib/groq";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Props {
   videoId: string;
   cue: SubtitleCue;
 }
 
-const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/audio/transcriptions';
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/audio/transcriptions";
 
 /** Lightweight transcription that returns just the text. Reuses the same
  *  Groq endpoint as the bulk transcriber but without word-level granularity. */
 async function transcribeBlobToText(blob: Blob, apiKey: string, model: string): Promise<string> {
-  if (!apiKey) throw new GroqError('missing_key', 'Groq API key is not set.');
-  const ext = blob.type.includes('mp4') ? 'mp4' : blob.type.includes('ogg') ? 'ogg' : 'webm';
-  const file = new File([blob], `take.${ext}`, { type: blob.type || 'audio/webm' });
+  if (!apiKey) throw new GroqError("missing_key", "Groq API key is not set.");
+  const ext = blob.type.includes("mp4") ? "mp4" : blob.type.includes("ogg") ? "ogg" : "webm";
+  const file = new File([blob], `take.${ext}`, { type: blob.type || "audio/webm" });
   const form = new FormData();
-  form.append('file', file);
-  form.append('model', model);
-  form.append('response_format', 'json');
+  form.append("file", file);
+  form.append("model", model);
+  form.append("response_format", "json");
   // Hint English so single-sentence takes don't get auto-detected as another lang.
-  form.append('language', 'en');
+  form.append("language", "en");
   let res: Response;
   try {
     res = await fetch(GROQ_ENDPOINT, {
-      method: 'POST',
+      method: "POST",
       headers: { Authorization: `Bearer ${apiKey}` },
       body: form,
     });
   } catch {
-    throw new GroqError('network', 'Network error while contacting Groq.');
+    throw new GroqError("network", "Network error while contacting Groq.");
   }
   if (res.status === 401 || res.status === 403)
-    throw new GroqError('auth', 'Groq rejected the API key.');
-  if (res.status === 429) throw new GroqError('rate_limit', 'Groq rate limit hit.');
-  if (!res.ok) throw new GroqError('unknown', `Groq error (${res.status}).`);
+    throw new GroqError("auth", "Groq rejected the API key.");
+  if (res.status === 429) throw new GroqError("rate_limit", "Groq rate limit hit.");
+  if (!res.ok) throw new GroqError("unknown", `Groq error (${res.status}).`);
   const data = (await res.json()) as { text?: string };
-  return (data.text ?? '').trim();
+  return (data.text ?? "").trim();
 }
 
 export function ShadowingPanel({ videoId, cue }: Props) {
@@ -137,7 +137,7 @@ export function ShadowingPanel({ videoId, cue }: Props) {
           Shadowing
           {takes.length > 0 && (
             <span className="text-[10px] font-semibold text-primary normal-case tracking-normal">
-              {takes.length} take{takes.length === 1 ? '' : 's'}
+              {takes.length} take{takes.length === 1 ? "" : "s"}
             </span>
           )}
         </span>
@@ -147,8 +147,8 @@ export function ShadowingPanel({ videoId, cue }: Props) {
       {open && (
         <div className="mt-2 space-y-3 px-1 pb-1">
           <p className="text-xs text-muted-foreground">
-            Listen to the line, then record yourself repeating it. Score your take to see
-            how close you got — word-by-word.
+            Listen to the line, then record yourself repeating it. Score your take to see how close
+            you got — word-by-word.
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -186,13 +186,7 @@ export function ShadowingPanel({ videoId, cue }: Props) {
                   <Square className="h-3.5 w-3.5 mr-1.5 fill-current" />
                   Stop · {elapsedLabel}
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  onClick={cancel}
-                  className="h-8"
-                >
+                <Button type="button" size="sm" variant="ghost" onClick={cancel} className="h-8">
                   Cancel
                 </Button>
               </>
@@ -213,9 +207,7 @@ export function ShadowingPanel({ videoId, cue }: Props) {
           )}
 
           {takes.length === 0 && !isRecording && (
-            <p className="text-xs text-muted-foreground italic">
-              No takes for this cue yet.
-            </p>
+            <p className="text-xs text-muted-foreground italic">No takes for this cue yet.</p>
           )}
 
           {takes.length > 0 && (
@@ -261,16 +253,16 @@ function TakeRow({ take, groqApiKey, transcribeModel, onChanged }: TakeRowProps)
 
   const scoreColor =
     score == null
-      ? 'text-muted-foreground'
+      ? "text-muted-foreground"
       : score >= 85
-      ? 'text-emerald-500'
-      : score >= 60
-      ? 'text-amber-500'
-      : 'text-destructive';
+        ? "text-emerald-500"
+        : score >= 60
+          ? "text-amber-500"
+          : "text-destructive";
 
   const handleScore = async () => {
     if (!groqApiKey) {
-      toast.error('Set your Groq API key in Settings to score takes.');
+      toast.error("Set your Groq API key in Settings to score takes.");
       return;
     }
     setScoring(true);
@@ -278,14 +270,14 @@ function TakeRow({ take, groqApiKey, transcribeModel, onChanged }: TakeRowProps)
       const text = await transcribeBlobToText(take.blob, groqApiKey, transcribeModel);
       if (!text) {
         toast.warning("Couldn't transcribe — try recording again louder.");
-        await updateTake(take.id, { hypothesis: '', score: 0 });
+        await updateTake(take.id, { hypothesis: "", score: 0 });
       } else {
         const s = similarityScore(take.refText, text);
         await updateTake(take.id, { hypothesis: text, score: s });
       }
       await onChanged();
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Scoring failed.';
+      const msg = e instanceof Error ? e.message : "Scoring failed.";
       toast.error(msg);
     } finally {
       setScoring(false);
@@ -301,7 +293,7 @@ function TakeRow({ take, groqApiKey, transcribeModel, onChanged }: TakeRowProps)
     <li className="rounded-md border border-border/60 bg-background/40 p-2 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <audio src={audioUrl} controls preload="metadata" className="h-8 flex-1 min-w-[180px]" />
-        <span className={cn('text-xs font-mono tabular-nums', scoreColor)}>
+        <span className={cn("text-xs font-mono tabular-nums", scoreColor)}>
           {score != null ? `${score}%` : `${formatTakeDuration(take.durationMs)}`}
         </span>
         {score == null ? (
@@ -312,7 +304,9 @@ function TakeRow({ take, groqApiKey, transcribeModel, onChanged }: TakeRowProps)
             className="h-7 text-xs"
             onClick={handleScore}
             disabled={scoring || !groqApiKey}
-            title={groqApiKey ? 'Transcribe & compare to the cue' : 'Set your Groq API key in Settings'}
+            title={
+              groqApiKey ? "Transcribe & compare to the cue" : "Set your Groq API key in Settings"
+            }
           >
             {scoring ? (
               <Loader2 className="h-3 w-3 mr-1 animate-spin" />
@@ -369,21 +363,21 @@ function DiffView({ ops }: { ops: DiffOp[] }) {
   return (
     <p className="flex flex-wrap gap-x-1 gap-y-0.5">
       {ops.map((op, i) => {
-        if (op.kind === 'match') {
+        if (op.kind === "match") {
           return (
             <span key={i} className="text-emerald-500/90">
               {op.ref}
             </span>
           );
         }
-        if (op.kind === 'sub') {
+        if (op.kind === "sub") {
           return (
-            <span key={i} className="text-amber-500" title={`said: ${op.hyp ?? ''}`}>
+            <span key={i} className="text-amber-500" title={`said: ${op.hyp ?? ""}`}>
               {op.ref}
             </span>
           );
         }
-        if (op.kind === 'del') {
+        if (op.kind === "del") {
           return (
             <span key={i} className="text-destructive line-through opacity-80" title="missed">
               {op.ref}

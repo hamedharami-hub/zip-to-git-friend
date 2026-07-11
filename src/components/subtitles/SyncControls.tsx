@@ -1,15 +1,15 @@
-import { Slider } from '@/components/ui/slider';
-import { Label } from '@/components/ui/label';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useSettingsStore } from '@/store/settingsStore';
+import { Slider } from "@/components/ui/slider";
+import { Label } from "@/components/ui/label";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useSettingsStore } from "@/store/settingsStore";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import type { SubtitleTrack } from '@/types';
+} from "@/components/ui/select";
+import type { SubtitleTrack } from "@/types";
 
 function TrackSync({ track, label }: { track: SubtitleTrack; label: string }) {
   const updateTrack = useSubtitleStore((s) => s.updateTrack);
@@ -66,9 +66,7 @@ export function SyncControls() {
           <Label className="text-xs">Display mode</Label>
           <Select
             value={settings.displayMode}
-            onValueChange={(v: 'inside' | 'outside' | 'hybrid') =>
-              update({ displayMode: v })
-            }
+            onValueChange={(v: "inside" | "outside" | "hybrid") => update({ displayMode: v })}
           >
             <SelectTrigger className="w-[140px] h-9">
               <SelectValue />
@@ -84,7 +82,7 @@ export function SyncControls() {
           <Label className="text-xs">Font size</Label>
           <Select
             value={settings.fontSize}
-            onValueChange={(v: 'sm' | 'md' | 'lg' | 'xl') => update({ fontSize: v })}
+            onValueChange={(v: "sm" | "md" | "lg" | "xl") => update({ fontSize: v })}
           >
             <SelectTrigger className="w-[100px] h-9">
               <SelectValue />

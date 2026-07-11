@@ -1,4 +1,4 @@
-import type { SegmentAnalysis, SubtitleCue, SubtitleTrack, Video } from '@/types';
+import type { SegmentAnalysis, SubtitleCue, SubtitleTrack, Video } from "@/types";
 import {
   getAllVideos,
   getTracks,
@@ -7,10 +7,10 @@ import {
   getVideo,
   getAllAnalysisForVideo,
   saveAnalysis,
-} from '@/lib/db';
+} from "@/lib/db";
 
 function pad(n: number, w = 2) {
-  return n.toString().padStart(w, '0');
+  return n.toString().padStart(w, "0");
 }
 
 function msToTs(ms: number): string {
@@ -23,17 +23,14 @@ function msToTs(ms: number): string {
 
 export function trackToSRT(cues: SubtitleCue[]): string {
   return cues
-    .map(
-      (c, i) =>
-        `${i + 1}\n${msToTs(c.startMs)} --> ${msToTs(c.endMs)}\n${c.text}\n`,
-    )
-    .join('\n');
+    .map((c, i) => `${i + 1}\n${msToTs(c.startMs)} --> ${msToTs(c.endMs)}\n${c.text}\n`)
+    .join("\n");
 }
 
 export function downloadFile(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -44,14 +41,14 @@ export function downloadFile(filename: string, content: string, mime: string) {
 
 export function exportTrackSRT(track: SubtitleTrack, baseName: string) {
   const srt = trackToSRT(track.cues);
-  downloadFile(`${baseName}.${track.role}.${track.language}.srt`, srt, 'text/plain');
+  downloadFile(`${baseName}.${track.role}.${track.language}.srt`, srt, "text/plain");
 }
 
 export interface ExportBundle {
-  schema: 'llvp.bundle.v1';
+  schema: "llvp.bundle.v1";
   exportedAt: number;
   videos: Array<{
-    video: Omit<Video, 'blobUrl'>;
+    video: Omit<Video, "blobUrl">;
     tracks: SubtitleTrack[];
     analyses: Array<{ cueId: string; analysis: SegmentAnalysis }>;
   }>;
@@ -59,10 +56,10 @@ export interface ExportBundle {
 
 export async function buildExportBundle(videoId?: string): Promise<ExportBundle> {
   const videos = videoId
-    ? [await getVideo(videoId)].filter(Boolean) as Video[]
+    ? ([await getVideo(videoId)].filter(Boolean) as Video[])
     : await getAllVideos();
   const out: ExportBundle = {
-    schema: 'llvp.bundle.v1',
+    schema: "llvp.bundle.v1",
     exportedAt: Date.now(),
     videos: [],
   };
@@ -75,9 +72,9 @@ export async function buildExportBundle(videoId?: string): Promise<ExportBundle>
   return out;
 }
 
-export async function exportBundleToFile(videoId?: string, name = 'llvp-export') {
+export async function exportBundleToFile(videoId?: string, name = "llvp-export") {
   const bundle = await buildExportBundle(videoId);
-  downloadFile(`${name}.json`, JSON.stringify(bundle, null, 2), 'application/json');
+  downloadFile(`${name}.json`, JSON.stringify(bundle, null, 2), "application/json");
 }
 
 export async function importBundleFromFile(file: File): Promise<{
@@ -87,8 +84,8 @@ export async function importBundleFromFile(file: File): Promise<{
 }> {
   const text = await file.text();
   const data = JSON.parse(text) as ExportBundle;
-  if (!data || data.schema !== 'llvp.bundle.v1' || !Array.isArray(data.videos)) {
-    throw new Error('Unrecognized export file.');
+  if (!data || data.schema !== "llvp.bundle.v1" || !Array.isArray(data.videos)) {
+    throw new Error("Unrecognized export file.");
   }
   let videos = 0;
   let tracks = 0;
@@ -98,7 +95,7 @@ export async function importBundleFromFile(file: File): Promise<{
     const existing = await getVideo(entry.video.id);
     const merged: Video = {
       ...entry.video,
-      blobUrl: existing?.blobUrl ?? '',
+      blobUrl: existing?.blobUrl ?? "",
       lastPosition: existing?.lastPosition ?? entry.video.lastPosition ?? 0,
       volume: existing?.volume ?? entry.video.volume ?? 1,
       playbackSpeed: existing?.playbackSpeed ?? entry.video.playbackSpeed ?? 1,

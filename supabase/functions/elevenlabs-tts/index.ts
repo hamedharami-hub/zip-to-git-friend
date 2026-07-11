@@ -73,29 +73,30 @@ serve(async (req) => {
     const { apiKey, text, voiceId, modelId, language } = await req.json();
     if (!apiKey || typeof apiKey !== "string") {
       return new Response(JSON.stringify({ error: "Missing apiKey." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
     if (!text || typeof text !== "string") {
       return new Response(JSON.stringify({ error: "Missing text." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
-    const isFa = language === 'fa';
+    const isFa = language === "fa";
     const voice = (voiceId as string) || "EXAVITQu4vr4xnSDxMaL"; // Sarah
     // The user's current error shows ElevenLabs rejecting `language_code=fa`
     // for turbo_v2_5. To keep Persian working reliably, use the multilingual
     // model for فارسی and let the provider infer the language from the text.
     const requestedModel = (modelId as string) || "eleven_multilingual_v2";
     const model = isFa ? "eleven_multilingual_v2" : requestedModel;
-    const langCode = !isFa && requestedModel === "eleven_turbo_v2_5"
-      ? undefined
-      : undefined;
+    const langCode = !isFa && requestedModel === "eleven_turbo_v2_5" ? undefined : undefined;
 
     const chunks = chunkText(text);
     if (chunks.length === 0) {
       return new Response(JSON.stringify({ error: "Empty text." }), {
-        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -109,18 +110,26 @@ serve(async (req) => {
     const total = parts.reduce((n, p) => n + p.length, 0);
     const out = new Uint8Array(total);
     let off = 0;
-    for (const p of parts) { out.set(p, off); off += p.length; }
+    for (const p of parts) {
+      out.set(p, off);
+      off += p.length;
+    }
 
     return new Response(out, {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "audio/mpeg", "X-Chunk-Count": String(chunks.length) },
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "audio/mpeg",
+        "X-Chunk-Count": String(chunks.length),
+      },
     });
   } catch (e) {
     console.error("elevenlabs-tts error", e);
     const msg = e instanceof Error ? e.message : "Unknown error";
     const status = /401|invalid api key|unauthor/i.test(msg) ? 401 : 500;
     return new Response(JSON.stringify({ error: msg }), {
-      status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

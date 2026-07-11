@@ -1,19 +1,19 @@
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Upload, Pencil } from 'lucide-react';
-import { BookUploader } from './BookUploader';
-import { ManualBookDialog } from './ManualBookDialog';
-import { useRef } from 'react';
+} from "@/components/ui/dropdown-menu";
+import { Upload, Pencil } from "lucide-react";
+import { BookUploader } from "./BookUploader";
+import { ManualBookDialog } from "./ManualBookDialog";
+import { useRef } from "react";
 
 interface Props {
-  variant?: 'button' | 'card';
+  variant?: "button" | "card";
 }
 
 /**
@@ -22,17 +22,17 @@ interface Props {
  * (so its file input + progress overlay are reused as-is); we just trigger
  * its hidden <input> via a ref.
  */
-export function BookImportMenu({ variant = 'button' }: Props) {
+export function BookImportMenu({ variant = "button" }: Props) {
   const epubBtnRef = useRef<HTMLButtonElement>(null);
   const manualBtnRef = useRef<HTMLButtonElement>(null);
 
-  const triggerLabel = variant === 'card' ? 'Add a book' : 'Add';
+  const triggerLabel = variant === "card" ? "Add a book" : "Add";
 
   return (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          {variant === 'card' ? (
+          {variant === "card" ? (
             <Button size="lg" className="gap-2">
               <Plus className="h-4 w-4" />
               {triggerLabel}
@@ -78,9 +78,7 @@ export function BookImportMenu({ variant = 'button' }: Props) {
       {/* Hidden hosts: keep their dialogs / file inputs available. */}
       <div className="hidden">
         <BookUploader variant="button" triggerRef={epubBtnRef} />
-        <ManualBookDialog
-          trigger={<button ref={manualBtnRef} type="button" aria-hidden />}
-        />
+        <ManualBookDialog trigger={<button ref={manualBtnRef} type="button" aria-hidden />} />
       </div>
     </>
   );

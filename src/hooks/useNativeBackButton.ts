@@ -1,7 +1,7 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useBookStore } from '@/store/bookStore';
-import { isLanguageBook } from '@/lib/languageBook';
+import { useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useBookStore } from "@/store/bookStore";
+import { isLanguageBook } from "@/lib/languageBook";
 
 /**
  * Wires the Android hardware back button (via Capacitor) and the browser
@@ -21,36 +21,47 @@ export function useNativeBackButton() {
     let mounted = true;
 
     // Map a deep route to a sensible parent so pressing back on a cold-loaded
-     // article/book/etc. returns to its list instead of exiting the app.
+    // article/book/etc. returns to its list instead of exiting the app.
     const parentFor = (path: string): string | null => {
-      if (path.startsWith('/news/article/') || path.startsWith('/news/digest/')) return '/news';
-      if (path.startsWith('/news')) return '/';
-      if (path.startsWith('/books/')) {
+      if (path.startsWith("/news/article/") || path.startsWith("/news/digest/")) return "/news";
+      if (path.startsWith("/news")) return "/";
+      if (path.startsWith("/books/")) {
         try {
-          const bookId = path.split('/')[2];
+          const bookId = path.split("/")[2];
           const book = useBookStore.getState().books.find((b) => b.id === bookId);
-          if (book && isLanguageBook(book)) return '/language-books';
-        } catch { /* ignore */ }
-        return '/books';
+          if (book && isLanguageBook(book)) return "/language-books";
+        } catch {
+          /* ignore */
+        }
+        return "/books";
       }
-      if (path.startsWith('/sentence-lab/')) return '/sentence-lab';
-      if (path.startsWith('/leitner')) return '/';
-      if (path.startsWith('/share')) return '/news';
-      if (path.startsWith('/firebase-auth') || path.startsWith('/auth')) return '/';
-      if (path.startsWith('/player/') || path.startsWith('/videos/')) return '/videos';
-      if (path.startsWith('/audio/')) return '/audio';
-      if (path === '/videos' || path === '/audio' || path === '/books' ||
-          path === '/language-books' || path === '/news' || path === '/settings' ||
-          path === '/stats' || path === '/sentence-lab' || path === '/leitner') return '/';
+      if (path.startsWith("/sentence-lab/")) return "/sentence-lab";
+      if (path.startsWith("/leitner")) return "/";
+      if (path.startsWith("/share")) return "/news";
+      if (path.startsWith("/firebase-auth") || path.startsWith("/auth")) return "/";
+      if (path.startsWith("/player/") || path.startsWith("/videos/")) return "/videos";
+      if (path.startsWith("/audio/")) return "/audio";
+      if (
+        path === "/videos" ||
+        path === "/audio" ||
+        path === "/books" ||
+        path === "/language-books" ||
+        path === "/news" ||
+        path === "/settings" ||
+        path === "/stats" ||
+        path === "/sentence-lab" ||
+        path === "/leitner"
+      )
+        return "/";
       return null;
     };
 
     (async () => {
       try {
-        const { App } = await import('@capacitor/app');
-        const handle = await App.addListener('backButton', ({ canGoBack }) => {
+        const { App } = await import("@capacitor/app");
+        const handle = await App.addListener("backButton", ({ canGoBack }) => {
           const path = location.pathname;
-          if (path === '/') {
+          if (path === "/") {
             App.exitApp();
             return;
           }
@@ -58,7 +69,10 @@ export function useNativeBackButton() {
           // in-page navigations (tab switches, hash changes) inflate history and
           // make navigate(-1) land on the same article again.
           const forceParent = parentFor(path);
-          if (forceParent && (path.startsWith('/news/article/') || path.startsWith('/news/digest/'))) {
+          if (
+            forceParent &&
+            (path.startsWith("/news/article/") || path.startsWith("/news/digest/"))
+          ) {
             navigate(forceParent);
             return;
           }

@@ -16,13 +16,18 @@ function DefaultError({ error, reset }: { error: Error; reset: () => void }) {
       </p>
       <div className="flex gap-2">
         <button
-          onClick={() => { router.invalidate(); reset(); }}
+          onClick={() => {
+            router.invalidate();
+            reset();
+          }}
           className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm"
         >
           تلاش دوباره
         </button>
         <button
-          onClick={() => { window.location.href = "/"; }}
+          onClick={() => {
+            window.location.href = "/";
+          }}
           className="rounded-full border px-4 py-2 text-sm"
         >
           صفحه‌ی اصلی
@@ -41,7 +46,10 @@ function DefaultNotFound() {
       <div className="text-5xl">🧭</div>
       <h1 className="text-xl font-semibold">صفحه پیدا نشد</h1>
       <p className="text-sm text-muted-foreground">آدرس درست نیست یا صفحه حذف شده.</p>
-      <a href="/" className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm mt-2">
+      <a
+        href="/"
+        className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm mt-2"
+      >
         صفحه‌ی اصلی
       </a>
     </div>

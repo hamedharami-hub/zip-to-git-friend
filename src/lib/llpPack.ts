@@ -1,14 +1,14 @@
-import type JSZipType from 'jszip';
+import type JSZipType from "jszip";
 
 // Dynamically load JSZip on first use to keep it out of the initial bundle.
 let _jszip: typeof JSZipType | null = null;
 async function loadJSZip(): Promise<typeof JSZipType> {
   if (_jszip) return _jszip;
-  const mod = await import('jszip');
-  _jszip = (mod.default ?? (mod as unknown as typeof JSZipType));
+  const mod = await import("jszip");
+  _jszip = mod.default ?? (mod as unknown as typeof JSZipType);
   return _jszip;
 }
-import type { LeitnerCard, SegmentAnalysis, SubtitleTrack, Video } from '@/types';
+import type { LeitnerCard, SegmentAnalysis, SubtitleTrack, Video } from "@/types";
 import {
   getAllAnalysisForVideo,
   getTracks,
@@ -20,8 +20,8 @@ import {
   saveVideo,
   saveVideoBlob,
   getAllLeitnerCards,
-} from '@/lib/db';
-import { downloadFile } from '@/lib/srtExporter';
+} from "@/lib/db";
+import { downloadFile } from "@/lib/srtExporter";
 
 /**
  * .llp = "Language Learning Pack"
@@ -39,41 +39,41 @@ import { downloadFile } from '@/lib/srtExporter';
  */
 
 export interface LLPManifest {
-  schema: 'llvp.pack.v1';
+  schema: "llvp.pack.v1";
   exportedAt: number;
-  app: 'language-learning-player';
+  app: "language-learning-player";
   appVersion: string;
-  video: Omit<Video, 'blobUrl'>;
+  video: Omit<Video, "blobUrl">;
   mediaFile: string; // relative path inside the zip
   trackIds: string[];
   hasAnalysis: boolean;
   leitnerCount: number;
 }
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = "1.0.0";
 
 function extensionFor(mimeType: string | undefined, fileName: string | undefined): string {
   if (fileName && /\.[a-z0-9]{2,5}$/i.test(fileName)) {
-    return fileName.slice(fileName.lastIndexOf('.'));
+    return fileName.slice(fileName.lastIndexOf("."));
   }
-  if (!mimeType) return '.bin';
-  if (mimeType.startsWith('audio/mpeg')) return '.mp3';
-  if (mimeType.startsWith('audio/mp4')) return '.m4a';
-  if (mimeType.startsWith('audio/wav') || mimeType === 'audio/x-wav') return '.wav';
-  if (mimeType.startsWith('audio/')) return '.audio';
-  if (mimeType.startsWith('video/mp4')) return '.mp4';
-  if (mimeType.startsWith('video/webm')) return '.webm';
-  if (mimeType.startsWith('video/quicktime')) return '.mov';
-  if (mimeType.startsWith('video/')) return '.video';
-  return '.bin';
+  if (!mimeType) return ".bin";
+  if (mimeType.startsWith("audio/mpeg")) return ".mp3";
+  if (mimeType.startsWith("audio/mp4")) return ".m4a";
+  if (mimeType.startsWith("audio/wav") || mimeType === "audio/x-wav") return ".wav";
+  if (mimeType.startsWith("audio/")) return ".audio";
+  if (mimeType.startsWith("video/mp4")) return ".mp4";
+  if (mimeType.startsWith("video/webm")) return ".webm";
+  if (mimeType.startsWith("video/quicktime")) return ".mov";
+  if (mimeType.startsWith("video/")) return ".video";
+  return ".bin";
 }
 
 function safeName(s: string, max = 60) {
   return (
-    (s || 'pack')
-      .replace(/[^\w\-. ]+/g, '_')
-      .replace(/\s+/g, '_')
-      .slice(0, max) || 'pack'
+    (s || "pack")
+      .replace(/[^\w\-. ]+/g, "_")
+      .replace(/\s+/g, "_")
+      .slice(0, max) || "pack"
   );
 }
 
@@ -85,7 +85,7 @@ export async function buildLLPBlob(
   options: { includeLeitner?: boolean } = {},
 ): Promise<{ blob: Blob; filename: string }> {
   const video = await getVideo(videoId);
-  if (!video) throw new Error('Video not found.');
+  if (!video) throw new Error("Video not found.");
 
   const tracks = await getTracks(videoId);
   const analyses = await getAllAnalysisForVideo(videoId);
@@ -103,9 +103,9 @@ export async function buildLLPBlob(
 
   const { blobUrl: _omit, ...videoMeta } = video;
   const manifest: LLPManifest = {
-    schema: 'llvp.pack.v1',
+    schema: "llvp.pack.v1",
     exportedAt: Date.now(),
-    app: 'language-learning-player',
+    app: "language-learning-player",
     appVersion: APP_VERSION,
     video: videoMeta,
     mediaFile,
@@ -116,30 +116,30 @@ export async function buildLLPBlob(
 
   const JSZipCtor = await loadJSZip();
   const zip = new JSZipCtor();
-  zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+  zip.file("manifest.json", JSON.stringify(manifest, null, 2));
 
   if (mediaBlob) {
     zip.file(mediaFile, mediaBlob);
   }
 
-  const tracksDir = zip.folder('tracks');
+  const tracksDir = zip.folder("tracks");
   for (const t of tracks) {
     tracksDir!.file(`${t.id}.json`, JSON.stringify(t, null, 2));
   }
 
   if (analyses.length > 0) {
-    zip.file('analysis.json', JSON.stringify(analyses, null, 2));
+    zip.file("analysis.json", JSON.stringify(analyses, null, 2));
   }
 
   if (cards.length > 0) {
-    zip.file('leitner.json', JSON.stringify(cards, null, 2));
+    zip.file("leitner.json", JSON.stringify(cards, null, 2));
   }
 
   const blob = await zip.generateAsync({
-    type: 'blob',
-    compression: 'DEFLATE',
+    type: "blob",
+    compression: "DEFLATE",
     compressionOptions: { level: 6 },
-    mimeType: 'application/octet-stream',
+    mimeType: "application/octet-stream",
   });
 
   const filename = `${safeName(video.title)}.llp`;
@@ -155,7 +155,7 @@ export async function exportLLP(
 ): Promise<string> {
   const { blob, filename } = await buildLLPBlob(videoId, options);
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -168,7 +168,7 @@ export async function exportLLP(
 export interface ImportResult {
   videoId: string;
   title: string;
-  mediaType: 'video' | 'audio';
+  mediaType: "video" | "audio";
   tracks: number;
   analyses: number;
   leitnerCards: number;
@@ -184,31 +184,31 @@ export interface ImportResult {
 export async function importLLP(file: File | Blob): Promise<ImportResult> {
   const JSZipCtor = await loadJSZip();
   const zip = await JSZipCtor.loadAsync(file);
-  const manifestEntry = zip.file('manifest.json');
+  const manifestEntry = zip.file("manifest.json");
   if (!manifestEntry) {
-    throw new Error('Not a valid .llp file (missing manifest.json).');
+    throw new Error("Not a valid .llp file (missing manifest.json).");
   }
-  const manifestText = await manifestEntry.async('string');
+  const manifestText = await manifestEntry.async("string");
   const manifest = JSON.parse(manifestText) as LLPManifest;
-  if (manifest.schema !== 'llvp.pack.v1') {
+  if (manifest.schema !== "llvp.pack.v1") {
     throw new Error(`Unsupported pack schema: ${manifest.schema}`);
   }
 
   // Generate a fresh id so importing the same pack twice does not overwrite.
   const newId =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `llp_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
-  const mediaType: 'video' | 'audio' = manifest.video.mediaType ?? 'video';
+  const mediaType: "video" | "audio" = manifest.video.mediaType ?? "video";
 
-  let blobUrl = '';
+  let blobUrl = "";
   let hasMedia = false;
   const mediaEntry = zip.file(manifest.mediaFile);
   if (mediaEntry) {
-    const mediaBlob = await mediaEntry.async('blob');
+    const mediaBlob = await mediaEntry.async("blob");
     const typedBlob = new Blob([mediaBlob], {
-      type: manifest.video.mimeType || (mediaType === 'audio' ? 'audio/mpeg' : 'video/mp4'),
+      type: manifest.video.mimeType || (mediaType === "audio" ? "audio/mpeg" : "video/mp4"),
     });
     blobUrl = URL.createObjectURL(typedBlob);
     await saveVideoBlob(newId, typedBlob);
@@ -227,12 +227,12 @@ export async function importLLP(file: File | Blob): Promise<ImportResult> {
   // Tracks
   let trackCount = 0;
   const trackEntries = Object.keys(zip.files).filter(
-    (p) => p.startsWith('tracks/') && p.endsWith('.json'),
+    (p) => p.startsWith("tracks/") && p.endsWith(".json"),
   );
   for (const path of trackEntries) {
     const entry = zip.file(path);
     if (!entry) continue;
-    const text = await entry.async('string');
+    const text = await entry.async("string");
     const track = JSON.parse(text) as SubtitleTrack;
     track.videoId = newId;
     // Re-namespace the track id to avoid collisions across imports.
@@ -243,9 +243,9 @@ export async function importLLP(file: File | Blob): Promise<ImportResult> {
 
   // Analyses
   let analysisCount = 0;
-  const analysisEntry = zip.file('analysis.json');
+  const analysisEntry = zip.file("analysis.json");
   if (analysisEntry) {
-    const text = await analysisEntry.async('string');
+    const text = await analysisEntry.async("string");
     const list = JSON.parse(text) as Array<{ cueId: string; analysis: SegmentAnalysis }>;
     for (const item of list) {
       await saveAnalysis(newId, item.cueId, item.analysis);
@@ -255,15 +255,15 @@ export async function importLLP(file: File | Blob): Promise<ImportResult> {
 
   // Leitner cards (optional)
   let cardCount = 0;
-  const leitnerEntry = zip.file('leitner.json');
+  const leitnerEntry = zip.file("leitner.json");
   if (leitnerEntry) {
-    const text = await leitnerEntry.async('string');
+    const text = await leitnerEntry.async("string");
     const cards = JSON.parse(text) as LeitnerCard[];
     for (const c of cards) {
       const fresh: LeitnerCard = {
         ...c,
         id:
-          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+          typeof crypto !== "undefined" && "randomUUID" in crypto
             ? crypto.randomUUID()
             : `card_${Date.now()}_${Math.random().toString(36).slice(2)}`,
         sourceVideoId: newId,

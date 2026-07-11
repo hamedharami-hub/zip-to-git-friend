@@ -4,8 +4,7 @@
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface ReqBody {
@@ -52,32 +51,55 @@ const TOOL_DEF = {
             properties: {
               title_en: { type: "string", description: "Short title, max 6 words." },
               title_fa: { type: "string", description: "Persian title." },
-              user_role: { type: "string", description: "Default user role (used if learner doesn't pick a different one)." },
+              user_role: {
+                type: "string",
+                description: "Default user role (used if learner doesn't pick a different one).",
+              },
               ai_role: { type: "string", description: "Default AI role (matches user_role)." },
               role_options: {
                 type: "array",
-                description: "2-4 distinct role pairs the learner could pick from for THIS same scene. Each pair has user + ai roles. The first item should match user_role / ai_role above.",
+                description:
+                  "2-4 distinct role pairs the learner could pick from for THIS same scene. Each pair has user + ai roles. The first item should match user_role / ai_role above.",
                 items: {
                   type: "object",
                   properties: {
                     user_role: { type: "string" },
                     ai_role: { type: "string" },
-                    label: { type: "string", description: "Short label like '👨‍⚕️ Doctor ↔ 🤒 Patient'." },
+                    label: {
+                      type: "string",
+                      description: "Short label like '👨‍⚕️ Doctor ↔ 🤒 Patient'.",
+                    },
                   },
                   required: ["user_role", "ai_role", "label"],
                   additionalProperties: false,
                 },
               },
-              scene_en: { type: "string", description: "1–3 sentences setting the scene in English (role-neutral when possible)." },
+              scene_en: {
+                type: "string",
+                description:
+                  "1–3 sentences setting the scene in English (role-neutral when possible).",
+              },
               scene_fa: { type: "string", description: "Same scene in Persian." },
               ai_opening_line: {
                 type: "string",
-                description: "The very first line the AI says to start the roleplay (assuming default ai_role). Plain text — fed to TTS.",
+                description:
+                  "The very first line the AI says to start the roleplay (assuming default ai_role). Plain text — fed to TTS.",
               },
               goal_en: { type: "string", description: "User's goal in 1 short sentence." },
               difficulty: { type: "string", enum: ["easy", "medium", "hard"] },
             },
-            required: ["title_en", "title_fa", "user_role", "ai_role", "role_options", "scene_en", "scene_fa", "ai_opening_line", "goal_en", "difficulty"],
+            required: [
+              "title_en",
+              "title_fa",
+              "user_role",
+              "ai_role",
+              "role_options",
+              "scene_en",
+              "scene_fa",
+              "ai_opening_line",
+              "goal_en",
+              "difficulty",
+            ],
             additionalProperties: false,
           },
         },
@@ -95,7 +117,12 @@ function buildUserPrompt(b: ReqBody): string {
     `COUNT: ${b.count ?? 3} distinct scenarios.`,
     "",
     "TARGET SENTENCES the learner has drilled (they should have natural opportunities to use these or close paraphrases):",
-    ...b.sentences.slice(0, 25).map((s, i) => `${i + 1}. "${s.english}"${s.expected_intent ? `  [intent: ${s.expected_intent}]` : ""}`),
+    ...b.sentences
+      .slice(0, 25)
+      .map(
+        (s, i) =>
+          `${i + 1}. "${s.english}"${s.expected_intent ? `  [intent: ${s.expected_intent}]` : ""}`,
+      ),
   ];
   return lines.join("\n");
 }
@@ -160,16 +187,22 @@ Deno.serve(async (req) => {
   }
 
   if (aiRes.status === 429) {
-    return new Response(JSON.stringify({ error: "Rate limits exceeded, please try again later." }), {
-      status: 429,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Rate limits exceeded, please try again later." }),
+      {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
   if (aiRes.status === 402) {
-    return new Response(JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }), {
-      status: 402,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return new Response(
+      JSON.stringify({ error: "Payment required, please add funds to your Lovable AI workspace." }),
+      {
+        status: 402,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
   if (!aiRes.ok) {
     const t = await aiRes.text();

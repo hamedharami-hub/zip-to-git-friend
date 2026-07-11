@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from 'react';
+import { RefObject, useEffect, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -10,19 +10,15 @@ import {
   Gauge,
   Maximize,
   Minimize,
-} from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
-import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+} from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface Props {
   videoRef: RefObject<HTMLVideoElement>;
   /** 'panel' (default) renders inside a card; 'overlay' is transparent for use over video. */
-  variant?: 'panel' | 'overlay';
+  variant?: "panel" | "overlay";
   /** Optional fullscreen toggle handler (must call requestFullscreen synchronously from the click). */
   onToggleFullscreen?: () => void;
   /** Whether the player is currently in fullscreen — controls the icon. */
@@ -32,13 +28,18 @@ interface Props {
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
 
 function formatTime(s: number): string {
-  if (!isFinite(s)) return '0:00';
+  if (!isFinite(s)) return "0:00";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen, isFullscreen }: Props) {
+export function PlayerControls({
+  videoRef,
+  variant = "panel",
+  onToggleFullscreen,
+  isFullscreen,
+}: Props) {
   const [time, setTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [paused, setPaused] = useState(true);
@@ -64,24 +65,22 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
       setSpeed(v.playbackRate);
     };
     sync();
-    const events = ['timeupdate', 'play', 'pause', 'volumechange', 'ratechange', 'loadedmetadata'];
+    const events = ["timeupdate", "play", "pause", "volumechange", "ratechange", "loadedmetadata"];
     events.forEach((e) => v.addEventListener(e, sync));
     return () => events.forEach((e) => v.removeEventListener(e, sync));
   }, [videoRef]);
 
   const v = videoRef.current;
-  const isOverlay = variant === 'overlay';
+  const isOverlay = variant === "overlay";
 
-  const iconBtn = isOverlay
-    ? 'h-8 w-8 text-white hover:bg-white/15'
-    : 'h-9 w-9';
+  const iconBtn = isOverlay ? "h-8 w-8 text-white hover:bg-white/15" : "h-9 w-9";
 
   return (
     <div
       className={
         isOverlay
-          ? 'flex flex-col gap-1.5 px-2 pb-1 text-white'
-          : 'rounded-lg bg-card border border-border p-3 flex flex-col gap-3'
+          ? "flex flex-col gap-1.5 px-2 pb-1 text-white"
+          : "rounded-lg bg-card border border-border p-3 flex flex-col gap-3"
       }
       onClick={(e) => e.stopPropagation()}
     >
@@ -94,7 +93,9 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
             // First movement of the drag — remember playback state and pause.
             wasPlayingBeforeScrubRef.current = !v.paused;
             if (!v.paused) {
-              try { v.pause(); } catch {}
+              try {
+                v.pause();
+              } catch {}
             }
           }
           setScrub(val);
@@ -111,7 +112,6 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
         }}
       />
 
-
       {/* Single compact row: play / prev / next / time | more */}
       <div className="flex items-center gap-1">
         <Button
@@ -122,7 +122,7 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
             if (!v) return;
             v.paused ? v.play() : v.pause();
           }}
-          aria-label={paused ? 'Play' : 'Pause'}
+          aria-label={paused ? "Play" : "Pause"}
         >
           {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
         </Button>
@@ -147,7 +147,7 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
 
         <span
           className={`text-xs tabular-nums ml-1 ${
-            isOverlay ? 'text-white/85' : 'text-muted-foreground'
+            isOverlay ? "text-white/85" : "text-muted-foreground"
           }`}
         >
           {formatTime(time)} / {formatTime(duration)}
@@ -160,8 +160,8 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
               variant="ghost"
               className={iconBtn}
               onClick={onToggleFullscreen}
-              aria-label={isFullscreen ? 'Exit fullscreen' : 'Enter fullscreen'}
-              title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+              aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
             >
               {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
             </Button>
@@ -202,7 +202,7 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
                       if (v.volume === 0) v.volume = 0.7;
                     }
                   }}
-                  aria-label={muted || volume === 0 ? 'Unmute' : 'Mute'}
+                  aria-label={muted || volume === 0 ? "Unmute" : "Mute"}
                 >
                   {muted || volume === 0 ? (
                     <VolumeX className="h-4 w-4" />
@@ -235,7 +235,7 @@ export function PlayerControls({ videoRef, variant = 'panel', onToggleFullscreen
                     <Button
                       key={sp}
                       size="sm"
-                      variant={speed === sp ? 'default' : 'outline'}
+                      variant={speed === sp ? "default" : "outline"}
                       className="h-7 px-1 text-xs"
                       onClick={() => {
                         if (v) v.playbackRate = sp;

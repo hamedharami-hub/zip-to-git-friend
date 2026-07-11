@@ -1,6 +1,6 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   ArrowLeft,
   Flame,
@@ -11,17 +11,19 @@ import {
   TrendingUp,
   Headphones,
   Library,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { getAllListeningSessions, getAllWordStatus } from '@/lib/db';
-import { getAllReadingSessions, getAllBooks } from '@/lib/bookDb';
-import type { ListeningSession, ReadingSession, WordStatusValue, Book } from '@/types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { getAllListeningSessions, getAllWordStatus } from "@/lib/db";
+import { getAllReadingSessions, getAllBooks } from "@/lib/bookDb";
+import type { ListeningSession, ReadingSession, WordStatusValue, Book } from "@/types";
 
 const Stats = () => {
-  usePageMeta({ title: 'Stats — Language Learning Player', description: 'آمار یادگیری — پیشرفت روزانه، واژگان و زمان مطالعه.' });
-  useEffect(() => {
-  }, []);
+  usePageMeta({
+    title: "Stats — Language Learning Player",
+    description: "آمار یادگیری — پیشرفت روزانه، واژگان و زمان مطالعه.",
+  });
+  useEffect(() => {}, []);
 
   const cards = useLeitnerStore((s) => s.cards);
   const [sessions, setSessions] = useState<ListeningSession[]>([]);
@@ -77,7 +79,7 @@ const Stats = () => {
     for (const s of rows) {
       allSeconds += s.seconds;
       allWords += s.words ?? 0;
-      const d = new Date(s.date + 'T00:00:00');
+      const d = new Date(s.date + "T00:00:00");
       if (d >= cut30) last30 += s.seconds;
       if (d >= cut7) last7 += s.seconds;
       if (s.date === todayKey) today += s.seconds;
@@ -103,8 +105,7 @@ const Stats = () => {
   const streak = useMemo(() => {
     const totals = new Map<string, number>();
     for (const s of sessions) totals.set(s.date, (totals.get(s.date) ?? 0) + s.seconds);
-    for (const s of readingSessions)
-      totals.set(s.date, (totals.get(s.date) ?? 0) + s.seconds);
+    for (const s of readingSessions) totals.set(s.date, (totals.get(s.date) ?? 0) + s.seconds);
     let count = 0;
     const d = new Date();
     while ((totals.get(formatDate(d)) ?? 0) > 60) {
@@ -175,7 +176,10 @@ const Stats = () => {
 
       <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 space-y-8">
         <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--tertiary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8">
-          <div aria-hidden className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl"
+          />
           <div className="relative">
             <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
               Your Journey
@@ -184,7 +188,7 @@ const Stats = () => {
               پیشرفت شما
             </h2>
             <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
-              {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : 'امروز شروع کن'}
+              {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : "امروز شروع کن"}
             </p>
           </div>
         </section>
@@ -194,7 +198,7 @@ const Stats = () => {
             icon={<Flame className="h-5 w-5" />}
             label="Day streak"
             value={streak.toString()}
-            sub={streak === 1 ? 'day in a row' : 'days in a row'}
+            sub={streak === 1 ? "day in a row" : "days in a row"}
             highlight={streak > 0}
           />
           <KpiCard
@@ -231,9 +235,7 @@ const Stats = () => {
                 <span className="h-2 w-2 rounded-sm bg-accent-foreground/60" />
                 Read
               </span>
-              <span className="font-medium text-foreground">
-                {formatDuration(totals.last30)}
-              </span>
+              <span className="font-medium text-foreground">{formatDuration(totals.last30)}</span>
             </div>
           </div>
           <div className="flex items-end gap-[3px] h-32 overflow-hidden">
@@ -247,8 +249,8 @@ const Stats = () => {
                   className="flex-1 min-w-0 flex flex-col items-center justify-end gap-0"
                   title={
                     `${d.label} — ${formatDuration(d.total)}` +
-                    (d.listen ? ` · 🎧 ${formatDuration(d.listen)}` : '') +
-                    (d.read ? ` · 📖 ${formatDuration(d.read)}` : '')
+                    (d.listen ? ` · 🎧 ${formatDuration(d.listen)}` : "") +
+                    (d.read ? ` · 📖 ${formatDuration(d.read)}` : "")
                   }
                 >
                   {d.read > 0 && (
@@ -260,16 +262,13 @@ const Stats = () => {
                   {d.listen > 0 && (
                     <div
                       className={`w-full ${
-                        isToday ? 'bg-primary' : 'bg-primary/70'
-                      } ${d.read === 0 ? 'rounded-t-sm' : ''}`}
+                        isToday ? "bg-primary" : "bg-primary/70"
+                      } ${d.read === 0 ? "rounded-t-sm" : ""}`}
                       style={{ height: `${Math.max(listenH, 2)}%` }}
                     />
                   )}
                   {d.total === 0 && (
-                    <div
-                      className="w-full bg-muted rounded-sm"
-                      style={{ height: '2%' }}
-                    />
+                    <div className="w-full bg-muted rounded-sm" style={{ height: "2%" }} />
                   )}
                 </div>
               );
@@ -299,7 +298,7 @@ const Stats = () => {
             allTime={readTotals.allSeconds}
             extra={
               books.length > 0
-                ? `${books.length} ${books.length === 1 ? 'book' : 'books'} in library`
+                ? `${books.length} ${books.length === 1 ? "book" : "books"} in library`
                 : undefined
             }
           />
@@ -313,11 +312,7 @@ const Stats = () => {
               Vocabulary knowledge
             </h2>
             <div className="space-y-2">
-              <StatRow
-                label="Known"
-                value={wordStatusCounts.known}
-                color="bg-green-500/70"
-              />
+              <StatRow label="Known" value={wordStatusCounts.known} color="bg-green-500/70" />
               <StatRow
                 label="Learning"
                 value={wordStatusCounts.learning}
@@ -330,10 +325,10 @@ const Stats = () => {
               />
             </div>
             <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
-              Total marked:{' '}
+              Total marked:{" "}
               <span className="font-medium text-foreground">
                 {wordStatusCounts.known + wordStatusCounts.learning + wordStatusCounts.ignored}
-              </span>{' '}
+              </span>{" "}
               words
             </p>
           </div>
@@ -344,9 +339,7 @@ const Stats = () => {
               Leitner cards
             </h2>
             <p className="text-3xl font-bold">{cardStats.total}</p>
-            <p className="text-xs text-muted-foreground">
-              {cardStats.due} due now
-            </p>
+            <p className="text-xs text-muted-foreground">{cardStats.due} due now</p>
             <div className="grid grid-cols-5 gap-1.5 pt-2">
               {cardStats.boxes.map((n, i) => (
                 <div
@@ -354,9 +347,7 @@ const Stats = () => {
                   className="rounded-md bg-primary/10 text-primary text-center py-1.5"
                   title={`Box ${i + 1}: ${n} cards`}
                 >
-                  <p className="text-[10px] uppercase tracking-wider opacity-70">
-                    B{i + 1}
-                  </p>
+                  <p className="text-[10px] uppercase tracking-wider opacity-70">B{i + 1}</p>
                   <p className="font-semibold">{n}</p>
                 </div>
               ))}
@@ -376,8 +367,8 @@ const Stats = () => {
 
 function formatDate(d: Date): string {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
 
@@ -410,17 +401,15 @@ function KpiCard({
     <div
       className={`rounded-[20px] p-5 space-y-1 transition-colors ${
         highlight
-          ? 'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] m3-elevation-1'
-          : 'bg-[hsl(var(--surface-container-low))] border border-outline-variant'
+          ? "bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] m3-elevation-1"
+          : "bg-[hsl(var(--surface-container-low))] border border-outline-variant"
       }`}
     >
       <div className="flex items-center justify-between">
         <span className="text-[10px] uppercase tracking-[0.12em] font-medium opacity-70">
           {label}
         </span>
-        <span className={highlight ? '' : 'text-muted-foreground'}>
-          {icon}
-        </span>
+        <span className={highlight ? "" : "text-muted-foreground"}>{icon}</span>
       </div>
       <p className="text-3xl font-semibold tabular-nums">{value}</p>
       {sub && <p className="text-[10px] opacity-70">{sub}</p>}
@@ -428,15 +417,7 @@ function KpiCard({
   );
 }
 
-function StatRow({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
+function StatRow({ label, value, color }: { label: string; value: number; color: string }) {
   return (
     <div className="flex items-center gap-3">
       <span className={`h-2.5 w-2.5 rounded-full ${color} shrink-0`} />
@@ -485,9 +466,7 @@ function ActivityCard({
 function Mini({ label, value }: { label: string; value: string }) {
   return (
     <div className="space-y-0.5">
-      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
-        {label}
-      </p>
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-base font-semibold tabular-nums">{value}</p>
     </div>
   );

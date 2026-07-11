@@ -3,16 +3,20 @@
  * keeps audio focus on Android Chrome — helps `speechSynthesis` survive
  * screen-off / backgrounding. iOS Safari still suspends speech when locked.
  */
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 const SILENT_WAV =
-  'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=';
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=";
 
 export function useTtsKeepAlive(active: boolean): void {
   const ref = useRef<HTMLAudioElement | null>(null);
   useEffect(() => {
     if (!active) {
-      try { ref.current?.pause(); } catch { /* */ }
+      try {
+        ref.current?.pause();
+      } catch {
+        /* */
+      }
       return;
     }
     try {
@@ -22,10 +26,18 @@ export function useTtsKeepAlive(active: boolean): void {
         a.volume = 0.001;
         ref.current = a;
       }
-      void ref.current.play().catch(() => { /* autoplay may block; harmless */ });
-    } catch { /* noop */ }
+      void ref.current.play().catch(() => {
+        /* autoplay may block; harmless */
+      });
+    } catch {
+      /* noop */
+    }
     return () => {
-      try { ref.current?.pause(); } catch { /* */ }
+      try {
+        ref.current?.pause();
+      } catch {
+        /* */
+      }
     };
   }, [active]);
 }

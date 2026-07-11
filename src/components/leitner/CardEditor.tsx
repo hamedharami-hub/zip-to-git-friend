@@ -1,34 +1,22 @@
-import { useEffect, useState } from 'react';
-import {
-  ImageIcon,
-  Loader2,
-  Save,
-  Sparkles,
-  Trash2,
-  Volume2,
-  X,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
+import { useEffect, useState } from "react";
+import { ImageIcon, Loader2, Save, Sparkles, Trash2, Volume2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { useLeitnerFolderStore } from '@/store/leitnerFolderStore';
-import {
-  generateCardDefinition,
-  generateCardExamples,
-  generateCardImage,
-} from '@/lib/leitnerAi';
-import { playClip, speak } from '@/lib/leitnerTts';
-import type { LeitnerCard } from '@/types';
-import { toast } from 'sonner';
+} from "@/components/ui/select";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { useLeitnerFolderStore } from "@/store/leitnerFolderStore";
+import { generateCardDefinition, generateCardExamples, generateCardImage } from "@/lib/leitnerAi";
+import { playClip, speak } from "@/lib/leitnerTts";
+import type { LeitnerCard } from "@/types";
+import { toast } from "sonner";
 
 interface Props {
   card: LeitnerCard;
@@ -42,9 +30,9 @@ export function CardEditor({ card, onClose }: Props) {
 
   const [front, setFront] = useState(card.front);
   const [back, setBack] = useState(card.back);
-  const [example, setExample] = useState(card.exampleSentence ?? '');
-  const [folderId, setFolderId] = useState<string>(card.folderId ?? 'none');
-  const [imageUrl, setImageUrl] = useState(card.imageUrl ?? '');
+  const [example, setExample] = useState(card.exampleSentence ?? "");
+  const [folderId, setFolderId] = useState<string>(card.folderId ?? "none");
+  const [imageUrl, setImageUrl] = useState(card.imageUrl ?? "");
   const [imgLoading, setImgLoading] = useState(false);
   const [exLoading, setExLoading] = useState(false);
   const [defLoading, setDefLoading] = useState(false);
@@ -54,9 +42,9 @@ export function CardEditor({ card, onClose }: Props) {
   useEffect(() => {
     setFront(card.front);
     setBack(card.back);
-    setExample(card.exampleSentence ?? '');
-    setFolderId(card.folderId ?? 'none');
-    setImageUrl(card.imageUrl ?? '');
+    setExample(card.exampleSentence ?? "");
+    setFolderId(card.folderId ?? "none");
+    setImageUrl(card.imageUrl ?? "");
   }, [card.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleSave = async () => {
@@ -64,23 +52,23 @@ export function CardEditor({ card, onClose }: Props) {
       front: front.trim(),
       back: back.trim(),
       exampleSentence: example.trim() || undefined,
-      folderId: folderId === 'none' ? undefined : folderId,
+      folderId: folderId === "none" ? undefined : folderId,
       imageUrl: imageUrl || undefined,
     });
-    toast.success('Card saved');
+    toast.success("Card saved");
     onClose();
   };
 
   const handleDelete = async () => {
-    if (!window.confirm('Delete this card?')) return;
+    if (!window.confirm("Delete this card?")) return;
     await deleteCard(card.id);
-    toast.success('Card deleted');
+    toast.success("Card deleted");
     onClose();
   };
 
   const handleGenerateImage = async () => {
     if (!front.trim()) {
-      toast.error('Add a word first');
+      toast.error("Add a word first");
       return;
     }
     setImgLoading(true);
@@ -92,9 +80,9 @@ export function CardEditor({ card, onClose }: Props) {
       });
       setImageUrl(url);
       await updateCard(card.id, { imageUrl: url });
-      toast.success('Image generated');
+      toast.success("Image generated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Image generation failed');
+      toast.error(e instanceof Error ? e.message : "Image generation failed");
     } finally {
       setImgLoading(false);
     }
@@ -110,7 +98,7 @@ export function CardEditor({ card, onClose }: Props) {
       });
       setExSuggestions(list);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Example generation failed');
+      toast.error(e instanceof Error ? e.message : "Example generation failed");
     } finally {
       setExLoading(false);
     }
@@ -123,11 +111,11 @@ export function CardEditor({ card, onClose }: Props) {
       const { definition, persian } = await generateCardDefinition({
         word: front.trim(),
       });
-      const merged = persian ? `${persian}${definition ? ` — ${definition}` : ''}` : definition;
+      const merged = persian ? `${persian}${definition ? ` — ${definition}` : ""}` : definition;
       if (merged) setBack(merged);
-      toast.success('Definition generated');
+      toast.success("Definition generated");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Definition generation failed');
+      toast.error(e instanceof Error ? e.message : "Definition generation failed");
     } finally {
       setDefLoading(false);
     }
@@ -147,8 +135,8 @@ export function CardEditor({ card, onClose }: Props) {
         <div>
           <p className="text-xs uppercase tracking-wider text-muted-foreground">Edit card</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Box {card.box} · {card.sourceKind ?? 'manual'}
-            {card.sourceTitle ? ` · ${card.sourceTitle}` : ''}
+            Box {card.box} · {card.sourceKind ?? "manual"}
+            {card.sourceTitle ? ` · ${card.sourceTitle}` : ""}
           </p>
         </div>
         <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close editor">
@@ -305,7 +293,7 @@ export function CardEditor({ card, onClose }: Props) {
               variant="secondary"
               size="sm"
               className="absolute top-2 right-2"
-              onClick={() => setImageUrl('')}
+              onClick={() => setImageUrl("")}
             >
               Remove
             </Button>

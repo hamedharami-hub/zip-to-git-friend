@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 
 /**
  * Detects pinch-zoom gestures on the given element ref. On a meaningful
@@ -36,19 +36,21 @@ export function usePinchFontStep(
       lastFire.current = now;
       startDist.current = d;
       window.dispatchEvent(
-        new CustomEvent('news-font-step', { detail: { delta: delta > 0 ? 1 : -1 } }),
+        new CustomEvent("news-font-step", { detail: { delta: delta > 0 ? 1 : -1 } }),
       );
     };
-    const onEnd = () => { startDist.current = 0; };
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: true });
-    el.addEventListener('touchend', onEnd);
-    el.addEventListener('touchcancel', onEnd);
+    const onEnd = () => {
+      startDist.current = 0;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: true });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
     return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
-      el.removeEventListener('touchcancel', onEnd);
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
     };
   }, [ref, threshold, cooldown]);
 }

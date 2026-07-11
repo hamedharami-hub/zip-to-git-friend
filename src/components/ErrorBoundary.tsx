@@ -1,6 +1,6 @@
-import { Component, ErrorInfo, ReactNode } from 'react';
-import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Component, ErrorInfo, ReactNode } from "react";
+import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   children: ReactNode;
@@ -22,14 +22,14 @@ export class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Surface for debugging with rich context.
     const ctx = {
-      route: this.props.routeName ?? 'unknown',
-      path: typeof window !== 'undefined' ? window.location.pathname : 'n/a',
+      route: this.props.routeName ?? "unknown",
+      path: typeof window !== "undefined" ? window.location.pathname : "n/a",
       timestamp: new Date().toISOString(),
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a',
+      userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
       componentStack: info.componentStack,
     };
     // eslint-disable-next-line no-console
-    console.error('[ErrorBoundary]', error.message, ctx, error);
+    console.error("[ErrorBoundary]", error.message, ctx, error);
   }
 
   reset = () => this.setState({ error: null });
@@ -52,14 +52,14 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
           <p className="text-sm text-muted-foreground break-words">
-            {this.state.error.message || 'Unknown error.'}
+            {this.state.error.message || "Unknown error."}
           </p>
           <div className="flex gap-2">
             <Button size="sm" onClick={this.reset}>
               <RotateCcw className="h-4 w-4 mr-2" />
               Try again
             </Button>
-            <Button size="sm" variant="outline" onClick={() => (window.location.href = '/')}>
+            <Button size="sm" variant="outline" onClick={() => (window.location.href = "/")}>
               <Home className="h-4 w-4 mr-2" />
               Home
             </Button>

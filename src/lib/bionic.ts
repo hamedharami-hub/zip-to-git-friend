@@ -4,20 +4,21 @@
  * `removeBionic(el)`. Preserves existing HTML (links, images, etc.).
  */
 
-const BIONIC_ATTR = 'data-rm-bionic';
+const BIONIC_ATTR = "data-rm-bionic";
 
 /** Apply bionic bolding to all text nodes in `root`. `intensity` = 0..1. */
 export function applyBionic(root: HTMLElement, intensity = 0.5): void {
   if (!root) return;
   removeBionic(root); // idempotent
-  root.setAttribute(BIONIC_ATTR, '1');
+  root.setAttribute(BIONIC_ATTR, "1");
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode: (node) => {
       const p = node.parentElement;
       if (!p) return NodeFilter.FILTER_REJECT;
       const tag = p.tagName;
-      if (tag === 'SCRIPT' || tag === 'STYLE' || tag === 'CODE' || tag === 'PRE') return NodeFilter.FILTER_REJECT;
-      if (p.closest('[data-rm-bionic-skip]')) return NodeFilter.FILTER_REJECT;
+      if (tag === "SCRIPT" || tag === "STYLE" || tag === "CODE" || tag === "PRE")
+        return NodeFilter.FILTER_REJECT;
+      if (p.closest("[data-rm-bionic-skip]")) return NodeFilter.FILTER_REJECT;
       if (!node.nodeValue || !node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
       return NodeFilter.FILTER_ACCEPT;
     },
@@ -31,7 +32,7 @@ export function applyBionic(root: HTMLElement, intensity = 0.5): void {
   }
 
   for (const textNode of targets) {
-    const text = textNode.nodeValue ?? '';
+    const text = textNode.nodeValue ?? "";
     const frag = document.createDocumentFragment();
     // Split preserving whitespace
     const parts = text.split(/(\s+)/);
@@ -48,10 +49,10 @@ export function applyBionic(root: HTMLElement, intensity = 0.5): void {
         frag.appendChild(document.createTextNode(part));
         continue;
       }
-      const wrap = document.createElement('span');
-      wrap.className = 'rm-bionic-word';
-      const b = document.createElement('b');
-      b.className = 'rm-bionic';
+      const wrap = document.createElement("span");
+      wrap.className = "rm-bionic-word";
+      const b = document.createElement("b");
+      b.className = "rm-bionic";
       b.textContent = part.slice(0, cut);
       wrap.appendChild(b);
       wrap.appendChild(document.createTextNode(part.slice(cut)));
@@ -64,9 +65,9 @@ export function applyBionic(root: HTMLElement, intensity = 0.5): void {
 export function removeBionic(root: HTMLElement): void {
   if (!root) return;
   root.removeAttribute(BIONIC_ATTR);
-  const wraps = root.querySelectorAll('span.rm-bionic-word');
+  const wraps = root.querySelectorAll("span.rm-bionic-word");
   wraps.forEach((w) => {
-    const text = w.textContent ?? '';
+    const text = w.textContent ?? "";
     w.replaceWith(document.createTextNode(text));
   });
   // Merge adjacent text nodes
@@ -74,5 +75,5 @@ export function removeBionic(root: HTMLElement): void {
 }
 
 export function isBionicActive(root: HTMLElement | null): boolean {
-  return !!root && root.getAttribute(BIONIC_ATTR) === '1';
+  return !!root && root.getAttribute(BIONIC_ATTR) === "1";
 }

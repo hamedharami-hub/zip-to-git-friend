@@ -1,13 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
-import { Sparkles, X, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
-import { useSettingsStore } from '@/store/settingsStore';
-import { useSubtitleStore } from '@/store/subtitleStore';
-import { useOnline } from '@/hooks/useOnline';
-import { runAnalyze, runAnalyzeBatch, batchSizeFor, AIError, getApiKeyFor, aiErrorMessage } from '@/lib/ai';
-import { getAnalysis, saveAnalysis } from '@/lib/db';
-import { toast } from 'sonner';
+import { useEffect, useRef, useState } from "react";
+import { Sparkles, X, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { useSettingsStore } from "@/store/settingsStore";
+import { useSubtitleStore } from "@/store/subtitleStore";
+import { useOnline } from "@/hooks/useOnline";
+import {
+  runAnalyze,
+  runAnalyzeBatch,
+  batchSizeFor,
+  AIError,
+  getApiKeyFor,
+  aiErrorMessage,
+} from "@/lib/ai";
+import { getAnalysis, saveAnalysis } from "@/lib/db";
+import { toast } from "sonner";
 
 interface Props {
   videoId: string;
@@ -35,15 +42,15 @@ export function BatchAnalyze({ videoId }: Props) {
   const start = async () => {
     if (running) return;
     if (!primary || primary.cues.length === 0) {
-      toast.error('No primary subtitles loaded.');
+      toast.error("No primary subtitles loaded.");
       return;
     }
     const choice = settings.batchModel;
     if (!getApiKeyFor(choice, settings)) {
       toast.error(
-        choice.provider === 'gemini'
-          ? 'Add your Gemini API key in Settings.'
-          : 'Add your Groq API key in Settings.',
+        choice.provider === "gemini"
+          ? "Add your Gemini API key in Settings."
+          : "Add your Groq API key in Settings.",
       );
       return;
     }
@@ -101,18 +108,18 @@ export function BatchAnalyze({ videoId }: Props) {
               setDone(processed);
             } catch (e) {
               failed++;
-              console.warn('Single fallback failed for', item.id, aiErrorMessage(e));
+              console.warn("Single fallback failed for", item.id, aiErrorMessage(e));
             }
           }
         }
       } catch (e) {
-        if (e instanceof AIError && e.code === 'rate_limit') {
+        if (e instanceof AIError && e.code === "rate_limit") {
           await new Promise((r) => setTimeout(r, 1800));
           batches.unshift(batch);
           return;
         }
         // Batch-wide failure (e.g. bad JSON) — fall back to per-cue calls.
-        console.warn('Batch failed, falling back per-cue:', aiErrorMessage(e));
+        console.warn("Batch failed, falling back per-cue:", aiErrorMessage(e));
         for (const item of batch) {
           if (cancelRef.current) return;
           try {
@@ -122,7 +129,7 @@ export function BatchAnalyze({ videoId }: Props) {
             setDone(processed);
           } catch (err) {
             failed++;
-            console.warn('Per-cue fallback failed for', item.id, aiErrorMessage(err));
+            console.warn("Per-cue fallback failed for", item.id, aiErrorMessage(err));
           }
         }
       }
@@ -160,7 +167,7 @@ export function BatchAnalyze({ videoId }: Props) {
         variant="outline"
         onClick={start}
         disabled={!primary?.cues.length || !online}
-        title={!online ? 'Requires an internet connection' : undefined}
+        title={!online ? "Requires an internet connection" : undefined}
         aria-label="Analyze all cues"
       >
         <Sparkles className="h-4 w-4 mr-1.5" aria-hidden="true" />

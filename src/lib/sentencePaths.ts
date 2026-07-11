@@ -1,4 +1,4 @@
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
 export interface PathStepRecipe {
   category: string;
@@ -34,23 +34,23 @@ function map(row: any): SentencePath {
   };
 }
 
-export async function fetchPaths(domain = 'general'): Promise<SentencePath[]> {
+export async function fetchPaths(domain = "general"): Promise<SentencePath[]> {
   const { data, error } = await supabase
-    .from('sentence_paths')
-    .select('*')
-    .eq('domain', domain)
-    .order('is_builtin', { ascending: false })
-    .order('sort_order', { ascending: true })
-    .order('created_at', { ascending: true });
+    .from("sentence_paths")
+    .select("*")
+    .eq("domain", domain)
+    .order("is_builtin", { ascending: false })
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []).map(map);
 }
 
 export async function fetchPath(id: string): Promise<SentencePath | null> {
   const { data, error } = await supabase
-    .from('sentence_paths')
-    .select('*')
-    .eq('id', id)
+    .from("sentence_paths")
+    .select("*")
+    .eq("id", id)
     .maybeSingle();
   if (error) throw error;
   return data ? map(data) : null;
@@ -68,16 +68,16 @@ export interface CreatePathInput {
 export async function createPath(input: CreatePathInput): Promise<SentencePath> {
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
-  if (!userId) throw new Error('Sign in required');
+  if (!userId) throw new Error("Sign in required");
   const { data, error } = await supabase
-    .from('sentence_paths')
+    .from("sentence_paths")
     .insert({
       user_id: userId,
       name: input.name,
       description: input.description ?? null,
-      icon: input.icon ?? 'Sparkles',
-      color: input.color ?? 'sky',
-      domain: input.domain ?? 'general',
+      icon: input.icon ?? "Sparkles",
+      color: input.color ?? "sky",
+      domain: input.domain ?? "general",
       is_builtin: false,
       recipe: input.recipe as any,
     })
@@ -88,6 +88,6 @@ export async function createPath(input: CreatePathInput): Promise<SentencePath> 
 }
 
 export async function deletePath(id: string): Promise<void> {
-  const { error } = await supabase.from('sentence_paths').delete().eq('id', id);
+  const { error } = await supabase.from("sentence_paths").delete().eq("id", id);
   if (error) throw error;
 }

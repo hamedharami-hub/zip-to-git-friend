@@ -1,6 +1,6 @@
-import { RefObject, useEffect, useRef } from 'react';
-import { useLoopStore } from '@/store/loopStore';
-import { useSubtitleStore } from '@/store/subtitleStore';
+import { RefObject, useEffect, useRef } from "react";
+import { useLoopStore } from "@/store/loopStore";
+import { useSubtitleStore } from "@/store/subtitleStore";
 
 /**
  * Smart looping driver. Watches video time and, when the active loop cue's
@@ -74,7 +74,7 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
             v.currentTime = cue.startMs / 1000;
           } catch {}
           setIteration(nextIter);
-          const vis = config.visibilityPattern[nextIter - 1] ?? 'both';
+          const vis = config.visibilityPattern[nextIter - 1] ?? "both";
           setVisibility(vis);
           pausingRef.current = false;
           v.play().catch(() => {});

@@ -19,7 +19,7 @@ function key(bookId: string, chapterIndex: number) {
 
 /** Build a stable lookup key from a paragraph's first ~80 normalized chars. */
 export function speechKeyFor(text: string): string {
-  return text.replace(/\s+/g, ' ').trim().toLowerCase().slice(0, 80);
+  return text.replace(/\s+/g, " ").trim().toLowerCase().slice(0, 80);
 }
 
 export function subscribeParagraphSpeech(
@@ -36,7 +36,11 @@ export function subscribeParagraphSpeech(
   set.add(fn);
   const v = lastValue.get(k);
   if (v !== undefined) {
-    try { fn(v); } catch { /* ignore */ }
+    try {
+      fn(v);
+    } catch {
+      /* ignore */
+    }
   }
   return () => {
     set!.delete(fn);
@@ -55,6 +59,10 @@ export function emitParagraphSpeech(
   const set = listeners.get(k);
   if (!set) return;
   for (const fn of set) {
-    try { fn(v); } catch { /* ignore */ }
+    try {
+      fn(v);
+    } catch {
+      /* ignore */
+    }
   }
 }

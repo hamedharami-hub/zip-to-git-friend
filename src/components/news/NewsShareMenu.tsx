@@ -10,9 +10,9 @@
  *    (font / size / alignment) restored
  *  - export options + in-document reader prefs persisted in localStorage
  */
-import { useEffect, useState } from 'react';
-import { Share2, Loader2, FileDown, Copy, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEffect, useState } from "react";
+import { Share2, Loader2, FileDown, Copy, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -20,19 +20,24 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
-} from '@/components/ui/dialog';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { toast } from 'sonner';
-import { getCachedParagraphAnalysis } from '@/lib/bookAnalysis';
-import { splitIntoShortChunks } from '@/lib/paragraphSplit';
-import { formatForTelegram } from '@/lib/news';
-import { suggestPersianHtmlFilename } from '@/lib/htmlFilename';
-import type { BookParagraphAnalysis } from '@/types';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
+import { splitIntoShortChunks } from "@/lib/paragraphSplit";
+import { formatForTelegram } from "@/lib/news";
+import { suggestPersianHtmlFilename } from "@/lib/htmlFilename";
+import type { BookParagraphAnalysis } from "@/types";
 
 interface Props {
   bookId: string;
@@ -46,9 +51,9 @@ interface Props {
 }
 
 type ParaPair =
-  | { kind: 'h'; level: number; en: string; fa?: string }
-  | { kind: 'p'; en: string; fa?: string; analysis?: BookParagraphAnalysis | null }
-  | { kind: 'img'; src: string; alt?: string; caption?: string };
+  | { kind: "h"; level: number; en: string; fa?: string }
+  | { kind: "p"; en: string; fa?: string; analysis?: BookParagraphAnalysis | null }
+  | { kind: "img"; src: string; alt?: string; caption?: string };
 
 async function buildPairs(
   bookId: string,
@@ -56,49 +61,54 @@ async function buildPairs(
   html: string,
   opts: { includeImages: boolean },
 ): Promise<ParaPair[]> {
-  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const doc = new DOMParser().parseFromString(html, "text/html");
   const root = doc.body ?? doc.documentElement;
   const out: ParaPair[] = [];
   const selector = opts.includeImages
-    ? 'h1, h2, h3, h4, h5, h6, p, blockquote, li, figure, img'
-    : 'h1, h2, h3, h4, h5, h6, p, blockquote, li';
+    ? "h1, h2, h3, h4, h5, h6, p, blockquote, li, figure, img"
+    : "h1, h2, h3, h4, h5, h6, p, blockquote, li";
   const blocks = root.querySelectorAll(selector);
   const seenImgs = new Set<string>();
   for (const el of Array.from(blocks)) {
     const tag = el.tagName.toLowerCase();
-    if (opts.includeImages && (tag === 'figure' || tag === 'img')) {
-      const img = tag === 'img' ? (el as HTMLImageElement) : el.querySelector('img');
-      const src = img?.getAttribute('src') || img?.getAttribute('data-src') || '';
-      if (!src || seenImgs.has(src) || src.startsWith('data:')) continue;
+    if (opts.includeImages && (tag === "figure" || tag === "img")) {
+      const img = tag === "img" ? (el as HTMLImageElement) : el.querySelector("img");
+      const src = img?.getAttribute("src") || img?.getAttribute("data-src") || "";
+      if (!src || seenImgs.has(src) || src.startsWith("data:")) continue;
       seenImgs.add(src);
-      const alt = img?.getAttribute('alt') || '';
-      const cap = tag === 'figure' ? (el.querySelector('figcaption')?.textContent ?? '').trim() : '';
-      out.push({ kind: 'img', src, alt, caption: cap || undefined });
+      const alt = img?.getAttribute("alt") || "";
+      const cap =
+        tag === "figure" ? (el.querySelector("figcaption")?.textContent ?? "").trim() : "";
+      out.push({ kind: "img", src, alt, caption: cap || undefined });
       continue;
     }
-    const raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const raw = (el.textContent ?? "").replace(/\s+/g, " ").trim();
     if (!raw) continue;
     if (/^h[1-6]$/.test(tag)) {
       let fa: string | undefined;
       try {
         const cached = await getCachedParagraphAnalysis(bookId, chapterIndex, raw);
         fa = cached?.translation?.trim() || undefined;
-      } catch { /* ignore */ }
-      out.push({ kind: 'h', level: Number(tag.slice(1)), en: raw, fa });
+      } catch {
+        /* ignore */
+      }
+      out.push({ kind: "h", level: Number(tag.slice(1)), en: raw, fa });
       continue;
     }
     const chunks = splitIntoShortChunks(raw);
     for (const text of chunks) {
       if (text.split(/\s+/).length < 4) {
-        out.push({ kind: 'p', en: text });
+        out.push({ kind: "p", en: text });
         continue;
       }
       let cached: BookParagraphAnalysis | null = null;
       try {
         cached = (await getCachedParagraphAnalysis(bookId, chapterIndex, text)) ?? null;
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       out.push({
-        kind: 'p',
+        kind: "p",
         en: text,
         fa: cached?.translation?.trim() || undefined,
         analysis: cached,
@@ -110,55 +120,56 @@ async function buildPairs(
 
 function esc(s: string): string {
   return s
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function safeFilename(name: string): string {
   return (
     name
-      .replace(/[\\/:*?"<>|]+/g, ' ')
-      .replace(/\s+/g, ' ')
+      .replace(/[\\/:*?"<>|]+/g, " ")
+      .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 120) || 'article'
+      .slice(0, 120) || "article"
   );
 }
 
 function plainSnippetFromHtml(html: string): string {
   try {
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    return (doc.body?.textContent ?? '')
-      .replace(/\s+/g, ' ')
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return (doc.body?.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 2500);
+  } catch {
+    return html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
       .trim()
       .slice(0, 2500);
-  } catch {
-    return html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 2500);
   }
 }
 
 function buildAnalysisHtml(a: BookParagraphAnalysis | null | undefined): string {
-  if (!a) return '';
+  if (!a) return "";
   const vocab = (a.vocabulary ?? []).filter((v) => v?.word);
   const idioms = (a.idioms ?? []).filter((i) => i?.phrase);
-  if (vocab.length === 0 && idioms.length === 0) return '';
+  if (vocab.length === 0 && idioms.length === 0) return "";
   const vocabHtml = vocab.length
     ? `<div class="anx-sec"><div class="anx-h">واژگان</div><ul>${vocab
         .map(
           (v) =>
-            `<li><b dir="ltr">${esc(v.word)}</b>${v.partOfSpeech ? ` <i>(${esc(v.partOfSpeech)})</i>` : ''} — ${esc(v.translation || '')}${v.example ? `<div class="anx-ex" dir="ltr">${esc(v.example)}</div>` : ''}</li>`,
+            `<li><b dir="ltr">${esc(v.word)}</b>${v.partOfSpeech ? ` <i>(${esc(v.partOfSpeech)})</i>` : ""} — ${esc(v.translation || "")}${v.example ? `<div class="anx-ex" dir="ltr">${esc(v.example)}</div>` : ""}</li>`,
         )
-        .join('')}</ul></div>`
-    : '';
+        .join("")}</ul></div>`
+    : "";
   const idiomsHtml = idioms.length
     ? `<div class="anx-sec"><div class="anx-h">اصطلاحات</div><ul>${idioms
         .map(
           (i) =>
-            `<li><b dir="ltr">${esc(i.phrase)}</b> — ${esc(i.meaning || '')}${i.literalTranslation ? `<div class="anx-ex">${esc(i.literalTranslation)}</div>` : ''}</li>`,
+            `<li><b dir="ltr">${esc(i.phrase)}</b> — ${esc(i.meaning || "")}${i.literalTranslation ? `<div class="anx-ex">${esc(i.literalTranslation)}</div>` : ""}</li>`,
         )
-        .join('')}</ul></div>`
-    : '';
+        .join("")}</ul></div>`
+    : "";
   return `<div class="anx" hidden>${vocabHtml}${idiomsHtml}</div>`;
 }
 
@@ -170,24 +181,24 @@ function buildBilingualHtml(
 ): string {
   const body = pairs
     .map((p) => {
-      if (p.kind === 'img') {
-        return `<figure class="fig"><img src="${esc(p.src)}" alt="${esc(p.alt ?? '')}" loading="lazy" />${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ''}</figure>`;
+      if (p.kind === "img") {
+        return `<figure class="fig"><img src="${esc(p.src)}" alt="${esc(p.alt ?? "")}" loading="lazy" />${p.caption ? `<figcaption>${esc(p.caption)}</figcaption>` : ""}</figure>`;
       }
-      if (p.kind === 'h') {
+      if (p.kind === "h") {
         const lvl = Math.max(2, Math.min(6, p.level));
         const enH = `<h${lvl} class="heading en" dir="ltr">${esc(p.en)}</h${lvl}>`;
-        const faH = p.fa ? `<h${lvl} class="heading fa" dir="rtl">${esc(p.fa)}</h${lvl}>` : '';
+        const faH = p.fa ? `<h${lvl} class="heading fa" dir="rtl">${esc(p.fa)}</h${lvl}>` : "";
         return `<div class="para">${enH}${faH}</div>`;
       }
       const en = `<p class="en" dir="ltr">${esc(p.en)}</p>`;
       const anx = buildAnalysisHtml(p.analysis);
-      const hasAnx = anx ? ' data-anx="1"' : '';
+      const hasAnx = anx ? ' data-anx="1"' : "";
       const fa = p.fa
-        ? `<p class="fa${anx ? ' has-anx' : ''}" dir="rtl"${hasAnx}>${esc(p.fa)}</p>`
-        : '';
+        ? `<p class="fa${anx ? " has-anx" : ""}" dir="rtl"${hasAnx}>${esc(p.fa)}</p>`
+        : "";
       return `<div class="para">${en}${fa}${anx}</div>`;
     })
-    .join('\n');
+    .join("\n");
 
   return `<!doctype html>
 <html lang="en">
@@ -290,7 +301,7 @@ function buildBilingualHtml(
   <div class="hint">روی پاراگراف فارسی بزن تا واژگان/اصطلاحات باز شود.</div>
 </div>
 <h1>${esc(title)}</h1>
-<p class="meta">${esc(siteName ?? '')}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ''}</p>
+<p class="meta">${esc(siteName ?? "")}${url ? ` · <a href="${esc(url)}" target="_blank" rel="noopener">${esc(url)}</a>` : ""}</p>
 
 ${body}
 
@@ -374,35 +385,43 @@ ${body}
 
 async function copyRich(html: string, plain: string): Promise<void> {
   try {
-    if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
       const item = new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([plain], { type: 'text/plain' }),
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
       });
       await navigator.clipboard.write([item]);
       return;
     }
-  } catch { /* fall through */ }
+  } catch {
+    /* fall through */
+  }
   await navigator.clipboard.writeText(plain);
 }
 
 // ----- Export-options persisted in localStorage -----
-const EXPORT_PREFS_KEY = 'news-html-export-prefs-v1';
+const EXPORT_PREFS_KEY = "news-html-export-prefs-v1";
 interface ExportPrefs {
   includeImages: boolean;
-  filenameLang: 'auto' | 'fa' | 'en';
+  filenameLang: "auto" | "fa" | "en";
 }
-const DEFAULT_EXPORT_PREFS: ExportPrefs = { includeImages: true, filenameLang: 'auto' };
+const DEFAULT_EXPORT_PREFS: ExportPrefs = { includeImages: true, filenameLang: "auto" };
 
 function loadExportPrefs(): ExportPrefs {
   try {
     const raw = localStorage.getItem(EXPORT_PREFS_KEY);
     if (!raw) return DEFAULT_EXPORT_PREFS;
     return { ...DEFAULT_EXPORT_PREFS, ...(JSON.parse(raw) ?? {}) };
-  } catch { return DEFAULT_EXPORT_PREFS; }
+  } catch {
+    return DEFAULT_EXPORT_PREFS;
+  }
 }
 function saveExportPrefs(p: ExportPrefs) {
-  try { localStorage.setItem(EXPORT_PREFS_KEY, JSON.stringify(p)); } catch { /* ignore */ }
+  try {
+    localStorage.setItem(EXPORT_PREFS_KEY, JSON.stringify(p));
+  } catch {
+    /* ignore */
+  }
 }
 
 export function NewsShareMenu({
@@ -415,14 +434,16 @@ export function NewsShareMenu({
   siteName,
   aiModel,
 }: Props) {
-  const [busy, setBusy] = useState<null | 'html' | 'fa' | 'raw' | 'tg'>(null);
+  const [busy, setBusy] = useState<null | "html" | "fa" | "raw" | "tg">(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [prefs, setPrefs] = useState<ExportPrefs>(() => loadExportPrefs());
   const [filename, setFilename] = useState<string>(() => safeFilename(title));
   const [namingBusy, setNamingBusy] = useState(false);
 
   // Re-seed filename when the article (title) changes.
-  useEffect(() => { setFilename(safeFilename(title)); }, [title]);
+  useEffect(() => {
+    setFilename(safeFilename(title));
+  }, [title]);
 
   function updatePrefs(patch: Partial<ExportPrefs>) {
     setPrefs((prev) => {
@@ -442,95 +463,121 @@ export function NewsShareMenu({
         url,
       });
       setFilename(safeFilename(name));
-      toast.success('نام فارسی پیشنهاد شد.');
+      toast.success("نام فارسی پیشنهاد شد.");
     } catch (e: any) {
-      toast.error(e?.message ?? 'پیشنهاد نام فایل شکست خورد.');
+      toast.error(e?.message ?? "پیشنهاد نام فایل شکست خورد.");
     } finally {
       setNamingBusy(false);
     }
   };
 
   const runDownload = async () => {
-    setBusy('html');
+    setBusy("html");
     try {
       const pairs = await buildPairs(bookId, chapterIndex, contentHtml, {
         includeImages: prefs.includeImages,
       });
-      const textCount = pairs.filter((p) => p.kind !== 'img').length;
+      const textCount = pairs.filter((p) => p.kind !== "img").length;
       if (textCount === 0) {
-        toast.error('متنی برای خروجی پیدا نشد.');
+        toast.error("متنی برای خروجی پیدا نشد.");
         return;
       }
       const html = buildBilingualHtml(title, siteName ?? undefined, url, pairs);
-      const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+      const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const href = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = href;
       a.download = `${safeFilename(filename || title)}.html`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(href), 1000);
-      const withFa = pairs.filter((p) => p.kind === 'p' && p.fa).length;
-      const imgs = pairs.filter((p) => p.kind === 'img').length;
-      const withAnx = pairs.filter((p) => p.kind === 'p' && p.analysis && ((p.analysis.vocabulary?.length || 0) + (p.analysis.idioms?.length || 0)) > 0).length;
+      const withFa = pairs.filter((p) => p.kind === "p" && p.fa).length;
+      const imgs = pairs.filter((p) => p.kind === "img").length;
+      const withAnx = pairs.filter(
+        (p) =>
+          p.kind === "p" &&
+          p.analysis &&
+          (p.analysis.vocabulary?.length || 0) + (p.analysis.idioms?.length || 0) > 0,
+      ).length;
       toast.success(`فایل ذخیره شد — ${withFa} ترجمه، ${withAnx} پردازش، ${imgs} عکس.`);
       setDialogOpen(false);
     } catch (e: any) {
-      toast.error(e?.message ?? 'ذخیره فایل شکست خورد.');
+      toast.error(e?.message ?? "ذخیره فایل شکست خورد.");
     } finally {
       setBusy(null);
     }
   };
 
   const copyRaw = async () => {
-    setBusy('raw');
+    setBusy("raw");
     try {
-      const body = (contentMd && contentMd !== '__SCRAPE_FAILED__' ? contentMd : '')
-        .replace(/```[\s\S]*?```/g, ' ')
-        .replace(/!\[[^\]]*\]\([^)]+\)/g, ' ')
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\n{3,}/g, '\n\n')
+      const body = (contentMd && contentMd !== "__SCRAPE_FAILED__" ? contentMd : "")
+        .replace(/```[\s\S]*?```/g, " ")
+        .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\n{3,}/g, "\n\n")
         .trim();
-      if (!body) { toast.error('متنی برای کپی پیدا نشد.'); return; }
-      const out = `${title}\n${siteName ? siteName + (url ? ' · ' + url : '') : (url ?? '')}\n\n${body}`.trim();
+      if (!body) {
+        toast.error("متنی برای کپی پیدا نشد.");
+        return;
+      }
+      const out =
+        `${title}\n${siteName ? siteName + (url ? " · " + url : "") : (url ?? "")}\n\n${body}`.trim();
       await navigator.clipboard.writeText(out);
-      toast.success('متن خام کپی شد.');
+      toast.success("متن خام کپی شد.");
     } catch (e: any) {
-      toast.error(e?.message ?? 'کپی شکست خورد.');
-    } finally { setBusy(null); }
+      toast.error(e?.message ?? "کپی شکست خورد.");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const copyFaRaw = async () => {
-    setBusy('fa');
+    setBusy("fa");
     try {
       const pairs = await buildPairs(bookId, chapterIndex, contentHtml, { includeImages: false });
-      const lines: string[] = [title, ''];
+      const lines: string[] = [title, ""];
       let withFa = 0;
       for (const p of pairs) {
-        if (p.kind === 'h') { lines.push('', p.en, ''); continue; }
-        if (p.kind === 'p') {
-          if (p.fa) { lines.push(p.fa); withFa++; }
-          else lines.push(p.en);
+        if (p.kind === "h") {
+          lines.push("", p.en, "");
+          continue;
+        }
+        if (p.kind === "p") {
+          if (p.fa) {
+            lines.push(p.fa);
+            withFa++;
+          } else lines.push(p.en);
         }
       }
-      if (withFa === 0) { toast.error('هنوز ترجمه‌ای کش نشده — اول دکمه ترجمه را بزن.'); return; }
-      await navigator.clipboard.writeText(lines.join('\n').replace(/\n{3,}/g, '\n\n').trim());
+      if (withFa === 0) {
+        toast.error("هنوز ترجمه‌ای کش نشده — اول دکمه ترجمه را بزن.");
+        return;
+      }
+      await navigator.clipboard.writeText(
+        lines
+          .join("\n")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim(),
+      );
       toast.success(`متن فارسی کپی شد — ${withFa} پاراگراف.`);
     } catch (e: any) {
-      toast.error(e?.message ?? 'کپی شکست خورد.');
-    } finally { setBusy(null); }
+      toast.error(e?.message ?? "کپی شکست خورد.");
+    } finally {
+      setBusy(null);
+    }
   };
 
   const copyTelegram = async () => {
-    setBusy('tg');
+    setBusy("tg");
     try {
       const pairs = await buildPairs(bookId, chapterIndex, contentHtml, { includeImages: false });
       const faLines = pairs
-        .map((p) => (p.kind === 'h' ? `\n${p.en}\n` : (p.kind === 'p' ? (p.fa ?? '') : '')))
+        .map((p) => (p.kind === "h" ? `\n${p.en}\n` : p.kind === "p" ? (p.fa ?? "") : ""))
         .filter(Boolean)
-        .join('\n\n')
+        .join("\n\n")
         .trim();
       const res = await formatForTelegram({
         title,
@@ -541,10 +588,12 @@ export function NewsShareMenu({
         model: aiModel,
       });
       await copyRich(res.html, res.plain);
-      toast.success('متن آماده تلگرام کپی شد ✨');
+      toast.success("متن آماده تلگرام کپی شد ✨");
     } catch (e: any) {
-      toast.error(e?.message ?? 'بازنویسی شکست خورد.');
-    } finally { setBusy(null); }
+      toast.error(e?.message ?? "بازنویسی شکست خورد.");
+    } finally {
+      setBusy(null);
+    }
   };
 
   return (
@@ -561,7 +610,9 @@ export function NewsShareMenu({
             <FileDown className="h-4 w-4 me-2" />
             <div className="flex flex-col">
               <span>HTML دوزبانه…</span>
-              <span className="text-[10px] text-muted-foreground">گزینه‌های نام فایل، عکس و پردازش</span>
+              <span className="text-[10px] text-muted-foreground">
+                گزینه‌های نام فایل، عکس و پردازش
+              </span>
             </div>
           </DropdownMenuItem>
 
@@ -571,7 +622,9 @@ export function NewsShareMenu({
             <Copy className="h-4 w-4 me-2" />
             <div className="flex flex-col">
               <span>متن خام + تیتر</span>
-              <span className="text-[10px] text-muted-foreground">همان متن اصلی به‌علاوهٔ عنوان و منبع</span>
+              <span className="text-[10px] text-muted-foreground">
+                همان متن اصلی به‌علاوهٔ عنوان و منبع
+              </span>
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={copyFaRaw} disabled={busy !== null}>
@@ -585,7 +638,9 @@ export function NewsShareMenu({
             <Sparkles className="h-4 w-4 me-2 text-primary" />
             <div className="flex flex-col">
               <span>بازنویسی برای تلگرام (AI)</span>
-              <span className="text-[10px] text-muted-foreground">سبک وبلاگی، با bold روی نکات</span>
+              <span className="text-[10px] text-muted-foreground">
+                سبک وبلاگی، با bold روی نکات
+              </span>
             </div>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -595,9 +650,7 @@ export function NewsShareMenu({
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>ذخیره HTML دوزبانه</DialogTitle>
-            <DialogDescription>
-              تنظیمات زیر برای دفعه‌های بعد ذخیره می‌شود.
-            </DialogDescription>
+            <DialogDescription>تنظیمات زیر برای دفعه‌های بعد ذخیره می‌شود.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -621,7 +674,11 @@ export function NewsShareMenu({
                 onClick={suggestFilename}
                 disabled={namingBusy}
               >
-                {namingBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4 text-primary" />}
+                {namingBusy ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4 text-primary" />
+                )}
                 پیشنهاد اسم فارسی با AI
               </Button>
             </div>
@@ -635,17 +692,21 @@ export function NewsShareMenu({
             </label>
 
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              ترجمه‌ها و پردازش‌های کش‌شده (واژگان و اصطلاحات) هم در فایل ذخیره می‌شوند؛
-              در حالت دو زبانه با تَپ روی پاراگراف فارسی نمایان می‌شوند.
+              ترجمه‌ها و پردازش‌های کش‌شده (واژگان و اصطلاحات) هم در فایل ذخیره می‌شوند؛ در حالت دو
+              زبانه با تَپ روی پاراگراف فارسی نمایان می‌شوند.
             </p>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="ghost" onClick={() => setDialogOpen(false)} disabled={busy === 'html'}>
+            <Button variant="ghost" onClick={() => setDialogOpen(false)} disabled={busy === "html"}>
               انصراف
             </Button>
-            <Button onClick={runDownload} disabled={busy === 'html'}>
-              {busy === 'html' ? <Loader2 className="h-4 w-4 animate-spin me-2" /> : <FileDown className="h-4 w-4 me-2" />}
+            <Button onClick={runDownload} disabled={busy === "html"}>
+              {busy === "html" ? (
+                <Loader2 className="h-4 w-4 animate-spin me-2" />
+              ) : (
+                <FileDown className="h-4 w-4 me-2" />
+              )}
               ذخیره
             </Button>
           </DialogFooter>

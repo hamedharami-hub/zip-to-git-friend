@@ -1,41 +1,59 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Brain, Layers, LineChart, Zap, Headphones, Star, Repeat } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import { ReviewMode, type ReviewProfile } from '@/components/leitner/ReviewMode';
-import { FoldersSidebar } from '@/components/leitner/FoldersSidebar';
-import { CardList } from '@/components/leitner/CardList';
-import { CardEditor } from '@/components/leitner/CardEditor';
-import { StatsExtras } from '@/components/leitner/StatsExtras';
-import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
-import type { LeitnerCard } from '@/types';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowLeft,
+  BookOpen,
+  Brain,
+  Layers,
+  LineChart,
+  Zap,
+  Headphones,
+  Star,
+  Repeat,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import { ReviewMode, type ReviewProfile } from "@/components/leitner/ReviewMode";
+import { FoldersSidebar } from "@/components/leitner/FoldersSidebar";
+import { CardList } from "@/components/leitner/CardList";
+import { CardEditor } from "@/components/leitner/CardEditor";
+import { StatsExtras } from "@/components/leitner/StatsExtras";
+import { AccountButton, SyncBadge } from "@/components/auth/AccountButton";
+import type { LeitnerCard } from "@/types";
 
 const PROFILES: Array<{ key: ReviewProfile; label: string; icon: typeof Zap; hint: string }> = [
-  { key: 'due',       label: 'Due',       icon: Brain,      hint: 'All cards scheduled for today' },
-  { key: 'quick',     label: 'Quick 10',  icon: Zap,        hint: 'Top 10 due cards — a 5 min sprint' },
-  { key: 'cram',      label: 'Cram',      icon: Repeat,     hint: 'Review every card (ignore schedule)' },
-  { key: 'listening', label: 'Listening', icon: Headphones, hint: 'Audio first — guess before you see' },
-  { key: 'starred',   label: 'Starred',   icon: Star,       hint: 'Only your flagged cards' },
+  { key: "due", label: "Due", icon: Brain, hint: "All cards scheduled for today" },
+  { key: "quick", label: "Quick 10", icon: Zap, hint: "Top 10 due cards — a 5 min sprint" },
+  { key: "cram", label: "Cram", icon: Repeat, hint: "Review every card (ignore schedule)" },
+  {
+    key: "listening",
+    label: "Listening",
+    icon: Headphones,
+    hint: "Audio first — guess before you see",
+  },
+  { key: "starred", label: "Starred", icon: Star, hint: "Only your flagged cards" },
 ];
 
 const BOX_META: Array<{ box: 1 | 2 | 3 | 4 | 5; label: string; interval: string }> = [
-  { box: 1, label: 'Box 1', interval: '1 day' },
-  { box: 2, label: 'Box 2', interval: '3 days' },
-  { box: 3, label: 'Box 3', interval: '7 days' },
-  { box: 4, label: 'Box 4', interval: '14 days' },
-  { box: 5, label: 'Box 5', interval: '30 days' },
+  { box: 1, label: "Box 1", interval: "1 day" },
+  { box: 2, label: "Box 2", interval: "3 days" },
+  { box: 3, label: "Box 3", interval: "7 days" },
+  { box: 4, label: "Box 4", interval: "14 days" },
+  { box: 5, label: "Box 5", interval: "30 days" },
 ];
 
 const Leitner = () => {
-  usePageMeta({ title: 'Leitner — Language Learning Player', description: 'مرور واژگان با روش لایتنر — تمرین هوشمند برای حفظ ماندگار.' });
+  usePageMeta({
+    title: "Leitner — Language Learning Player",
+    description: "مرور واژگان با روش لایتنر — تمرین هوشمند برای حفظ ماندگار.",
+  });
   const cards = useLeitnerStore((s) => s.cards);
   const [folderId, setFolderId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'browse' | 'review' | 'stats'>('browse');
+  const [tab, setTab] = useState<"browse" | "review" | "stats">("browse");
   const [editing, setEditing] = useState<LeitnerCard | null>(null);
-  const [profile, setProfile] = useState<ReviewProfile>('due');
+  const [profile, setProfile] = useState<ReviewProfile>("due");
 
   const stats = useMemo(() => {
     const now = Date.now();
@@ -46,7 +64,15 @@ const Leitner = () => {
       s.total += 1;
       if (c.nextReview <= now) s.due += 1;
     }
-    return s as { 1: number; 2: number; 3: number; 4: number; 5: number; total: number; due: number };
+    return s as {
+      1: number;
+      2: number;
+      3: number;
+      4: number;
+      5: number;
+      total: number;
+      due: number;
+    };
   }, [cards, folderId]);
 
   // Keep `editing` in sync with the underlying card (after AI updates).
@@ -60,8 +86,7 @@ const Leitner = () => {
     }
   }, [cards, editing]);
 
-  useEffect(() => {
-  }, []);
+  useEffect(() => {}, []);
 
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
@@ -84,7 +109,10 @@ const Leitner = () => {
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6 space-y-6">
         <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--primary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--tertiary-container))] p-6 sm:p-8">
-          <div aria-hidden className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--primary)/0.18)] blur-3xl" />
+          <div
+            aria-hidden
+            className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-[hsl(var(--primary)/0.18)] blur-3xl"
+          />
           <div className="relative flex items-end justify-between gap-4 flex-wrap">
             <div className="space-y-2">
               <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
@@ -95,13 +123,16 @@ const Leitner = () => {
               </h2>
               <p className="text-sm text-[hsl(var(--on-surface-variant))] inline-flex items-center gap-2 flex-wrap">
                 <span>
-                  {stats.total} کارت · <span className="text-[hsl(var(--primary))] font-semibold">{stats.due} آماده الان</span>
+                  {stats.total} کارت ·{" "}
+                  <span className="text-[hsl(var(--primary))] font-semibold">
+                    {stats.due} آماده الان
+                  </span>
                 </span>
                 <SyncBadge />
               </p>
             </div>
             <Button
-              onClick={() => setTab('review')}
+              onClick={() => setTab("review")}
               disabled={stats.due === 0}
               size="lg"
               className="rounded-full h-12 px-6 gap-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 m3-elevation-2"
@@ -111,7 +142,6 @@ const Leitner = () => {
             </Button>
           </div>
         </section>
-
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)} className="space-y-6">
           <TabsList className="grid grid-cols-3 w-full max-w-md">
@@ -134,13 +164,15 @@ const Leitner = () => {
               <FoldersSidebar
                 selectedId={folderId}
                 onSelect={setFolderId}
-                onReview={(id) => { setFolderId(id); setProfile('due'); setTab('review'); }}
+                onReview={(id) => {
+                  setFolderId(id);
+                  setProfile("due");
+                  setTab("review");
+                }}
               />
               <div className="flex-1 min-w-0 space-y-4">
                 <CardList folderId={folderId} onEdit={setEditing} />
-                {editing && (
-                  <CardEditor card={editing} onClose={() => setEditing(null)} />
-                )}
+                {editing && <CardEditor card={editing} onClose={() => setEditing(null)} />}
               </div>
             </div>
           </TabsContent>
@@ -148,9 +180,9 @@ const Leitner = () => {
           <TabsContent value="review" className="space-y-4">
             <div className="flex items-center justify-between gap-2 flex-wrap">
               <p className="text-sm text-muted-foreground">
-                Reviewing {folderId ? 'this folder' : 'all folders'}
+                Reviewing {folderId ? "this folder" : "all folders"}
               </p>
-              <Button variant="ghost" size="sm" onClick={() => setTab('browse')}>
+              <Button variant="ghost" size="sm" onClick={() => setTab("browse")}>
                 Back to browse
               </Button>
             </div>
@@ -165,8 +197,8 @@ const Leitner = () => {
                     title={p.hint}
                     className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs transition-colors ${
                       active
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'border-border text-muted-foreground hover:bg-muted'
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-border text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -176,11 +208,13 @@ const Leitner = () => {
               })}
             </div>
             <ReviewMode
-              key={`${profile}-${folderId ?? 'all'}`}
+              key={`${profile}-${folderId ?? "all"}`}
               folderId={folderId}
               profile={profile}
-              audioOnly={profile === 'listening'}
-              onEmpty={() => { /* stay on screen */ }}
+              audioOnly={profile === "listening"}
+              onEmpty={() => {
+                /* stay on screen */
+              }}
             />
           </TabsContent>
 
@@ -188,14 +222,17 @@ const Leitner = () => {
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {BOX_META.map((m, i) => {
                 const tones = [
-                  'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]',
-                  'bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]',
-                  'bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))]',
-                  'bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]',
-                  'bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]',
+                  "bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]",
+                  "bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]",
+                  "bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))]",
+                  "bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))]",
+                  "bg-[hsl(var(--secondary-container))] text-[hsl(var(--on-secondary-container))]",
                 ];
                 return (
-                  <div key={m.box} className={`rounded-[20px] p-5 text-center ${tones[i]} m3-elevation-1`}>
+                  <div
+                    key={m.box}
+                    className={`rounded-[20px] p-5 text-center ${tones[i]} m3-elevation-1`}
+                  >
                     <p className="text-[10px] uppercase tracking-[0.12em] opacity-70 font-medium">
                       {m.label}
                     </p>

@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { Plus, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,15 +9,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { toast } from 'sonner';
-import { useBookStore } from '@/store/bookStore';
-import { appendChapter } from '@/lib/bookDb';
-import { pastedTextToChapter } from '@/lib/manualBook';
-import type { Book } from '@/types';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
+import { useBookStore } from "@/store/bookStore";
+import { appendChapter } from "@/lib/bookDb";
+import { pastedTextToChapter } from "@/lib/manualBook";
+import type { Book } from "@/types";
 
 interface Props {
   book: Book;
@@ -30,28 +30,23 @@ interface Props {
 }
 
 /** Append a new chapter to an existing book by pasting plain text. */
-export function AddChapterDialog({
-  book,
-  existingChapterCount,
-  onAdded,
-  trigger,
-}: Props) {
+export function AddChapterDialog({ book, existingChapterCount, onAdded, trigger }: Props) {
   const upsert = useBookStore((s) => s.upsert);
 
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [title, setTitle] = useState(`Chapter ${existingChapterCount + 1}`);
-  const [text, setText] = useState('');
+  const [text, setText] = useState("");
 
   function reset() {
     setTitle(`Chapter ${existingChapterCount + 1}`);
-    setText('');
+    setText("");
   }
 
   async function handleSave() {
     const trimmed = text.trim();
     if (!trimmed) {
-      toast.error('Please paste the chapter text first.');
+      toast.error("Please paste the chapter text first.");
       return;
     }
     setBusy(true);
@@ -78,8 +73,8 @@ export function AddChapterDialog({
       setOpen(false);
       reset();
     } catch (err) {
-      console.error('[AddChapterDialog] failed', err);
-      toast.error('Could not add this chapter.');
+      console.error("[AddChapterDialog] failed", err);
+      toast.error("Could not add this chapter.");
     } finally {
       setBusy(false);
     }
@@ -136,7 +131,7 @@ export function AddChapterDialog({
             <p className="text-[11px] text-muted-foreground">
               {text.trim()
                 ? `${text.trim().split(/\s+/).filter(Boolean).length.toLocaleString()} words`
-                : 'Tip: each blank line starts a new paragraph.'}
+                : "Tip: each blank line starts a new paragraph."}
             </p>
           </div>
         </div>

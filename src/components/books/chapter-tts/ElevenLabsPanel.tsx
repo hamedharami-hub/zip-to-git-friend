@@ -6,19 +6,19 @@
  * State lives in the parent ChapterTTSPlayer — this is a pure presentational
  * component that just wires callbacks. Extracted to shrink the parent file.
  */
-import { Link } from 'react-router-dom';
-import { Download, Loader2, Pause, Play, RefreshCw, RotateCcw, RotateCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+import { Link } from "react-router-dom";
+import { Download, Loader2, Pause, Play, RefreshCw, RotateCcw, RotateCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from '@/lib/elevenLabsTts';
-import { fmtTime as fmt } from './constants';
+} from "@/components/ui/select";
+import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from "@/lib/elevenLabsTts";
+import { fmtTime as fmt } from "./constants";
 
 interface Props {
   elevenKey: string;
@@ -50,7 +50,7 @@ export function ElevenLabsPanel(p: Props) {
   if (!p.elevenKey) {
     return (
       <div className="text-sm text-muted-foreground">
-        ElevenLabs نیاز به API key دارد.{' '}
+        ElevenLabs نیاز به API key دارد.{" "}
         <Link to="/settings" className="text-primary underline underline-offset-2">
           در تنظیمات → AI اضافه کن
         </Link>
@@ -68,7 +68,9 @@ export function ElevenLabsPanel(p: Props) {
             </SelectTrigger>
             <SelectContent>
               {ELEVENLABS_VOICES.map((v) => (
-                <SelectItem key={v.id} value={v.id}>{v.label}</SelectItem>
+                <SelectItem key={v.id} value={v.id}>
+                  {v.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -78,7 +80,9 @@ export function ElevenLabsPanel(p: Props) {
             </SelectTrigger>
             <SelectContent>
               {ELEVENLABS_MODELS.map((m) => (
-                <SelectItem key={m.id} value={m.id}>{m.label}</SelectItem>
+                <SelectItem key={m.id} value={m.id}>
+                  {m.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -88,11 +92,12 @@ export function ElevenLabsPanel(p: Props) {
             ) : (
               <Play className="h-4 w-4 mr-2" />
             )}
-            {p.elevenLoading ? 'در حال ساخت…' : 'Listen'}
+            {p.elevenLoading ? "در حال ساخت…" : "Listen"}
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
-          ~{Math.ceil(p.textLength / 1000)}k نویسه · multilingual_v2 از انگلیسی و فارسی پشتیبانی می‌کند.
+          ~{Math.ceil(p.textLength / 1000)}k نویسه · multilingual_v2 از انگلیسی و فارسی پشتیبانی
+          می‌کند.
         </p>
       </div>
     );
@@ -130,27 +135,53 @@ export function ElevenLabsPanel(p: Props) {
           <Button variant="ghost" size="icon" onClick={() => p.seekRel(-15)} aria-label="Back 15s">
             <RotateCcw className="h-4 w-4" />
           </Button>
-          <Button size="icon" onClick={p.togglePlay} aria-label={p.playing ? 'Pause' : 'Play'}>
+          <Button size="icon" onClick={p.togglePlay} aria-label={p.playing ? "Pause" : "Play"}>
             {p.playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={() => p.seekRel(15)} aria-label="Forward 15s">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => p.seekRel(15)}
+            aria-label="Forward 15s"
+          >
             <RotateCw className="h-4 w-4" />
           </Button>
         </div>
         <div className="flex items-center gap-2">
           <Select value={String(p.rate)} onValueChange={(v) => p.onRate(Number(v))}>
-            <SelectTrigger className="h-8 w-[78px]"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="h-8 w-[78px]">
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                <SelectItem key={r} value={String(r)}>{r}×</SelectItem>
+                <SelectItem key={r} value={String(r)}>
+                  {r}×
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button variant="ghost" size="icon" onClick={p.download} aria-label="Download" title="Download .mp3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={p.download}
+            aria-label="Download"
+            title="Download .mp3"
+          >
             <Download className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={p.load} disabled={p.elevenLoading} aria-label="Re-generate" title="Re-generate">
-            {p.elevenLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={p.load}
+            disabled={p.elevenLoading}
+            aria-label="Re-generate"
+            title="Re-generate"
+          >
+            {p.elevenLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCw className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

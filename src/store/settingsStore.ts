@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import type { AppSettings } from '@/types';
-import { getSettings, saveSettings } from '@/lib/db';
-import { supabase } from '@/integrations/supabase/client';
+import { create } from "zustand";
+import type { AppSettings } from "@/types";
+import { getSettings, saveSettings } from "@/lib/db";
+import { supabase } from "@/integrations/supabase/client";
 
 interface SettingsState {
   settings: AppSettings;
@@ -13,47 +13,47 @@ interface SettingsState {
 }
 
 const DEFAULTS: AppSettings = {
-  theme: 'dark',
-  fontSize: 'md',
-  displayMode: 'outside',
+  theme: "dark",
+  fontSize: "md",
+  displayMode: "outside",
   autoShowAnalysis: false,
   blindListen: false,
   autoPauseAtCueEnd: false,
   autoImmersiveOnLandscape: false,
   showInlineTranslation: true,
-  simplifyLevel: 'a2-b1',
+  simplifyLevel: "a2-b1",
   defaultSimplifyArticles: false,
-  geminiApiKey: '',
-  groqApiKey: '',
-  geminiTtsApiKey: '',
-  elevenLabsApiKey: '',
-  azureTtsApiKey: '',
-  azureTtsRegion: 'westeurope',
-  huggingFaceApiKey: '',
-  playHtUserId: '',
-  playHtApiKey: '',
-  openTtsUrl: '',
-  geminiModel: 'gemini-3-flash-preview',
-  analyzeModel: { provider: 'gemini', model: 'gemini-3-flash-preview' },
-  translateModel: { provider: 'gemini', model: 'gemini-3.1-flash-lite-preview' },
-  batchModel: { provider: 'gemini', model: 'gemini-3.1-flash-lite-preview' },
-  wordMeaningModel: { provider: 'gemini', model: 'gemini-3.1-flash-lite-preview' },
-  transcribeModel: 'whisper-large-v3-turbo',
-  bookAnalysisModel: 'google/gemini-3-flash-preview',
-  bookSingleAnalysisModel: 'google/gemini-3-flash-preview',
-  bookBatchAnalysisModel: 'google/gemini-3.1-flash-lite-preview',
-  bookRewriteModel: 'google/gemini-3-flash-preview',
-  paragraphAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
-  paragraphBatchModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
-  rewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
-  bookSingleAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
-  bookBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
-  newsBatchAnalysisModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
-  newsRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
-  htmlFilenameModelRef: { provider: 'gateway', model: 'google/gemini-3.1-flash-lite-preview' },
-  bookRewriteModelRef: { provider: 'gateway', model: 'google/gemini-3-flash-preview' },
+  geminiApiKey: "",
+  groqApiKey: "",
+  geminiTtsApiKey: "",
+  elevenLabsApiKey: "",
+  azureTtsApiKey: "",
+  azureTtsRegion: "westeurope",
+  huggingFaceApiKey: "",
+  playHtUserId: "",
+  playHtApiKey: "",
+  openTtsUrl: "",
+  geminiModel: "gemini-3-flash-preview",
+  analyzeModel: { provider: "gemini", model: "gemini-3-flash-preview" },
+  translateModel: { provider: "gemini", model: "gemini-3.1-flash-lite-preview" },
+  batchModel: { provider: "gemini", model: "gemini-3.1-flash-lite-preview" },
+  wordMeaningModel: { provider: "gemini", model: "gemini-3.1-flash-lite-preview" },
+  transcribeModel: "whisper-large-v3-turbo",
+  bookAnalysisModel: "google/gemini-3-flash-preview",
+  bookSingleAnalysisModel: "google/gemini-3-flash-preview",
+  bookBatchAnalysisModel: "google/gemini-3.1-flash-lite-preview",
+  bookRewriteModel: "google/gemini-3-flash-preview",
+  paragraphAnalysisModelRef: { provider: "gateway", model: "google/gemini-3-flash-preview" },
+  paragraphBatchModelRef: { provider: "gateway", model: "google/gemini-3.1-flash-lite-preview" },
+  rewriteModelRef: { provider: "gateway", model: "google/gemini-3-flash-preview" },
+  bookSingleAnalysisModelRef: { provider: "gateway", model: "google/gemini-3-flash-preview" },
+  bookBatchAnalysisModelRef: { provider: "gateway", model: "google/gemini-3.1-flash-lite-preview" },
+  newsBatchAnalysisModelRef: { provider: "gateway", model: "google/gemini-3.1-flash-lite-preview" },
+  newsRewriteModelRef: { provider: "gateway", model: "google/gemini-3-flash-preview" },
+  htmlFilenameModelRef: { provider: "gateway", model: "google/gemini-3.1-flash-lite-preview" },
+  bookRewriteModelRef: { provider: "gateway", model: "google/gemini-3-flash-preview" },
   paragraphGestures: false,
-  paragraphTextAlign: 'start',
+  paragraphTextAlign: "start",
 };
 
 // Smart merge: cloud value wins when present & non-empty; otherwise local fills it.
@@ -62,8 +62,8 @@ function smartMerge(local: AppSettings, cloud: Partial<AppSettings>): AppSetting
   for (const k of Object.keys(cloud) as Array<keyof AppSettings>) {
     const cv = (cloud as any)[k];
     const lv = (local as any)[k];
-    const cloudEmpty = cv === undefined || cv === null || cv === '';
-    const localEmpty = lv === undefined || lv === null || lv === '';
+    const cloudEmpty = cv === undefined || cv === null || cv === "";
+    const localEmpty = lv === undefined || lv === null || lv === "";
     if (!cloudEmpty) merged[k] = cv;
     else if (!localEmpty) merged[k] = lv;
   }
@@ -75,13 +75,15 @@ function schedulePush(settings: AppSettings) {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       await supabase
-        .from('user_settings')
-        .upsert({ user_id: user.id, settings: settings as any }, { onConflict: 'user_id' });
+        .from("user_settings")
+        .upsert({ user_id: user.id, settings: settings as any }, { onConflict: "user_id" });
     } catch (e) {
-      console.warn('[settings] cloud push failed', e);
+      console.warn("[settings] cloud push failed", e);
     }
   }, 800);
 }
@@ -94,8 +96,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     const s = await getSettings();
     let theme = s.theme;
     try {
-      const persistedTheme = localStorage.getItem('llvp-theme');
-      if (persistedTheme === 'dark' || persistedTheme === 'light') {
+      const persistedTheme = localStorage.getItem("llvp-theme");
+      if (persistedTheme === "dark" || persistedTheme === "light") {
         theme = persistedTheme;
       }
     } catch {}
@@ -115,12 +117,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
   syncWithCloud: async () => {
     try {
       set({ cloudSyncing: true });
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
       const { data, error } = await supabase
-        .from('user_settings')
-        .select('settings')
-        .eq('user_id', user.id)
+        .from("user_settings")
+        .select("settings")
+        .eq("user_id", user.id)
         .maybeSingle();
       if (error) throw error;
       const local = get().settings;
@@ -131,21 +135,21 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       applyTheme(merged.theme);
       // Push merged back so cloud also gets any local-only values.
       await supabase
-        .from('user_settings')
-        .upsert({ user_id: user.id, settings: merged as any }, { onConflict: 'user_id' });
+        .from("user_settings")
+        .upsert({ user_id: user.id, settings: merged as any }, { onConflict: "user_id" });
     } catch (e) {
-      console.warn('[settings] cloud sync failed', e);
+      console.warn("[settings] cloud sync failed", e);
     } finally {
       set({ cloudSyncing: false });
     }
   },
 }));
 
-function applyTheme(theme: 'dark' | 'light') {
+function applyTheme(theme: "dark" | "light") {
   const root = document.documentElement;
-  if (theme === 'dark') root.classList.add('dark');
-  else root.classList.remove('dark');
+  if (theme === "dark") root.classList.add("dark");
+  else root.classList.remove("dark");
   try {
-    localStorage.setItem('llvp-theme', theme);
+    localStorage.setItem("llvp-theme", theme);
   } catch {}
 }

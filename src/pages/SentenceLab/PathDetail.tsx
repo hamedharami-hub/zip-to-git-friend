@@ -1,14 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Loader2, Play, Sparkles } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { fetchPath, type SentencePath } from '@/lib/sentencePaths';
-import { useSentenceStore } from '@/store/sentenceStore';
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft, Loader2, Play, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { fetchPath, type SentencePath } from "@/lib/sentencePaths";
+import { useSentenceStore } from "@/store/sentenceStore";
 
 export default function SentencePathDetailPage() {
-  const { pathId = '' } = useParams<{ pathId: string }>();
+  const { pathId = "" } = useParams<{ pathId: string }>();
   const navigate = useNavigate();
   const [path, setPath] = useState<SentencePath | null>(null);
   const [loading, setLoading] = useState(true);
@@ -34,12 +34,19 @@ export default function SentencePathDetailPage() {
     <div className="min-h-screen bg-background text-foreground">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate('/sentence-lab/general')} aria-label="Back">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate("/sentence-lab/general")}
+            aria-label="Back"
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Sentence Path</p>
-            <h1 className="truncate text-base font-semibold leading-none">{path?.name ?? '...'}</h1>
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Sentence Path
+            </p>
+            <h1 className="truncate text-base font-semibold leading-none">{path?.name ?? "..."}</h1>
           </div>
         </div>
       </header>
@@ -50,11 +57,17 @@ export default function SentencePathDetailPage() {
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
         ) : !path ? (
-          <Card><CardContent className="py-8 text-center text-sm text-destructive">Path not found</CardContent></Card>
+          <Card>
+            <CardContent className="py-8 text-center text-sm text-destructive">
+              Path not found
+            </CardContent>
+          </Card>
         ) : (
           <>
             {path.description && (
-              <p className="mb-4 text-sm text-muted-foreground" dir="rtl">{path.description}</p>
+              <p className="mb-4 text-sm text-muted-foreground" dir="rtl">
+                {path.description}
+              </p>
             )}
 
             <button
@@ -88,7 +101,9 @@ export default function SentencePathDetailPage() {
                     <p className="text-sm font-medium">{step.subcategory}</p>
                     <p className="text-[11px] text-muted-foreground">{step.category}</p>
                   </div>
-                  <Badge variant="secondary" className="text-[10px]">×{step.count}</Badge>
+                  <Badge variant="secondary" className="text-[10px]">
+                    ×{step.count}
+                  </Badge>
                 </div>
               ))}
             </div>

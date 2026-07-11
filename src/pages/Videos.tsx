@@ -1,30 +1,51 @@
-import { usePageMeta } from '@/hooks/usePageMeta';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Upload, Settings as SettingsIcon, Film, Trash2, Brain, Trophy, WifiOff, Play, Package, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { getAllVideos, saveVideo, deleteVideo, saveVideoBlob, setAppState, getAppState } from '@/lib/db';
-import { useLeitnerStore } from '@/store/leitnerStore';
-import type { Video } from '@/types';
-import { toast } from 'sonner';
-import { ConfirmDialog } from '@/components/ConfirmDialog';
-import { VideoGridSkeleton } from '@/components/VideoCardSkeleton';
-import { InstallButton } from '@/components/pwa/InstallButton';
-import { EmptyState } from '@/components/EmptyState';
-import { useOnline } from '@/hooks/useOnline';
-import { AccountButton, SyncBadge } from '@/components/auth/AccountButton';
-import { importLLP } from '@/lib/llpPack';
-import { validateMediaFile } from '@/lib/fileValidation';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { PullToRefreshIndicator } from '@/components/PullToRefreshIndicator';
+import { usePageMeta } from "@/hooks/usePageMeta";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Upload,
+  Settings as SettingsIcon,
+  Film,
+  Trash2,
+  Brain,
+  Trophy,
+  WifiOff,
+  Play,
+  Package,
+  ArrowLeft,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  getAllVideos,
+  saveVideo,
+  deleteVideo,
+  saveVideoBlob,
+  setAppState,
+  getAppState,
+} from "@/lib/db";
+import { useLeitnerStore } from "@/store/leitnerStore";
+import type { Video } from "@/types";
+import { toast } from "sonner";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { VideoGridSkeleton } from "@/components/VideoCardSkeleton";
+import { InstallButton } from "@/components/pwa/InstallButton";
+import { EmptyState } from "@/components/EmptyState";
+import { useOnline } from "@/hooks/useOnline";
+import { AccountButton, SyncBadge } from "@/components/auth/AccountButton";
+import { importLLP } from "@/lib/llpPack";
+import { validateMediaFile } from "@/lib/fileValidation";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 
 function uuid() {
-  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return Math.random().toString(36).slice(2);
 }
 
 const Videos = () => {
-  usePageMeta({ title: 'Videos — Language Learning Player', description: 'کتابخانه‌ی ویدیو — مدیریت فیلم‌ها و اپیزودهای شما.' });
+  usePageMeta({
+    title: "Videos — Language Learning Player",
+    description: "کتابخانه‌ی ویدیو — مدیریت فیلم‌ها و اپیزودهای شما.",
+  });
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastVideoId, setLastVideoId] = useState<string | null>(null);
@@ -37,7 +58,15 @@ const Videos = () => {
       s.total += 1;
       if (c.nextReview <= now) s.due += 1;
     }
-    return s as { 1: number; 2: number; 3: number; 4: number; 5: number; total: number; due: number };
+    return s as {
+      1: number;
+      2: number;
+      3: number;
+      4: number;
+      5: number;
+      total: number;
+      due: number;
+    };
   }, [cards]);
   const fileRef = useRef<HTMLInputElement>(null);
   const llpRef = useRef<HTMLInputElement>(null);
@@ -45,29 +74,29 @@ const Videos = () => {
   const navigate = useNavigate();
 
   const handleImportLLP = async (file: File) => {
-    const v = validateMediaFile(file, 'llp');
+    const v = validateMediaFile(file, "llp");
     if (!v.ok) {
-      toast.error(v.reason ?? 'Invalid pack file.');
+      toast.error(v.reason ?? "Invalid pack file.");
       return;
     }
     try {
       const result = await importLLP(file);
       toast.success(`Imported pack: ${result.title}`);
       await setAppState(
-        result.mediaType === 'audio' ? 'lastAudioId' : 'lastVideoId',
+        result.mediaType === "audio" ? "lastAudioId" : "lastVideoId",
         result.videoId,
       );
       navigate(`/player/${result.videoId}`);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : 'Could not import pack.');
+      toast.error(e instanceof Error ? e.message : "Could not import pack.");
     }
   };
 
   const refresh = async () => {
     const all = await getAllVideos();
-    const videosOnly = all.filter((v) => (v.mediaType ?? 'video') === 'video');
+    const videosOnly = all.filter((v) => (v.mediaType ?? "video") === "video");
     setVideos(videosOnly.sort((a, b) => b.createdAt - a.createdAt));
-    const last = await getAppState<string>('lastVideoId');
+    const last = await getAppState<string>("lastVideoId");
     setLastVideoId(last);
     setLoading(false);
   };
@@ -75,7 +104,7 @@ const Videos = () => {
   const ptr = usePullToRefresh({
     onRefresh: async () => {
       await refresh();
-      toast.success('Library refreshed.');
+      toast.success("Library refreshed.");
     },
   });
 
@@ -84,16 +113,16 @@ const Videos = () => {
   }, []);
 
   const handleUpload = async (file: File) => {
-    const v = validateMediaFile(file, 'video');
+    const v = validateMediaFile(file, "video");
     if (!v.ok) {
-      toast.error(v.reason ?? 'Invalid video file.');
+      toast.error(v.reason ?? "Invalid video file.");
       return;
     }
     const id = uuid();
     const blobUrl = URL.createObjectURL(file);
     const duration = await new Promise<number>((resolve) => {
-      const v = document.createElement('video');
-      v.preload = 'metadata';
+      const v = document.createElement("video");
+      v.preload = "metadata";
       v.src = blobUrl;
       v.onloadedmetadata = () => resolve(v.duration || 0);
       v.onerror = () => resolve(0);
@@ -101,7 +130,7 @@ const Videos = () => {
 
     const video: Video = {
       id,
-      title: file.name.replace(/\.[^.]+$/, ''),
+      title: file.name.replace(/\.[^.]+$/, ""),
       fileName: file.name,
       blobUrl,
       duration,
@@ -109,33 +138,33 @@ const Videos = () => {
       volume: 1,
       playbackSpeed: 1,
       createdAt: Date.now(),
-      mediaType: 'video',
-      mimeType: file.type || 'video/mp4',
+      mediaType: "video",
+      mimeType: file.type || "video/mp4",
     };
     try {
       await saveVideoBlob(id, file);
     } catch (e) {
-      console.error('Failed to persist video blob', e);
-      toast.warning('Could not cache video file. You may need to re-attach after reload.');
+      console.error("Failed to persist video blob", e);
+      toast.warning("Could not cache video file. You may need to re-attach after reload.");
     }
     await saveVideo(video);
-    await setAppState('lastVideoId', id);
-    toast.success('Video added — opening player.');
+    await setAppState("lastVideoId", id);
+    toast.success("Video added — opening player.");
     navigate(`/player/${id}`);
   };
 
   const handleDelete = async (id: string) => {
     await deleteVideo(id);
     if (lastVideoId === id) {
-      await setAppState('lastVideoId', null);
+      await setAppState("lastVideoId", null);
       setLastVideoId(null);
     }
-    toast.success('Video deleted.');
+    toast.success("Video deleted.");
     refresh();
   };
 
   const lastVideo = useMemo(
-    () => (lastVideoId ? videos.find((v) => v.id === lastVideoId) ?? null : null),
+    () => (lastVideoId ? (videos.find((v) => v.id === lastVideoId) ?? null) : null),
     [lastVideoId, videos],
   );
 
@@ -193,7 +222,7 @@ const Videos = () => {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleUpload(f);
-              e.target.value = '';
+              e.target.value = "";
             }}
             aria-label="Upload video file"
           />
@@ -205,7 +234,7 @@ const Videos = () => {
             onChange={(e) => {
               const f = e.target.files?.[0];
               if (f) handleImportLLP(f);
-              e.target.value = '';
+              e.target.value = "";
             }}
             aria-label="Import .llp pack"
           />
@@ -239,7 +268,8 @@ const Videos = () => {
                 <p className="text-xs text-muted-foreground">Continue watching</p>
                 <p className="font-semibold truncate">{lastVideo.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  Resume from {formatDur(lastVideo.lastPosition)} · {formatDur(lastVideo.duration)} total
+                  Resume from {formatDur(lastVideo.lastPosition)} · {formatDur(lastVideo.duration)}{" "}
+                  total
                 </p>
               </div>
             </Link>
@@ -258,8 +288,8 @@ const Videos = () => {
               <p className="text-sm text-muted-foreground">Due for review</p>
               <p className="font-semibold truncate">
                 {stats.due > 0
-                  ? `You have ${stats.due} Leitner card${stats.due === 1 ? '' : 's'} due`
-                  : 'No cards due — you’re caught up'}
+                  ? `You have ${stats.due} Leitner card${stats.due === 1 ? "" : "s"} due`
+                  : "No cards due — you’re caught up"}
               </p>
             </div>
           </Link>
@@ -330,11 +360,7 @@ const Videos = () => {
                     confirmLabel="Delete"
                     onConfirm={() => handleDelete(v.id)}
                     trigger={
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        aria-label={`Delete ${v.title}`}
-                      >
+                      <Button size="icon" variant="ghost" aria-label={`Delete ${v.title}`}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     }
@@ -350,10 +376,10 @@ const Videos = () => {
 };
 
 function formatDur(s: number) {
-  if (!s) return '—';
+  if (!s) return "—";
   const m = Math.floor(s / 60);
   const sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2, '0')}`;
+  return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
 export default Videos;

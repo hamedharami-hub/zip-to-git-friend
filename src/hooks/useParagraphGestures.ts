@@ -1,4 +1,4 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback } from "react";
 
 interface Options {
   enabled: boolean;
@@ -42,58 +42,67 @@ export function useParagraphGestures({
     }
   }, []);
 
-  const onPointerDown = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    if (!enabled) return;
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    const target = e.currentTarget;
-    startX.current = e.clientX;
-    startY.current = e.clientY;
-    startT.current = performance.now();
-    moved.current = false;
-    longFired.current = false;
-    clear();
-    longTimer.current = window.setTimeout(() => {
-      longFired.current = true;
-      onLongPress?.(e.target as HTMLElement);
-    }, longPressMs);
-    // Avoid the synthetic click on long-press
-    void target;
-  }, [enabled, longPressMs, onLongPress, clear]);
-
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    if (!enabled) return;
-    const dx = e.clientX - startX.current;
-    const dy = e.clientY - startY.current;
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
-      moved.current = true;
+  const onPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (!enabled) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      const target = e.currentTarget;
+      startX.current = e.clientX;
+      startY.current = e.clientY;
+      startT.current = performance.now();
+      moved.current = false;
+      longFired.current = false;
       clear();
-    }
-  }, [enabled, clear]);
+      longTimer.current = window.setTimeout(() => {
+        longFired.current = true;
+        onLongPress?.(e.target as HTMLElement);
+      }, longPressMs);
+      // Avoid the synthetic click on long-press
+      void target;
+    },
+    [enabled, longPressMs, onLongPress, clear],
+  );
 
-  const onPointerUp = useCallback((e: React.PointerEvent<HTMLElement>) => {
-    if (!enabled) return;
-    clear();
-    if (longFired.current) return;
-    const dx = e.clientX - startX.current;
-    const dy = e.clientY - startY.current;
-    const absX = Math.abs(dx);
-    const absY = Math.abs(dy);
-    const dt = performance.now() - startT.current;
-    if (absX > swipeThreshold && absX > absY * 1.5 && dt < 800) {
-      if (dx < 0) onSwipeLeft?.();
-      else onSwipeRight?.();
-      return;
-    }
-    if (!moved.current && dt < 300) {
-      const now = performance.now();
-      if (now - lastTapT.current < doubleTapMs) {
-        onDoubleTap?.(e.target as HTMLElement);
-        lastTapT.current = 0;
-      } else {
-        lastTapT.current = now;
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (!enabled) return;
+      const dx = e.clientX - startX.current;
+      const dy = e.clientY - startY.current;
+      if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+        moved.current = true;
+        clear();
       }
-    }
-  }, [enabled, swipeThreshold, doubleTapMs, onSwipeLeft, onSwipeRight, onDoubleTap, clear]);
+    },
+    [enabled, clear],
+  );
+
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent<HTMLElement>) => {
+      if (!enabled) return;
+      clear();
+      if (longFired.current) return;
+      const dx = e.clientX - startX.current;
+      const dy = e.clientY - startY.current;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const dt = performance.now() - startT.current;
+      if (absX > swipeThreshold && absX > absY * 1.5 && dt < 800) {
+        if (dx < 0) onSwipeLeft?.();
+        else onSwipeRight?.();
+        return;
+      }
+      if (!moved.current && dt < 300) {
+        const now = performance.now();
+        if (now - lastTapT.current < doubleTapMs) {
+          onDoubleTap?.(e.target as HTMLElement);
+          lastTapT.current = 0;
+        } else {
+          lastTapT.current = now;
+        }
+      }
+    },
+    [enabled, swipeThreshold, doubleTapMs, onSwipeLeft, onSwipeRight, onDoubleTap, clear],
+  );
 
   const onPointerCancel = useCallback(() => {
     clear();
@@ -110,13 +119,13 @@ export function useParagraphGestures({
 }
 
 /** Speak text using the Web Speech API. Best-effort, no-op if unavailable. */
-export function speakText(text: string, lang: 'en' | 'fa'): void {
+export function speakText(text: string, lang: "en" | "fa"): void {
   try {
-    if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = lang === 'fa' ? 'fa-IR' : 'en-US';
-    u.rate = lang === 'fa' ? 0.95 : 1.0;
+    u.lang = lang === "fa" ? "fa-IR" : "en-US";
+    u.rate = lang === "fa" ? 0.95 : 1.0;
     window.speechSynthesis.speak(u);
   } catch {
     /* ignore */

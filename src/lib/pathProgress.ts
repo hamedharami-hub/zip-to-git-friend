@@ -8,16 +8,16 @@
  * Pure read-only helpers — no mutations.
  */
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
 
-export const CEFR_ORDER = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
+export const CEFR_ORDER = ["A1", "A2", "B1", "B2", "C1", "C2"] as const;
 export type CefrLevel = (typeof CEFR_ORDER)[number];
 
 export interface PathStep {
   level: CefrLevel;
   total: number;
-  seen: number;       // user has reviewed at least once
-  mastered: number;   // FSRS stability ≥ 7 days
+  seen: number; // user has reviewed at least once
+  mastered: number; // FSRS stability ≥ 7 days
   /** 0..1 — share of mastered / total. */
   progress: number;
   /** Step is the current focus: previous step is mostly done but this one isn't. */
@@ -36,19 +36,19 @@ export async function fetchPathSteps(
 ): Promise<PathStep[]> {
   // 1) Pull every published sentence in this sub, with id + cefr_level
   let q = supabase
-    .from('sentence_lab')
-    .select('id, cefr_level')
-    .eq('status', 'published')
-    .eq('category', categorySlug);
-  if (subcategorySlug && subcategorySlug !== 'all') {
-    q = q.eq('subcategory', subcategorySlug);
+    .from("sentence_lab")
+    .select("id, cefr_level")
+    .eq("status", "published")
+    .eq("category", categorySlug);
+  if (subcategorySlug && subcategorySlug !== "all") {
+    q = q.eq("subcategory", subcategorySlug);
   }
   const { data: sentences, error } = await q;
   if (error) throw error;
 
   const byLevel = new Map<string, string[]>();
   for (const s of sentences ?? []) {
-    const lvl = (s.cefr_level ?? 'A2') as string;
+    const lvl = (s.cefr_level ?? "A2") as string;
     const arr = byLevel.get(lvl) ?? [];
     arr.push(s.id as string);
     byLevel.set(lvl, arr);
@@ -63,10 +63,10 @@ export async function fetchPathSteps(
   if (userId && allIds.length > 0) {
     // Supabase .in() handles up to a few thousand ids fine for our scale.
     const { data: prog } = await supabase
-      .from('sentence_progress')
-      .select('sentence_id, state, stability')
-      .eq('user_id', userId)
-      .in('sentence_id', allIds);
+      .from("sentence_progress")
+      .select("sentence_id, state, stability")
+      .eq("user_id", userId)
+      .in("sentence_id", allIds);
     for (const p of prog ?? []) {
       progressById.set(p.sentence_id as string, {
         state: p.state as string,

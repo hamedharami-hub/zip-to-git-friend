@@ -1,23 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, Flag, Volume2, Trash2, Filter, Headphones, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { useSentenceFlagStore } from "@/store/sentenceFlagStore";
 import {
-  ArrowLeft, Loader2, Flag, Volume2, Trash2, Filter,
-  Headphones, Home,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { useSentenceFlagStore } from '@/store/sentenceFlagStore';
-import {
-  fetchFlaggedSentences, FLAG_COLORS, FLAG_COLOR_META, type FlagColor,
-} from '@/lib/sentenceFlags';
-import { FlagButton } from '@/components/sentence-lab/FlagButton';
-import { cn } from '@/lib/utils';
-import { toast } from 'sonner';
+  fetchFlaggedSentences,
+  FLAG_COLORS,
+  FLAG_COLOR_META,
+  type FlagColor,
+} from "@/lib/sentenceFlags";
+import { FlagButton } from "@/components/sentence-lab/FlagButton";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Row {
-  flag: ReturnType<typeof useSentenceFlagStore.getState>['flags'][string];
+  flag: ReturnType<typeof useSentenceFlagStore.getState>["flags"][string];
   sentence: any;
 }
 
@@ -38,22 +38,21 @@ export default function SentenceLeitnerPage() {
       const data = await fetchFlaggedSentences();
       setRows(data as Row[]);
     } catch (e: any) {
-      toast.error(e?.message ?? 'Load failed');
+      toast.error(e?.message ?? "Load failed");
     } finally {
       setLoading(false);
     }
   }
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
   // refresh local list whenever flag store changes
   useEffect(() => {
     setRows((prev) => prev.filter((r) => flags[r.sentence.id]));
   }, [flags]);
 
-  const filtered = useMemo(
-    () => rows.filter((r) => colors.includes(r.flag.color)),
-    [rows, colors],
-  );
+  const filtered = useMemo(() => rows.filter((r) => colors.includes(r.flag.color)), [rows, colors]);
 
   const counts = useMemo(() => {
     const c: Record<FlagColor, number> = { red: 0, orange: 0, yellow: 0, blue: 0 };
@@ -64,11 +63,13 @@ export default function SentenceLeitnerPage() {
   function speak(text: string) {
     try {
       const u = new SpeechSynthesisUtterance(text);
-      u.lang = 'en-US';
+      u.lang = "en-US";
       u.rate = 0.95;
       window.speechSynthesis.cancel();
       window.speechSynthesis.speak(u);
-    } catch {/* noop */}
+    } catch {
+      /* noop */
+    }
   }
 
   return (
@@ -76,13 +77,13 @@ export default function SentenceLeitnerPage() {
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="h-8 w-8">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-8 w-8">
               <Home className="h-4 w-4" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/sentence-lab')}
+              onClick={() => navigate("/sentence-lab")}
               className="h-8 w-8"
             >
               <ArrowLeft className="h-4 w-4" />
@@ -122,7 +123,7 @@ export default function SentenceLeitnerPage() {
                   value={c}
                   className="flex flex-col items-center gap-1 py-2 data-[state=on]:bg-muted"
                 >
-                  <span className={cn('h-4 w-4 rounded-full', meta.bg)} />
+                  <span className={cn("h-4 w-4 rounded-full", meta.bg)} />
                   <span className="text-[10px]">{meta.label}</span>
                   <span className="text-[10px] text-muted-foreground">{counts[c]}</span>
                 </ToggleGroupItem>
@@ -139,8 +140,8 @@ export default function SentenceLeitnerPage() {
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
               {rows.length === 0
-                ? 'هنوز هیچ جمله‌ای پرچم نخورده. در پادکست یا تمرین، روی آیکون پرچم بزن.'
-                : 'با این فیلتر چیزی پیدا نشد.'}
+                ? "هنوز هیچ جمله‌ای پرچم نخورده. در پادکست یا تمرین، روی آیکون پرچم بزن."
+                : "با این فیلتر چیزی پیدا نشد."}
             </CardContent>
           </Card>
         ) : (
@@ -162,29 +163,43 @@ export default function SentenceLeitnerPage() {
                         </p>
                       )}
                       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                        <Badge variant="outline" className="text-[9px]" style={{ color: meta.hex, borderColor: meta.hex }}>
+                        <Badge
+                          variant="outline"
+                          className="text-[9px]"
+                          style={{ color: meta.hex, borderColor: meta.hex }}
+                        >
                           {flag.label || meta.label}
                         </Badge>
                         {sentence.cefr_level && (
-                          <Badge variant="outline" className="text-[9px]">{sentence.cefr_level}</Badge>
+                          <Badge variant="outline" className="text-[9px]">
+                            {sentence.cefr_level}
+                          </Badge>
                         )}
                         {sentence.subcategory && (
-                          <Badge variant="secondary" className="text-[9px]">{sentence.subcategory}</Badge>
+                          <Badge variant="secondary" className="text-[9px]">
+                            {sentence.subcategory}
+                          </Badge>
                         )}
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <FlagButton sentenceId={sentence.id} size="sm" />
                       <Button
-                        variant="ghost" size="icon" className="h-7 w-7"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
                         onClick={() => speak(sentence.english)}
                         aria-label="Play"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
                       </Button>
                       <Button
-                        variant="ghost" size="icon" className="h-7 w-7 text-destructive"
-                        onClick={() => { void clearFlag(sentence.id); }}
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => {
+                          void clearFlag(sentence.id);
+                        }}
                         aria-label="Remove flag"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -202,8 +217,8 @@ export default function SentenceLeitnerPage() {
             <Headphones className="h-3.5 w-3.5" /> حالت پیمزلر
           </p>
           <p className="mt-1">
-            وقتی درس بعدی را در پادکست شروع می‌کنی، جمله‌های پرچم قرمز و نارنجی به‌صورت
-            تنیده بین جمله‌های جدید پخش می‌شوند تا تثبیت بشن.
+            وقتی درس بعدی را در پادکست شروع می‌کنی، جمله‌های پرچم قرمز و نارنجی به‌صورت تنیده بین
+            جمله‌های جدید پخش می‌شوند تا تثبیت بشن.
           </p>
         </div>
       </main>

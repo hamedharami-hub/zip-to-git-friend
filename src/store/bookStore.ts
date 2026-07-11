@@ -1,18 +1,18 @@
-import { create } from 'zustand';
-import type { Book, BookChapter } from '@/types';
+import { create } from "zustand";
+import type { Book, BookChapter } from "@/types";
 import {
   getAllBooks,
   getBook as dbGetBook,
   saveBook as dbSaveBook,
   deleteBook as dbDeleteBook,
   getChaptersForBook,
-} from '@/lib/bookDb';
+} from "@/lib/bookDb";
 import {
   uploadBookToCloud,
   pushBookProgress,
   deleteBookFromCloud,
   syncBooksWithCloud,
-} from '@/lib/bookCloudSync';
+} from "@/lib/bookCloudSync";
 
 interface BookStoreState {
   books: Book[];
@@ -60,7 +60,7 @@ export const useBookStore = create<BookStoreState>((set, get) => ({
       const books = await getAllBooks();
       set({ books });
     } catch (e) {
-      console.warn('[bookStore] cloud sync failed', e);
+      console.warn("[bookStore] cloud sync failed", e);
     } finally {
       set({ syncing: false });
     }

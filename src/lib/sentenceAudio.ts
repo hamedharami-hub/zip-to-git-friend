@@ -12,16 +12,12 @@
  * everyone — and every future session — gets it via a plain HTTP GET.
  */
 
-import { supabase } from '@/integrations/supabase/client';
-import { useSettingsStore } from '@/store/settingsStore';
-import { synthesizeText, type GeminiTtsVoice } from '@/lib/geminiTts';
-import {
-  getOfflineAudioUrl,
-  saveOfflineAudio,
-  downloadAndCache,
-} from '@/lib/audioOfflineCache';
+import { supabase } from "@/integrations/supabase/client";
+import { useSettingsStore } from "@/store/settingsStore";
+import { synthesizeText, type GeminiTtsVoice } from "@/lib/geminiTts";
+import { getOfflineAudioUrl, saveOfflineAudio, downloadAndCache } from "@/lib/audioOfflineCache";
 
-const BUCKET = 'sentence-audio';
+const BUCKET = "sentence-audio";
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
 
 /** In-memory cache of resolved URLs (per page session). */
@@ -30,8 +26,8 @@ const memCache = new Map<string, string>();
 const inflight = new Map<string, Promise<string>>();
 
 const DEFAULT_VOICE: Record<string, GeminiTtsVoice> = {
-  en: 'Charon',
-  fa: 'Aoede',
+  en: "Charon",
+  fa: "Aoede",
 };
 
 function key(sentenceId: string, lang: string): string {
@@ -39,7 +35,7 @@ function key(sentenceId: string, lang: string): string {
 }
 
 function safe(s: string): string {
-  return s.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return s.replace(/[^a-zA-Z0-9_-]/g, "_");
 }
 
 function publicUrlFor(sentenceId: string, lang: string): string {
@@ -50,28 +46,24 @@ function publicUrlFor(sentenceId: string, lang: string): string {
 /** HEAD probe — confirms the cached file is actually downloadable. */
 async function existsInBucket(sentenceId: string, lang: string): Promise<boolean> {
   try {
-    const res = await fetch(publicUrlFor(sentenceId, lang), { method: 'HEAD' });
+    const res = await fetch(publicUrlFor(sentenceId, lang), { method: "HEAD" });
     return res.ok;
   } catch {
     return false;
   }
 }
 
-async function uploadToCache(
-  sentenceId: string,
-  lang: string,
-  blob: Blob,
-): Promise<string> {
+async function uploadToCache(sentenceId: string, lang: string, blob: Blob): Promise<string> {
   const form = new FormData();
-  form.append('sentenceId', sentenceId);
-  form.append('lang', lang);
-  form.append('file', blob, `${safe(sentenceId)}_${safe(lang)}.wav`);
-  const { data, error } = await supabase.functions.invoke('sentence-tts-upload', {
+  form.append("sentenceId", sentenceId);
+  form.append("lang", lang);
+  form.append("file", blob, `${safe(sentenceId)}_${safe(lang)}.wav`);
+  const { data, error } = await supabase.functions.invoke("sentence-tts-upload", {
     body: form,
   });
-  if (error) throw new Error(error.message ?? 'Upload failed');
+  if (error) throw new Error(error.message ?? "Upload failed");
   const url = (data as { url?: string })?.url;
-  if (!url) throw new Error('Upload returned no URL');
+  if (!url) throw new Error("Upload returned no URL");
   return url;
 }
 
@@ -87,7 +79,7 @@ export interface GetSentenceAudioOptions {
  */
 export async function getSentenceAudio(
   sentenceId: string,
-  lang: 'en' | 'fa' | string,
+  lang: "en" | "fa" | string,
   text: string,
   opts: GetSentenceAudioOptions = {},
 ): Promise<string> {
@@ -128,10 +120,10 @@ export async function getSentenceAudio(
     const apiKey = settings.geminiTtsApiKey || settings.geminiApiKey;
     if (!apiKey) {
       throw new Error(
-        'No Gemini API key configured. Add one in Settings → AI to enable Podcast Mode.',
+        "No Gemini API key configured. Add one in Settings → AI to enable Podcast Mode.",
       );
     }
-    const voice = opts.voice ?? DEFAULT_VOICE[lang] ?? 'Charon';
+    const voice = opts.voice ?? DEFAULT_VOICE[lang] ?? "Charon";
     const blob = await synthesizeText(apiKey, text, voice);
 
     // Save to offline cache regardless of upload outcome
@@ -143,7 +135,7 @@ export async function getSentenceAudio(
       memCache.set(k, url);
       return url;
     } catch (e) {
-      console.warn('[sentenceAudio] upload failed, using local blob', e);
+      console.warn("[sentenceAudio] upload failed, using local blob", e);
       const url = URL.createObjectURL(blob);
       memCache.set(k, url);
       return url;
@@ -167,7 +159,7 @@ export async function warmSentenceAudio(
     try {
       await getSentenceAudio(it.id, it.lang, it.text, opts);
     } catch (e) {
-      console.warn('[sentenceAudio] warm failed', it.id, it.lang, e);
+      console.warn("[sentenceAudio] warm failed", it.id, it.lang, e);
     }
   }
 }

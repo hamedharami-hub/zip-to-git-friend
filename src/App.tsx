@@ -25,6 +25,7 @@ const Settings = lazy(() => import('./pages/Settings'));
 const Leitner = lazy(() => import('./pages/Leitner'));
 const Stats = lazy(() => import('./pages/Stats'));
 const Auth = lazy(() => import('./pages/Auth'));
+const AuthCallback = lazy(() => import('./pages/AuthCallback'));
 const Audio = lazy(() => import('./pages/Audio'));
 const Books = lazy(() => import('./pages/Books'));
 const LanguageBooks = lazy(() => import('./pages/LanguageBooks'));
@@ -155,6 +156,7 @@ const App = () => (
               <Route path="/" element={wrap('Home', <Home />)} />
               <Route path="/videos" element={wrap('Videos', <Videos />)} />
               <Route path="/auth" element={wrap('Auth', <Auth />)} />
+              <Route path="/auth/callback" element={wrap('AuthCallback', <AuthCallback />)} />
               <Route path="/firebase-auth" element={wrap('FirebaseAuth', <FirebaseAuthPage />)} />
               <Route path="/player/:videoId" element={wrap('Player', <Player />, <PlayerSkeleton />)} />
               <Route path="/leitner" element={wrap('Leitner', <Leitner />)} />

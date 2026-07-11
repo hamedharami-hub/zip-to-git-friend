@@ -61,16 +61,30 @@ const Auth = () => {
   const handleGoogle = async () => {
     setSubmitting(true);
     try {
+      // On mobile browsers, the popup flow often gets blocked or auto-closed,
+      // producing "Sign in was cancelled". Force a full-page redirect there.
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+      const extraParams: Record<string, string> = { prompt: 'select_account' };
+      if (isMobile) extraParams.display = 'page';
+
       const result = await lovable.auth.signInWithOAuth('google', {
         redirect_uri: `${window.location.origin}${nextPath}`,
+        extraParams,
       });
-      if (result.error) throw result.error;
+      if (result.error) {
+        const msg = (result.error instanceof Error ? result.error.message : String(result.error)) || '';
+        // Silently ignore popup-close cancellations — user just closed it.
+        if (/cancel|closed|popup/i.test(msg)) {
+          setSubmitting(false);
+          return;
+        }
+        throw result.error;
+      }
       if (result.redirected) return; // browser will redirect
-      // Tokens received → session set, navigate to intended target.
       navigate(nextPath, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Google sign-in failed.';
-      toast.error(msg);
+      if (!/cancel|closed|popup/i.test(msg)) toast.error(msg);
       setSubmitting(false);
     }
   };

@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { FolderPlus, Ban, Folder, Trash2, X } from "lucide-react";
+import { FolderPlus, Ban, Folder, Trash2, X, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,9 +25,13 @@ import {
   deleteFolder,
   blockDomain,
   unblockDomain,
+  VOICE_LABELS,
+  DEFAULT_REWRITE_VOICE,
   type NewsFolder,
   type BlockedDomain,
 } from "@/lib/news";
+import { useSettingsStore } from "@/store/settingsStore";
+import type { RewriteVoice } from "@/types";
 
 const FOLDER_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#a855f7", "#ec4899", "#14b8a6"];
 
@@ -39,6 +50,8 @@ export function ManageNewsDialog({
   onFoldersChanged: () => void | Promise<void>;
   onBlockedChanged: () => void | Promise<void>;
 }) {
+  const settings = useSettingsStore((s) => s.settings);
+  const update = useSettingsStore((s) => s.update);
   const [folderName, setFolderName] = useState("");
   const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0]);
   const [blockInput, setBlockInput] = useState("");
@@ -53,8 +66,8 @@ export function ManageNewsDialog({
       setFolderName("");
       await onFoldersChanged();
       toast.success("پوشه ساخته شد.");
-    } catch (e: any) {
-      toast.error(e.message ?? "خطا");
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "خطا");
     } finally {
       setBusy(false);
     }
@@ -65,8 +78,8 @@ export function ManageNewsDialog({
     try {
       await deleteFolder(id);
       await onFoldersChanged();
-    } catch (e: any) {
-      toast.error(e.message ?? "خطا");
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "خطا");
     }
   };
 
@@ -79,8 +92,8 @@ export function ManageNewsDialog({
       setBlockInput("");
       await onBlockedChanged();
       toast.success("دامنه بلاک شد.");
-    } catch (e: any) {
-      toast.error(e.message ?? "خطا");
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "خطا");
     } finally {
       setBusy(false);
     }
@@ -91,16 +104,19 @@ export function ManageNewsDialog({
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>مدیریت اخبار</DialogTitle>
-          <DialogDescription>پوشه‌های منابع و دامنه‌های بلاک‌شده.</DialogDescription>
+          <DialogDescription>پوشه‌ها، دامنه‌های بلاک‌شده و لحن بازنویسی.</DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="folders" className="mt-2">
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="folders" className="gap-1 text-xs">
               <FolderPlus className="h-3.5 w-3.5" /> پوشه‌ها
             </TabsTrigger>
             <TabsTrigger value="blocked" className="gap-1 text-xs">
-              <Ban className="h-3.5 w-3.5" /> دامنه‌های بلاک‌شده
+              <Ban className="h-3.5 w-3.5" /> بلاک‌شده
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="gap-1 text-xs">
+              <SlidersHorizontal className="h-3.5 w-3.5" /> تنظیمات
             </TabsTrigger>
           </TabsList>
 
@@ -171,6 +187,30 @@ export function ManageNewsDialog({
                   ))}
                 </ul>
               )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="preferences" className="space-y-4 mt-4">
+            <div className="space-y-2">
+              <Label className="text-xs">لحن بازنویسی پیش‌فرض</Label>
+              <Select
+                value={settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
+                onValueChange={(v) => void update({ defaultRewriteVoice: v as RewriteVoice })}
+              >
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(VOICE_LABELS) as RewriteVoice[]).map((v) => (
+                    <SelectItem key={v} value={v} className="text-xs">
+                      {VOICE_LABELS[v]}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">
+                این لحن برای بازنویسی هر خبر هنگام باز کردن استفاده می‌شود.
+              </p>
             </div>
           </TabsContent>
 

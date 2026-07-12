@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { AppSettings } from "@/types";
 import { getSettings, saveSettings } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import { DEFAULT_REWRITE_VOICE } from "@/lib/news";
 
 interface SettingsState {
   settings: AppSettings;
@@ -23,6 +24,7 @@ const DEFAULTS: AppSettings = {
   showInlineTranslation: true,
   simplifyLevel: "a2-b1",
   defaultSimplifyArticles: false,
+  defaultRewriteVoice: DEFAULT_REWRITE_VOICE,
   geminiApiKey: "",
   groqApiKey: "",
   geminiTtsApiKey: "",
@@ -58,14 +60,14 @@ const DEFAULTS: AppSettings = {
 
 // Smart merge: cloud value wins when present & non-empty; otherwise local fills it.
 function smartMerge(local: AppSettings, cloud: Partial<AppSettings>): AppSettings {
-  const merged: any = { ...local };
+  const merged = { ...local } as Record<string, unknown>;
   for (const k of Object.keys(cloud) as Array<keyof AppSettings>) {
-    const cv = (cloud as any)[k];
-    const lv = (local as any)[k];
+    const cv = cloud[k] as unknown;
+    const lv = local[k] as unknown;
     const cloudEmpty = cv === undefined || cv === null || cv === "";
     const localEmpty = lv === undefined || lv === null || lv === "";
-    if (!cloudEmpty) merged[k] = cv;
-    else if (!localEmpty) merged[k] = lv;
+    if (!cloudEmpty) merged[k as string] = cv;
+    else if (!localEmpty) merged[k as string] = lv;
   }
   return merged as AppSettings;
 }
@@ -81,7 +83,10 @@ function schedulePush(settings: AppSettings) {
       if (!user) return;
       await supabase
         .from("user_settings")
-        .upsert({ user_id: user.id, settings: settings as any }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: user.id, settings: settings as Record<string, unknown> },
+          { onConflict: "user_id" },
+        );
     } catch (e) {
       console.warn("[settings] cloud push failed", e);
     }
@@ -100,7 +105,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       if (persistedTheme === "dark" || persistedTheme === "light") {
         theme = persistedTheme;
       }
-    } catch {}
+    } catch {
+      /* ignore localStorage errors */
+    }
     set({ settings: s, loaded: true });
     if (theme !== s.theme) {
       set((state) => ({ settings: { ...state.settings, theme } }));
@@ -136,7 +143,10 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       // Push merged back so cloud also gets any local-only values.
       await supabase
         .from("user_settings")
-        .upsert({ user_id: user.id, settings: merged as any }, { onConflict: "user_id" });
+        .upsert(
+          { user_id: user.id, settings: merged as Record<string, unknown> },
+          { onConflict: "user_id" },
+        );
     } catch (e) {
       console.warn("[settings] cloud sync failed", e);
     } finally {
@@ -151,5 +161,7 @@ function applyTheme(theme: "dark" | "light") {
   else root.classList.remove("dark");
   try {
     localStorage.setItem("llvp-theme", theme);
-  } catch {}
+  } catch {
+    /* ignore localStorage errors */
+  }
 }

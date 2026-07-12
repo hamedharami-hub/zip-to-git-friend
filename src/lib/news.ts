@@ -88,6 +88,19 @@ export function rewriteKey(length: DigestLength, voice: RewriteVoice): string {
   return `${length}:${voice}`;
 }
 
+/** Persian labels for the available rewrite personas. */
+export const VOICE_LABELS: Record<RewriteVoice, string> = {
+  auto: "رسمی مجله‌ای (مانند قبل)",
+  storyteller: "داستان‌سرا",
+  friend: "دوستانه",
+  teacher: "معلمانه",
+  socratic: "سقراطی",
+  journalist: "خبری-تحلیلی",
+};
+
+/** Default persona used when the user has not explicitly chosen one. */
+export const DEFAULT_REWRITE_VOICE: RewriteVoice = "storyteller";
+
 // ─────────── Sources CRUD ───────────
 
 function rowToSource(row: Record<string, unknown>): NewsSource {

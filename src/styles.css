@@ -60,6 +60,11 @@
   --font-display: "Fraunces", "Vazirmatn", Georgia, serif;
   --font-serif: "Fraunces", "Vazirmatn", Georgia, serif;
 
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-out-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-in-out-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-liquid: cubic-bezier(0.23, 1, 0.32, 1);
+
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
 }
@@ -226,6 +231,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
   }
 
   [lang="fa"],
@@ -262,6 +268,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
     *,
     *::before,
     *::after {
@@ -344,19 +353,20 @@
     background-color: hsl(var(--surface-container-high));
   }
 
-  /* Top app bar */
+  /* Top app bar — glass frosted header */
   .m3-top-app-bar {
-    background-color: hsl(var(--surface) / 0.85);
-    backdrop-filter: saturate(160%) blur(12px);
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
     transition:
-      background-color 200ms ease,
+      background 200ms ease,
       box-shadow 200ms ease,
-      border-color 200ms ease;
-    border-bottom: 1px solid transparent;
+      border-color 200ms ease,
+      transform 200ms ease;
+    border-bottom: 1px solid var(--glass-border);
   }
   .m3-top-app-bar.scrolled {
-    background-color: hsl(var(--surface) / 0.94);
-    border-bottom-color: hsl(var(--border));
+    background: var(--glass-bg-strong);
+    box-shadow: var(--glass-shadow);
   }
 
   .m3-state-layer {
@@ -576,6 +586,7 @@ html.rm-contrast [data-reading-root] li {
 /* Apply glass finish globally to core surfaces so the whole app feels glassy. */
 :root:not(.no-glass) [data-slot="card"],
 :root:not(.no-glass) [data-slot="dialog-content"],
+:root:not(.no-glass) [data-slot="alert-dialog-content"],
 :root:not(.no-glass) [data-slot="popover-content"],
 :root:not(.no-glass) [data-slot="dropdown-menu-content"],
 :root:not(.no-glass) [data-slot="sheet-content"],
@@ -583,11 +594,51 @@ html.rm-contrast [data-reading-root] li {
 :root:not(.no-glass) [data-slot="hover-card-content"],
 :root:not(.no-glass) [data-slot="tooltip-content"],
 :root:not(.no-glass) [data-slot="context-menu-content"],
-:root:not(.no-glass) [data-slot="menubar-content"] {
+:root:not(.no-glass) [data-slot="menubar-content"],
+:root:not(.no-glass) [data-slot="select-content"],
+:root:not(.no-glass) [data-slot="toast"]:not(.destructive) {
   background: var(--glass-bg-strong);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   border-color: var(--glass-border);
   box-shadow: var(--glass-shadow);
+  transition:
+    background 200ms ease,
+    border-color 200ms ease,
+    box-shadow 200ms ease,
+    transform 200ms ease;
+}
+
+/* Button micro-interactions */
+[data-slot="button"] {
+  transition:
+    transform 0.15s var(--ease-out-expo),
+    box-shadow 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+  will-change: transform;
+}
+[data-slot="button"]:active:not(:disabled) {
+  transform: scale(0.96);
+}
+[data-slot="button"]:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Card lift on hover for interactive cards */
+[data-slot="card"] {
+  transition:
+    transform 0.25s var(--ease-out-expo),
+    box-shadow 0.25s ease,
+    background 0.2s ease;
+  will-change: transform, box-shadow;
+}
+[data-slot="card"]:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
+}
+[data-slot="card"]:active {
+  transform: translateY(0) scale(0.995);
 }
 
 /* Inline images injected into rewritten articles. */

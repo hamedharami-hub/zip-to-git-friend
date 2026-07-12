@@ -15,6 +15,7 @@ import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import { startSync, stopSync } from "./lib/leitnerSync";
 import { useNativeBackButton } from "./hooks/useNativeBackButton";
 import { useEdgeSwipeBack } from "./hooks/useEdgeSwipeBack";
+import { Haptic } from "./components/Haptic";
 
 import { PlayerSkeleton } from "@/components/player/PlayerSkeleton";
 
@@ -148,6 +149,7 @@ const App = () => (
           <SettingsBootstrap>
             <SyncBridge />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+              <Haptic />
               <NativeGestures />
               <Routes>
                 <Route path="/" element={wrap("Home", <Home />)} />

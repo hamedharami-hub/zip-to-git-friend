@@ -193,6 +193,8 @@ export interface AppSettings {
   /** When true, every news article is auto-rewritten in everyday simple English
    *  on first open (no need to press the "ساده روزمره" tab manually). */
   defaultSimplifyArticles?: boolean;
+  /** Default persona/voice for news rewrites. */
+  defaultRewriteVoice?: RewriteVoice;
   geminiApiKey: string;
   groqApiKey: string;
   /** Optional separate Gemini API key dedicated to Text-to-Speech.
@@ -310,6 +312,18 @@ export type RewriteStyle =
 
 /** Difficulty level used by the "everyday simple" rewrite style. */
 export type SimplifyLevel = "a2-b1" | "b1-b2";
+
+/** News rewrite length options exposed in the reader UI. */
+export type RewriteLength = "long" | "max" | "auto-max" | "simple";
+
+/** Persona / voice for the news rewrite. */
+export type RewriteVoice =
+  | "auto"
+  | "storyteller"
+  | "friend"
+  | "teacher"
+  | "socratic"
+  | "journalist";
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */

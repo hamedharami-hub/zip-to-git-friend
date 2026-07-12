@@ -105,6 +105,8 @@ import {
   listBlockedDomains,
   blockDomain,
   unblockDomain,
+  VOICE_LABELS,
+  DEFAULT_REWRITE_VOICE,
   type DiscoveryResult,
   type DiscoveredSite,
   type FeedItem,
@@ -115,6 +117,7 @@ import {
   type NewsFolder,
   type BlockedDomain,
 } from "@/lib/news";
+import type { RewriteVoice } from "@/types";
 import { useSettingsStore } from "@/store/settingsStore";
 import { coerceBookModel } from "@/lib/aiModels";
 import { useLongPress } from "@/hooks/useLongPress";
@@ -127,6 +130,7 @@ const News = () => {
   const [params, setParams] = useSearchParams();
 
   const settings = useSettingsStore((s) => s.settings);
+  const update = useSettingsStore((s) => s.update);
   const newsModelRef = coerceBookModel(
     settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
@@ -702,6 +706,7 @@ const News = () => {
         topic: activeSource?.topic ?? activeSource?.name,
         windowHours: Number(windowHours),
         model: newsModelRef.model,
+        voice: settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE,
       });
       setDigests((prev) => [digest, ...prev]);
       toast.success("خلاصه آماده شد.");
@@ -711,7 +716,15 @@ const News = () => {
     } finally {
       setDigestBusy(false);
     }
-  }, [feedItems, digestLength, activeSource, windowHours, navigate, newsModelRef.model]);
+  }, [
+    feedItems,
+    digestLength,
+    activeSource,
+    windowHours,
+    navigate,
+    newsModelRef.model,
+    settings.defaultRewriteVoice,
+  ]);
 
   /** Quick-summary from a topic feed URL (Google News / Bing News RSS). */
   const handleInstantDigest = useCallback(
@@ -736,6 +749,7 @@ const News = () => {
           topic: topicText,
           windowHours: 24,
           model: newsModelRef.model,
+          voice: settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE,
         });
         setDigests((prev) => [digest, ...prev]);
         toast.success(
@@ -746,7 +760,7 @@ const News = () => {
         toast.error((e as Error).message ?? "ساخت خلاصه شکست خورد.");
       }
     },
-    [navigate, newsModelRef.model],
+    [navigate, newsModelRef.model, settings.defaultRewriteVoice],
   );
 
   const handleDeleteSource = useCallback(
@@ -1320,6 +1334,26 @@ const News = () => {
                       </Select>
                     </div>
                   )}
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+                      لحن بازنویسی:
+                    </span>
+                    <Select
+                      value={settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
+                      onValueChange={(v) => void update({ defaultRewriteVoice: v as RewriteVoice })}
+                    >
+                      <SelectTrigger className="h-8 w-[140px] text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(VOICE_LABELS) as RewriteVoice[]).map((v) => (
+                          <SelectItem key={v} value={v} className="text-xs">
+                            {VOICE_LABELS[v]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="flex items-center gap-1.5 ms-auto">
                     <Tabs
                       value={digestLength}

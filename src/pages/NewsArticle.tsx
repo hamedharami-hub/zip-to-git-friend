@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useArticleRewrite } from "@/hooks/useArticleRewrite";
 import { loadNewsDisplayLang, saveNewsDisplayLang } from "@/lib/newsDisplayLang";
@@ -47,7 +47,12 @@ import { cacheArticle, getCachedArticle } from "@/lib/newsOfflineCache";
 import { NewsShareMenu } from "@/components/news/NewsShareMenu";
 import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
 import { NewsTocMenu } from "@/components/news/NewsTocMenu";
+import { ImageLightbox } from "@/components/news/ImageLightbox";
 import { usePinchFontStep } from "@/hooks/usePinchZoom";
+import { useReadingMode } from "@/hooks/useReadingMode";
+import { extractArticleImages, type LightboxImage } from "@/lib/extractArticleImages";
+import { BidiText } from "@/components/BidiText";
+import { cn } from "@/lib/utils";
 import { isSeen, markSeen } from "@/lib/seenArticles";
 import { LangCycleButton } from "@/components/news/LangCycleButton";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
@@ -108,6 +113,9 @@ const NewsArticleReader = () => {
   );
   const pinchScrollRef = useRef<HTMLDivElement | null>(null);
   usePinchFontStep(pinchScrollRef);
+
+  // Shared reading-mode state (theme, extra line-height) from ReadingModeControls.
+  const { extraLineHeight } = useReadingMode();
 
   const settings = useSettingsStore((s) => s.settings);
   const update = useSettingsStore((s) => s.update);
@@ -373,6 +381,54 @@ const NewsArticleReader = () => {
     }
   };
 
+  const activeKey = rewriteKey(activeRewrite, voice);
+  const activeRewriteDoc = rewrites[activeKey];
+  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
+
+  // Inject inline images from the original article into the rewritten HTML so
+  // shorter/AI rewrites still show the photos at roughly the same positions.
+  const rewriteHtmlWithImages = activeRewriteDoc?.contentHtml
+    ? injectArticleImages(activeRewriteDoc.contentHtml, article?.contentHtml, {
+        skipUrl: article?.imageUrl,
+      })
+    : activeRewriteDoc?.contentHtml;
+
+  // Collect all images for the hero + inline gallery lightbox.
+  const articleImageUrl = article?.imageUrl;
+  const articleContentHtml = article?.contentHtml;
+  const articleTitle = article?.title;
+  const allImages = useMemo<LightboxImage[]>(() => {
+    const map = new Map<string, LightboxImage>();
+    const add = (html: string | null | undefined) => {
+      for (const img of extractArticleImages(html, { skipUrl: articleImageUrl })) {
+        if (!map.has(img.src)) map.set(img.src, img);
+      }
+    };
+    if (articleImageUrl) map.set(articleImageUrl, { src: articleImageUrl, alt: articleTitle });
+    if (articleContentHtml) add(articleContentHtml);
+    if (rewriteHtmlWithImages) add(rewriteHtmlWithImages);
+    return Array.from(map.values());
+  }, [articleImageUrl, articleContentHtml, articleTitle, rewriteHtmlWithImages]);
+
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState<LightboxImage[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  const openLightbox = useCallback(
+    (src: string) => {
+      const idx = allImages.findIndex((img) => img.src === src);
+      if (idx >= 0) {
+        setLightboxImages(allImages);
+        setLightboxIndex(idx);
+      } else {
+        setLightboxImages([{ src, alt: "" }]);
+        setLightboxIndex(0);
+      }
+      setLightboxOpen(true);
+    },
+    [allImages],
+  );
+
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
@@ -398,18 +454,6 @@ const NewsArticleReader = () => {
       </div>
     );
   }
-
-  const activeKey = rewriteKey(activeRewrite, voice);
-  const activeRewriteDoc = rewrites[activeKey];
-  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
-
-  // Inject inline images from the original article into the rewritten HTML so
-  // shorter/AI rewrites still show the photos at roughly the same positions.
-  const rewriteHtmlWithImages = activeRewriteDoc?.contentHtml
-    ? injectArticleImages(activeRewriteDoc.contentHtml, article.contentHtml, {
-        skipUrl: article.imageUrl,
-      })
-    : activeRewriteDoc?.contentHtml;
 
   // Build pseudo-chapters so TranslateChapterButton (which expects a BookChapter)
   // can drive whole-text translation against the same `analyze-paragraph` cache.
@@ -482,7 +526,7 @@ const NewsArticleReader = () => {
             onChange={view === "rewrite" ? setRwDisplayLang : setOrigDisplayLang}
             hasAnyTranslation={(view === "rewrite" ? rwTranslationCount : origTranslationCount) > 0}
           />
-          <NewsTypographyMenu onChange={handleTypoChange} />
+          <NewsTypographyMenu onChange={handleTypoChange} showReadingMode={true} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTocMenu
             html={
@@ -579,8 +623,8 @@ const NewsArticleReader = () => {
         <main
           id="news-reading-root"
           data-reading-root
-          className="max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12"
-          style={{ lineHeight: 1.6, ...(typo.familyStyle ?? {}) }}
+          className={cn("max-w-4xl mx-auto px-5 sm:px-10 py-8 sm:py-12", typo.familyClass)}
+          style={{ lineHeight: 1.7 + extraLineHeight, ...(typo.familyStyle ?? {}) }}
         >
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
@@ -595,13 +639,25 @@ const NewsArticleReader = () => {
                     src={article.imageUrl}
                     alt=""
                     loading="lazy"
-                    className="w-full max-h-[360px] object-cover rounded-xl mb-5 bg-muted"
+                    role="button"
+                    tabIndex={0}
+                    aria-label="بزرگنمایی تصویر"
+                    className="w-full max-h-[360px] object-cover rounded-xl mb-5 bg-muted cursor-pointer transition hover:ring-2 hover:ring-primary/50"
+                    onClick={() => openLightbox(article.imageUrl!)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        openLightbox(article.imageUrl!);
+                      }
+                    }}
                     onError={(e) => {
                       (e.target as HTMLImageElement).style.display = "none";
                     }}
                   />
                 )}
-                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">{article.title}</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
+                  <BidiText as="span">{article.title}</BidiText>
+                </h2>
                 <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
                   {article.siteName && <span>{article.siteName}</span>}
                   {article.wordCount > 0 && (
@@ -647,6 +703,7 @@ const NewsArticleReader = () => {
                   onTranslationCountChange={setOrigTranslationCount}
                   sourceKind="news"
                   sourceTitle={article.title}
+                  onImageClick={openLightbox}
                 />
               )}
 
@@ -668,6 +725,7 @@ const NewsArticleReader = () => {
                 modelRef={newsRewriteRef}
                 onModelChange={(ref: BookAIModelRef) => void update({ newsRewriteModelRef: ref })}
                 settings={settings}
+                onImageClick={openLightbox}
               />
             </>
           ) : (
@@ -684,6 +742,13 @@ const NewsArticleReader = () => {
           )}
         </main>
       </div>
+
+      <ImageLightbox
+        images={lightboxImages}
+        open={lightboxOpen}
+        startIndex={lightboxIndex}
+        onOpenChange={setLightboxOpen}
+      />
     </div>
   );
 };

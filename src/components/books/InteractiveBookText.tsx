@@ -50,6 +50,8 @@ interface Props {
   sourceKind?: import("@/types").LeitnerSourceKind;
   /** Title used as a Leitner sub-folder name (book/article title). */
   sourceTitle?: string;
+  /** Called when an inline image is clicked. */
+  onImageClick?: (src: string) => void;
 }
 
 interface Block {
@@ -217,6 +219,7 @@ export function InteractiveBookText({
   onTranslationCountChange,
   sourceKind,
   sourceTitle,
+  onImageClick,
 }: Props) {
   const blocks = useMemo(() => htmlToBlocks(html), [html]);
 
@@ -338,17 +341,11 @@ export function InteractiveBookText({
   // When gesture mode is on, the per-paragraph toolbar is hidden, so we tighten
   // the spacing between blocks to feel like a real book.
   const spacingClass = gesturesOn ? "space-y-3" : "space-y-8";
-  const leadingClass = gesturesOn ? "leading-[1.9]" : "leading-loose";
+  // Line-height is intentionally inherited from the reading container so
+  // reading-mode presets and parent line-height controls apply correctly.
   return (
     <article
-      className={cn(
-        "mx-auto w-full",
-        spacingClass,
-        leadingClass,
-        fontSizeClass,
-        fontFamilyClass,
-        alignClass,
-      )}
+      className={cn("mx-auto w-full", spacingClass, fontSizeClass, fontFamilyClass, alignClass)}
     >
       {blocks.map((b, i) => {
         switch (b.kind) {
@@ -482,7 +479,24 @@ export function InteractiveBookText({
                 src={b.src}
                 alt={b.alt ?? ""}
                 loading="lazy"
-                className="mx-auto max-h-[60vh] rounded-md border border-border"
+                role={onImageClick ? "button" : undefined}
+                tabIndex={onImageClick ? 0 : undefined}
+                aria-label={onImageClick ? "بزرگنمایی تصویر" : undefined}
+                className={cn(
+                  "mx-auto max-h-[60vh] rounded-md border border-border",
+                  onImageClick && "cursor-pointer transition hover:ring-2 hover:ring-primary/50",
+                )}
+                onClick={onImageClick ? () => onImageClick(b.src!) : undefined}
+                onKeyDown={
+                  onImageClick
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onImageClick(b.src!);
+                        }
+                      }
+                    : undefined
+                }
               />
             );
           case "p":
@@ -737,9 +751,11 @@ function Paragraph({
     setStarred((v) => {
       const n = !v;
       try {
-        n
-          ? localStorage.setItem(`para-star:${hash}`, "1")
-          : localStorage.removeItem(`para-star:${hash}`);
+        if (n) {
+          localStorage.setItem(`para-star:${hash}`, "1");
+        } else {
+          localStorage.removeItem(`para-star:${hash}`);
+        }
       } catch {
         /* ignore */
       }

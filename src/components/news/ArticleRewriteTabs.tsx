@@ -39,6 +39,7 @@ interface Props {
   modelRef: BookAIModelRef;
   onModelChange: (ref: BookAIModelRef) => void;
   settings: AppSettings;
+  onImageClick?: (src: string) => void;
 }
 
 function labelFor(len: RewriteLength): string {
@@ -79,6 +80,7 @@ export function ArticleRewriteTabs({
   modelRef,
   onModelChange,
   settings,
+  onImageClick,
 }: Props) {
   return (
     <section className="mt-12 pt-8 border-t border-border/50">
@@ -212,6 +214,7 @@ export function ArticleRewriteTabs({
                       }
                       sourceKind="news"
                       sourceTitle={articleTitle}
+                      onImageClick={onImageClick}
                     />
                   </>
                 )}

@@ -3,11 +3,17 @@
  *
  * Persists choice in localStorage and exposes the chosen Tailwind class names
  * via a callback so the parent can pass them to InteractiveBookText.
+ *
+ * When `showReadingMode` is true, also exposes the shared reading-mode theme
+ * and extra line-height controls from useReadingMode.
  */
 import { useEffect, useState } from "react";
-import { Type } from "lucide-react";
+import { AlignJustify, Palette, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Slider } from "@/components/ui/slider";
+import { useReadingMode, type EyeComfortPreset } from "@/hooks/useReadingMode";
 
 const SIZE_KEY = "news-font-size";
 const FAMILY_KEY = "news-font-family";
@@ -15,12 +21,16 @@ const FAMILY_KEY = "news-font-family";
 export type NewsFontSize = "sm" | "base" | "lg" | "xl" | "2xl";
 export type NewsFontFamily = "sans" | "serif" | "vazir" | "mono";
 
+/**
+ * Use arbitrary font-size classes so the article text can inherit its
+ * line-height from the reading container (and from reading-mode presets).
+ */
 const SIZE_CLASS: Record<NewsFontSize, string> = {
-  sm: "text-sm",
-  base: "text-base",
-  lg: "text-lg",
-  xl: "text-xl",
-  "2xl": "text-2xl",
+  sm: "text-[0.875rem]",
+  base: "text-[1rem]",
+  lg: "text-[1.125rem]",
+  xl: "text-[1.25rem]",
+  "2xl": "text-[1.5rem]",
 };
 
 const FAMILY_CLASS: Record<NewsFontFamily, string> = {
@@ -34,15 +44,24 @@ const FAMILY_STYLE: Partial<Record<NewsFontFamily, React.CSSProperties>> = {
   vazir: { fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif' },
 };
 
+const PRESETS: { id: EyeComfortPreset; label: string }[] = [
+  { id: "off", label: "بدون تغییر" },
+  { id: "comfort", label: "☀ راحت" },
+  { id: "sepia", label: "📜 سپیا" },
+  { id: "night", label: "🌙 شب" },
+  { id: "contrast", label: "⬛ کنتراست" },
+];
+
 interface Props {
   onChange: (cls: {
     sizeClass: string;
     familyClass: string;
     familyStyle?: React.CSSProperties;
   }) => void;
+  showReadingMode?: boolean;
 }
 
-export function NewsTypographyMenu({ onChange }: Props) {
+export function NewsTypographyMenu({ onChange, showReadingMode = false }: Props) {
   const [size, setSize] = useState<NewsFontSize>(() => {
     try {
       return (localStorage.getItem(SIZE_KEY) as NewsFontSize) || "base";
@@ -57,6 +76,8 @@ export function NewsTypographyMenu({ onChange }: Props) {
       return "sans";
     }
   });
+
+  const { eyeComfortPreset, extraLineHeight, set } = useReadingMode();
 
   useEffect(() => {
     try {
@@ -99,7 +120,7 @@ export function NewsTypographyMenu({ onChange }: Props) {
           <Type className="h-4 w-4" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-64 space-y-4">
+      <PopoverContent align="end" className="w-72 space-y-4">
         <div>
           <p className="text-xs font-medium mb-2 text-muted-foreground">اندازه فونت</p>
           <div className="grid grid-cols-5 gap-1">
@@ -114,7 +135,7 @@ export function NewsTypographyMenu({ onChange }: Props) {
                     : "border-border text-muted-foreground hover:text-foreground")
                 }
               >
-                A{s === "sm" ? "" : s === "base" ? "" : ""}
+                A
                 <span className="text-[10px] ms-0.5 opacity-70">
                   {s === "sm" ? "sm" : s === "base" ? "md" : s}
                 </span>
@@ -122,6 +143,7 @@ export function NewsTypographyMenu({ onChange }: Props) {
             ))}
           </div>
         </div>
+
         <div>
           <p className="text-xs font-medium mb-2 text-muted-foreground">نوع فونت</p>
           <div className="grid grid-cols-2 gap-1.5">
@@ -151,6 +173,50 @@ export function NewsTypographyMenu({ onChange }: Props) {
             ))}
           </div>
         </div>
+
+        {showReadingMode && (
+          <>
+            <div>
+              <p className="text-xs font-medium mb-2 text-muted-foreground flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" /> تم مطالعه
+              </p>
+              <div className="grid grid-cols-2 gap-1.5">
+                {PRESETS.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => set({ eyeComfortPreset: p.id })}
+                    className={
+                      "rounded-md border px-2 py-1.5 text-xs transition-colors text-start " +
+                      (eyeComfortPreset === p.id
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border text-muted-foreground hover:text-foreground")
+                    }
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <AlignJustify className="h-3.5 w-3.5" /> فاصله خطوط
+                </Label>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  +{extraLineHeight.toFixed(2)}
+                </span>
+              </div>
+              <Slider
+                value={[extraLineHeight]}
+                min={0}
+                max={0.6}
+                step={0.05}
+                onValueChange={([v]) => set({ extraLineHeight: v })}
+              />
+            </div>
+          </>
+        )}
       </PopoverContent>
     </Popover>
   );

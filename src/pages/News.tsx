@@ -49,6 +49,9 @@ import { AddSourceDialog } from "@/components/news/AddSourceDialog";
 import { SourcesTree } from "@/components/news/SourcesTree";
 import { FolderAggregatedView, AllAggregatedView } from "@/components/news/NewsAggregatedViews";
 import { ManageNewsDialog } from "@/components/news/ManageNewsDialog";
+import { NewsOnboarding } from "@/components/news/NewsOnboarding";
+import { SAMPLE_SOURCES, type PublicTopic } from "@/lib/newsPublicTopics";
+import { PublicNewsView } from "@/components/news/PublicNewsView";
 import { InstallButton } from "@/components/pwa/InstallButton";
 import { loadCachedFeed, mergeIntoCache } from "@/lib/newsFeedCache";
 import { Button } from "@/components/ui/button";
@@ -171,6 +174,8 @@ const News = () => {
   const [openArticle, setOpenArticle] = useState<string | null>(null);
   const [trendingBusy, setTrendingBusy] = useState(false);
   const [showSaved, setShowSaved] = useState(false);
+  const [publicTopic, setPublicTopic] = useState<PublicTopic | null>(null);
+  const [addSourceOpen, setAddSourceOpen] = useState(false);
   // Re-render tick when the seen-articles set changes (cross-tab too).
   const [, setSeenTick] = useState(0);
   useEffect(() => subscribeSeen(() => setSeenTick((n) => n + 1)), []);
@@ -779,6 +784,36 @@ const News = () => {
     [activeSourceId],
   );
 
+  const handleAddSampleSources = useCallback(async () => {
+    try {
+      const created = await Promise.all(
+        SAMPLE_SOURCES.map((s) =>
+          addSource({
+            kind: s.kind,
+            name: s.name,
+            url: s.url,
+            topic: s.topic,
+            language: s.language,
+          }),
+        ),
+      );
+      setSources((prev) => [...prev, ...created]);
+      if (created.length > 0) {
+        setActiveSourceId(created[0].id);
+      }
+      toast.success(`${created.length} منبع نمونه اضافه شد.`);
+    } catch (e: Error | unknown) {
+      toast.error((e as Error).message ?? "اضافه کردن منابع نمونه شکست خورد.");
+    }
+  }, []);
+
+  const handlePublicBrowse = useCallback((topic: PublicTopic) => {
+    setActiveSourceId(null);
+    setActiveFolderId(null);
+    setAllMode(false);
+    setPublicTopic(topic);
+  }, []);
+
   // Translate every English title currently visible (whichever list is active),
   // in cost-aware batches via the news-translate-titles edge function.
   const handleTranslateVisibleTitles = useCallback(async () => {
@@ -900,35 +935,6 @@ const News = () => {
     });
   }, []);
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Link to="/">
-              <Button variant="ghost" size="icon" aria-label="Back to home">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-semibold">News</h1>
-          </div>
-        </header>
-        <main className="max-w-3xl mx-auto px-6 py-10">
-          <EmptyState
-            icon={<Newspaper className="h-7 w-7" />}
-            title="ابتدا وارد شوید"
-            description="برای ساخت فهرست منابع و خلاصه‌های هوش مصنوعی، یک حساب رایگان بسازید."
-            action={
-              <Link to="/auth">
-                <Button size="lg">ورود / ثبت‌نام</Button>
-              </Link>
-            }
-          />
-        </main>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground overflow-x-hidden">
       <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
@@ -945,281 +951,302 @@ const News = () => {
             <span className="truncate">News</span>
           </h1>
           <div className="ms-auto flex items-center gap-2">
-            <ImportUrlDialog
-              initialUrl={sharedUrl ?? undefined}
-              autoOpen={!!sharedUrl}
-              onClose={() => {
-                if (sharedUrl) {
-                  const next = new URLSearchParams(params);
-                  next.delete("import_url");
-                  setParams(next, { replace: true });
-                }
-              }}
-              onChannelAdded={(s) => {
-                setSources((prev) => [...prev, s]);
-                setActiveSourceId(s.id);
-              }}
-            />
-            <AddSourceDialog
-              onAdded={(s) => {
-                setSources((prev) => [...prev, s]);
-                setActiveSourceId(s.id);
-              }}
-              onInstantDigest={handleInstantDigest}
-            />
+            {user && (
+              <>
+                <ImportUrlDialog
+                  initialUrl={sharedUrl ?? undefined}
+                  autoOpen={!!sharedUrl}
+                  onClose={() => {
+                    if (sharedUrl) {
+                      const next = new URLSearchParams(params);
+                      next.delete("import_url");
+                      setParams(next, { replace: true });
+                    }
+                  }}
+                  onChannelAdded={(s) => {
+                    setSources((prev) => [...prev, s]);
+                    setActiveSourceId(s.id);
+                  }}
+                />
+                <AddSourceDialog
+                  open={addSourceOpen}
+                  onOpenChange={setAddSourceOpen}
+                  onAdded={(s) => {
+                    setSources((prev) => [...prev, s]);
+                    setActiveSourceId(s.id);
+                  }}
+                  onInstantDigest={handleInstantDigest}
+                />
+              </>
+            )}
             <InstallButton />
             <AccountButton />
           </div>
         </div>
       </header>
 
-      <main className="max-w-[1400px] mx-auto px-3 sm:px-6 py-6 grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6 min-w-0">
-        <aside className="space-y-6 min-w-0">
-          <section>
-            <div className="flex items-center justify-between mb-2 px-1">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                منابع
-              </h2>
-              <div className="flex items-center gap-1">
-                <span className="text-[11px] text-muted-foreground">{sources.length}</span>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={handleTranslateVisibleTitles}
-                  disabled={trBusy}
-                  title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
-                >
-                  {trBusy ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Languages className="h-3.5 w-3.5" />
-                  )}
-                </Button>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-6 w-6"
-                      disabled={dlBusy}
-                      title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)"
-                    >
-                      {dlBusy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Download className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last10")}>
-                      ۱۰ خبر آخر
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last50")}>
-                      ۵۰ خبر آخر
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline("last100")}>
-                      ۱۰۰ خبر آخر
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handlePrefetchOffline("all")}>
-                      همه‌ی این لیست
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => {
-                        setSelectMode((v) => !v);
-                        if (selectMode) setSelectedUrls(new Set());
-                      }}
-                    >
-                      {selectMode ? (
-                        <>
-                          <Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب
-                        </>
-                      ) : (
-                        <>
-                          <CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…
-                        </>
-                      )}
-                    </DropdownMenuItem>
-                    {selectMode && (
-                      <DropdownMenuItem
-                        onClick={() => handlePrefetchOffline("selected")}
-                        disabled={selectedUrls.size === 0}
-                      >
-                        <Download className="h-3.5 w-3.5 me-2" />
-                        دانلود {selectedUrls.size} انتخاب‌شده
-                      </DropdownMenuItem>
+      <main
+        className={
+          user
+            ? "max-w-[1400px] mx-auto px-3 sm:px-6 py-6 grid lg:grid-cols-[260px_minmax(0,1fr)] gap-6 min-w-0"
+            : "max-w-3xl mx-auto px-3 sm:px-6 py-6"
+        }
+      >
+        {user && (
+          <aside className="space-y-6 min-w-0">
+            <section>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  منابع
+                </h2>
+                <div className="flex items-center gap-1">
+                  <span className="text-[11px] text-muted-foreground">{sources.length}</span>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={handleTranslateVisibleTitles}
+                    disabled={trBusy}
+                    title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
+                  >
+                    {trBusy ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Languages className="h-3.5 w-3.5" />
                     )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-6 w-6"
-                  onClick={() => setManageOpen(true)}
-                  title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده"
-                >
-                  <SettingsIcon className="h-3.5 w-3.5" />
-                </Button>
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        disabled={dlBusy}
+                        title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)"
+                      >
+                        {dlBusy ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Download className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last10")}>
+                        ۱۰ خبر آخر
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last50")}>
+                        ۵۰ خبر آخر
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last100")}>
+                        ۱۰۰ خبر آخر
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handlePrefetchOffline("all")}>
+                        همه‌ی این لیست
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectMode((v) => !v);
+                          if (selectMode) setSelectedUrls(new Set());
+                        }}
+                      >
+                        {selectMode ? (
+                          <>
+                            <Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب
+                          </>
+                        ) : (
+                          <>
+                            <CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…
+                          </>
+                        )}
+                      </DropdownMenuItem>
+                      {selectMode && (
+                        <DropdownMenuItem
+                          onClick={() => handlePrefetchOffline("selected")}
+                          disabled={selectedUrls.size === 0}
+                        >
+                          <Download className="h-3.5 w-3.5 me-2" />
+                          دانلود {selectedUrls.size} انتخاب‌شده
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6"
+                    onClick={() => setManageOpen(true)}
+                    title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده"
+                  >
+                    <SettingsIcon className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-            </div>
-            {trProgress && trProgress.total > 0 && (
-              <p className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-1">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
-              </p>
-            )}
-            {dlProgress && dlProgress.total > 0 && (
-              <div className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
-                <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-                <span className="truncate flex-1">
-                  دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
-                  {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ""}
-                </span>
-                {dlBusy && (
-                  <button onClick={cancelPrefetch} className="text-destructive hover:underline">
-                    لغو
-                  </button>
-                )}
-              </div>
-            )}
-            {selectMode && (
-              <div className="px-1 mb-2 text-[11px] text-primary flex items-center gap-1">
-                <CheckSquare className="h-3 w-3" />
-                حالت انتخاب فعال — روی خبرها بزن • {selectedUrls.size} انتخاب‌شده
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => {
-                setAllMode(true);
-                setActiveFolderId(null);
-                setActiveSourceId(null);
-              }}
-              className={
-                "mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors " +
-                (allMode
-                  ? "border-primary/30 bg-primary/10 text-foreground shadow-sm"
-                  : "border-border/60 bg-card/60 hover:bg-accent text-foreground/90")
-              }
-            >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
-                <Globe2 className="h-3.5 w-3.5 text-primary" />
-              </span>
-              <span className="truncate flex-1 text-start font-medium">همه‌ی اخبار</span>
-              <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                {sources.length}
-              </span>
-            </button>
-            {sources.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-1">
-                هنوز منبعی اضافه نکرده‌ای. روی «افزودن» بزن.
-              </p>
-            ) : (
-              <SourcesTree
-                folders={folders}
-                sourcesByFolder={sourcesByFolder}
-                activeSourceId={activeSourceId}
-                activeFolderId={activeFolderId}
-                collapsed={expandedFolders}
-                onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
-                onPickFolder={(id) => {
-                  setActiveFolderId(id);
-                  setActiveSourceId(null);
-                  setAllMode(false);
-                }}
-                onPickSource={(id) => {
-                  setActiveSourceId(id);
-                  setActiveFolderId(null);
-                  setAllMode(false);
-                }}
-                onDeleteSource={handleDeleteSource}
-                onMoveSource={async (sourceId, folderId) => {
-                  await updateSource(sourceId, { folderId });
-                  setSources((prev) =>
-                    prev.map((s) => (s.id === sourceId ? { ...s, folderId } : s)),
-                  );
-                }}
-                onRenameSource={async (id, name) => {
-                  await updateSource(id, { name });
-                  setSources((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
-                  toast.success("نام منبع به‌روز شد.");
-                }}
-                onRenameFolder={async (id, name) => {
-                  await updateFolder(id, { name });
-                  setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
-                  toast.success("نام پوشه به‌روز شد.");
-                }}
-              />
-            )}
-          </section>
-
-          <section>
-            <div className="flex items-center justify-between mb-2 px-1">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                اخبار ذخیره‌شده
-              </h2>
+              {trProgress && trProgress.total > 0 && (
+                <p className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
+                </p>
+              )}
+              {dlProgress && dlProgress.total > 0 && (
+                <div className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
+                  <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                  <span className="truncate flex-1">
+                    دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
+                    {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ""}
+                  </span>
+                  {dlBusy && (
+                    <button onClick={cancelPrefetch} className="text-destructive hover:underline">
+                      لغو
+                    </button>
+                  )}
+                </div>
+              )}
+              {selectMode && (
+                <div className="px-1 mb-2 text-[11px] text-primary flex items-center gap-1">
+                  <CheckSquare className="h-3 w-3" />
+                  حالت انتخاب فعال — روی خبرها بزن • {selectedUrls.size} انتخاب‌شده
+                </div>
+              )}
               <button
                 type="button"
-                onClick={() => setShowSaved((v) => !v)}
-                className="text-[10px] text-primary hover:underline"
+                onClick={() => {
+                  setAllMode(true);
+                  setActiveFolderId(null);
+                  setActiveSourceId(null);
+                }}
+                className={
+                  "mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors " +
+                  (allMode
+                    ? "border-primary/30 bg-primary/10 text-foreground shadow-sm"
+                    : "border-border/60 bg-card/60 hover:bg-accent text-foreground/90")
+                }
               >
-                {showSaved ? "بستن" : `نمایش (${savedArticles.length})`}
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
+                  <Globe2 className="h-3.5 w-3.5 text-primary" />
+                </span>
+                <span className="truncate flex-1 text-start font-medium">همه‌ی اخبار</span>
+                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                  {sources.length}
+                </span>
               </button>
-            </div>
-            {showSaved &&
-              (savedArticles.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-1">هنوز خبری سیو نکرده‌ای.</p>
+              {sources.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-1">
+                  هنوز منبعی اضافه نکرده‌ای. روی «افزودن» بزن.
+                </p>
               ) : (
-                <ul className="space-y-1 max-h-64 overflow-y-auto">
-                  {savedArticles.map((a) => (
-                    <li key={a.id}>
+                <SourcesTree
+                  folders={folders}
+                  sourcesByFolder={sourcesByFolder}
+                  activeSourceId={activeSourceId}
+                  activeFolderId={activeFolderId}
+                  collapsed={expandedFolders}
+                  onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
+                  onPickFolder={(id) => {
+                    setActiveFolderId(id);
+                    setActiveSourceId(null);
+                    setAllMode(false);
+                  }}
+                  onPickSource={(id) => {
+                    setActiveSourceId(id);
+                    setActiveFolderId(null);
+                    setAllMode(false);
+                  }}
+                  onDeleteSource={handleDeleteSource}
+                  onMoveSource={async (sourceId, folderId) => {
+                    await updateSource(sourceId, { folderId });
+                    setSources((prev) =>
+                      prev.map((s) => (s.id === sourceId ? { ...s, folderId } : s)),
+                    );
+                  }}
+                  onRenameSource={async (id, name) => {
+                    await updateSource(id, { name });
+                    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
+                    toast.success("نام منبع به‌روز شد.");
+                  }}
+                  onRenameFolder={async (id, name) => {
+                    await updateFolder(id, { name });
+                    setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
+                    toast.success("نام پوشه به‌روز شد.");
+                  }}
+                />
+              )}
+            </section>
+
+            <section>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  اخبار ذخیره‌شده
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowSaved((v) => !v)}
+                  className="text-[10px] text-primary hover:underline"
+                >
+                  {showSaved ? "بستن" : `نمایش (${savedArticles.length})`}
+                </button>
+              </div>
+              {showSaved &&
+                (savedArticles.length === 0 ? (
+                  <p className="text-xs text-muted-foreground px-1">هنوز خبری سیو نکرده‌ای.</p>
+                ) : (
+                  <ul className="space-y-1 max-h-64 overflow-y-auto">
+                    {savedArticles.map((a) => (
+                      <li key={a.id}>
+                        <Link
+                          to={`/news/article/${a.id}`}
+                          className="block rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                        >
+                          <span className="block truncate font-medium">{a.title}</span>
+                          <span className="block text-[10px] text-muted-foreground truncate">
+                            {a.siteName ?? siteFromUrl(a.url)}
+                          </span>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                ))}
+            </section>
+
+            <section>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
+                خلاصه‌های ذخیره‌شده
+              </h2>
+              {digests.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-1">هنوز خلاصه‌ای ساخته نشده.</p>
+              ) : (
+                <ul className="space-y-1">
+                  {digests.slice(0, 12).map((d) => (
+                    <li key={d.id}>
                       <Link
-                        to={`/news/article/${a.id}`}
-                        className="block rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
+                        to={`/news/digest/${d.id}`}
+                        className="block rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
                       >
-                        <span className="block truncate font-medium">{a.title}</span>
-                        <span className="block text-[10px] text-muted-foreground truncate">
-                          {a.siteName ?? siteFromUrl(a.url)}
+                        <span className="block truncate font-medium">{d.title}</span>
+                        <span className="block text-[11px] text-muted-foreground">
+                          {d.length === "max" ? "حداکثری" : d.length === "long" ? "بلند" : "کوتاه"}{" "}
+                          · {formatTime(d.createdAt)}
                         </span>
                       </Link>
                     </li>
                   ))}
                 </ul>
-              ))}
-          </section>
-
-          <section>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-              خلاصه‌های ذخیره‌شده
-            </h2>
-            {digests.length === 0 ? (
-              <p className="text-xs text-muted-foreground px-1">هنوز خلاصه‌ای ساخته نشده.</p>
-            ) : (
-              <ul className="space-y-1">
-                {digests.slice(0, 12).map((d) => (
-                  <li key={d.id}>
-                    <Link
-                      to={`/news/digest/${d.id}`}
-                      className="block rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-                    >
-                      <span className="block truncate font-medium">{d.title}</span>
-                      <span className="block text-[11px] text-muted-foreground">
-                        {d.length === "max" ? "حداکثری" : d.length === "long" ? "بلند" : "کوتاه"} ·{" "}
-                        {formatTime(d.createdAt)}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        </aside>
+              )}
+            </section>
+          </aside>
+        )}
 
         <section className="min-w-0 space-y-4">
-          {allMode ? (
+          {publicTopic ? (
+            <PublicNewsView
+              topic={publicTopic}
+              onBack={() => setPublicTopic(null)}
+              onSignIn={() => navigate("/auth")}
+              onTopicChange={setPublicTopic}
+            />
+          ) : allMode ? (
             <AllAggregatedView
               items={allFeed}
               loading={allLoading}
@@ -1241,25 +1268,15 @@ const News = () => {
               sources={sources}
             />
           ) : !activeSource ? (
-            <EmptyState
-              icon={<Newspaper className="h-7 w-7" />}
-              title="یک منبع انتخاب یا اضافه کن"
-              description="فید RSS یک سایت خبری اضافه کن، یا یک موضوع/سایت بنویس تا با هوش مصنوعی جستجو کنیم."
-              action={
-                <AddSourceDialog
-                  onAdded={(s) => {
-                    setSources((prev) => [...prev, s]);
-                    setActiveSourceId(s.id);
-                  }}
-                  onInstantDigest={handleInstantDigest}
-                  trigger={
-                    <Button size="lg" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      افزودن منبع
-                    </Button>
-                  }
-                />
-              }
+            <NewsOnboarding
+              isLoggedIn={!!user}
+              onBrowsePublic={handlePublicBrowse}
+              onAddSampleSources={handleAddSampleSources}
+              onAddSource={() => {
+                if (user) setAddSourceOpen(true);
+                else navigate("/auth");
+              }}
+              onSignIn={() => navigate("/auth")}
             />
           ) : (
             <>

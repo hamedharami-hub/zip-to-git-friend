@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { useArticleRewrite, type RewriteLength } from "@/hooks/useArticleRewrite";
+import { useArticleRewrite } from "@/hooks/useArticleRewrite";
 import { loadNewsDisplayLang, saveNewsDisplayLang } from "@/lib/newsDisplayLang";
+import { rewriteKey } from "@/lib/news";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -128,6 +129,8 @@ const NewsArticleReader = () => {
     activeRewrite,
     rewriteBusy,
     setActiveRewrite,
+    voice,
+    setVoice,
     handleRewrite,
     deleteRewrite,
     loadRewrites,
@@ -170,6 +173,7 @@ const NewsArticleReader = () => {
                 .select("id")
                 .eq("topic", `article:${useArticle.id}`)
                 .eq("length", "simple")
+                .eq("voice", voice)
                 .limit(1);
               const has = Array.isArray(existingSimple) && existingSimple.length > 0;
               if (!has && navigator.onLine) {
@@ -189,10 +193,12 @@ const NewsArticleReader = () => {
                 .from("news_digests" as never)
                 .select("id")
                 .eq("topic", `article:${useArticle.id}`)
+                .eq("length", activeRewrite)
+                .eq("voice", voice)
                 .limit(1);
               const hasAny = Array.isArray(existing) && existing.length > 0;
               if (!hasAny) {
-                void handleRewrite("auto-max", false).catch(() => {});
+                void handleRewrite(activeRewrite, false).catch(() => {});
               }
             } catch {
               /* ignore */
@@ -215,25 +221,22 @@ const NewsArticleReader = () => {
   // only hits the AI when needed.
   /* eslint-disable react-hooks/exhaustive-deps */
   useEffect(() => {
-    if (!article?.contentHtml) return;
+    if (!article) return;
     let cancelled = false;
     const controller = new AbortController();
 
-    const activeBookId =
-      view === "rewrite" && rewrites[activeRewrite]?.contentHtml
-        ? `news-rw-${article.id}-${activeRewrite}`
-        : `news-${article.id}`;
-    const activeHtml =
-      view === "rewrite" && rewrites[activeRewrite]?.contentHtml
-        ? rewrites[activeRewrite]!.contentHtml!
-        : article.contentHtml;
+    const activeDoc = view === "rewrite" ? rewrites[rewriteKey(activeRewrite, voice)] : undefined;
+    const activeBookId = activeDoc?.contentHtml
+      ? `news-rw-${article.id}-${activeRewrite}-${voice}`
+      : `news-${article.id}`;
+    const activeHtml = activeDoc?.contentHtml ?? article.contentHtml;
     if (!activeHtml) return;
 
     const chapter: BookChapter = {
       id: `${activeBookId}:0`,
       bookId: activeBookId,
       index: 0,
-      title: article.title,
+      title: activeDoc?.title || article.title,
       html: activeHtml,
       text: "",
       wordCount: 0,
@@ -277,13 +280,7 @@ const NewsArticleReader = () => {
       cancelled = true;
       controller.abort();
     };
-  }, [
-    article?.id,
-    article?.contentHtml,
-    view,
-    activeRewrite,
-    rewrites[activeRewrite]?.contentHtml,
-  ]);
+  }, [article?.id, article?.contentHtml, view, activeRewrite, voice, rewrites]);
   /* eslint-enable react-hooks/exhaustive-deps */
 
   const runScrape = async (a: NewsArticle, manual = true) => {
@@ -402,8 +399,9 @@ const NewsArticleReader = () => {
     );
   }
 
-  const activeRewriteDoc = rewrites[activeRewrite];
-  const hasAnyRewrite = !!rewrites.long || !!rewrites.max || !!rewrites["auto-max"];
+  const activeKey = rewriteKey(activeRewrite, voice);
+  const activeRewriteDoc = rewrites[activeKey];
+  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
 
   // Inject inline images from the original article into the rewritten HTML so
   // shorter/AI rewrites still show the photos at roughly the same positions.
@@ -428,8 +426,8 @@ const NewsArticleReader = () => {
     : undefined;
   const rwChapter: BookChapter | undefined = rewriteHtmlWithImages
     ? {
-        id: `news-rw-${article.id}-${activeRewrite}:0`,
-        bookId: `news-rw-${article.id}-${activeRewrite}`,
+        id: `news-rw-${article.id}-${activeRewrite}-${voice}:0`,
+        bookId: `news-rw-${article.id}-${activeRewrite}-${voice}`,
         index: 0,
         title: activeRewriteDoc!.title || article.title,
         html: rewriteHtmlWithImages,
@@ -488,7 +486,7 @@ const NewsArticleReader = () => {
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
           <NewsTocMenu
             html={
-              view === "rewrite" && rewriteHtmlWithImages
+              view === "rewrite" && activeRewriteDoc && rewriteHtmlWithImages
                 ? rewriteHtmlWithImages
                 : (article.contentHtml ?? "")
             }
@@ -504,7 +502,7 @@ const NewsArticleReader = () => {
                   : article.title
               }
               contentHtml={
-                view === "rewrite" && rewriteHtmlWithImages
+                view === "rewrite" && activeRewriteDoc && rewriteHtmlWithImages
                   ? rewriteHtmlWithImages
                   : (article.contentHtml ?? "")
               }
@@ -556,19 +554,17 @@ const NewsArticleReader = () => {
 
       {ttsText && (
         <ChapterTTSPlayer
-          bookId={`news-${article.id}`}
-          chapterIndex={
-            view === "rewrite"
-              ? activeRewrite === "max"
-                ? 2
-                : activeRewrite === "auto-max"
-                  ? 3
-                  : activeRewrite === "simple"
-                    ? 4
-                    : 1
-              : 0
+          bookId={
+            view === "rewrite" && activeRewriteDoc
+              ? `news-rw-${article.id}-${activeRewrite}-${voice}`
+              : `news-${article.id}`
           }
-          chapterTitle={article.title}
+          chapterIndex={0}
+          chapterTitle={
+            view === "rewrite" && activeRewriteDoc
+              ? activeRewriteDoc.title || article.title
+              : article.title
+          }
           text={ttsText}
           textFa={faTtsText || undefined}
           coverUrl={article.imageUrl ?? undefined}
@@ -660,6 +656,8 @@ const NewsArticleReader = () => {
                 rewrites={rewrites}
                 activeRewrite={activeRewrite}
                 onActiveRewriteChange={setActiveRewrite}
+                voice={voice}
+                onVoiceChange={setVoice}
                 rewriteBusy={rewriteBusy}
                 onRewrite={handleRewrite}
                 onDeleteRewrite={deleteRewrite}

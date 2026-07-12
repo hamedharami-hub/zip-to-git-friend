@@ -15,19 +15,10 @@ import {
 } from "@/components/ui/select";
 import { InteractiveBookText, type DisplayLang } from "@/components/books/InteractiveBookText";
 import { getAvailableBookModels } from "@/lib/aiModels";
-import { rewriteKey } from "@/lib/news";
+import { rewriteKey, VOICE_LABELS } from "@/lib/news";
 import type { BookAIModelRef, AppSettings, RewriteLength, RewriteVoice, NewsDigest } from "@/types";
 
 const LENGTHS: RewriteLength[] = ["simple", "auto-max", "long", "max"];
-
-const VOICE_LABELS: Record<RewriteVoice, string> = {
-  auto: "رسمی مجله‌ای (مانند قبل)",
-  storyteller: "داستان‌سرا",
-  friend: "دوستانه",
-  teacher: "معلمانه",
-  socratic: "سقراطی",
-  journalist: "خبری-تحلیلی",
-};
 
 interface Props {
   articleId: string;

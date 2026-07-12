@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
+  DEFAULT_REWRITE_VOICE,
   generateDigest,
   rowToDigest,
   rewriteKey,
@@ -44,7 +45,7 @@ export function useArticleRewrite({
   const [rewrites, setRewrites] = useState<Record<string, NewsDigest | undefined>>({});
   const [activeRewrite, setActiveRewriteState] = useState<RewriteLength>("long");
   const [voice, setVoiceState] = useState<RewriteVoice>(
-    settings.defaultRewriteVoice ?? "storyteller",
+    settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE,
   );
   const [rewriteBusy, setRewriteBusy] = useState<RewriteLength | null>(null);
 

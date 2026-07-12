@@ -5,7 +5,8 @@
  *   articles: Array<{ title: string; url: string; siteName?: string;
  *                     excerpt?: string; contentMd?: string;
  *                     publishedAt?: string }>;
- *   length: 'short' | 'long';
+ *   length: 'short' | 'long' | 'max' | 'auto-max' | 'simple';
+ *   voice?: 'auto' | 'storyteller' | 'friend' | 'teacher' | 'socratic' | 'journalist';
  *   topic?: string;
  *   windowHours?: number;
  * }
@@ -55,6 +56,7 @@ Hard rules:
   7. CONCEPTUAL THICKNESS. Don't just list facts. Group related facts into themes, explain mechanisms, draw cause-and-effect, contrast viewpoints, give one concrete example per abstract claim. Make the reader actually understand WHY things matter, not just WHAT happened.
   8. NO numbered lists. Bullets ONLY inside the "Key points" block described above — nowhere else. NO single-sentence paragraphs. NO repeated phrases between sections. NO "in conclusion" / "to summarise" tics.
   9. Output VALID markdown only — no front-matter, no commentary about the task, no "Here is the article" preamble. Headings exactly as #, ##, ### — never bold-as-heading.
+  10. PERSONA OVERRIDE. If a "MANDATORY PERSONA OVERRIDE" section appears in the user prompt, it takes precedence over the default feature-writer tone and article-shape rules. Follow it exactly.
 
 Always respond by calling the provided tool. Never reply with raw prose.`;
 
@@ -70,6 +72,15 @@ const AUTO_MAX_INSTRUCTIONS =
 // Legacy short fallback (kept so old clients don't 500).
 const SHORT_INSTRUCTIONS =
   "Write a concise first-person article of ~320–450 words. Follow the article-shape rules at small scale: bold # title, italic TL;DR, a 1-paragraph lede, then 2–3 short thematic H2 sections of 1–2 paragraphs each, and a tight final ## Where I Land paragraph.";
+
+const VOICE_APPENDIX: Record<string, string> = {
+  auto: "",
+  storyteller: `MANDATORY PERSONA OVERRIDE — Storyteller:\nThis is a story, not an essay. Start with a concrete scene, a specific moment, or a character in action. Build a narrative arc: setup → complication → tension → resolution. The H2 sections should move the story forward, not just analyze it. Use sensory details, small moments of dialogue, and emotional beats. The ending should feel like the closing of a story, not a summary. You may still include a "Key points" block and a TL;DR, but keep the prose vivid and scene-driven. First person is allowed as a narrator.`,
+  friend: `MANDATORY PERSONA OVERRIDE — Friend explaining over coffee:\nWrite as if you are telling this to a close friend who is curious but busy. Use "you" and "I". Use contractions, asides, "you know", "the thing is", "honestly", "pretty much", "kind of". Keep sentences short and conversational. React emotionally ("I was surprised", "That makes me think…"). Ask the reader short rhetorical questions. Do not be afraid of fragments or casual transitions. Keep the structure, but make it feel like a chat.`,
+  teacher: `MANDATORY PERSONA OVERRIDE — Patient teacher:\nAssume the reader knows almost nothing. Every time you introduce a person, organisation, law, technology, acronym or jargon term, briefly explain it in plain English in a short parenthetical or appositive. Use analogies and examples ("Imagine...", "Think of it like..."). Repeat the core idea in different words. When you explain a mechanism, go step by step. Ask "Why does this matter?" and answer it. The tone should be warm, patient, and encouraging.`,
+  socratic: `MANDATORY PERSONA OVERRIDE — Socratic guide:\nStructure the article as a series of questions the reader is likely to ask, then answer each one. Each H2 heading should be a clear, engaging question (e.g., "Why did this happen?", "Who is actually affected?", "What happens next?"). Answer the question in 2–3 paragraphs. Use "I" as a guide and "you" as the curious reader. The final section can be "What should I remember?" instead of "Where I Land". The goal is to make the reader feel like they are discovering the answer with you.`,
+  journalist: `MANDATORY PERSONA OVERRIDE — Sharp news journalist:\nUse a neutral, third-person voice. Lead with the most important fact. You MAY cite sources inline ("Reuters reported", "officials said") and attribute direct quotes. Keep paragraphs short and punchy. Prioritise facts and quotes over personal reflection. Do NOT write a personal "Where I Land" section. Instead, end with a "What this means" or "What to watch" section that is factual, not personal. Inverted pyramid: most important first, then context, then detail.`,
+};
 
 // "Simple everyday English" — rewrite (NOT summary). Preserves every fact.
 const SIMPLE_INSTRUCTIONS_A2 =
@@ -158,6 +169,7 @@ serve(async (req) => {
     const {
       articles,
       length = "long",
+      voice = "auto",
       topic,
       windowHours = 24,
       model: requestedModel,
@@ -200,8 +212,10 @@ serve(async (req) => {
                 : SIMPLE_INSTRUCTIONS_A2
               : LONG_INSTRUCTIONS;
 
+    const voiceAppendix = VOICE_APPENDIX[voice] ?? VOICE_APPENDIX.auto;
     const userPrompt = [
       instructions,
+      voiceAppendix,
       "",
       `Topic / scope: ${topic ?? "general"}.`,
       `Window: last ${windowHours} hour(s).`,
@@ -210,7 +224,8 @@ serve(async (req) => {
       "```json",
       JSON.stringify(compact, null, 2),
       "```",
-    ].join("\n");
+    ].filter((x) => x !== "")
+      .join("\n");
 
     // Per-length output cap (in tokens). Without this the gateway truncates
     // long features halfway through — symptom: headings appear but bodies are missing.

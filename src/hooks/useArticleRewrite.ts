@@ -6,11 +6,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateDigest, type NewsArticle, type NewsDigest } from "@/lib/news";
+import {
+  generateDigest,
+  rowToDigest,
+  rewriteKey,
+  type NewsArticle,
+  type NewsDigest,
+} from "@/lib/news";
 import { cacheRewrites, getCachedRewrites } from "@/lib/newsOfflineCache";
-import type { AppSettings, BookAIModelRef } from "@/types";
-
-export type RewriteLength = "long" | "max" | "auto-max" | "simple";
+import type { AppSettings, BookAIModelRef, RewriteLength, RewriteVoice } from "@/types";
 
 interface UseArticleRewriteParams {
   article: NewsArticle | null;
@@ -20,9 +24,11 @@ interface UseArticleRewriteParams {
 }
 
 interface UseArticleRewriteReturn {
-  rewrites: Record<RewriteLength, NewsDigest | undefined>;
+  rewrites: Record<string, NewsDigest | undefined>;
   activeRewrite: RewriteLength;
   setActiveRewrite: (length: RewriteLength) => void;
+  voice: RewriteVoice;
+  setVoice: (voice: RewriteVoice) => void;
   rewriteBusy: RewriteLength | null;
   handleRewrite: (length: RewriteLength, force?: boolean) => Promise<void>;
   deleteRewrite: (length: RewriteLength) => Promise<void>;
@@ -35,14 +41,16 @@ export function useArticleRewrite({
   settings,
   onViewChange,
 }: UseArticleRewriteParams): UseArticleRewriteReturn {
-  const [rewrites, setRewrites] = useState<Record<RewriteLength, NewsDigest | undefined>>(
-    {} as Record<RewriteLength, NewsDigest | undefined>,
+  const [rewrites, setRewrites] = useState<Record<string, NewsDigest | undefined>>({});
+  const [activeRewrite, setActiveRewriteState] = useState<RewriteLength>("long");
+  const [voice, setVoiceState] = useState<RewriteVoice>(
+    settings.defaultRewriteVoice ?? "storyteller",
   );
-  const [activeRewrite, setActiveRewriteState] = useState<RewriteLength>("auto-max");
   const [rewriteBusy, setRewriteBusy] = useState<RewriteLength | null>(null);
 
   const articleRef = useRef(article);
   const rewritesRef = useRef(rewrites);
+  const voiceRef = useRef(voice);
 
   useEffect(() => {
     articleRef.current = article;
@@ -52,50 +60,41 @@ export function useArticleRewrite({
     rewritesRef.current = rewrites;
   }, [rewrites]);
 
+  useEffect(() => {
+    voiceRef.current = voice;
+  }, [voice]);
+
   const setActiveRewrite = useCallback((length: RewriteLength) => {
     setActiveRewriteState(length);
   }, []);
 
+  const setVoice = useCallback((v: RewriteVoice) => {
+    setVoiceState(v);
+  }, []);
+
   const loadRewrites = useCallback(async (a: NewsArticle) => {
     const cached = getCachedRewrites(a.id);
-    if (cached) setRewrites(cached as Record<RewriteLength, NewsDigest | undefined>);
+    if (cached) setRewrites((prev) => ({ ...prev, ...cached }));
     try {
       const { data } = await supabase
         .from("news_digests" as never)
         .select("*")
         .eq("topic", `article:${a.id}`)
         .order("created_at", { ascending: false });
-      const map = {} as Record<RewriteLength, NewsDigest | undefined>;
+      const map: Record<string, NewsDigest | undefined> = {};
       for (const row of (data as Record<string, unknown>[]) ?? []) {
-        const d: NewsDigest = {
-          id: row.id as string,
-          userId: row.user_id as string,
-          sourceId: row.source_id as string | null,
-          length: row.length as NewsDigest["length"],
-          scope: row.scope as NewsDigest["scope"],
-          topic: row.topic as string | null,
-          windowHours: row.window_hours as number,
-          title: row.title as string,
-          contentMd: row.content_md as string,
-          contentHtml: row.content_html as string,
-          sourceArticles: (row.source_articles as NewsDigest["sourceArticles"]) ?? [],
-          wordCount: row.word_count as number,
-          model: row.model as string | null,
-          createdAt: row.created_at as string,
-          updatedAt: row.updated_at as string,
-        };
+        const d = rowToDigest(row);
         if (
-          (d.length === "long" ||
-            d.length === "max" ||
-            d.length === "auto-max" ||
-            d.length === "simple") &&
-          !map[d.length as RewriteLength]
+          d.length === "long" ||
+          d.length === "max" ||
+          d.length === "auto-max" ||
+          d.length === "simple"
         ) {
-          map[d.length as RewriteLength] = d;
+          map[rewriteKey(d.length, d.voice)] = d;
         }
       }
-      setRewrites(map);
-      cacheRewrites(a.id, map);
+      setRewrites((prev) => ({ ...prev, ...map }));
+      cacheRewrites(a.id, { ...cached, ...map });
     } catch {
       /* offline: keep cached */
     }
@@ -105,7 +104,8 @@ export function useArticleRewrite({
     async (length: RewriteLength, force = false) => {
       const currentArticle = articleRef.current;
       if (!currentArticle) return;
-      if (!force && rewritesRef.current[length]) {
+      const key = rewriteKey(length, voiceRef.current);
+      if (!force && rewritesRef.current[key]) {
         setActiveRewrite(length);
         onViewChange?.("rewrite");
         return;
@@ -137,11 +137,12 @@ export function useArticleRewrite({
           windowHours: 24,
           model: modelRef.model,
           simplifyLevel: length === "simple" ? (settings.simplifyLevel ?? "a2-b1") : undefined,
+          voice: voiceRef.current,
         });
         setRewrites((m) => {
-          const next = { ...m, [length]: digest };
+          const next = { ...m, [key]: digest };
           if (currentArticle) {
-            cacheRewrites(currentArticle.id, next as Record<string, NewsDigest | undefined>);
+            cacheRewrites(currentArticle.id, next);
           }
           return next;
         });
@@ -158,18 +159,21 @@ export function useArticleRewrite({
   );
 
   const deleteRewrite = useCallback(async (length: RewriteLength) => {
-    const r = rewritesRef.current[length];
+    const key = rewriteKey(length, voiceRef.current);
+    const r = rewritesRef.current[key];
     const currentArticle = articleRef.current;
     if (!r) return;
     try {
-      await supabase
-        .from("news_digests" as never)
-        .delete()
-        .eq("id", r.id);
+      if (!r.id.startsWith("local-")) {
+        await supabase
+          .from("news_digests" as never)
+          .delete()
+          .eq("id", r.id);
+      }
       setRewrites((m) => {
-        const next = { ...m, [length]: undefined };
+        const next = { ...m, [key]: undefined };
         if (currentArticle) {
-          cacheRewrites(currentArticle.id, next as Record<string, NewsDigest | undefined>);
+          cacheRewrites(currentArticle.id, next);
         }
         return next;
       });
@@ -183,6 +187,8 @@ export function useArticleRewrite({
     rewrites,
     activeRewrite,
     setActiveRewrite,
+    voice,
+    setVoice,
     rewriteBusy,
     handleRewrite,
     deleteRewrite,

@@ -5,9 +5,10 @@
  * the Supabase tables (`news_sources`, `news_articles`, `news_digests`).
  */
 import { supabase } from "@/integrations/supabase/client";
+import type { RewriteLength, RewriteVoice } from "@/types";
 
 export type NewsSourceKind = "rss" | "topic" | "site";
-export type DigestLength = "short" | "long" | "max" | "auto-max" | "simple";
+export type DigestLength = "short" | RewriteLength;
 export type DigestScope = "topic" | "site" | "source";
 
 export interface NewsSource {
@@ -78,25 +79,30 @@ export interface NewsDigest {
   sourceArticles: Array<{ title: string; url: string; siteName?: string }>;
   wordCount: number;
   model: string | null;
+  voice: RewriteVoice;
   createdAt: string;
   updatedAt: string;
 }
 
+export function rewriteKey(length: DigestLength, voice: RewriteVoice): string {
+  return `${length}:${voice}`;
+}
+
 // ─────────── Sources CRUD ───────────
 
-function rowToSource(row: any): NewsSource {
+function rowToSource(row: Record<string, unknown>): NewsSource {
   return {
-    id: row.id,
-    userId: row.user_id,
-    kind: row.kind,
-    name: row.name,
-    url: row.url,
-    topic: row.topic,
-    language: row.language,
-    folderId: row.folder_id ?? null,
-    sortOrder: row.sort_order ?? 0,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    userId: row.user_id as string,
+    kind: row.kind as NewsSourceKind,
+    name: row.name as string,
+    url: row.url as string | null,
+    topic: row.topic as string | null,
+    language: row.language as string | null,
+    folderId: (row.folder_id as string | null | undefined) ?? null,
+    sortOrder: (row.sort_order as number | null | undefined) ?? 0,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
@@ -107,7 +113,7 @@ export async function listSources(): Promise<NewsSource[]> {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return ((data as any[]) ?? []).map(rowToSource);
+  return ((data as Record<string, unknown>[] | null) ?? []).map(rowToSource);
 }
 
 export async function addSource(
@@ -133,14 +139,14 @@ export async function addSource(
     .select()
     .single();
   if (error) throw error;
-  return rowToSource(data);
+  return rowToSource(data as Record<string, unknown>);
 }
 
 export async function updateSource(
   id: string,
   patch: Partial<{ folderId: string | null; sortOrder: number; name: string }>,
 ): Promise<void> {
-  const update: Record<string, any> = {};
+  const update: Record<string, unknown> = {};
   if ("folderId" in patch) update.folder_id = patch.folderId;
   if ("sortOrder" in patch) update.sort_order = patch.sortOrder;
   if ("name" in patch) update.name = patch.name;
@@ -161,16 +167,16 @@ export async function deleteSource(id: string): Promise<void> {
 
 // ─────────── Folders ───────────
 
-function rowToFolder(row: any): NewsFolder {
+function rowToFolder(row: Record<string, unknown>): NewsFolder {
   return {
-    id: row.id,
-    userId: row.user_id,
-    name: row.name,
-    color: row.color,
-    icon: row.icon,
-    sortOrder: row.sort_order ?? 0,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    userId: row.user_id as string,
+    name: row.name as string,
+    color: row.color as string | null,
+    icon: row.icon as string | null,
+    sortOrder: (row.sort_order as number | null | undefined) ?? 0,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
@@ -181,7 +187,7 @@ export async function listFolders(): Promise<NewsFolder[]> {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) throw error;
-  return ((data as any[]) ?? []).map(rowToFolder);
+  return ((data as Record<string, unknown>[] | null) ?? []).map(rowToFolder);
 }
 
 export async function createFolder(input: {
@@ -202,7 +208,7 @@ export async function createFolder(input: {
     .select()
     .single();
   if (error) throw error;
-  return rowToFolder(data);
+  return rowToFolder(data as Record<string, unknown>);
 }
 
 export async function updateFolder(
@@ -243,10 +249,10 @@ export async function listBlockedDomains(): Promise<BlockedDomain[]> {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return ((data as any[]) ?? []).map((r) => ({
-    id: r.id,
-    domain: r.domain,
-    createdAt: r.created_at,
+  return ((data as Record<string, unknown>[] | null) ?? []).map((r) => ({
+    id: r.id as string,
+    domain: r.domain as string,
+    createdAt: r.created_at as string,
   }));
 }
 
@@ -425,23 +431,23 @@ export async function scrapeArticle(
 
 // ─────────── Articles CRUD ───────────
 
-function rowToArticle(row: any): NewsArticle {
+function rowToArticle(row: Record<string, unknown>): NewsArticle {
   return {
-    id: row.id,
-    userId: row.user_id,
-    sourceId: row.source_id,
-    url: row.url,
-    title: row.title,
-    author: row.author,
-    excerpt: row.excerpt,
-    contentMd: row.content_md,
-    contentHtml: row.content_html,
-    imageUrl: row.image_url,
-    siteName: row.site_name,
-    language: row.language,
-    publishedAt: row.published_at,
-    fetchedAt: row.fetched_at,
-    wordCount: row.word_count ?? 0,
+    id: row.id as string,
+    userId: row.user_id as string,
+    sourceId: (row.source_id as string | null | undefined) ?? null,
+    url: row.url as string,
+    title: row.title as string,
+    author: (row.author as string | null | undefined) ?? null,
+    excerpt: (row.excerpt as string | null | undefined) ?? null,
+    contentMd: (row.content_md as string | null | undefined) ?? null,
+    contentHtml: (row.content_html as string | null | undefined) ?? null,
+    imageUrl: (row.image_url as string | null | undefined) ?? null,
+    siteName: (row.site_name as string | null | undefined) ?? null,
+    language: (row.language as string | null | undefined) ?? null,
+    publishedAt: (row.published_at as string | null | undefined) ?? null,
+    fetchedAt: row.fetched_at as string,
+    wordCount: (row.word_count as number | null | undefined) ?? 0,
     isSaved: !!row.is_saved,
   };
 }
@@ -453,7 +459,7 @@ export async function getArticleByUrl(url: string): Promise<NewsArticle | null> 
     .eq("url", url)
     .maybeSingle();
   if (error) throw error;
-  return data ? rowToArticle(data) : null;
+  return data ? rowToArticle(data as Record<string, unknown>) : null;
 }
 
 export async function getArticleById(id: string): Promise<NewsArticle | null> {
@@ -463,7 +469,7 @@ export async function getArticleById(id: string): Promise<NewsArticle | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return data ? rowToArticle(data) : null;
+  return data ? rowToArticle(data as Record<string, unknown>) : null;
 }
 
 export async function upsertArticle(input: {
@@ -505,7 +511,7 @@ export async function upsertArticle(input: {
     .select()
     .single();
   if (error) throw error;
-  return rowToArticle(data);
+  return rowToArticle(data as Record<string, unknown>);
 }
 
 export async function setArticleSaved(id: string, isSaved: boolean): Promise<void> {
@@ -524,28 +530,29 @@ export async function listSavedArticles(): Promise<NewsArticle[]> {
     .order("updated_at", { ascending: false })
     .limit(200);
   if (error) throw error;
-  return ((data as any[]) ?? []).map(rowToArticle);
+  return ((data as Record<string, unknown>[] | null) ?? []).map(rowToArticle);
 }
 
 // ─────────── Digests ───────────
 
-function rowToDigest(row: any): NewsDigest {
+export function rowToDigest(row: Record<string, unknown>): NewsDigest {
   return {
-    id: row.id,
-    userId: row.user_id,
-    sourceId: row.source_id,
-    length: row.length,
-    scope: row.scope,
-    topic: row.topic,
-    windowHours: row.window_hours,
-    title: row.title,
-    contentMd: row.content_md,
-    contentHtml: row.content_html,
-    sourceArticles: (row.source_articles as any) ?? [],
-    wordCount: row.word_count,
-    model: row.model,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id as string,
+    userId: row.user_id as string,
+    sourceId: (row.source_id as string | null | undefined) ?? null,
+    length: row.length as DigestLength,
+    scope: row.scope as DigestScope,
+    topic: (row.topic as string | null | undefined) ?? null,
+    windowHours: (row.window_hours as number | null | undefined) ?? 24,
+    title: row.title as string,
+    contentMd: row.content_md as string,
+    contentHtml: row.content_html as string,
+    sourceArticles: (row.source_articles as NewsDigest["sourceArticles"]) ?? [],
+    wordCount: (row.word_count as number | null | undefined) ?? 0,
+    model: row.model as string | null,
+    voice: (row.voice as RewriteVoice) ?? "auto",
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
   };
 }
 
@@ -556,7 +563,7 @@ export async function listDigests(): Promise<NewsDigest[]> {
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
-  return ((data as any[]) ?? []).map(rowToDigest);
+  return ((data as Record<string, unknown>[] | null) ?? []).map(rowToDigest);
 }
 
 export async function getDigestById(id: string): Promise<NewsDigest | null> {
@@ -566,7 +573,7 @@ export async function getDigestById(id: string): Promise<NewsDigest | null> {
     .eq("id", id)
     .maybeSingle();
   if (error) throw error;
-  return data ? rowToDigest(data) : null;
+  return data ? rowToDigest(data as Record<string, unknown>) : null;
 }
 
 export async function deleteDigest(id: string): Promise<void> {
@@ -593,7 +600,9 @@ export async function generateDigest(opts: {
   windowHours?: number;
   model?: string;
   simplifyLevel?: "a2-b1" | "b1-b2";
+  voice?: RewriteVoice;
 }): Promise<NewsDigest> {
+  const voice = opts.voice ?? "auto";
   const { data, error } = await supabase.functions.invoke<{
     title: string;
     contentMd: string;
@@ -604,6 +613,7 @@ export async function generateDigest(opts: {
     body: {
       articles: opts.articles,
       length: opts.length,
+      voice,
       topic: opts.topic,
       windowHours: opts.windowHours ?? 24,
       model: opts.model,
@@ -637,10 +647,36 @@ export async function generateDigest(opts: {
       source_articles: sources,
       word_count: data.wordCount,
       model: data.model,
+      voice,
     } as never)
     .select()
     .single();
-  if (insErr) throw insErr;
+  if (insErr) {
+    // Fallback when the new `voice` column or extended length check has not
+    // been applied yet. We still return a usable digest and persist it locally.
+    const code = (insErr as { code?: string }).code;
+    if (code === "42703" || code === "23514") {
+      return {
+        id: `local-${crypto.randomUUID()}`,
+        userId,
+        sourceId: opts.sourceId ?? null,
+        length: opts.length,
+        scope: opts.scope,
+        topic: opts.topic ?? null,
+        windowHours: opts.windowHours ?? 24,
+        title: data.title,
+        contentMd: data.contentMd,
+        contentHtml: data.contentHtml,
+        sourceArticles: sources,
+        wordCount: data.wordCount,
+        model: data.model,
+        voice,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+    }
+    throw insErr;
+  }
   return rowToDigest(row);
 }
 
@@ -749,13 +785,12 @@ export async function formatForTelegram(opts: {
 
 // ─────────── Helpers ───────────
 
-function extractErr(error: any, fallback: string): string {
+function extractErr(error: unknown, fallback: string): string {
   try {
-    const ctx = error?.context;
-    if (ctx && typeof ctx.json === "function") {
-      // can't await here; just use message
-    }
-    return error?.message || fallback;
+    if (typeof error === "string") return error || fallback;
+    if (error instanceof Error) return error.message || fallback;
+    const msg = (error as { message?: string }).message;
+    return msg || fallback;
   } catch {
     return fallback;
   }

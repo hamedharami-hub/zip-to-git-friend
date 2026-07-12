@@ -15,18 +15,28 @@ import {
 } from "@/components/ui/select";
 import { InteractiveBookText, type DisplayLang } from "@/components/books/InteractiveBookText";
 import { getAvailableBookModels } from "@/lib/aiModels";
-import type { BookAIModelRef, AppSettings } from "@/types";
-import type { NewsDigest } from "@/lib/news";
-import { type RewriteLength } from "@/hooks/useArticleRewrite";
+import { rewriteKey } from "@/lib/news";
+import type { BookAIModelRef, AppSettings, RewriteLength, RewriteVoice, NewsDigest } from "@/types";
 
 const LENGTHS: RewriteLength[] = ["simple", "auto-max", "long", "max"];
+
+const VOICE_LABELS: Record<RewriteVoice, string> = {
+  auto: "رسمی مجله‌ای (مانند قبل)",
+  storyteller: "داستان‌سرا",
+  friend: "دوستانه",
+  teacher: "معلمانه",
+  socratic: "سقراطی",
+  journalist: "خبری-تحلیلی",
+};
 
 interface Props {
   articleId: string;
   articleTitle: string;
-  rewrites: Record<RewriteLength, NewsDigest | undefined>;
+  rewrites: Record<string, NewsDigest | undefined>;
   activeRewrite: RewriteLength;
   onActiveRewriteChange: (v: RewriteLength) => void;
+  voice: RewriteVoice;
+  onVoiceChange: (v: RewriteVoice) => void;
   rewriteBusy: RewriteLength | null;
   onRewrite: (length: RewriteLength, force?: boolean) => void;
   onDeleteRewrite: (length: RewriteLength) => void;
@@ -42,22 +52,22 @@ interface Props {
 
 function labelFor(len: RewriteLength): string {
   return len === "simple"
-    ? "ساده‌سازی روزمره (با تمام نکته‌ها)"
+    ? "ساده روزمره"
     : len === "auto-max"
-      ? "نسخه کامل ساده"
+      ? "نسخه حداکثری"
       : len === "long"
-        ? "خلاصه بلند"
-        : "خلاصه حداکثری";
+        ? "نسخه بلند"
+        : "نسخه کامل";
 }
 
 function tabLabel(len: RewriteLength): string {
   return len === "simple"
-    ? "ساده روزمره"
+    ? "ساده"
     : len === "auto-max"
-      ? "نسخه کامل ساده"
+      ? "حداکثری"
       : len === "long"
-        ? "خلاصه بلند"
-        : "خلاصه حداکثری";
+        ? "بلند"
+        : "کامل";
 }
 
 export function ArticleRewriteTabs({
@@ -66,6 +76,8 @@ export function ArticleRewriteTabs({
   rewrites,
   activeRewrite,
   onActiveRewriteChange,
+  voice,
+  onVoiceChange,
   rewriteBusy,
   onRewrite,
   onDeleteRewrite,
@@ -84,7 +96,20 @@ export function ArticleRewriteTabs({
           <Sparkles className="h-4 w-4 text-primary" />
           <h3 className="text-base font-semibold">بازنویسی این خبر با هوش مصنوعی</h3>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[11px] text-muted-foreground whitespace-nowrap">لحن نگارش:</span>
+          <Select value={voice} onValueChange={(v) => onVoiceChange(v as RewriteVoice)}>
+            <SelectTrigger className="h-7 text-[11px] min-w-[120px] max-w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {(Object.keys(VOICE_LABELS) as RewriteVoice[]).map((v) => (
+                <SelectItem key={v} value={v}>
+                  {VOICE_LABELS[v]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <span className="text-[11px] text-muted-foreground whitespace-nowrap">مدل بازنویسی:</span>
           <Select
             value={`${modelRef.provider}:${modelRef.model}`}
@@ -126,12 +151,13 @@ export function ArticleRewriteTabs({
           {LENGTHS.map((len) => (
             <TabsTrigger key={len} value={len} className="text-xs">
               {tabLabel(len)}
-              {rewrites[len] && <span className="ms-1.5 text-primary">●</span>}
+              {rewrites[rewriteKey(len, voice)] && <span className="ms-1.5 text-primary">●</span>}
             </TabsTrigger>
           ))}
         </TabsList>
         {LENGTHS.map((len) => {
-          const r = rewrites[len];
+          const key = rewriteKey(len, voice);
+          const r = rewrites[key];
           const busy = rewriteBusy === len;
           const html =
             len === activeRewrite && rewriteHtmlWithImages ? rewriteHtmlWithImages : r?.contentHtml;
@@ -185,7 +211,7 @@ export function ArticleRewriteTabs({
                     </div>
                     <InteractiveBookText
                       html={html ?? r.contentHtml}
-                      bookId={`news-rw-${articleId}-${len}`}
+                      bookId={`news-rw-${articleId}-${len}-${voice}`}
                       chapterIndex={0}
                       fontSizeClass={typo.sizeClass}
                       fontFamilyClass={typo.familyClass}

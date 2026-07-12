@@ -7,9 +7,9 @@ import { useTitleTranslations } from "@/lib/newsTitleTranslations";
 import { isSeen } from "@/lib/seenArticles";
 import type { FeedItem, NewsFolder, NewsSource } from "@/lib/news";
 
-type EnrichedItem = FeedItem & { _sourceName?: string };
+export type EnrichedItem = FeedItem & { _sourceName?: string };
 
-function FeedItemCard({
+export function FeedItemCard({
   item,
   onOpen,
   titleFa,

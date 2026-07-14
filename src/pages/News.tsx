@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   RETURN_KEY,
@@ -11,7 +11,6 @@ import {
   type ReturnState,
 } from "@/lib/newsPageHelpers";
 import {
-  ArrowLeft,
   Newspaper,
   Plus,
   Rss,
@@ -38,21 +37,19 @@ import {
   Square,
 } from "lucide-react";
 import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsHeader } from "@/components/news/NewsHeader";
 import { prefetchManyForOffline, isUrlCached, getCachedIdForUrl } from "@/lib/newsOfflineCache";
 import {
   useTitleTranslations,
   translateTitlesBatch,
   type TranslatableItem,
 } from "@/lib/newsTitleTranslations";
-import { ImportUrlDialog } from "@/components/news/ImportUrlDialog";
-import { AddSourceDialog } from "@/components/news/AddSourceDialog";
 import { SourcesTree } from "@/components/news/SourcesTree";
 import { FolderAggregatedView, AllAggregatedView } from "@/components/news/NewsAggregatedViews";
 import { ManageNewsDialog } from "@/components/news/ManageNewsDialog";
 import { NewsOnboarding } from "@/components/news/NewsOnboarding";
 import { SAMPLE_SOURCES, type PublicTopic } from "@/lib/newsPublicTopics";
 import { PublicNewsView } from "@/components/news/PublicNewsView";
-import { InstallButton } from "@/components/pwa/InstallButton";
 import { loadCachedFeed, mergeIntoCache } from "@/lib/newsFeedCache";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -83,7 +80,6 @@ import {
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/EmptyState";
-import { AccountButton } from "@/components/auth/AccountButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -176,6 +172,30 @@ const News = () => {
   const [showSaved, setShowSaved] = useState(false);
   const [publicTopic, setPublicTopic] = useState<PublicTopic | null>(null);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
+
+  const handleClearSharedUrl = useCallback(() => {
+    if (!sharedUrl) return;
+    const next = new URLSearchParams(params);
+    next.delete("import_url");
+    setParams(next, { replace: true });
+  }, [params, setParams, sharedUrl]);
+
+  const handleChannelAdded = useCallback(
+    (s: NewsSource) => {
+      setSources((prev) => [...prev, s]);
+      setActiveSourceId(s.id);
+    },
+    [setSources, setActiveSourceId],
+  );
+
+  const handleSourceAdded = useCallback(
+    (s: NewsSource) => {
+      setSources((prev) => [...prev, s]);
+      setActiveSourceId(s.id);
+    },
+    [setSources, setActiveSourceId],
+  );
+
   // Re-render tick when the seen-articles set changes (cross-tab too).
   const [, setSeenTick] = useState(0);
   useEffect(() => subscribeSeen(() => setSeenTick((n) => n + 1)), []);
@@ -937,53 +957,16 @@ const News = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground overflow-x-hidden">
-      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-16 flex items-center gap-2">
-          <Link to="/">
-            <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-[15px] font-semibold flex items-center gap-2 min-w-0">
-            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] flex items-center justify-center shrink-0">
-              <Newspaper className="h-4 w-4" />
-            </span>
-            <span className="truncate">News</span>
-          </h1>
-          <div className="ms-auto flex items-center gap-2">
-            {user && (
-              <>
-                <ImportUrlDialog
-                  initialUrl={sharedUrl ?? undefined}
-                  autoOpen={!!sharedUrl}
-                  onClose={() => {
-                    if (sharedUrl) {
-                      const next = new URLSearchParams(params);
-                      next.delete("import_url");
-                      setParams(next, { replace: true });
-                    }
-                  }}
-                  onChannelAdded={(s) => {
-                    setSources((prev) => [...prev, s]);
-                    setActiveSourceId(s.id);
-                  }}
-                />
-                <AddSourceDialog
-                  open={addSourceOpen}
-                  onOpenChange={setAddSourceOpen}
-                  onAdded={(s) => {
-                    setSources((prev) => [...prev, s]);
-                    setActiveSourceId(s.id);
-                  }}
-                  onInstantDigest={handleInstantDigest}
-                />
-              </>
-            )}
-            <InstallButton />
-            <AccountButton />
-          </div>
-        </div>
-      </header>
+      <NewsHeader
+        user={user}
+        sharedUrl={sharedUrl}
+        onClearSharedUrl={handleClearSharedUrl}
+        onChannelAdded={handleChannelAdded}
+        addSourceOpen={addSourceOpen}
+        onAddSourceOpenChange={setAddSourceOpen}
+        onSourceAdded={handleSourceAdded}
+        onInstantDigest={handleInstantDigest}
+      />
 
       <main
         className={

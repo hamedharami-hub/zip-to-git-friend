@@ -85,7 +85,7 @@ const SyncBridge = () => {
         startSync(user.id).catch((e) => console.error("startSync failed", e));
       });
     } else {
-      stopSync().catch(() => {});
+      stopSync().catch(() => undefined);
     }
   }, [user]);
   return null;

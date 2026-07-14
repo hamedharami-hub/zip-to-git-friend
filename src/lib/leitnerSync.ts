@@ -210,7 +210,7 @@ function subscribeRealtime(userId: string) {
           const old = payload.old as Partial<RemoteRow>;
           const id = (old.client_id as string) || (old.id as string);
           if (id) {
-            await deleteLeitnerCard(id).catch(() => {});
+            await deleteLeitnerCard(id).catch(() => undefined);
             useLeitnerStore.setState({
               cards: useLeitnerStore.getState().cards.filter((c) => c.id !== id),
             });

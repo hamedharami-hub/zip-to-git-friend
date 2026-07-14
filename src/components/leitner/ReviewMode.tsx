@@ -608,7 +608,8 @@ export function ReviewMode({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                effectiveMode === "cloze" ? handleClozeSubmit() : handleTypeSubmit();
+                if (effectiveMode === "cloze") handleClozeSubmit();
+                else handleTypeSubmit();
               }
             }}
             placeholder={effectiveMode === "cloze" ? "کلمه‌ی جا افتاده…" : "جواب رو تایپ کن…"}

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import type { CategoryWithStats } from "@/lib/sentenceCategories";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 const DOMAIN_META: Record<string, { name: string; icon: any; description: string }> = {
   pharmacy: {
     name: "Pharmacy",
@@ -37,6 +38,7 @@ export default function SentenceDomainPage() {
         .order("sort_order", { ascending: true });
 
       const cats = (data ?? []).map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         (row: any): CategoryWithStats => ({
           id: row.id,
           slug: row.slug,

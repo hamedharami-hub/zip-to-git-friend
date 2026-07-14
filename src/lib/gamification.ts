@@ -56,6 +56,7 @@ export function xpProgress(xp: number) {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function mapState(row: any): GamificationState {
   return {
     userId: row.user_id,
@@ -72,6 +73,7 @@ function mapState(row: any): GamificationState {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function mapQuest(row: any): DailyQuest {
   return {
     id: row.id,

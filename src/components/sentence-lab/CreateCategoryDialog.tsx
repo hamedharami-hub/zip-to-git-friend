@@ -55,6 +55,7 @@ export function CreateCategoryDialog({ open, onOpenChange, parentSlug, onCreated
       setName("");
       setDescription("");
       onCreated?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({
         title: "Could not create",

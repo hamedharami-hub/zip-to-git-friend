@@ -124,7 +124,7 @@ export function ReaderSelectionToolbar({ containerRef, onHighlight, onAddNote }:
         size="icon"
         className="h-7 w-7"
         onClick={() => {
-          void navigator.clipboard.writeText(text).catch(() => {});
+          void navigator.clipboard.writeText(text).catch(() => undefined);
           dismiss();
         }}
         aria-label="Copy"

@@ -46,6 +46,7 @@ export default function SentencePlanner() {
       const [c, s] = await Promise.all([fetchTopCategories(), listScenarios()]);
       setCats(c);
       setSaved(s);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "Failed to load");
     }
@@ -57,7 +58,8 @@ export default function SentencePlanner() {
 
   function toggle(slug: string) {
     const next = new Set(selected);
-    next.has(slug) ? next.delete(slug) : next.add(slug);
+    if (next.has(slug)) next.delete(slug);
+    else next.add(slug);
     setSelected(next);
   }
 
@@ -97,12 +99,14 @@ export default function SentencePlanner() {
         role,
         steps: data.steps as ScenarioStep[],
         createdAt: Date.now(),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         sentenceIds: sentences.map((s: any) => s.id),
       };
       await saveScenario(scenario);
       setSaved(await listScenarios());
       setActive(scenario);
       toast.success("Scenario ready");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message ?? "Generation failed");

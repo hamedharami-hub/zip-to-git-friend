@@ -78,7 +78,7 @@ export async function checkForUpdate(): Promise<void> {
     }
   } else {
     const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(regs.map((r) => r.update().catch(() => {})));
+    await Promise.all(regs.map((r) => r.update().catch(() => undefined)));
   }
   set({ lastChecked: Date.now() });
   await refreshRegistrationState();
@@ -190,7 +190,7 @@ export function registerPWA() {
       // Poll for updates every 60 min while app is open.
       setInterval(
         () => {
-          updateSW().catch(() => {});
+          updateSW().catch(() => undefined);
           set({ lastChecked: Date.now() });
         },
         60 * 60 * 1000,

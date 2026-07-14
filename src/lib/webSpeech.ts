@@ -19,11 +19,13 @@ export interface WebSpeechController {
   abort: () => void;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 type AnyRecognition = any;
 
 function getRecognitionCtor(): AnyRecognition | null {
   if (typeof window === "undefined") return null;
   // Chrome/Edge/Safari ship `webkitSpeechRecognition`; spec name is `SpeechRecognition`.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 }
 
@@ -74,6 +76,7 @@ export function startWebSpeech(opts: WebSpeechOptions = {}): WebSpeechController
   let resolveStop: ((r: WebSpeechResult) => void) | null = null;
   let rejectStop: ((e: Error) => void) | null = null;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   rec.onresult = (e: any) => {
     let interim = "";
     for (let i = e.resultIndex; i < e.results.length; i++) {
@@ -89,6 +92,7 @@ export function startWebSpeech(opts: WebSpeechOptions = {}): WebSpeechController
     if (interim && opts.onInterim) opts.onInterim(interim.trim());
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   rec.onerror = (e: any) => {
     if (stopped) return;
     const code = e?.error ?? "unknown";

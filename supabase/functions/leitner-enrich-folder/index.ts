@@ -116,29 +116,35 @@ async function enrichBatch(apiKey: string, cards: CardIn[]) {
   const items = Array.isArray(parsed?.items) ? parsed.items : [];
 
   // Normalise — strip empty strings; cap arrays.
-  return items
-    .map((it: any) => ({
-      id: String(it.id ?? "").trim(),
-      back:
-        typeof it.back === "string" && it.back.trim() ? it.back.trim().slice(0, 200) : undefined,
-      exampleSentence:
-        typeof it.exampleSentence === "string" && it.exampleSentence.trim()
-          ? it.exampleSentence.trim().slice(0, 240)
+  return (
+    items
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
+      .map((it: any) => ({
+        id: String(it.id ?? "").trim(),
+        back:
+          typeof it.back === "string" && it.back.trim() ? it.back.trim().slice(0, 200) : undefined,
+        exampleSentence:
+          typeof it.exampleSentence === "string" && it.exampleSentence.trim()
+            ? it.exampleSentence.trim().slice(0, 240)
+            : undefined,
+        synonyms: Array.isArray(it.synonyms)
+          ? it.synonyms
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
+              .filter((x: any) => typeof x === "string" && x.trim())
+              .map((x: string) => x.trim())
+              .slice(0, 8)
           : undefined,
-      synonyms: Array.isArray(it.synonyms)
-        ? it.synonyms
-            .filter((x: any) => typeof x === "string" && x.trim())
-            .map((x: string) => x.trim())
-            .slice(0, 8)
-        : undefined,
-      antonyms: Array.isArray(it.antonyms)
-        ? it.antonyms
-            .filter((x: any) => typeof x === "string" && x.trim())
-            .map((x: string) => x.trim())
-            .slice(0, 6)
-        : undefined,
-    }))
-    .filter((x: any) => x.id);
+        antonyms: Array.isArray(it.antonyms)
+          ? it.antonyms
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
+              .filter((x: any) => typeof x === "string" && x.trim())
+              .map((x: string) => x.trim())
+              .slice(0, 6)
+          : undefined,
+      }))
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
+      .filter((x: any) => x.id)
+  );
 }
 
 serve(async (req) => {
@@ -166,6 +172,7 @@ serve(async (req) => {
     // Process in small batches so a single bad card doesn't kill the run
     // and to keep token usage reasonable.
     const BATCH = 8;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const out: any[] = [];
     let lastError: string | undefined;
 

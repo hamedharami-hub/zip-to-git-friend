@@ -70,6 +70,15 @@ function stripFences(s: string): string {
   return t.trim();
 }
 
+function stripSurroundingPunctuation(s: string): string {
+  const chars = new Set(['"', "'", "`", "(", ")", "[", "]"]);
+  let i = 0;
+  while (i < s.length && chars.has(s[i])) i++;
+  let j = s.length;
+  while (j > i && chars.has(s[j - 1])) j--;
+  return s.slice(i, j);
+}
+
 function buildAnalysisPrompt(text: string): string {
   return `You are an expert English-to-Persian language learning assistant for an adult Iranian learner.
 
@@ -277,7 +286,5 @@ Rules: Output ONLY the Persian translation (1–4 words). NO English. NO quotes.
 Rules: Output ONLY the Persian translation. NO English. NO quotes. NO parentheses. NO explanation.
 Text: ${text}`;
   const raw = await callGroqChat(prompt, apiKey, model);
-  return stripFences(raw)
-    .trim()
-    .replace(/^["'`(\[]+|["'`)\]]+$/g, "");
+  return stripSurroundingPunctuation(stripFences(raw).trim());
 }

@@ -80,6 +80,7 @@ export async function generateLanguageChapter(input: {
     { body: input },
   );
   if (error) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const msg = (error as any)?.context?.error || (error as any)?.message || "AI request failed.";
     throw new Error(typeof msg === "string" ? msg : "AI request failed.");
   }

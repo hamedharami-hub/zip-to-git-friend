@@ -55,6 +55,7 @@ export function CustomPathDialog({ open, onOpenChange, onCreated, domain = "gene
         .select("slug, name")
         .eq("domain", domain)
         .is("parent_id", null);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       const catSlugs = (cats ?? []).map((c: any) => c.slug);
       if (catSlugs.length === 0) {
         setOptions([]);
@@ -121,6 +122,7 @@ export function CustomPathDialog({ open, onOpenChange, onCreated, domain = "gene
       setSteps([]);
       setPickValue("");
       onCreated();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({ title: "خطا", description: e?.message, variant: "destructive" });
     } finally {

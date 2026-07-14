@@ -42,7 +42,7 @@ export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChan
 
   // Re-open whenever a new shared URL arrives.
   // (Parent passes a fresh initialUrl + autoOpen=true via search params.)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     if (autoOpen && initialUrl) {
       setUrl(initialUrl);
@@ -106,6 +106,7 @@ export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChan
       toast.success("مقاله آماده شد.");
       handleOpenChange(false);
       navigate(`/news/article/${saved.id}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e.message ?? "Import failed.");
     } finally {

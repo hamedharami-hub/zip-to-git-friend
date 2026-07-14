@@ -104,6 +104,7 @@ Output JSON shape:
 
     const data = await resp.json();
     const content = data?.choices?.[0]?.message?.content ?? "{}";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     let parsed: any;
     try {
       parsed = JSON.parse(content);
@@ -117,6 +118,7 @@ Output JSON shape:
     return new Response(JSON.stringify(parsed), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   } catch (e: any) {
     return new Response(JSON.stringify({ error: e?.message ?? "unknown" }), {
       status: 500,

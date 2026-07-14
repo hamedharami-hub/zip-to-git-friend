@@ -93,6 +93,7 @@ serve(async (req) => {
 
     const cleaned = paragraphs
       .slice(0, MAX_PARAGRAPHS)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       .map((p: any) =>
         String(p ?? "")
           .trim()
@@ -169,6 +170,7 @@ serve(async (req) => {
       });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     let parsed: any;
     try {
       parsed = JSON.parse(argsStr);
@@ -179,6 +181,7 @@ serve(async (req) => {
       });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const rawResults: any[] = Array.isArray(parsed.results) ? parsed.results : [];
     // Normalize and pad to input length so callers can match by index.
     const normalized = cleaned.map((_p, i) => {
@@ -189,8 +192,10 @@ serve(async (req) => {
         vocabulary: Array.isArray(r.vocabulary)
           ? r.vocabulary
               .filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
                 (v: any) => v && typeof v.word === "string" && typeof v.translation === "string",
               )
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
               .map((v: any) => ({
                 word: String(v.word).trim(),
                 translation: String(v.translation).trim(),
@@ -201,8 +206,10 @@ serve(async (req) => {
         idioms: Array.isArray(r.idioms)
           ? r.idioms
               .filter(
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
                 (x: any) => x && typeof x.phrase === "string" && typeof x.meaning === "string",
               )
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
               .map((x: any) => ({
                 phrase: String(x.phrase).trim(),
                 meaning: String(x.meaning).trim(),

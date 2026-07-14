@@ -141,7 +141,9 @@ function mdToHtml(md: string): string {
     return `<p>${t.replace(/\n/g, "<br/>")}</p>`;
   });
   s = paragraphs.join("\n");
-  s = s.replace(/\u0000CODE(\d+)\u0000/g, (_, i) => {
+  const codeMarker = String.fromCharCode(0);
+  const codeRe = new RegExp(`${codeMarker}CODE(\\d+)${codeMarker}`, "g");
+  s = s.replace(codeRe, (_, i) => {
     return `<pre><code>${codeBlocks[Number(i)]
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -191,6 +193,7 @@ serve(async (req) => {
     const isHugeLength = length === "max" || length === "auto-max" || length === "simple";
     const perArticleCap = isHugeLength ? 1800 : 600;
     const maxArticles = isHugeLength ? 30 : 25;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const compact = articles.slice(0, maxArticles).map((a: any) => ({
       title: String(a.title ?? "").slice(0, 250),
       url: String(a.url ?? ""),
@@ -224,7 +227,8 @@ serve(async (req) => {
       "```json",
       JSON.stringify(compact, null, 2),
       "```",
-    ].filter((x) => x !== "")
+    ]
+      .filter((x) => x !== "")
       .join("\n");
 
     // Per-length output cap (in tokens). Without this the gateway truncates

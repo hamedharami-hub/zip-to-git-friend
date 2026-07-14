@@ -99,7 +99,9 @@ export function useVideoElement(ref: RefObject<HTMLMediaElement | null>): VideoE
     if (!el) return;
     try {
       await el.play();
-    } catch {}
+    } catch {
+      /* no-op */
+    }
   }, [ref]);
   const pause = useCallback(() => {
     ref.current?.pause();
@@ -108,7 +110,7 @@ export function useVideoElement(ref: RefObject<HTMLMediaElement | null>): VideoE
     const el = ref.current;
     if (!el) return;
     if (el.paused) {
-      el.play().catch(() => {});
+      el.play().catch(() => undefined);
     } else {
       el.pause();
     }
@@ -120,7 +122,9 @@ export function useVideoElement(ref: RefObject<HTMLMediaElement | null>): VideoE
       if (el.readyState < 1) return;
       try {
         el.currentTime = Math.max(0, Math.min(el.duration || sec, sec));
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     },
     [ref],
   );
@@ -130,7 +134,9 @@ export function useVideoElement(ref: RefObject<HTMLMediaElement | null>): VideoE
       if (!el) return;
       try {
         el.currentTime = Math.max(0, Math.min(el.duration || 0, el.currentTime + delta));
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     },
     [ref],
   );

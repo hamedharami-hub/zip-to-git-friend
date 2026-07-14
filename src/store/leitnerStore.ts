@@ -141,7 +141,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     };
     await saveLeitnerCard(card);
     set({ cards: [...get().cards, card] });
-    pushCard(card).catch(() => {});
+    pushCard(card).catch(() => undefined);
 
     // Background: extract a short audio clip when we have video + range and no audioUrl yet.
     if (
@@ -173,7 +173,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     const updated = { ...card, ...patch };
     await saveLeitnerCard(updated);
     set({ cards: get().cards.map((c) => (c.id === id ? updated : c)) });
-    pushCard(updated).catch(() => {});
+    pushCard(updated).catch(() => undefined);
   },
   reviewCard: async (id, correct) => {
     const card = get().cards.find((c) => c.id === id);
@@ -181,7 +181,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     const updated = applyReview(card, correct);
     await saveLeitnerCard(updated);
     set({ cards: get().cards.map((c) => (c.id === id ? updated : c)) });
-    pushCard(updated).catch(() => {});
+    pushCard(updated).catch(() => undefined);
   },
   rateCard: async (id, rating, opts) => {
     const card = get().cards.find((c) => c.id === id);
@@ -195,7 +195,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     const updated = applyAnswer(card, rating);
     await saveLeitnerCard(updated);
     set({ cards: get().cards.map((c) => (c.id === id ? updated : c)) });
-    pushCard(updated).catch(() => {});
+    pushCard(updated).catch(() => undefined);
   },
   lastReviewSnapshot: null,
   undoLastReview: async () => {
@@ -206,13 +206,13 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
       cards: get().cards.map((c) => (c.id === snap.id ? snap : c)),
       lastReviewSnapshot: null,
     });
-    pushCard(snap).catch(() => {});
+    pushCard(snap).catch(() => undefined);
     return snap.id;
   },
   deleteCard: async (id) => {
     await dbDeleteCard(id);
     set({ cards: get().cards.filter((c) => c.id !== id) });
-    deleteRemoteCard(id).catch(() => {});
+    deleteRemoteCard(id).catch(() => undefined);
   },
   toggleStar: async (id) => {
     const card = get().cards.find((c) => c.id === id);
@@ -220,7 +220,7 @@ export const useLeitnerStore = create<LeitnerState>((set, get) => ({
     const updated = { ...card, starred: !card.starred };
     await saveLeitnerCard(updated);
     set({ cards: get().cards.map((c) => (c.id === id ? updated : c)) });
-    pushCard(updated).catch(() => {});
+    pushCard(updated).catch(() => undefined);
   },
   getDueCards: (now = Date.now(), folderId) => {
     const base = folderId ? get().cards.filter((c) => c.folderId === folderId) : get().cards;

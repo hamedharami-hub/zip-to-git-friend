@@ -140,6 +140,7 @@ function Stat({
   value,
   accent,
 }: {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   icon: any;
   label: string;
   value: number;

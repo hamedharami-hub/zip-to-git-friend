@@ -43,7 +43,7 @@ interface Props {
 
 /** Splits a string into tokens preserving whitespace and punctuation. */
 function tokenize(text: string): Array<{ token: string; isWord: boolean }> {
-  const parts = text.split(/(\s+|[^\w'’\-]+)/u);
+  const parts = text.split(/(\s+|[^\w'’-]+)/u);
   return parts
     .filter((p) => p.length > 0)
     .map((token) => ({

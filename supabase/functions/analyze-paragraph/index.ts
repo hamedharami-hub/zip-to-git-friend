@@ -207,6 +207,7 @@ serve(async (req) => {
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     let parsed: any;
     try {
       parsed = JSON.parse(argsStr);
@@ -224,8 +225,10 @@ serve(async (req) => {
       vocabulary: Array.isArray(parsed.vocabulary)
         ? parsed.vocabulary
             .filter(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
               (v: any) => v && typeof v.word === "string" && typeof v.translation === "string",
             )
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
             .map((v: any) => ({
               word: String(v.word).trim(),
               translation: String(v.translation).trim(),
@@ -235,7 +238,9 @@ serve(async (req) => {
         : [],
       idioms: Array.isArray(parsed.idioms)
         ? parsed.idioms
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
             .filter((i: any) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
             .map((i: any) => ({
               phrase: String(i.phrase).trim(),
               meaning: String(i.meaning).trim(),

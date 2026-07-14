@@ -58,7 +58,7 @@ export const useLeitnerFolderStore = create<FolderState>((set, get) => ({
     };
     await saveLeitnerFolder(folder);
     set({ folders: [...get().folders, folder] });
-    pushFolder(folder).catch(() => {});
+    pushFolder(folder).catch(() => undefined);
     return folder;
   },
   ensureFolder: async ({ name, kind, sourceRef, parentId }) => {
@@ -74,12 +74,12 @@ export const useLeitnerFolderStore = create<FolderState>((set, get) => ({
     const updated = { ...f, name: name.trim() || f.name };
     await saveLeitnerFolder(updated);
     set({ folders: get().folders.map((x) => (x.id === id ? updated : x)) });
-    pushFolder(updated).catch(() => {});
+    pushFolder(updated).catch(() => undefined);
   },
   deleteFolder: async (id) => {
     await dbDeleteFolder(id);
     set({ folders: get().folders.filter((x) => x.id !== id) });
-    deleteRemoteFolder(id).catch(() => {});
+    deleteRemoteFolder(id).catch(() => undefined);
   },
   getById: (id) => (id ? get().folders.find((f) => f.id === id) : undefined),
   getByKindRef: (kind, sourceRef) =>

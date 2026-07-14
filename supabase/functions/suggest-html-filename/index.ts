@@ -12,9 +12,9 @@ function cleanFilename(input: string): string {
   return (
     (input || "")
       .replace(/```[\s\S]*?```/g, " ")
-      .replace(/[\"'“”‘’`]/g, "")
+      .replace(/["'“”‘’`]/g, "")
       .replace(/\.html?$/i, "")
-      .replace(/[\\/:*?\"<>|]+/g, " ")
+      .replace(/[\\/:*?"<>|]+/g, " ")
       .replace(/\s+/g, " ")
       .trim()
       .slice(0, 80) || "متن خبری"

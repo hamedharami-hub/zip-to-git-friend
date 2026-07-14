@@ -41,6 +41,7 @@ export default function SentencePathPage() {
       setSub(s);
       const ps = await fetchPathSteps(categorySlug, subSlug);
       setSteps(ps);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       setError(e?.message ?? "Failed to load path");
     } finally {

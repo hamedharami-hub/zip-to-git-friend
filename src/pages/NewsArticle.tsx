@@ -185,7 +185,7 @@ const NewsArticleReader = () => {
                 .limit(1);
               const has = Array.isArray(existingSimple) && existingSimple.length > 0;
               if (!has && navigator.onLine) {
-                void handleRewrite("simple", false).catch(() => {});
+                void handleRewrite("simple", false).catch(() => undefined);
               } else {
                 // Already cached — switch to the simple tab on open.
                 setActiveRewrite("simple");
@@ -206,7 +206,7 @@ const NewsArticleReader = () => {
                 .limit(1);
               const hasAny = Array.isArray(existing) && existing.length > 0;
               if (!hasAny) {
-                void handleRewrite(activeRewrite, false).catch(() => {});
+                void handleRewrite(activeRewrite, false).catch(() => undefined);
               }
             } catch {
               /* ignore */

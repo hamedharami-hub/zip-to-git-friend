@@ -18,6 +18,7 @@ export interface CategoryWithStats extends SentenceCategory {
   sentenceCount: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function map(row: any): SentenceCategory {
   return {
     id: row.id,

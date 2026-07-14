@@ -58,6 +58,7 @@ export async function fetchPathSteps(
   const { data: auth } = await supabase.auth.getUser();
   const userId = auth.user?.id;
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   const allIds = (sentences ?? []).map((s: any) => s.id as string);
   const progressById = new Map<string, { state: string; stability: number }>();
   if (userId && allIds.length > 0) {

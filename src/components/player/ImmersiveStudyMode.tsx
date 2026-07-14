@@ -40,6 +40,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
   const hideSubtitleText = blind.enabled && !blind.isRevealed;
 
   const [feedback, setFeedback] = useState<"play" | "pause" | "prev" | "next" | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const feedbackTimerRef = useRef<number | null>(null);
   const tapTimerRef = useRef<number | null>(null);
   const lastTapRef = useRef<{ time: number; zone: "left" | "mid" | "right" } | null>(null);
@@ -53,7 +54,9 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
     if (current.lastPosition && current.lastPosition < (current.duration || Infinity)) {
       try {
         v.currentTime = current.lastPosition;
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
   }, [current?.id]);
 
@@ -99,7 +102,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      v.play().catch(() => {});
+      v.play().catch(() => undefined);
       flashFeedback("play");
     } else {
       v.pause();
@@ -127,7 +130,9 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
     if (target) {
       try {
         v.currentTime = target.startMs / 1000;
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
   };
 
@@ -169,7 +174,6 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
   // Using flex column so the video does NOT extend behind the subtitle area;
   // it sits in the top region with object-contain and proper aspect ratio,
   // while subtitles get a dedicated, full-width compact bar below.
-  const [analysisOpen, setAnalysisOpen] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 bg-black overflow-hidden flex flex-col">

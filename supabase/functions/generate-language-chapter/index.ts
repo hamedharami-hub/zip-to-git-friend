@@ -210,6 +210,7 @@ Then call the tool with the result.`;
       );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     let parsed: any;
     try {
       parsed = JSON.parse(argsStr);
@@ -223,7 +224,8 @@ Then call the tool with the result.`;
     const story = String(parsed.story ?? "").trim();
     const title = String(parsed.title ?? "").trim() || "Story";
     const used = Array.isArray(parsed.usedItems)
-      ? parsed.usedItems.map((s: any) => String(s ?? "").trim()).filter(Boolean)
+      ? // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
+        parsed.usedItems.map((s: any) => String(s ?? "").trim()).filter(Boolean)
       : [];
     const teachingNotes = String(parsed.teachingNotes ?? "").trim();
 

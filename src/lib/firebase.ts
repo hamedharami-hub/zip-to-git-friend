@@ -33,7 +33,7 @@ export function getFirebase(): Promise<FirebaseServices> {
           .then((ok) => {
             if (ok) firebaseAnalytics = getAnalytics(app);
           })
-          .catch(() => {});
+          .catch(() => undefined);
       }
       return { app, auth, db };
     });

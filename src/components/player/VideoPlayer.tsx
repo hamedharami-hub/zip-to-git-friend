@@ -92,7 +92,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     if (current.lastPosition && current.lastPosition < (current.duration || Infinity)) {
       try {
         v.currentTime = current.lastPosition;
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
   }, [current?.id]);
 
@@ -116,8 +118,10 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       if (pending) {
         try {
           v.currentTime = pending.time;
-        } catch {}
-        if (pending.play) v.play().catch(() => {});
+        } catch {
+          /* no-op */
+        }
+        if (pending.play) v.play().catch(() => undefined);
         pendingSeekRef.current = null;
       }
     };
@@ -170,7 +174,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         }
       : null,
     {
-      onPlay: () => videoRef.current?.play().catch(() => {}),
+      onPlay: () => videoRef.current?.play().catch(() => undefined),
       onPause: () => videoRef.current?.pause(),
       onSeekBackward: (s) => {
         const v = videoRef.current;
@@ -196,7 +200,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         }
         try {
           v.currentTime = target.startMs / 1000;
-        } catch {}
+        } catch {
+          /* no-op */
+        }
       },
       onNextTrack: () => {
         const v = videoRef.current;
@@ -207,7 +213,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         if (!target) return;
         try {
           v.currentTime = target.startMs / 1000;
-        } catch {}
+        } catch {
+          /* no-op */
+        }
       },
     },
     !!current,
@@ -257,7 +265,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     }
     try {
       v.currentTime = Math.max(0, seekRequest.time);
-    } catch {}
+    } catch {
+      /* no-op */
+    }
     if (seekRequest.play) {
       safePlay(v);
     }
@@ -314,8 +324,10 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       const exit =
         document.exitFullscreen?.bind(document) || docAny.webkitExitFullscreen?.bind(docAny);
       try {
-        Promise.resolve(exit?.()).catch(() => {});
-      } catch {}
+        Promise.resolve(exit?.()).catch(() => undefined);
+      } catch {
+        /* no-op */
+      }
       // Unlock orientation on exit (Android).
       const orientation = (
         screen as Screen & {
@@ -324,7 +336,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       ).orientation;
       try {
         orientation?.unlock?.();
-      } catch {}
+      } catch {
+        /* no-op */
+      }
       return;
     }
     if (el) {
@@ -346,19 +360,25 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
                 }
               ).orientation;
               try {
-                orientation?.lock?.("landscape").catch(() => {});
-              } catch {}
+                orientation?.lock?.("landscape").catch(() => undefined);
+              } catch {
+                /* no-op */
+              }
             })
-            .catch(() => {});
+            .catch(() => undefined);
           return;
-        } catch {}
+        } catch {
+          /* no-op */
+        }
       }
     }
     // iOS Safari fallback — only the <video> can go fullscreen.
     const vAny = v as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
     try {
       vAny?.webkitEnterFullscreen?.();
-    } catch {}
+    } catch {
+      /* no-op */
+    }
   };
 
   if (!current) return null;
@@ -403,7 +423,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     if (target) {
       try {
         v.currentTime = target.startMs / 1000;
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
   };
 

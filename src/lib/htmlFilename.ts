@@ -57,6 +57,7 @@ async function suggestWithGemini(
   if (!res.ok) throw new HtmlFilenameError(`Gemini filename failed (${res.status}).`);
   const data = await res.json();
   return cleanFilename(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join(" ") ?? "",
   );
 }

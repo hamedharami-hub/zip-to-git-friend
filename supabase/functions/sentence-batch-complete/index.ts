@@ -56,6 +56,7 @@ ${need.aussie ? '- "english_aussie": natural Australian-English version (slang/i
   }
   const data = await resp.json();
   const txt = data.choices?.[0]?.message?.content ?? "{}";
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any = {};
   try {
     parsed = JSON.parse(txt);
@@ -115,6 +116,7 @@ Deno.serve(async (req) => {
         }
         // gentle pacing
         await new Promise((r) => setTimeout(r, 250));
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       } catch (e: any) {
         failed++;
         results.push({ id: row.id, ok: false, error: String(e?.message ?? e) });
@@ -124,6 +126,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({ scanned: rows?.length ?? 0, updated, failed, results }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   } catch (e: any) {
     return new Response(JSON.stringify({ error: String(e?.message ?? e) }), {
       status: 500,

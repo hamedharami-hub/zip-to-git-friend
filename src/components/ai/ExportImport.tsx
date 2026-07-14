@@ -24,7 +24,7 @@ export function ExportImport({ videoId, onImported }: Props) {
   const primary = useSubtitleStore((s) => s.primary);
   const secondary = useSubtitleStore((s) => s.secondary);
   const current = useVideoStore((s) => s.current);
-  const baseName = (current?.title || "subtitles").replace(/[^\w\-]+/g, "_");
+  const baseName = (current?.title || "subtitles").replace(/[^\w-]+/g, "_");
 
   const handleImport = async (file: File) => {
     try {

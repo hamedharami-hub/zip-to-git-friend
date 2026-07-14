@@ -44,13 +44,24 @@ interface SearchItem {
 
 const RTL_RE = /[\u0590-\u08FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
 
+function isAscii(str: string): boolean {
+  for (const ch of str) {
+    const cp = ch.codePointAt(0) ?? 0;
+    if (cp > 0x7f) return false;
+    if (cp < 0x20 && cp !== 9 && cp !== 10 && cp !== 13) return false;
+  }
+  return true;
+}
+
 function shouldTranslateTitle(title: string): boolean {
   const clean = (title ?? "").trim();
   if (!clean) return false;
   // Keep Persian / RTL headlines in their original script.
   if (RTL_RE.test(clean)) return false;
-  if (/^[\x00-\x7F\s.,:;!?"'()\-_/&%0-9]+$/.test(clean) && /[A-Za-z]{3,}/.test(clean)) return false;
-  return /[^\x00-\x7F]/.test(clean) || !/[A-Za-z]{3,}/.test(clean);
+  const hasThreeLetters = /[A-Za-z]{3,}/.test(clean);
+  const ascii = isAscii(clean);
+  if (ascii && hasThreeLetters) return false;
+  return !ascii || !hasThreeLetters;
 }
 
 function siteFromUrl(url: string): string | undefined {
@@ -276,6 +287,7 @@ async function summarizeWithGemini(opts: {
   const json = await res.json();
   const argsStr = json?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
   if (!argsStr) return {};
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any;
   try {
     parsed = JSON.parse(argsStr);
@@ -434,9 +446,11 @@ async function searchWithFirecrawl(opts: {
   const data = await fcRes.json();
   if (!fcRes.ok) {
     const err = new Error(data?.error ?? `Firecrawl search failed (${fcRes.status})`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     (err as any).status = fcRes.status;
     throw err;
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   const raw: any[] =
     (Array.isArray(data?.data) && data.data) || data?.web?.results || data?.web || [];
   return raw
@@ -512,6 +526,7 @@ serve(async (req) => {
           language,
         });
         usedSource = "firecrawl";
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       } catch (e: any) {
         firecrawlError = e?.message ?? "Firecrawl error";
         console.warn("Firecrawl failed, falling back to Google News RSS:", firecrawlError);

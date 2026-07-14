@@ -71,6 +71,7 @@ export default function SentenceCategoryPage() {
       setCat(c);
       const s = await fetchSubcategories(categorySlug);
       setSubs(s);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       setError(e?.message ?? "Failed to load");
     } finally {

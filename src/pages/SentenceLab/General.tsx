@@ -57,6 +57,7 @@ export default function SentenceGeneralPage() {
       const [p, c] = await Promise.all([fetchPaths("general"), fetchTopCategories()]);
       setPaths(p);
       setCats(c.filter((x) => GENERAL_BROWSE_SLUGS.has(x.slug)));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({ title: "Failed to load", description: e?.message, variant: "destructive" });
     } finally {
@@ -74,6 +75,7 @@ export default function SentenceGeneralPage() {
       await deletePath(p.id);
       toast({ title: "حذف شد" });
       void load();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({ title: "خطا", description: e?.message, variant: "destructive" });
     }

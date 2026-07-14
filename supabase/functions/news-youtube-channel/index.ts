@@ -80,7 +80,7 @@ function youtubeChannelHandle(url: string) {
     if (!/(^|\.)youtube\.com$/.test(u.hostname)) return null;
     let m = u.pathname.match(/^\/channel\/(UC[\w-]{20,})/);
     if (m) return { kind: "id" as const, value: m[1] };
-    m = u.pathname.match(/^\/(@[A-Za-z0-9_.\-]+)/);
+    m = u.pathname.match(/^\/(@[A-Za-z0-9_.-]+)/);
     if (m) return { kind: "handle" as const, value: m[1] };
     m = u.pathname.match(/^\/user\/([^/]+)/);
     if (m) return { kind: "user" as const, value: m[1] };

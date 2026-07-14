@@ -152,6 +152,7 @@ serve(async (req) => {
       siteName: main.siteName ?? null,
       content: String(main.contentMd ?? main.excerpt ?? "").slice(0, 4000),
     };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const relatedBlock = related.slice(0, 12).map((a: any) => ({
       title: String(a.title ?? "").slice(0, 250),
       url: String(a.url ?? ""),
@@ -254,6 +255,7 @@ serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   } catch (e: any) {
     console.error("news-compare error", e);
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {

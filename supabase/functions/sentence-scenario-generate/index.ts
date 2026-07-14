@@ -221,6 +221,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any;
   try {
     parsed = typeof argStr === "string" ? JSON.parse(argStr) : argStr;

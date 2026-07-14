@@ -149,13 +149,6 @@ const News = () => {
   const [publicTopic, setPublicTopic] = useState<PublicTopic | null>(null);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
 
-  const handleClearSharedUrl = useCallback(() => {
-    if (!sharedUrl) return;
-    const next = new URLSearchParams(params);
-    next.delete("import_url");
-    setParams(next, { replace: true });
-  }, [params, setParams, sharedUrl]);
-
   const handleChannelAdded = useCallback(
     (s: NewsSource) => {
       setSources((prev) => [...prev, s]);
@@ -199,6 +192,13 @@ const News = () => {
 
   // If we arrived from /share?import_url=…, open the importer prefilled.
   const sharedUrl = params.get("import_url");
+
+  const handleClearSharedUrl = useCallback(() => {
+    if (!sharedUrl) return;
+    const next = new URLSearchParams(params);
+    next.delete("import_url");
+    setParams(next, { replace: true });
+  }, [params, setParams, sharedUrl]);
 
   usePageMeta({
     title: "News reader — Language learning",
@@ -685,7 +685,7 @@ const News = () => {
   );
 
   const handlePickFolderSource = useCallback(
-    (sourceId: string) => {
+    async (sourceId: string) => {
       setActiveSourceId(sourceId);
       setActiveFolderId(null);
     },

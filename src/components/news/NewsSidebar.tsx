@@ -60,7 +60,7 @@ interface Props {
   setAllMode: (v: boolean) => void;
   setSources: React.Dispatch<React.SetStateAction<NewsSource[]>>;
   setFolders: React.Dispatch<React.SetStateAction<NewsFolder[]>>;
-  setShowSaved: (v: boolean) => void;
+  setShowSaved: React.Dispatch<React.SetStateAction<boolean>>;
   onDeleteSource: (id: string) => void | Promise<void>;
 }
 

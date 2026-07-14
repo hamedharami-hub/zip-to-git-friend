@@ -67,9 +67,9 @@ interface Props {
   openArticle: string | null;
   handleOpenArticle: (item: FeedItem) => void;
   handlePublicBrowse: (topic: PublicTopic) => void;
-  handleAddSampleSources: () => void;
+  handleAddSampleSources: () => Promise<void>;
   setAddSourceOpen: (open: boolean) => void;
-  onPickFolderSource: (sourceId: string) => void;
+  onPickFolderSource: (sourceId: string) => void | Promise<void>;
   user: User | null;
 }
 

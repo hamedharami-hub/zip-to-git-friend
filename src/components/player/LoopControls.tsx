@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Repeat, Square, Settings2 } from "lucide-react";
 import type { SubtitleCue, LoopConfig } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -27,7 +27,7 @@ const VIS_LABEL: Record<Vis, string> = {
   none: "No subtitles",
 };
 
-export function LoopControls({ cue }: Props) {
+export const LoopControls = memo(function LoopControls({ cue }: Props) {
   const config = useLoopStore((s) => s.config);
   const activeCue = useLoopStore((s) => s.cue);
   const startLoop = useLoopStore((s) => s.startLoop);
@@ -163,4 +163,4 @@ export function LoopControls({ cue }: Props) {
       )}
     </div>
   );
-}
+});

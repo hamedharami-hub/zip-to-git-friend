@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { memo } from "react";
 import { GEMINI_TTS_VOICES, type GeminiTtsVoice } from "@/lib/geminiTts";
 
 interface Props {
@@ -17,7 +18,11 @@ interface Props {
   size?: "lg" | "sm";
 }
 
-export function GeminiVoicePicker({ voice, onChange, size = "lg" }: Props) {
+export const GeminiVoicePicker = memo(function GeminiVoicePicker({
+  voice,
+  onChange,
+  size = "lg",
+}: Props) {
   const triggerCls = size === "lg" ? "h-9 w-[200px]" : "h-8 w-[160px]";
   return (
     <Select value={voice} onValueChange={(v) => onChange(v as GeminiTtsVoice)}>
@@ -33,4 +38,4 @@ export function GeminiVoicePicker({ voice, onChange, size = "lg" }: Props) {
       </SelectContent>
     </Select>
   );
-}
+});

@@ -12,7 +12,7 @@
  * recording so the user can hear themselves cleanly without bleed-through.
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic,
   Square,
@@ -78,7 +78,7 @@ async function transcribeBlobToText(blob: Blob, apiKey: string, model: string): 
   return (data.text ?? "").trim();
 }
 
-export function ShadowingPanel({ videoId, cue }: Props) {
+export const ShadowingPanel = memo(function ShadowingPanel({ videoId, cue }: Props) {
   const [open, setOpen] = useState(false);
   const requestSeek = useVideoStore((s) => s.requestSeek);
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
@@ -227,7 +227,7 @@ export function ShadowingPanel({ videoId, cue }: Props) {
       )}
     </div>
   );
-}
+});
 
 interface TakeRowProps {
   take: ShadowingTake;

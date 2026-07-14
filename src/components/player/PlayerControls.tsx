@@ -1,4 +1,4 @@
-import { RefObject, useEffect, useRef, useState } from "react";
+import { memo, RefObject, useEffect, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -34,7 +34,7 @@ function formatTime(s: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-export function PlayerControls({
+export const PlayerControls = memo(function PlayerControls({
   videoRef,
   variant = "panel",
   onToggleFullscreen,
@@ -255,4 +255,4 @@ export function PlayerControls({
       </div>
     </div>
   );
-}
+});

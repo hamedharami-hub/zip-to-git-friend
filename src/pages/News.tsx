@@ -1,18 +1,15 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 import {
   RETURN_KEY,
   WINDOW_OPTIONS,
-  formatTime,
   siteFromUrl,
-  isRtlText,
   isBlockedUrl,
   type ReturnState,
 } from "@/lib/newsPageHelpers";
 import {
-  ArrowLeft,
   Newspaper,
   Plus,
   Rss,
@@ -31,41 +28,25 @@ import {
   Ban,
   Bookmark,
   BookmarkCheck,
-  Settings as SettingsIcon,
   X,
-  Languages,
-  Download,
-  CheckSquare,
-  Square,
 } from "lucide-react";
+import { NewsArticleCard } from "@/components/news/NewsArticleCard";
+import { NewsHeader } from "@/components/news/NewsHeader";
+import { NewsSidebar } from "@/components/news/NewsSidebar";
+import { NewsFeed } from "@/components/news/NewsFeed";
 import { prefetchManyForOffline, isUrlCached, getCachedIdForUrl } from "@/lib/newsOfflineCache";
 import {
   useTitleTranslations,
   translateTitlesBatch,
   type TranslatableItem,
 } from "@/lib/newsTitleTranslations";
-import { ImportUrlDialog } from "@/components/news/ImportUrlDialog";
-import { AddSourceDialog } from "@/components/news/AddSourceDialog";
-import { SourcesTree } from "@/components/news/SourcesTree";
 import { FolderAggregatedView, AllAggregatedView } from "@/components/news/NewsAggregatedViews";
 import { ManageNewsDialog } from "@/components/news/ManageNewsDialog";
 import { NewsOnboarding } from "@/components/news/NewsOnboarding";
 import { SAMPLE_SOURCES, type PublicTopic } from "@/lib/newsPublicTopics";
 import { PublicNewsView } from "@/components/news/PublicNewsView";
-import { InstallButton } from "@/components/pwa/InstallButton";
 import { loadCachedFeed, mergeIntoCache } from "@/lib/newsFeedCache";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -74,16 +55,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 import { EmptyState } from "@/components/EmptyState";
-import { AccountButton } from "@/components/auth/AccountButton";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import {
@@ -176,6 +148,23 @@ const News = () => {
   const [showSaved, setShowSaved] = useState(false);
   const [publicTopic, setPublicTopic] = useState<PublicTopic | null>(null);
   const [addSourceOpen, setAddSourceOpen] = useState(false);
+
+  const handleChannelAdded = useCallback(
+    (s: NewsSource) => {
+      setSources((prev) => [...prev, s]);
+      setActiveSourceId(s.id);
+    },
+    [setSources, setActiveSourceId],
+  );
+
+  const handleSourceAdded = useCallback(
+    (s: NewsSource) => {
+      setSources((prev) => [...prev, s]);
+      setActiveSourceId(s.id);
+    },
+    [setSources, setActiveSourceId],
+  );
+
   // Re-render tick when the seen-articles set changes (cross-tab too).
   const [, setSeenTick] = useState(0);
   useEffect(() => subscribeSeen(() => setSeenTick((n) => n + 1)), []);
@@ -203,6 +192,13 @@ const News = () => {
 
   // If we arrived from /share?import_url=…, open the importer prefilled.
   const sharedUrl = params.get("import_url");
+
+  const handleClearSharedUrl = useCallback(() => {
+    if (!sharedUrl) return;
+    const next = new URLSearchParams(params);
+    next.delete("import_url");
+    setParams(next, { replace: true });
+  }, [params, setParams, sharedUrl]);
 
   usePageMeta({
     title: "News reader — Language learning",
@@ -688,6 +684,14 @@ const News = () => {
     [activeSource, activeSourceId, activeFolderId, allMode, navigate, selectMode],
   );
 
+  const handlePickFolderSource = useCallback(
+    async (sourceId: string) => {
+      setActiveSourceId(sourceId);
+      setActiveFolderId(null);
+    },
+    [setActiveSourceId, setActiveFolderId],
+  );
+
   const handleGenerateDigest = useCallback(async () => {
     if (feedItems.length === 0) {
       toast.error("No articles to summarise yet.");
@@ -937,53 +941,16 @@ const News = () => {
 
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground overflow-x-hidden">
-      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-[1400px] mx-auto px-3 sm:px-6 h-16 flex items-center gap-2">
-          <Link to="/">
-            <Button variant="ghost" size="icon" aria-label="Back to home" className="rounded-full">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-[15px] font-semibold flex items-center gap-2 min-w-0">
-            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--primary-container))] text-[hsl(var(--on-primary-container))] flex items-center justify-center shrink-0">
-              <Newspaper className="h-4 w-4" />
-            </span>
-            <span className="truncate">News</span>
-          </h1>
-          <div className="ms-auto flex items-center gap-2">
-            {user && (
-              <>
-                <ImportUrlDialog
-                  initialUrl={sharedUrl ?? undefined}
-                  autoOpen={!!sharedUrl}
-                  onClose={() => {
-                    if (sharedUrl) {
-                      const next = new URLSearchParams(params);
-                      next.delete("import_url");
-                      setParams(next, { replace: true });
-                    }
-                  }}
-                  onChannelAdded={(s) => {
-                    setSources((prev) => [...prev, s]);
-                    setActiveSourceId(s.id);
-                  }}
-                />
-                <AddSourceDialog
-                  open={addSourceOpen}
-                  onOpenChange={setAddSourceOpen}
-                  onAdded={(s) => {
-                    setSources((prev) => [...prev, s]);
-                    setActiveSourceId(s.id);
-                  }}
-                  onInstantDigest={handleInstantDigest}
-                />
-              </>
-            )}
-            <InstallButton />
-            <AccountButton />
-          </div>
-        </div>
-      </header>
+      <NewsHeader
+        user={user}
+        sharedUrl={sharedUrl}
+        onClearSharedUrl={handleClearSharedUrl}
+        onChannelAdded={handleChannelAdded}
+        addSourceOpen={addSourceOpen}
+        onAddSourceOpenChange={setAddSourceOpen}
+        onSourceAdded={handleSourceAdded}
+        onInstantDigest={handleInstantDigest}
+      />
 
       <main
         className={
@@ -993,550 +960,80 @@ const News = () => {
         }
       >
         {user && (
-          <aside className="space-y-6 min-w-0">
-            <section>
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  منابع
-                </h2>
-                <div className="flex items-center gap-1">
-                  <span className="text-[11px] text-muted-foreground">{sources.length}</span>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6"
-                    onClick={handleTranslateVisibleTitles}
-                    disabled={trBusy}
-                    title="ترجمه‌ی فارسی همه‌ی عنوان‌های انگلیسیِ این لیست (بَچ، کم‌هزینه)"
-                  >
-                    {trBusy ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Languages className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-6 w-6"
-                        disabled={dlBusy}
-                        title="دانلود خبر برای حالت آفلاین (متن انگلیسی پردازش‌شده)"
-                      >
-                        {dlBusy ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Download className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel className="text-xs">دانلود برای آفلاین</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last10")}>
-                        ۱۰ خبر آخر
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last50")}>
-                        ۵۰ خبر آخر
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handlePrefetchOffline("last100")}>
-                        ۱۰۰ خبر آخر
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handlePrefetchOffline("all")}>
-                        همه‌ی این لیست
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => {
-                          setSelectMode((v) => !v);
-                          if (selectMode) setSelectedUrls(new Set());
-                        }}
-                      >
-                        {selectMode ? (
-                          <>
-                            <Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب
-                          </>
-                        ) : (
-                          <>
-                            <CheckSquare className="h-3.5 w-3.5 me-2" /> انتخاب چند خبر…
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      {selectMode && (
-                        <DropdownMenuItem
-                          onClick={() => handlePrefetchOffline("selected")}
-                          disabled={selectedUrls.size === 0}
-                        >
-                          <Download className="h-3.5 w-3.5 me-2" />
-                          دانلود {selectedUrls.size} انتخاب‌شده
-                        </DropdownMenuItem>
-                      )}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6"
-                    onClick={() => setManageOpen(true)}
-                    title="مدیریت پوشه‌ها و دامنه‌های بلاک‌شده"
-                  >
-                    <SettingsIcon className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-              {trProgress && trProgress.total > 0 && (
-                <p className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-1">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  ترجمه‌ی عنوان‌ها… {trProgress.done}/{trProgress.total}
-                </p>
-              )}
-              {dlProgress && dlProgress.total > 0 && (
-                <div className="px-1 mb-2 text-[11px] text-muted-foreground flex items-center gap-2">
-                  <Loader2 className="h-3 w-3 animate-spin shrink-0" />
-                  <span className="truncate flex-1">
-                    دانلود آفلاین… {dlProgress.done}/{dlProgress.total}
-                    {dlProgress.failed > 0 ? ` · ${dlProgress.failed} ناموفق` : ""}
-                  </span>
-                  {dlBusy && (
-                    <button onClick={cancelPrefetch} className="text-destructive hover:underline">
-                      لغو
-                    </button>
-                  )}
-                </div>
-              )}
-              {selectMode && (
-                <div className="px-1 mb-2 text-[11px] text-primary flex items-center gap-1">
-                  <CheckSquare className="h-3 w-3" />
-                  حالت انتخاب فعال — روی خبرها بزن • {selectedUrls.size} انتخاب‌شده
-                </div>
-              )}
-              <button
-                type="button"
-                onClick={() => {
-                  setAllMode(true);
-                  setActiveFolderId(null);
-                  setActiveSourceId(null);
-                }}
-                className={
-                  "mb-2 w-full flex items-center gap-2 rounded-2xl border px-2.5 py-2 text-sm transition-colors " +
-                  (allMode
-                    ? "border-primary/30 bg-primary/10 text-foreground shadow-sm"
-                    : "border-border/60 bg-card/60 hover:bg-accent text-foreground/90")
-                }
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background">
-                  <Globe2 className="h-3.5 w-3.5 text-primary" />
-                </span>
-                <span className="truncate flex-1 text-start font-medium">همه‌ی اخبار</span>
-                <span className="rounded-full border border-border/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
-                  {sources.length}
-                </span>
-              </button>
-              {sources.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-1">
-                  هنوز منبعی اضافه نکرده‌ای. روی «افزودن» بزن.
-                </p>
-              ) : (
-                <SourcesTree
-                  folders={folders}
-                  sourcesByFolder={sourcesByFolder}
-                  activeSourceId={activeSourceId}
-                  activeFolderId={activeFolderId}
-                  collapsed={expandedFolders}
-                  onToggleFolder={(id) => setExpandedFolders((c) => ({ ...c, [id]: !c[id] }))}
-                  onPickFolder={(id) => {
-                    setActiveFolderId(id);
-                    setActiveSourceId(null);
-                    setAllMode(false);
-                  }}
-                  onPickSource={(id) => {
-                    setActiveSourceId(id);
-                    setActiveFolderId(null);
-                    setAllMode(false);
-                  }}
-                  onDeleteSource={handleDeleteSource}
-                  onMoveSource={async (sourceId, folderId) => {
-                    await updateSource(sourceId, { folderId });
-                    setSources((prev) =>
-                      prev.map((s) => (s.id === sourceId ? { ...s, folderId } : s)),
-                    );
-                  }}
-                  onRenameSource={async (id, name) => {
-                    await updateSource(id, { name });
-                    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
-                    toast.success("نام منبع به‌روز شد.");
-                  }}
-                  onRenameFolder={async (id, name) => {
-                    await updateFolder(id, { name });
-                    setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
-                    toast.success("نام پوشه به‌روز شد.");
-                  }}
-                />
-              )}
-            </section>
-
-            <section>
-              <div className="flex items-center justify-between mb-2 px-1">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  اخبار ذخیره‌شده
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setShowSaved((v) => !v)}
-                  className="text-[10px] text-primary hover:underline"
-                >
-                  {showSaved ? "بستن" : `نمایش (${savedArticles.length})`}
-                </button>
-              </div>
-              {showSaved &&
-                (savedArticles.length === 0 ? (
-                  <p className="text-xs text-muted-foreground px-1">هنوز خبری سیو نکرده‌ای.</p>
-                ) : (
-                  <ul className="space-y-1 max-h-64 overflow-y-auto">
-                    {savedArticles.map((a) => (
-                      <li key={a.id}>
-                        <Link
-                          to={`/news/article/${a.id}`}
-                          className="block rounded-md px-2 py-1.5 text-xs hover:bg-accent transition-colors"
-                        >
-                          <span className="block truncate font-medium">{a.title}</span>
-                          <span className="block text-[10px] text-muted-foreground truncate">
-                            {a.siteName ?? siteFromUrl(a.url)}
-                          </span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                ))}
-            </section>
-
-            <section>
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-1">
-                خلاصه‌های ذخیره‌شده
-              </h2>
-              {digests.length === 0 ? (
-                <p className="text-xs text-muted-foreground px-1">هنوز خلاصه‌ای ساخته نشده.</p>
-              ) : (
-                <ul className="space-y-1">
-                  {digests.slice(0, 12).map((d) => (
-                    <li key={d.id}>
-                      <Link
-                        to={`/news/digest/${d.id}`}
-                        className="block rounded-md px-2 py-1.5 text-sm hover:bg-accent transition-colors"
-                      >
-                        <span className="block truncate font-medium">{d.title}</span>
-                        <span className="block text-[11px] text-muted-foreground">
-                          {d.length === "max" ? "حداکثری" : d.length === "long" ? "بلند" : "کوتاه"}{" "}
-                          · {formatTime(d.createdAt)}
-                        </span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </aside>
+          <NewsSidebar
+            user={user}
+            sources={sources}
+            folders={folders}
+            savedArticles={savedArticles}
+            digests={digests}
+            activeSourceId={activeSourceId}
+            activeFolderId={activeFolderId}
+            allMode={allMode}
+            expandedFolders={expandedFolders}
+            showSaved={showSaved}
+            trBusy={trBusy}
+            trProgress={trProgress}
+            dlBusy={dlBusy}
+            dlProgress={dlProgress}
+            selectMode={selectMode}
+            selectedUrls={selectedUrls}
+            sourcesByFolder={sourcesByFolder}
+            onTranslateVisibleTitles={handleTranslateVisibleTitles}
+            onPrefetchOffline={handlePrefetchOffline}
+            onCancelPrefetch={cancelPrefetch}
+            onSelectModeToggle={() => {
+              setSelectMode((v) => !v);
+              if (selectMode) setSelectedUrls(new Set());
+            }}
+            onManageOpen={() => setManageOpen(true)}
+            setExpandedFolders={setExpandedFolders}
+            setActiveFolderId={setActiveFolderId}
+            setActiveSourceId={setActiveSourceId}
+            setAllMode={setAllMode}
+            setSources={setSources}
+            setFolders={setFolders}
+            setShowSaved={setShowSaved}
+            onDeleteSource={handleDeleteSource}
+          />
         )}
 
-        <section className="min-w-0 space-y-4">
-          {publicTopic ? (
-            <PublicNewsView
-              topic={publicTopic}
-              onBack={() => setPublicTopic(null)}
-              onSignIn={() => navigate("/auth")}
-              onTopicChange={setPublicTopic}
-            />
-          ) : allMode ? (
-            <AllAggregatedView
-              items={allFeed}
-              loading={allLoading}
-              onRefresh={refreshAllFeed}
-              onOpenItem={handleOpenArticle}
-              sourceCount={sources.length}
-            />
-          ) : activeFolderId ? (
-            <FolderAggregatedView
-              folder={folders.find((f) => f.id === activeFolderId) ?? null}
-              items={folderFeed}
-              loading={folderLoading}
-              onRefresh={refreshFolderFeed}
-              onOpenItem={handleOpenArticle}
-              onPickSource={(id) => {
-                setActiveSourceId(id);
-                setActiveFolderId(null);
-              }}
-              sources={sources}
-            />
-          ) : !activeSource ? (
-            <NewsOnboarding
-              isLoggedIn={!!user}
-              onBrowsePublic={handlePublicBrowse}
-              onAddSampleSources={handleAddSampleSources}
-              onAddSource={() => {
-                if (user) setAddSourceOpen(true);
-                else navigate("/auth");
-              }}
-              onSignIn={() => navigate("/auth")}
-            />
-          ) : (
-            <>
-              <div className="rounded-xl border border-border bg-card p-4 space-y-3">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                    {activeSource.kind === "rss" ? (
-                      <Rss className="h-4 w-4 text-primary shrink-0" />
-                    ) : activeSource.kind === "site" ? (
-                      <Globe2 className="h-4 w-4 text-primary shrink-0" />
-                    ) : (
-                      <Search className="h-4 w-4 text-primary shrink-0" />
-                    )}
-                    <h2 className="font-semibold truncate">{activeSource.name}</h2>
-                    {activeSource.url && (
-                      <a
-                        href={activeSource.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[11px] text-muted-foreground truncate hover:text-foreground"
-                      >
-                        {siteFromUrl(activeSource.url)}
-                      </a>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleTrending}
-                    disabled={trendingBusy}
-                    className="gap-1"
-                    title="عنوان‌های داغ همین الان"
-                  >
-                    {trendingBusy ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <TrendingUp className="h-3.5 w-3.5" />
-                    )}
-                    داغ‌ها
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={refreshFeed}
-                    disabled={feedLoading}
-                    className="gap-1"
-                  >
-                    {feedLoading ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5" />
-                    )}
-                    بروزرسانی
-                  </Button>
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {activeSource.kind !== "rss" && (
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <Select value={windowHours} onValueChange={setWindowHours}>
-                        <SelectTrigger className="h-8 w-[140px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {WINDOW_OPTIONS.map((o) => (
-                            <SelectItem key={o.value} value={o.value} className="text-xs">
-                              {o.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                      لحن بازنویسی:
-                    </span>
-                    <Select
-                      value={settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
-                      onValueChange={(v) => void update({ defaultRewriteVoice: v as RewriteVoice })}
-                    >
-                      <SelectTrigger className="h-8 w-[140px] text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(Object.keys(VOICE_LABELS) as RewriteVoice[]).map((v) => (
-                          <SelectItem key={v} value={v} className="text-xs">
-                            {VOICE_LABELS[v]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex items-center gap-1.5 ms-auto">
-                    <Tabs
-                      value={digestLength}
-                      onValueChange={(v) => setDigestLength(v as "long" | "max")}
-                    >
-                      <TabsList className="h-8">
-                        <TabsTrigger value="long" className="text-xs">
-                          خلاصه بلند
-                        </TabsTrigger>
-                        <TabsTrigger value="max" className="text-xs">
-                          خلاصه حداکثری
-                        </TabsTrigger>
-                      </TabsList>
-                    </Tabs>
-                    <Button
-                      onClick={handleGenerateDigest}
-                      disabled={digestBusy || feedItems.length === 0}
-                      size="sm"
-                      className="gap-1.5"
-                    >
-                      {digestBusy ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                      ساخت خلاصه AI
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {feedError ? (
-                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-                  {feedError}
-                </div>
-              ) : feedLoading ? (
-                <div className="py-16 flex justify-center">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : feedItems.length === 0 ? (
-                <EmptyState
-                  icon={<Newspaper className="h-7 w-7" />}
-                  title="هیچ خبری پیدا نشد"
-                  description="بازه زمانی را عوض کن یا منبع دیگری انتخاب کن."
-                />
-              ) : (
-                <ul className="space-y-3">
-                  {feedItems.map((item) => {
-                    const seen = isSeen(item.url);
-                    const cached = isUrlCached(item.url);
-                    const picked = selectedUrls.has(item.url);
-                    return (
-                      <li
-                        key={item.url}
-                        id={`news-item-${encodeURIComponent(item.url)}`}
-                        className="scroll-mt-24 rounded-xl transition-shadow"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleOpenArticle(item)}
-                          disabled={openArticle === item.url}
-                          className={
-                            "group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all " +
-                            (picked ? "border-primary ring-2 ring-primary/30 " : "border-border ") +
-                            (seen ? "opacity-60" : "")
-                          }
-                        >
-                          <div className="flex gap-3">
-                            {selectMode && (
-                              <div className="shrink-0 self-start mt-1" aria-hidden>
-                                {picked ? (
-                                  <CheckSquare className="h-5 w-5 text-primary" />
-                                ) : (
-                                  <Square className="h-5 w-5 text-muted-foreground" />
-                                )}
-                              </div>
-                            )}
-                            {cached && !selectMode && (
-                              <div
-                                className="shrink-0 self-start mt-1"
-                                title="برای حالت آفلاین ذخیره شده"
-                              >
-                                <Download className="h-3.5 w-3.5 text-primary" />
-                              </div>
-                            )}
-                            {item.imageUrl && (
-                              <img
-                                src={item.imageUrl}
-                                alt=""
-                                loading="lazy"
-                                className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = "none";
-                                }}
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <h3
-                                dir={isRtlText(item.title) ? "rtl" : "ltr"}
-                                lang={isRtlText(item.title) ? "fa" : undefined}
-                                className={
-                                  "font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors " +
-                                  (isRtlText(item.title)
-                                    ? "font-[Vazirmatn,system-ui,sans-serif] text-start "
-                                    : "") +
-                                  (seen ? "font-normal text-muted-foreground" : "")
-                                }
-                              >
-                                {seen && (
-                                  <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />
-                                )}
-                                {item.title}
-                              </h3>
-                              {titleTr[item.url]?.titleFa && (
-                                <p
-                                  dir="rtl"
-                                  lang="fa"
-                                  className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90"
-                                >
-                                  {titleTr[item.url].titleFa}
-                                </p>
-                              )}
-                              {item.excerpt && (
-                                <p
-                                  dir={isRtlText(item.excerpt) ? "rtl" : "ltr"}
-                                  lang={isRtlText(item.excerpt) ? "fa" : undefined}
-                                  className={
-                                    "text-sm text-muted-foreground mt-1 line-clamp-2 " +
-                                    (isRtlText(item.excerpt)
-                                      ? "font-[Vazirmatn,system-ui,sans-serif] text-start"
-                                      : "")
-                                  }
-                                >
-                                  {item.excerpt}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
-                                {(item.siteName || siteFromUrl(item.url)) && (
-                                  <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
-                                    <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
-                                    <span className="truncate">
-                                      {item.siteName ?? siteFromUrl(item.url)}
-                                    </span>
-                                  </span>
-                                )}
-                                {item.publishedAt && (
-                                  <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
-                                    <Clock className="me-1 h-3 w-3" />
-                                    {formatTime(item.publishedAt)}
-                                  </span>
-                                )}
-                                {openArticle === item.url && (
-                                  <Loader2 className="h-3 w-3 animate-spin ms-auto" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </>
-          )}
-        </section>
+        <NewsFeed
+          publicTopic={publicTopic}
+          setPublicTopic={setPublicTopic}
+          allMode={allMode}
+          allFeed={allFeed}
+          allLoading={allLoading}
+          refreshAllFeed={refreshAllFeed}
+          activeFolderId={activeFolderId}
+          folderFeed={folderFeed}
+          folderLoading={folderLoading}
+          refreshFolderFeed={refreshFolderFeed}
+          activeSource={activeSource}
+          sources={sources}
+          folders={folders}
+          feedItems={feedItems}
+          feedLoading={feedLoading}
+          feedError={feedError}
+          refreshFeed={refreshFeed}
+          handleTrending={handleTrending}
+          trendingBusy={trendingBusy}
+          windowHours={windowHours}
+          setWindowHours={setWindowHours}
+          digestLength={digestLength}
+          setDigestLength={setDigestLength}
+          handleGenerateDigest={handleGenerateDigest}
+          digestBusy={digestBusy}
+          titleTr={titleTr}
+          selectMode={selectMode}
+          selectedUrls={selectedUrls}
+          openArticle={openArticle}
+          handleOpenArticle={handleOpenArticle}
+          handlePublicBrowse={handlePublicBrowse}
+          handleAddSampleSources={handleAddSampleSources}
+          setAddSourceOpen={setAddSourceOpen}
+          onPickFolderSource={handlePickFolderSource}
+          user={user}
+        />
       </main>
 
       <ManageNewsDialog

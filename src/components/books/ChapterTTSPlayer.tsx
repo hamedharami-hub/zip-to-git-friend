@@ -15,7 +15,7 @@
  * (Gemini path is the most reliable on iOS for true background audio).
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Headphones,
   Play,
@@ -56,6 +56,9 @@ import { Link } from "react-router-dom";
 import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from "@/lib/elevenLabsTts";
 import { loadElevenLabsBlob, elevenLabsErrorMessage } from "./chapter-tts/loadElevenLabs";
 import { ElevenLabsPanel } from "./chapter-tts/ElevenLabsPanel";
+import { OtherTtsPanel } from "./chapter-tts/OtherTtsPanel";
+import { BrowserTtsPanel } from "./chapter-tts/BrowserTtsPanel";
+import { GeminiTtsPanel } from "./chapter-tts/GeminiTtsPanel";
 import { LangToggle } from "./chapter-tts/LangToggle";
 import { subscribeParagraphSpeechRequest } from "@/lib/paragraphSpeechRequestBus";
 import { synthesizeOther, otherEngineErrorMessage } from "./chapter-tts/synthesizeOther";
@@ -88,7 +91,7 @@ interface Props {
   coverUrl?: string;
 }
 
-export function ChapterTTSPlayer({
+export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   bookId,
   chapterIndex: chapterIndexProp,
   chapterTitle,
@@ -191,24 +194,27 @@ export function ChapterTTSPlayer({
     chunkUrlsRef.current = [];
   }
 
-  function playChunk(idx: number, url: string) {
-    if (!previewAudioRef.current) previewAudioRef.current = new Audio();
-    const a = previewAudioRef.current;
-    if (playingChunk === idx && !a.paused) {
-      a.pause();
-      setPlayingChunk(null);
-      return;
-    }
-    a.src = url;
-    a.playbackRate = rate;
-    a.onended = () => setPlayingChunk(null);
-    a.onpause = () => {
-      if (a.ended) setPlayingChunk(null);
-    };
-    a.play()
-      .then(() => setPlayingChunk(idx))
-      .catch(() => setPlayingChunk(null));
-  }
+  const playChunk = useCallback(
+    (idx: number, url: string) => {
+      if (!previewAudioRef.current) previewAudioRef.current = new Audio();
+      const a = previewAudioRef.current;
+      if (playingChunk === idx && !a.paused) {
+        a.pause();
+        setPlayingChunk(null);
+        return;
+      }
+      a.src = url;
+      a.playbackRate = rate;
+      a.onended = () => setPlayingChunk(null);
+      a.onpause = () => {
+        if (a.ended) setPlayingChunk(null);
+      };
+      a.play()
+        .then(() => setPlayingChunk(idx))
+        .catch(() => setPlayingChunk(null));
+    },
+    [playingChunk, rate],
+  );
 
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -928,309 +934,55 @@ export function ChapterTTSPlayer({
             </Button>
           </div>
 
-          {/* Body — Browser TTS */}
           {engine === "browser" && (
-            <div className="space-y-1.5">
-              {!browserSupported ? (
-                <div className="text-xs text-muted-foreground">
-                  مرورگر شما TTS داخلی ندارد. Gemini را امتحان کن.
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <Select
-                      value={browserVoiceId ?? undefined}
-                      onValueChange={(v) => setBrowserVoiceId(v)}
-                    >
-                      <SelectTrigger className="h-7 max-w-[200px] text-[11px]">
-                        <SelectValue placeholder="Voice" />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-[40vh]">
-                        {browserVoices.length === 0 && (
-                          <SelectItem value="__none__" disabled>
-                            Loading…
-                          </SelectItem>
-                        )}
-                        {browserVoices
-                          .filter((v) =>
-                            v.lang.toLowerCase().startsWith(ttsLang === "fa" ? "fa" : "en"),
-                          )
-                          .map((v) => (
-                            <SelectItem key={v.id} value={v.id}>
-                              {v.name} <span className="opacity-60">({v.lang})</span>
-                            </SelectItem>
-                          ))}
-                        {browserVoices.length > 0 &&
-                          browserVoices.filter((v) =>
-                            v.lang.toLowerCase().startsWith(ttsLang === "fa" ? "fa" : "en"),
-                          ).length === 0 && (
-                            <SelectItem value="__no_voice__" disabled>
-                              {ttsLang === "fa"
-                                ? "صدای فارسی روی این مرورگر پیدا نشد"
-                                : "No English voice found"}
-                            </SelectItem>
-                          )}
-                      </SelectContent>
-                    </Select>
-                    <Select value={String(rate)} onValueChange={(v) => onRate(Number(v))}>
-                      <SelectTrigger className="h-7 w-[60px] text-[11px]">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                          <SelectItem key={r} value={String(r)}>
-                            {r}×
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      title="پاراگراف قبلی"
-                      onClick={() => {
-                        const c = browserCtrlRef.current;
-                        const idx = c ? c.index : resumeIndexRef.current;
-                        const target = Math.max(0, idx - 1);
-                        c?.stop();
-                        browserCtrlRef.current = null;
-                        resumeIndexRef.current = target;
-                        startBrowser();
-                      }}
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-7 px-2 gap-1 text-[11px]"
-                      onClick={toggleBrowserPlay}
-                      title={browserPlaying ? "Pause" : "Listen"}
-                    >
-                      {browserPlaying ? (
-                        <Pause className="h-3.5 w-3.5" />
-                      ) : (
-                        <Play className="h-3.5 w-3.5" />
-                      )}
-                      {browserPlaying ? "Pause" : "Listen"}
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      className="h-7 w-7"
-                      title="پاراگراف بعدی"
-                      onClick={() => {
-                        const c = browserCtrlRef.current;
-                        const total = c ? c.totalChunks : 0;
-                        const idx = c ? c.index : resumeIndexRef.current;
-                        const target = total > 0 ? Math.min(total - 1, idx + 1) : idx + 1;
-                        c?.stop();
-                        browserCtrlRef.current = null;
-                        resumeIndexRef.current = target;
-                        startBrowser();
-                      }}
-                    >
-                      <RotateCw className="h-3.5 w-3.5" />
-                    </Button>
-
-                    {(browserCtrlRef.current || resumeIndexRef.current > 0) && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 px-2 text-[11px]"
-                        onClick={stopBrowser}
-                      >
-                        Stop
-                      </Button>
-                    )}
-                  </div>
-                  {browserChunk && (
-                    <div className="space-y-0.5">
-                      <Progress
-                        value={(browserChunk.done / browserChunk.total) * 100}
-                        className="h-1"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        {browserChunk.done} / {browserChunk.total}
-                      </p>
-                    </div>
-                  )}
-                  {ttsLang === "fa" &&
-                    browserVoices.length > 0 &&
-                    browserVoices.filter((v) => v.lang.toLowerCase().startsWith("fa")).length ===
-                      0 && (
-                      <p className="text-[11px] text-destructive/90 leading-relaxed">
-                        این مرورگر فعلاً صدای fa-IR را به Web Speech API نداده است؛ اگر روی گوشی
-                        صدای فارسی نصب است، یک‌بار مرورگر/اپ را کامل ببند و باز کن، یا از
-                        Azure/ElevenLabs استفاده کن.
-                      </p>
-                    )}
-                </>
-              )}
-            </div>
+            <BrowserTtsPanel
+              browserSupported={browserSupported}
+              browserVoiceId={browserVoiceId}
+              setBrowserVoiceId={setBrowserVoiceId}
+              ttsLang={ttsLang}
+              browserVoices={browserVoices}
+              rate={rate}
+              onRate={onRate}
+              browserCtrlRef={browserCtrlRef}
+              resumeIndexRef={resumeIndexRef}
+              startBrowser={startBrowser}
+              stopBrowser={stopBrowser}
+              toggleBrowserPlay={toggleBrowserPlay}
+              browserPlaying={browserPlaying}
+              browserChunk={browserChunk}
+            />
           )}
 
-          {/* Body — Gemini TTS */}
           {engine === "gemini" && (
-            <>
-              {!apiKey ? (
-                <div className="text-sm text-muted-foreground">
-                  Gemini TTS needs an API key.{" "}
-                  <Link to="/settings" className="text-primary underline underline-offset-2">
-                    Add it in Settings → AI
-                  </Link>
-                  .
-                </div>
-              ) : !audioUrl ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <GeminiVoicePicker voice={voice} onChange={setVoice} size="lg" />
-                    <Button onClick={() => loadOrSynthesize(false)} disabled={loading}>
-                      {loading ? (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4 mr-2" />
-                      )}
-                      {loading ? "Generating…" : "Listen"}
-                    </Button>
-                  </div>
-                  {loading && chunkInfo && (
-                    <div className="space-y-1">
-                      <Progress value={progress * 100} />
-                      <p className="text-xs text-muted-foreground">
-                        پاراگراف {chunkInfo.done} از {chunkInfo.total} —{" "}
-                        {Math.round(progress * 100)}٪
-                      </p>
-                    </div>
-                  )}
-                  {readyChunks.length > 0 && (
-                    <ParagraphChunkList
-                      chunks={readyChunks}
-                      playingIndex={playingChunk}
-                      onPlay={playChunk}
-                    />
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    ~{Math.ceil(text.length / 1000)}k نویسه · هر پاراگراف بلافاصله بعد از ساخت قابل
-                    پخش است و در حافظهٔ آفلاین می‌ماند.
-                  </p>
-                </div>
-              ) : (
-                <>
-                  {readyChunks.length > 0 && (
-                    <ParagraphChunkList
-                      chunks={readyChunks}
-                      playingIndex={playingChunk}
-                      onPlay={playChunk}
-                    />
-                  )}
-                  <audio
-                    ref={audioRef}
-                    src={audioUrl}
-                    preload="metadata"
-                    onLoadedMetadata={(e) => {
-                      const a = e.currentTarget;
-                      setDuration(a.duration || 0);
-                      a.playbackRate = rate;
-                    }}
-                    onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
-                    onPlay={() => setPlaying(true)}
-                    onPause={() => setPlaying(false)}
-                    onEnded={() => setPlaying(false)}
-                  />
-
-                  <Slider
-                    value={[duration ? current / duration : 0]}
-                    min={0}
-                    max={1}
-                    step={0.001}
-                    onValueChange={onSeek}
-                    aria-label="Seek"
-                  />
-                  <div className="flex items-center justify-between text-xs tabular-nums text-muted-foreground">
-                    <span>{fmt(current)}</span>
-                    <span>{fmt(duration)}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => seekRel(-15)}
-                        aria-label="Back 15s"
-                      >
-                        <RotateCcw className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        onClick={togglePlay}
-                        aria-label={playing ? "Pause" : "Play"}
-                      >
-                        {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => seekRel(15)}
-                        aria-label="Forward 15s"
-                      >
-                        <RotateCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Select value={String(rate)} onValueChange={(v) => onRate(Number(v))}>
-                        <SelectTrigger className="h-8 w-[78px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {[0.75, 1, 1.25, 1.5, 1.75, 2].map((r) => (
-                            <SelectItem key={r} value={String(r)}>
-                              {r}×
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <GeminiVoicePicker voice={voice} onChange={setVoice} size="sm" />
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleDownload}
-                        aria-label="Download audio"
-                        title="Download .wav"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => loadOrSynthesize(true)}
-                        disabled={loading}
-                        aria-label="Re-generate"
-                        title="Re-generate"
-                      >
-                        {loading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4" />
-                        )}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={handleClear}
-                        aria-label="Delete cached audio"
-                        title="Delete cached audio"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </>
+            <GeminiTtsPanel
+              apiKey={apiKey}
+              text={text}
+              voice={voice}
+              setVoice={setVoice}
+              loading={loading}
+              chunkInfo={chunkInfo}
+              progress={progress}
+              readyChunks={readyChunks}
+              playingChunk={playingChunk}
+              playChunk={playChunk}
+              audioUrl={audioUrl}
+              audioRef={audioRef}
+              current={current}
+              duration={duration}
+              rate={rate}
+              playing={playing}
+              onRate={onRate}
+              onSeek={onSeek}
+              togglePlay={togglePlay}
+              seekRel={seekRel}
+              setDuration={setDuration}
+              setCurrent={setCurrent}
+              setPlaying={setPlaying}
+              loadOrSynthesize={loadOrSynthesize}
+              handleDownload={handleDownload}
+              handleClear={handleClear}
+              fmt={fmt}
+            />
           )}
 
           {/* Body — ElevenLabs */}
@@ -1261,126 +1013,35 @@ export function ChapterTTSPlayer({
             />
           )}
 
-          {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
-          {(engine === "azure" ||
-            engine === "huggingface" ||
-            engine === "playht" ||
-            engine === "opentts") && (
-            <div className="space-y-3">
-              {engine === "azure" && !azureKey && (
-                <div className="text-sm text-muted-foreground">
-                  Azure نیاز به key + region دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "huggingface" && !hfKey && (
-                <div className="text-sm text-muted-foreground">
-                  Hugging Face نیاز به token دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "playht" && (!playHtUser || !playHtKey) && (
-                <div className="text-sm text-muted-foreground">
-                  Play.ht نیاز به user id + key دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "opentts" && !openTtsUrl && (
-                <div className="text-sm text-muted-foreground">
-                  آدرس سرور OpenTTS را در تنظیمات بگذار.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                {engine === "azure" && (
-                  <Select value={azureVoice} onValueChange={setAzureVoice}>
-                    <SelectTrigger className="h-9 w-[220px]">
-                      <SelectValue placeholder="انتخاب صدا" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {azureVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "huggingface" && (
-                  <Select value={hfVoice} onValueChange={setHfVoice}>
-                    <SelectTrigger className="h-9 w-[260px]">
-                      <SelectValue placeholder="انتخاب مدل" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hfVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "playht" && (
-                  <Select value={playHtVoice} onValueChange={setPlayHtVoice}>
-                    <SelectTrigger className="h-9 w-[240px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {playHtVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "opentts" && (
-                  <input
-                    type="text"
-                    value={openTtsVoice}
-                    onChange={(e) => setOpenTtsVoice(e.target.value)}
-                    placeholder="e.g. coqui-tts:fa_custom"
-                    className="h-9 px-2 rounded-md border border-border bg-background text-sm w-[260px]"
-                  />
-                )}
-                <Button onClick={() => loadOther(false)} disabled={otherLoading}>
-                  {otherLoading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4 mr-2" />
-                  )}
-                  {otherLoading ? "در حال ساخت…" : "Listen"}
-                </Button>
-              </div>
-              {audioUrl && (
-                <audio
-                  ref={audioRef}
-                  src={audioUrl}
-                  controls
-                  className="w-full"
-                  onLoadedMetadata={(e) => {
-                    const a = e.currentTarget;
-                    setDuration(a.duration || 0);
-                    a.playbackRate = rate;
-                  }}
-                  onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onEnded={() => setPlaying(false)}
-                />
-              )}
-            </div>
-          )}
+          <OtherTtsPanel
+            engine={engine}
+            azureKey={azureKey}
+            hfKey={hfKey}
+            playHtUser={playHtUser}
+            playHtKey={playHtKey}
+            openTtsUrl={openTtsUrl}
+            azureVoice={azureVoice}
+            setAzureVoice={setAzureVoice}
+            hfVoice={hfVoice}
+            setHfVoice={setHfVoice}
+            playHtVoice={playHtVoice}
+            setPlayHtVoice={setPlayHtVoice}
+            openTtsVoice={openTtsVoice}
+            setOpenTtsVoice={setOpenTtsVoice}
+            azureVoiceOpts={azureVoiceOpts}
+            hfVoiceOpts={hfVoiceOpts}
+            playHtVoiceOpts={playHtVoiceOpts}
+            loadOther={loadOther}
+            otherLoading={otherLoading}
+            audioUrl={audioUrl}
+            audioRef={audioRef}
+            rate={rate}
+            setDuration={setDuration}
+            setCurrent={setCurrent}
+            setPlaying={setPlaying}
+          />
         </div>
       </div>
     </>
   );
-}
+});

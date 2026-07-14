@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { memo } from "react";
 import type { Engine } from "./constants";
 
 const OPTIONS: ReadonlyArray<{ id: Engine; label: string }> = [
@@ -27,7 +28,11 @@ interface Props {
   browserSupported: boolean;
 }
 
-export function EngineSelector({ engine, onChange, browserSupported }: Props) {
+export const EngineSelector = memo(function EngineSelector({
+  engine,
+  onChange,
+  browserSupported,
+}: Props) {
   return (
     <Select value={engine} onValueChange={(v) => onChange(v as Engine)}>
       <SelectTrigger className="h-7 w-[120px] text-[11px]">
@@ -42,4 +47,4 @@ export function EngineSelector({ engine, onChange, browserSupported }: Props) {
       </SelectContent>
     </Select>
   );
-}
+});

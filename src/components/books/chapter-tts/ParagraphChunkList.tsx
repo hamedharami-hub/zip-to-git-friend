@@ -2,6 +2,7 @@
  * Scrollable list of generated/cached paragraph audio chunks.
  * Extracted from ChapterTTSPlayer for clarity.
  */
+import { memo } from "react";
 import { Play, Pause } from "lucide-react";
 
 export interface ReadyChunk {
@@ -18,7 +19,11 @@ interface Props {
   onPlay: (index: number, url: string) => void;
 }
 
-export function ParagraphChunkList({ chunks, playingIndex, onPlay }: Props) {
+export const ParagraphChunkList = memo(function ParagraphChunkList({
+  chunks,
+  playingIndex,
+  onPlay,
+}: Props) {
   if (chunks.length === 0) return null;
   const total = chunks[0]?.total ?? chunks.length;
   return (
@@ -54,4 +59,4 @@ export function ParagraphChunkList({ chunks, playingIndex, onPlay }: Props) {
       </div>
     </div>
   );
-}
+});

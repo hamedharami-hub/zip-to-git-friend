@@ -15,7 +15,7 @@
  * (Gemini path is the most reliable on iOS for true background audio).
  */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Headphones,
   Play,
@@ -88,7 +88,7 @@ interface Props {
   coverUrl?: string;
 }
 
-export function ChapterTTSPlayer({
+export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   bookId,
   chapterIndex: chapterIndexProp,
   chapterTitle,
@@ -191,24 +191,27 @@ export function ChapterTTSPlayer({
     chunkUrlsRef.current = [];
   }
 
-  function playChunk(idx: number, url: string) {
-    if (!previewAudioRef.current) previewAudioRef.current = new Audio();
-    const a = previewAudioRef.current;
-    if (playingChunk === idx && !a.paused) {
-      a.pause();
-      setPlayingChunk(null);
-      return;
-    }
-    a.src = url;
-    a.playbackRate = rate;
-    a.onended = () => setPlayingChunk(null);
-    a.onpause = () => {
-      if (a.ended) setPlayingChunk(null);
-    };
-    a.play()
-      .then(() => setPlayingChunk(idx))
-      .catch(() => setPlayingChunk(null));
-  }
+  const playChunk = useCallback(
+    (idx: number, url: string) => {
+      if (!previewAudioRef.current) previewAudioRef.current = new Audio();
+      const a = previewAudioRef.current;
+      if (playingChunk === idx && !a.paused) {
+        a.pause();
+        setPlayingChunk(null);
+        return;
+      }
+      a.src = url;
+      a.playbackRate = rate;
+      a.onended = () => setPlayingChunk(null);
+      a.onpause = () => {
+        if (a.ended) setPlayingChunk(null);
+      };
+      a.play()
+        .then(() => setPlayingChunk(idx))
+        .catch(() => setPlayingChunk(null));
+    },
+    [playingChunk, rate],
+  );
 
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
@@ -1383,4 +1386,4 @@ export function ChapterTTSPlayer({
       </div>
     </>
   );
-}
+});

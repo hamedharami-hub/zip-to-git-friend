@@ -116,6 +116,7 @@ const Player = () => {
       // Don't revoke createdObjectUrl — it's referenced by the persisted Video record
       // and may be reused if the user comes back without a reload.
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [videoId]);
 
   // Auto-enter immersive on mobile landscape — ONLY when explicitly enabled

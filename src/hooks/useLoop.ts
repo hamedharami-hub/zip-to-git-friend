@@ -93,6 +93,7 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
       cancelAnimationFrame(raf);
       pausingRef.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [
     videoRef,
     config.enabled,

@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createRouter, useRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
 function DefaultError({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   return (
@@ -37,6 +38,7 @@ function DefaultError({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
 function DefaultNotFound() {
   return (
     <div

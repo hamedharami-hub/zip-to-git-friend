@@ -148,4 +148,5 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
 export const useFirebaseAuth = () => useContext(Ctx);

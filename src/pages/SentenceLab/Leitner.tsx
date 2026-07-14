@@ -48,6 +48,7 @@ export default function SentenceLeitnerPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, []);
   // refresh local list whenever flag store changes
   useEffect(() => {

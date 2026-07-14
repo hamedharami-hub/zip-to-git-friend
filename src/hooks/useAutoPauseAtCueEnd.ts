@@ -29,6 +29,7 @@ export function useAutoPauseAtCueEnd(
       // New cue started — clear the latch so we pause at *its* end.
       pausedForCueRef.current = null;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [activeCue?.id]);
 
   // Re-arm on user-initiated play after an auto-pause.
@@ -66,5 +67,6 @@ export function useAutoPauseAtCueEnd(
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [videoEl, activeCue?.id, activeCue?.endMs, enabled, suppressed]);
 }

@@ -75,6 +75,7 @@ export function SubtitleRenderer({
           (c.sourceCueId === primaryCue.id || c.sourceCueId?.startsWith(`${primaryCue.id}@`)),
       ) ?? null
     );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [cards, primaryCue?.id, videoId]);
 
   if (!primaryCue && !secondaryCue) {

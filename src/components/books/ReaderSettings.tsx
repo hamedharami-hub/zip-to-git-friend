@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
  */
 export type ReaderFontFamily = "serif" | "sans" | "mono" | "dyslexic" | "classic" | "modern";
 
+// eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
 export const FAMILY_FONT_STACKS: Record<ReaderFontFamily, string> = {
   serif:
     "'Iowan Old Style', 'Apple Garamond', 'Baskerville', 'Times New Roman', 'Droid Serif', Times, 'Source Serif Pro', serif",

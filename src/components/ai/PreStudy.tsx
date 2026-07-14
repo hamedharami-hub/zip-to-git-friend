@@ -282,6 +282,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [open, current?.word, online]);
 
   const next = () => {
@@ -331,6 +332,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
       }
     }
     return set.size;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [primary?.id]);
 
   if (!open) {

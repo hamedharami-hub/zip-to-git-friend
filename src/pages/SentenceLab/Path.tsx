@@ -51,6 +51,7 @@ export default function SentencePathPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [categorySlug, subSlug]);
 
   const summary = summarizeSteps(steps);

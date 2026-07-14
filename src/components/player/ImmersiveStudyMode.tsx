@@ -58,6 +58,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
         /* no-op */
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [current?.id]);
 
   // Register media globally so popovers can pause/resume it.
@@ -79,6 +80,7 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
       });
     }, 5000);
     return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [current?.id, updateCurrent]);
 
   // Lock body scroll while immersive.

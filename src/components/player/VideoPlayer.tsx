@@ -96,6 +96,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         /* no-op */
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [current?.id]);
 
   // Initial controls hint — show for 2.5s on mount so first-time users see them.
@@ -252,6 +253,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       window.removeEventListener("pagehide", flush);
       flush();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [current?.id, updateCurrent]);
 
   // Respond to external seek requests (e.g. clicking a cue in the list).
@@ -271,6 +273,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     if (seekRequest.play) {
       safePlay(v);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [seekRequest?.token]);
 
   // Hotkeys

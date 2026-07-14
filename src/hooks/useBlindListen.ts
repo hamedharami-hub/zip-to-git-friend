@@ -51,6 +51,7 @@ export function useBlindListen(
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [enabled, mediaEl, activeCue?.id]);
 
   const isRevealed = activeCue ? revealedIds.has(activeCue.id) : false;

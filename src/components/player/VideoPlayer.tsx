@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useVideoStore } from "@/store/videoStore";
 import { useSubtitleStore } from "@/store/subtitleStore";
@@ -33,7 +33,10 @@ interface VideoPlayerProps {
   onEnterImmersive?: () => void;
 }
 
-export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}) {
+export const VideoPlayer = memo(function VideoPlayer({
+  videoId,
+  onEnterImmersive,
+}: VideoPlayerProps = {}) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const current = useVideoStore((s) => s.current);
@@ -315,7 +318,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
   // Toggle fullscreen — MUST be called synchronously from a user gesture
   // (onClick). Android Chrome / Windows: fullscreen the container so the
   // controls stay visible. iOS Safari fallback: fullscreen the video element.
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     const el = containerRef.current;
     const v = videoRef.current;
     const docAny = document as Document & {
@@ -382,57 +385,58 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
     } catch {
       /* no-op */
     }
-  };
+  }, []);
 
-  if (!current) return null;
-
-  const onLoaded = () => {
+  const onLoaded = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (!current.duration && v.duration) {
+    if (!current?.duration && v.duration) {
       updateCurrent({ duration: v.duration });
     }
-  };
+  }, [current?.duration, updateCurrent]);
 
-  const showControlsTemporarily = () => {
+  const showControlsTemporarily = useCallback(() => {
     setControlsVisible(true);
     if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
     hideTimerRef.current = window.setTimeout(() => setControlsVisible(false), 2800);
-  };
+  }, []);
 
-  const flashFeedback = (kind: "play" | "pause" | "prev" | "next") => {
+  const flashFeedback = useCallback((kind: "play" | "pause" | "prev" | "next") => {
     setFeedback(kind);
     if (feedbackTimerRef.current) window.clearTimeout(feedbackTimerRef.current);
     feedbackTimerRef.current = window.setTimeout(() => setFeedback(null), 500);
-  };
+  }, []);
 
-  const jumpToCue = (direction: "prev" | "next") => {
-    const v = videoRef.current;
-    const cues = primary?.cues ?? [];
-    if (!v || cues.length === 0) return;
-    const tMs = v.currentTime * 1000;
-    let target: (typeof cues)[number] | undefined;
-    if (direction === "next") {
-      target = cues.find((c) => c.startMs > tMs + 50);
-    } else {
-      for (let i = cues.length - 1; i >= 0; i--) {
-        if (cues[i].startMs < tMs - 600) {
-          target = cues[i];
-          break;
+  const jumpToCue = useCallback(
+    (direction: "prev" | "next") => {
+      const v = videoRef.current;
+      const cues = primary?.cues ?? [];
+      if (!v || cues.length === 0) return;
+      const tMs = v.currentTime * 1000;
+      let target: (typeof cues)[number] | undefined;
+      if (direction === "next") {
+        target = cues.find((c) => c.startMs > tMs + 50);
+      } else {
+        for (let i = cues.length - 1; i >= 0; i--) {
+          if (cues[i].startMs < tMs - 600) {
+            target = cues[i];
+            break;
+          }
+        }
+        if (!target) target = cues[0];
+      }
+      if (target) {
+        try {
+          v.currentTime = target.startMs / 1000;
+        } catch {
+          /* no-op */
         }
       }
-      if (!target) target = cues[0];
-    }
-    if (target) {
-      try {
-        v.currentTime = target.startMs / 1000;
-      } catch {
-        /* no-op */
-      }
-    }
-  };
+    },
+    [primary?.cues],
+  );
 
-  const togglePlayPause = () => {
+  const togglePlayPause = useCallback(() => {
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
@@ -442,56 +446,89 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       v.pause();
       flashFeedback("pause");
     }
-  };
+  }, [flashFeedback]);
 
   // Tap behavior:
   //  - middle zone: single tap toggles play IMMEDIATELY (no 280ms wait).
   //  - left/right zones: single tap only reveals controls; double tap jumps cue.
   // This removes the laggy play/pause feel on Android.
-  const handleVideoTap = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const ratio = x / rect.width;
-    const zone: "left" | "mid" | "right" = ratio < 0.25 ? "left" : ratio > 0.75 ? "right" : "mid";
+  const handleVideoTap = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const ratio = x / rect.width;
+      const zone: "left" | "mid" | "right" = ratio < 0.25 ? "left" : ratio > 0.75 ? "right" : "mid";
 
-    const now = Date.now();
-    const last = lastTapRef.current;
-    showControlsTemporarily();
+      const now = Date.now();
+      const last = lastTapRef.current;
+      showControlsTemporarily();
 
-    // Edge zones: keep double-tap detection for cue jump.
-    if (zone !== "mid") {
-      if (last && now - last.time < 300 && last.zone === zone) {
-        if (tapTimerRef.current) {
-          window.clearTimeout(tapTimerRef.current);
+      // Edge zones: keep double-tap detection for cue jump.
+      if (zone !== "mid") {
+        if (last && now - last.time < 300 && last.zone === zone) {
+          if (tapTimerRef.current) {
+            window.clearTimeout(tapTimerRef.current);
+            tapTimerRef.current = null;
+          }
+          lastTapRef.current = null;
+          if (zone === "right") {
+            jumpToCue("next");
+            flashFeedback("next");
+          } else {
+            jumpToCue("prev");
+            flashFeedback("prev");
+          }
+          return;
+        }
+        lastTapRef.current = { time: now, zone };
+        if (tapTimerRef.current) window.clearTimeout(tapTimerRef.current);
+        tapTimerRef.current = window.setTimeout(() => {
+          lastTapRef.current = null;
           tapTimerRef.current = null;
-        }
-        lastTapRef.current = null;
-        if (zone === "right") {
-          jumpToCue("next");
-          flashFeedback("next");
-        } else {
-          jumpToCue("prev");
-          flashFeedback("prev");
-        }
+        }, 280);
         return;
       }
-      lastTapRef.current = { time: now, zone };
-      if (tapTimerRef.current) window.clearTimeout(tapTimerRef.current);
-      tapTimerRef.current = window.setTimeout(() => {
-        lastTapRef.current = null;
-        tapTimerRef.current = null;
-      }, 280);
-      return;
-    }
 
-    // Middle zone: instant play/pause toggle.
-    lastTapRef.current = null;
-    if (tapTimerRef.current) {
-      window.clearTimeout(tapTimerRef.current);
-      tapTimerRef.current = null;
-    }
-    togglePlayPause();
-  };
+      // Middle zone: instant play/pause toggle.
+      lastTapRef.current = null;
+      if (tapTimerRef.current) {
+        window.clearTimeout(tapTimerRef.current);
+        tapTimerRef.current = null;
+      }
+      togglePlayPause();
+    },
+    [flashFeedback, jumpToCue, showControlsTemporarily, togglePlayPause],
+  );
+
+  const handleMouseLeave = useCallback(() => setControlsVisible(false), []);
+
+  const handleTimeUpdate = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const now = performance.now();
+      if (now - lastTimeEmitRef.current < 250) return;
+      lastTimeEmitRef.current = now;
+      setCurrentTime((e.target as HTMLVideoElement).currentTime);
+    },
+    [setCurrentTime],
+  );
+
+  const handlePlay = useCallback(() => setIsPlaying(true), [setIsPlaying]);
+  const handlePause = useCallback(() => setIsPlaying(false), [setIsPlaying]);
+
+  const handleEnterImmersive = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      onEnterImmersive?.();
+    },
+    [onEnterImmersive],
+  );
+
+  const toggleAutoPause = useCallback(
+    () => updateSettings({ autoPauseAtCueEnd: !autoPauseAtCueEnd }),
+    [updateSettings, autoPauseAtCueEnd],
+  );
+
+  if (!current) return null;
 
   const isAudio = current.mediaType === "audio";
 
@@ -501,7 +538,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         ref={containerRef}
         className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? "aspect-[5/2] sm:aspect-[7/2]" : "aspect-video"} ${isFullscreen ? "!aspect-auto w-screen h-screen sm:rounded-none" : ""}`}
         onMouseMove={showControlsTemporarily}
-        onMouseLeave={() => setControlsVisible(false)}
+        onMouseLeave={handleMouseLeave}
       >
         {isAudio && (
           <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-white/70 bg-gradient-to-br from-primary/30 via-black to-black">
@@ -522,16 +559,9 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           src={current.blobUrl}
           className={`w-full h-full ${isAudio ? "opacity-0 pointer-events-none" : ""}`}
           onLoadedMetadata={onLoaded}
-          onTimeUpdate={(e) => {
-            // Throttle global store updates to ~4Hz to avoid re-rendering
-            // every subscriber on each native timeupdate tick (~15Hz).
-            const now = performance.now();
-            if (now - lastTimeEmitRef.current < 250) return;
-            lastTimeEmitRef.current = now;
-            setCurrentTime((e.target as HTMLVideoElement).currentTime);
-          }}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
+          onTimeUpdate={handleTimeUpdate}
+          onPlay={handlePlay}
+          onPause={handlePause}
           preload="metadata"
         />
 
@@ -584,10 +614,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
         {onEnterImmersive && (
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEnterImmersive();
-            }}
+            onClick={handleEnterImmersive}
             className={`absolute top-3 right-3 z-30 inline-flex items-center justify-center h-9 w-9 rounded-md bg-black/55 text-white hover:bg-black/75 transition-opacity ${
               controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
             }`}
@@ -692,7 +719,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
           <div className="flex items-center gap-2 flex-wrap">
             <button
               type="button"
-              onClick={() => updateSettings({ autoPauseAtCueEnd: !autoPauseAtCueEnd })}
+              onClick={toggleAutoPause}
               className={`inline-flex items-center gap-1.5 rounded-md border px-2 py-1 text-xs font-medium transition-colors ${
                 autoPauseAtCueEnd
                   ? "border-primary bg-primary/15 text-primary"
@@ -717,7 +744,7 @@ export function VideoPlayer({ videoId, onEnterImmersive }: VideoPlayerProps = {}
       )}
     </div>
   );
-}
+});
 
 /** Play with friendly error messages for autoplay-block / decode failures. */
 function safePlay(v: HTMLVideoElement) {

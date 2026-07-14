@@ -13,6 +13,15 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    build: {
+      minify: "terser",
+      terserOptions: {
+        compress: {
+          drop_debugger: true,
+          pure_funcs: ["console.log", "console.info", "console.warn", "console.debug"],
+        },
+      },
+    },
     plugins: [
       mcpPlugin(),
       VitePWA({
@@ -35,7 +44,9 @@ export default defineConfig({
           ],
         },
         workbox: {
-          globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2}"],
+          globDirectory: ".output/public",
+          globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
+          swDest: ".output/public/sw.js",
           navigateFallback: "/",
           navigateFallbackDenylist: [
             /^\/api\//,

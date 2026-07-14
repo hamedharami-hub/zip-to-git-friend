@@ -8,7 +8,7 @@
  * targets without an extra DB column.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { appendChapter, saveChapter, chapterKey } from "@/lib/bookDb";
+import { appendChapter, saveChapter, chapterKey, getChapter } from "@/lib/bookDb";
 import { useBookStore } from "@/store/bookStore";
 import { generateGradientCover, pastedTextToChapter } from "@/lib/manualBook";
 import type { Book, BookChapter } from "@/types";
@@ -208,7 +208,6 @@ export async function updateLanguageChapter(
   index: number,
   patch: { story?: string; items?: string[]; notes?: string; title?: string },
 ): Promise<void> {
-  const { getChapter } = await import("@/lib/bookDb");
   const existing = await getChapter(bookId, index);
   if (!existing) return;
   const text = (patch.story ?? existing.text).trim();

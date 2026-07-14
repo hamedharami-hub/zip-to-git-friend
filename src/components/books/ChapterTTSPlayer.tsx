@@ -56,6 +56,7 @@ import { Link } from "react-router-dom";
 import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from "@/lib/elevenLabsTts";
 import { loadElevenLabsBlob, elevenLabsErrorMessage } from "./chapter-tts/loadElevenLabs";
 import { ElevenLabsPanel } from "./chapter-tts/ElevenLabsPanel";
+import { OtherTtsPanel } from "./chapter-tts/OtherTtsPanel";
 import { LangToggle } from "./chapter-tts/LangToggle";
 import { subscribeParagraphSpeechRequest } from "@/lib/paragraphSpeechRequestBus";
 import { synthesizeOther, otherEngineErrorMessage } from "./chapter-tts/synthesizeOther";
@@ -1264,124 +1265,33 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
             />
           )}
 
-          {/* Body — Azure / HF / Play.ht / OpenTTS (shared minimal UI) */}
-          {(engine === "azure" ||
-            engine === "huggingface" ||
-            engine === "playht" ||
-            engine === "opentts") && (
-            <div className="space-y-3">
-              {engine === "azure" && !azureKey && (
-                <div className="text-sm text-muted-foreground">
-                  Azure نیاز به key + region دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "huggingface" && !hfKey && (
-                <div className="text-sm text-muted-foreground">
-                  Hugging Face نیاز به token دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "playht" && (!playHtUser || !playHtKey) && (
-                <div className="text-sm text-muted-foreground">
-                  Play.ht نیاز به user id + key دارد.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              {engine === "opentts" && !openTtsUrl && (
-                <div className="text-sm text-muted-foreground">
-                  آدرس سرور OpenTTS را در تنظیمات بگذار.{" "}
-                  <Link to="/settings" className="text-primary underline">
-                    تنظیمات → AI
-                  </Link>
-                </div>
-              )}
-              <div className="flex items-center gap-2 flex-wrap">
-                {engine === "azure" && (
-                  <Select value={azureVoice} onValueChange={setAzureVoice}>
-                    <SelectTrigger className="h-9 w-[220px]">
-                      <SelectValue placeholder="انتخاب صدا" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {azureVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "huggingface" && (
-                  <Select value={hfVoice} onValueChange={setHfVoice}>
-                    <SelectTrigger className="h-9 w-[260px]">
-                      <SelectValue placeholder="انتخاب مدل" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {hfVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "playht" && (
-                  <Select value={playHtVoice} onValueChange={setPlayHtVoice}>
-                    <SelectTrigger className="h-9 w-[240px]">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {playHtVoiceOpts.map((v) => (
-                        <SelectItem key={v.id} value={v.id}>
-                          {v.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                {engine === "opentts" && (
-                  <input
-                    type="text"
-                    value={openTtsVoice}
-                    onChange={(e) => setOpenTtsVoice(e.target.value)}
-                    placeholder="e.g. coqui-tts:fa_custom"
-                    className="h-9 px-2 rounded-md border border-border bg-background text-sm w-[260px]"
-                  />
-                )}
-                <Button onClick={() => loadOther(false)} disabled={otherLoading}>
-                  {otherLoading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <Play className="h-4 w-4 mr-2" />
-                  )}
-                  {otherLoading ? "در حال ساخت…" : "Listen"}
-                </Button>
-              </div>
-              {audioUrl && (
-                <audio
-                  ref={audioRef}
-                  src={audioUrl}
-                  controls
-                  className="w-full"
-                  onLoadedMetadata={(e) => {
-                    const a = e.currentTarget;
-                    setDuration(a.duration || 0);
-                    a.playbackRate = rate;
-                  }}
-                  onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
-                  onPlay={() => setPlaying(true)}
-                  onPause={() => setPlaying(false)}
-                  onEnded={() => setPlaying(false)}
-                />
-              )}
-            </div>
-          )}
+          <OtherTtsPanel
+            engine={engine}
+            azureKey={azureKey}
+            hfKey={hfKey}
+            playHtUser={playHtUser}
+            playHtKey={playHtKey}
+            openTtsUrl={openTtsUrl}
+            azureVoice={azureVoice}
+            setAzureVoice={setAzureVoice}
+            hfVoice={hfVoice}
+            setHfVoice={setHfVoice}
+            playHtVoice={playHtVoice}
+            setPlayHtVoice={setPlayHtVoice}
+            openTtsVoice={openTtsVoice}
+            setOpenTtsVoice={setOpenTtsVoice}
+            azureVoiceOpts={azureVoiceOpts}
+            hfVoiceOpts={hfVoiceOpts}
+            playHtVoiceOpts={playHtVoiceOpts}
+            loadOther={loadOther}
+            otherLoading={otherLoading}
+            audioUrl={audioUrl}
+            audioRef={audioRef}
+            rate={rate}
+            setDuration={setDuration}
+            setCurrent={setCurrent}
+            setPlaying={setPlaying}
+          />
         </div>
       </div>
     </>

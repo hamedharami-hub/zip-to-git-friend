@@ -7,7 +7,6 @@ import {
   WINDOW_OPTIONS,
   formatTime,
   siteFromUrl,
-  isRtlText,
   isBlockedUrl,
   type ReturnState,
 } from "@/lib/newsPageHelpers";
@@ -38,6 +37,7 @@ import {
   CheckSquare,
   Square,
 } from "lucide-react";
+import { NewsArticleCard } from "@/components/news/NewsArticleCard";
 import { prefetchManyForOffline, isUrlCached, getCachedIdForUrl } from "@/lib/newsOfflineCache";
 import {
   useTitleTranslations,
@@ -1418,120 +1418,19 @@ const News = () => {
                 />
               ) : (
                 <ul className="space-y-3">
-                  {feedItems.map((item) => {
-                    const seen = isSeen(item.url);
-                    const cached = isUrlCached(item.url);
-                    const picked = selectedUrls.has(item.url);
-                    return (
-                      <li
-                        key={item.url}
-                        id={`news-item-${encodeURIComponent(item.url)}`}
-                        className="scroll-mt-24 rounded-xl transition-shadow"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleOpenArticle(item)}
-                          disabled={openArticle === item.url}
-                          className={
-                            "group block w-full text-start rounded-xl border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all " +
-                            (picked ? "border-primary ring-2 ring-primary/30 " : "border-border ") +
-                            (seen ? "opacity-60" : "")
-                          }
-                        >
-                          <div className="flex gap-3">
-                            {selectMode && (
-                              <div className="shrink-0 self-start mt-1" aria-hidden>
-                                {picked ? (
-                                  <CheckSquare className="h-5 w-5 text-primary" />
-                                ) : (
-                                  <Square className="h-5 w-5 text-muted-foreground" />
-                                )}
-                              </div>
-                            )}
-                            {cached && !selectMode && (
-                              <div
-                                className="shrink-0 self-start mt-1"
-                                title="برای حالت آفلاین ذخیره شده"
-                              >
-                                <Download className="h-3.5 w-3.5 text-primary" />
-                              </div>
-                            )}
-                            {item.imageUrl && (
-                              <img
-                                src={item.imageUrl}
-                                alt=""
-                                loading="lazy"
-                                className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = "none";
-                                }}
-                              />
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <h3
-                                dir={isRtlText(item.title) ? "rtl" : "ltr"}
-                                lang={isRtlText(item.title) ? "fa" : undefined}
-                                className={
-                                  "font-semibold leading-snug line-clamp-2 group-hover:text-primary transition-colors " +
-                                  (isRtlText(item.title)
-                                    ? "font-[Vazirmatn,system-ui,sans-serif] text-start "
-                                    : "") +
-                                  (seen ? "font-normal text-muted-foreground" : "")
-                                }
-                              >
-                                {seen && (
-                                  <CheckCircle2 className="inline h-3.5 w-3.5 me-1 text-primary/70 align-text-bottom" />
-                                )}
-                                {item.title}
-                              </h3>
-                              {titleTr[item.url]?.titleFa && (
-                                <p
-                                  dir="rtl"
-                                  lang="fa"
-                                  className="text-sm mt-1 line-clamp-2 font-[Vazirmatn,system-ui,sans-serif] text-start text-foreground/90"
-                                >
-                                  {titleTr[item.url].titleFa}
-                                </p>
-                              )}
-                              {item.excerpt && (
-                                <p
-                                  dir={isRtlText(item.excerpt) ? "rtl" : "ltr"}
-                                  lang={isRtlText(item.excerpt) ? "fa" : undefined}
-                                  className={
-                                    "text-sm text-muted-foreground mt-1 line-clamp-2 " +
-                                    (isRtlText(item.excerpt)
-                                      ? "font-[Vazirmatn,system-ui,sans-serif] text-start"
-                                      : "")
-                                  }
-                                >
-                                  {item.excerpt}
-                                </p>
-                              )}
-                              <div className="flex items-center gap-2 mt-2 text-[11px] text-muted-foreground flex-wrap">
-                                {(item.siteName || siteFromUrl(item.url)) && (
-                                  <span className="inline-flex max-w-full items-center rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 font-medium text-foreground/90">
-                                    <Globe2 className="me-1 h-3 w-3 shrink-0 text-primary/80" />
-                                    <span className="truncate">
-                                      {item.siteName ?? siteFromUrl(item.url)}
-                                    </span>
-                                  </span>
-                                )}
-                                {item.publishedAt && (
-                                  <span className="inline-flex items-center rounded-full border border-border/60 px-2 py-0.5">
-                                    <Clock className="me-1 h-3 w-3" />
-                                    {formatTime(item.publishedAt)}
-                                  </span>
-                                )}
-                                {openArticle === item.url && (
-                                  <Loader2 className="h-3 w-3 animate-spin ms-auto" />
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </button>
-                      </li>
-                    );
-                  })}
+                  {feedItems.map((item) => (
+                    <NewsArticleCard
+                      key={item.url}
+                      item={item}
+                      titleFa={titleTr[item.url]?.titleFa}
+                      isSeen={isSeen(item.url)}
+                      isCached={isUrlCached(item.url)}
+                      selectMode={selectMode}
+                      isSelected={selectedUrls.has(item.url)}
+                      isOpening={openArticle === item.url}
+                      onOpen={handleOpenArticle}
+                    />
+                  ))}
                 </ul>
               )}
             </>

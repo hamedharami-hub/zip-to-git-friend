@@ -96,6 +96,7 @@ export const VOICE_LABELS: Record<RewriteVoice, string> = {
   teacher: "معلمانه",
   socratic: "سقراطی",
   journalist: "خبری-تحلیلی",
+  copilot: "کمک‌هوشمند (Copilot-style + ایموجی)",
 };
 
 /** Default persona used when the user has not explicitly chosen one. */

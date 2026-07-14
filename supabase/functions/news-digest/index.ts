@@ -6,7 +6,7 @@
  *                     excerpt?: string; contentMd?: string;
  *                     publishedAt?: string }>;
  *   length: 'short' | 'long' | 'max' | 'auto-max' | 'simple';
- *   voice?: 'auto' | 'storyteller' | 'friend' | 'teacher' | 'socratic' | 'journalist';
+ *   voice?: 'auto' | 'storyteller' | 'friend' | 'teacher' | 'socratic' | 'journalist' | 'copilot';
  *   topic?: string;
  *   windowHours?: number;
  * }
@@ -101,6 +101,72 @@ const SIMPLE_INSTRUCTIONS_B2 =
   "SENTENCE-BUILDING RULE: break long dense sentences into shorter ones. Prefer simple connectors ('and', 'but', 'so', 'because') over stacked relative clauses. " +
   "CRITICAL — DO NOT SUMMARISE OR SHORTEN. Preserve EVERY fact, name, number, date, place, quote, example and idea, in the SAME order. Adding short clarifying asides for context is REQUIRED and does not count as adding facts — but nothing is allowed to drop. Output length ≥ source length (≥ 100% of source word count; longer is fine because of the added micro-explanations). " +
   "STRUCTURE: bold # title, italic *TL;DR*, lede, ## H2 sections, closing ## Where I Land. First-person voice. Pure prose.";
+
+const COPILOT_SYSTEM_PROMPT = `You are a Microsoft Copilot-style AI news assistant writing for an INTERMEDIATE adult Iranian learner of English. You take one or more raw source reports (news article markdown or YouTube transcript) and produce ONE complete, visually scannable "Copilot Snapshot" in English.
+
+Core rules:
+1. PRESERVE EVERYTHING. Do not drop, summarise away, or omit any fact, name, number, date, place, quote, example, statistic, or idea present in the sources. If the source is a video transcript, preserve speaker names, timestamps, and key spoken points.
+2. NO INVENTION. Do not invent facts, quotes, numbers, or attributions. Use only what the sources provide.
+3. ENGLISH ONLY. Translate naturally from any source language.
+4. B1–B2 ENGLISH. Clear, modern, everyday vocabulary. Average sentence ≤ 18 words. Explain jargon in-line on first use.
+5. STRUCTURE IS MANDATORY. Output the Snapshot in the exact order and with the exact emoji "sticker" section headings given in the user prompt.
+6. VOICE MIX. Be 30% sharp journalist (lead + hard facts + numbers), 40% patient teacher (explain mechanisms, background, implications), 20% friendly chat (1–2 short asides like "Here's the thing —"), 10% socratic (final question).
+7. FORMAT. Use valid markdown only: # title, ## section headings, **bold**, *italic*, bullet lists where requested, > blockquotes only for direct source quotes. No front-matter, no commentary about the task, no "Here is the article" preamble. Headings are # / ## / ### only — never bold-as-heading.
+8. ALWAYS respond by calling the provided tool. Never reply with raw prose.`;
+
+const COPILOT_INSTRUCTIONS = `Write a "Copilot Snapshot" — a visually scannable, emoji-rich news brief. Do not output the section numbers below; output only the markdown headings and content.
+
+MANDATORY STRUCTURE (use these exact emoji + heading stickers in this order):
+
+1. # 🗞️ Title
+Start the markdown with a single-line # headline that captures the main story in ≤ 15 words. The headline should include the 🗞️ emoji at the start.
+
+2. ## ✨ TL;DR
+One *italic* sentence (≤ 30 words) that tells the whole story in plain English.
+
+3. ## 📌 Key Points
+5–8 bullet lines. Every bullet must:
+   - Start with one emoji relevant to the point (choose from 🌍, ⚡, 💰, 👤, 📅, ⚠️, 🏛️, 🚀, 🔬, 🎭, 📈, 🛡️, or another fitting emoji).
+   - Then a **bold noun phrase**.
+   - Then " — " and a 12–20 word plain-English explanation.
+   - Cover every distinct fact from the source. Do not skip any.
+For "max" or "auto-max" lengths, use 8–12 bullets and add more detail.
+
+4. ## ⏱️ What Happened
+If the source has events/chronology: 3–6 paragraphs, each starting with a bold date/time when available, explaining what happened in order. If no chronology, explain the mechanism step by step.
+For "max"/"auto-max" expand to 5–9 paragraphs.
+
+5. ## 👥 Who Is Involved
+For every named person, organization, country, company, or group, write one line: "**Name** — one-line role or explanation". Do not leave any named entity out.
+For "max"/"auto-max" add 1–2 extra sentences of context for each major entity.
+
+6. ## 🔢 By the Numbers
+Extract every number, percentage, date, price, population, amount, or statistic. Present each as "**number** — what it means in plain language". Include units and dates.
+For "max"/"auto-max" add a one-line implication for each major number.
+
+7. ## 💬 Key Quotes
+Any direct quote from the source, in quotation marks, with attribution if known. If the source has no direct quote, omit this section.
+For "max"/"auto-max" include up to 3 quotes with context.
+
+8. ## 🧠 Why It Matters
+2–4 short paragraphs of analysis: how the mechanism works, short-term implications, long-term implications, who wins/loses, what comes next. Include a concrete example for every abstract claim.
+For "max"/"auto-max" use 4–7 paragraphs and include a counter-argument or limitation.
+
+9. ## 🌍 Background You Need
+1–3 short paragraphs explaining the minimum context a beginner needs (history, law, technology, culture). Do not assume prior knowledge.
+For "max"/"auto-max" expand to 2–4 paragraphs.
+
+10. ## 🙋 One Question to Keep in Mind
+End with one engaging, open-ended question that invites the reader to think further. Do not answer it.
+
+11. ## 🔗 Go Deeper
+A short list of the source titles and URLs exactly as provided. If a source is a video/transcript, note "(video transcript)".
+
+Tone and language:
+- Speak directly to the reader as "you". Use "I" only in the final question or a rare aside.
+- Do not use third-person framing like "the author says" or "this article reports".
+- Keep sentences short and clear.
+- Target length: "short" ~250–350 words, "long" ~700–1000 words, "max" ~1200–1800 words, "auto-max" ~1800–2600 words. For "simple", use the simplest A2–B1 English while keeping every fact and the same structure.`;
 
 /** Tiny markdown→HTML converter (mirror of news-scrape-article). */
 function mdToHtml(md: string): string {
@@ -202,8 +268,10 @@ serve(async (req) => {
       content: String(a.contentMd ?? a.excerpt ?? "").slice(0, perArticleCap),
     }));
 
-    const instructions =
-      length === "auto-max"
+    const isCopilot = voice === "copilot";
+    const instructions = isCopilot
+      ? COPILOT_INSTRUCTIONS
+      : length === "auto-max"
         ? AUTO_MAX_INSTRUCTIONS
         : length === "max"
           ? MAX_INSTRUCTIONS
@@ -215,7 +283,7 @@ serve(async (req) => {
                 : SIMPLE_INSTRUCTIONS_A2
               : LONG_INSTRUCTIONS;
 
-    const voiceAppendix = VOICE_APPENDIX[voice] ?? VOICE_APPENDIX.auto;
+    const voiceAppendix = isCopilot ? "" : (VOICE_APPENDIX[voice] ?? VOICE_APPENDIX.auto);
     const userPrompt = [
       instructions,
       voiceAppendix,
@@ -259,7 +327,7 @@ serve(async (req) => {
           model,
           max_tokens: maxTokensFor(length),
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: isCopilot ? COPILOT_SYSTEM_PROMPT : SYSTEM_PROMPT },
             { role: "user", content: userPrompt },
           ],
           tools: [

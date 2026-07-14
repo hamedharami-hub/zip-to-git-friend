@@ -323,7 +323,8 @@ export type RewriteVoice =
   | "friend"
   | "teacher"
   | "socratic"
-  | "journalist";
+  | "journalist"
+  | "copilot";
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */

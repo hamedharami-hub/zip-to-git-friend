@@ -3,12 +3,14 @@
  * Extracted from ChapterTTSPlayer.
  */
 
+import { memo } from "react";
+
 interface Props {
   value: "en" | "fa";
   onChange: (v: "en" | "fa") => void;
 }
 
-export function LangToggle({ value, onChange }: Props) {
+export const LangToggle = memo(function LangToggle({ value, onChange }: Props) {
   return (
     <div
       role="tablist"
@@ -32,4 +34,4 @@ export function LangToggle({ value, onChange }: Props) {
       ))}
     </div>
   );
-}
+});

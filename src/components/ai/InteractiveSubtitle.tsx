@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import {
   Volume2,
   ExternalLink,
@@ -74,7 +74,14 @@ function cleanWord(w: string): string {
  * Clicking a word opens a popover with AI Persian translation (cached) and
  * a one-click "Add to Leitner" button.
  */
-export function InteractiveSubtitle({ text, className, onWord, videoId, cueId, context }: Props) {
+export const InteractiveSubtitle = memo(function InteractiveSubtitle({
+  text,
+  className,
+  onWord,
+  videoId,
+  cueId,
+  context,
+}: Props) {
   const containerRef = useRef<HTMLSpanElement>(null);
   const [open, setOpen] = useState(false);
   const [activeWord, setActiveWord] = useState<string>("");
@@ -374,4 +381,4 @@ export function InteractiveSubtitle({ text, className, onWord, videoId, cueId, c
       </Popover>
     </>
   );
-}
+});

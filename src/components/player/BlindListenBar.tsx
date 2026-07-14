@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Eye, ChevronRight, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -13,7 +14,13 @@ interface Props {
  * Compact action bar shown when "blind listen" mode is on.
  * Lets the user reveal the current sentence and/or jump to the next one.
  */
-export function BlindListenBar({ enabled, revealed, onReveal, onNext, variant = "panel" }: Props) {
+export const BlindListenBar = memo(function BlindListenBar({
+  enabled,
+  revealed,
+  onReveal,
+  onNext,
+  variant = "panel",
+}: Props) {
   if (!enabled) return null;
   const dark = variant === "overlay";
   return (
@@ -46,4 +53,4 @@ export function BlindListenBar({ enabled, revealed, onReveal, onNext, variant = 
       </Button>
     </div>
   );
-}
+});

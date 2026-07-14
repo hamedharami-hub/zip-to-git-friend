@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Sparkles, Plus, Loader2, Languages, Check, WifiOff } from "lucide-react";
 import type { SubtitleCue, SegmentAnalysis } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,12 @@ interface Props {
   showTranslate?: boolean;
 }
 
-export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = false }: Props) {
+export const AnalysisPanel = memo(function AnalysisPanel({
+  videoId,
+  cue,
+  autoRun = false,
+  showTranslate = false,
+}: Props) {
   const settings = useSettingsStore((s) => s.settings);
   const addCard = useLeitnerStore((s) => s.addCard);
   const findByFront = useLeitnerStore((s) => s.findByFront);
@@ -279,4 +284,4 @@ export function AnalysisPanel({ videoId, cue, autoRun = false, showTranslate = f
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { SubtitleCue } from "@/types";
 import { useSettingsStore } from "@/store/settingsStore";
 
@@ -55,15 +55,15 @@ export function useBlindListen(
   }, [enabled, mediaEl, activeCue?.id]);
 
   const isRevealed = activeCue ? revealedIds.has(activeCue.id) : false;
-  const reveal = () => {
+  const reveal = useCallback(() => {
     if (!activeCue) return;
     setRevealedIds((prev) => {
       const next = new Set(prev);
       next.add(activeCue.id);
       return next;
     });
-  };
-  const next = () => {
+  }, [activeCue]);
+  const next = useCallback(() => {
     if (!mediaEl) return;
     const cur = activeCue;
     if (!cur) {
@@ -88,7 +88,7 @@ export function useBlindListen(
     } catch {
       /* no-op */
     }
-  };
+  }, [activeCue, allCues, mediaEl]);
 
   return { enabled, isRevealed, reveal, next };
 }

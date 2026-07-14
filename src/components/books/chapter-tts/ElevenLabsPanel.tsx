@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ELEVENLABS_MODELS, ELEVENLABS_VOICES } from "@/lib/elevenLabsTts";
+import { memo } from "react";
 import { fmtTime as fmt } from "./constants";
 
 interface Props {
@@ -46,7 +47,7 @@ interface Props {
   seekRel: (delta: number) => void;
 }
 
-export function ElevenLabsPanel(p: Props) {
+export const ElevenLabsPanel = memo(function ElevenLabsPanel(p: Props) {
   if (!p.elevenKey) {
     return (
       <div className="text-sm text-muted-foreground">
@@ -187,4 +188,4 @@ export function ElevenLabsPanel(p: Props) {
       </div>
     </>
   );
-}
+});

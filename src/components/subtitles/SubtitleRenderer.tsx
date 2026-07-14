@@ -9,7 +9,7 @@ import { useCachedTranslation } from "@/hooks/useCachedTranslation";
 import { Button } from "@/components/ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { toast } from "sonner";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 interface Props {
   primaryCue: SubtitleCue | null;
@@ -36,7 +36,7 @@ function encodeCueRef(cueId: string, startMs: number): string {
   return `${cueId}@${Math.round(startMs)}`;
 }
 
-export function SubtitleRenderer({
+export const SubtitleRenderer = memo(function SubtitleRenderer({
   primaryCue,
   secondaryCue,
   variant,
@@ -192,4 +192,4 @@ export function SubtitleRenderer({
       )}
     </div>
   );
-}
+});

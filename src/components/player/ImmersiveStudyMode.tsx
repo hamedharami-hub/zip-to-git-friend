@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { X, Play, Pause, ChevronLeft, ChevronRight } from "lucide-react";
 import { useVideoStore } from "@/store/videoStore";
 import { useSubtitleStore } from "@/store/subtitleStore";
@@ -24,7 +24,7 @@ interface Props {
  * - Double-tap zones: middle = play/pause, right 25% = next cue, left 25% = previous cue.
  * - A small "X" exits.
  */
-export function ImmersiveStudyMode({ videoId, onExit }: Props) {
+export const ImmersiveStudyMode = memo(function ImmersiveStudyMode({ videoId, onExit }: Props) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const current = useVideoStore((s) => s.current);
   const setCurrentTime = useVideoStore((s) => s.setCurrentTime);
@@ -299,4 +299,4 @@ export function ImmersiveStudyMode({ videoId, onExit }: Props) {
       </div>
     </div>
   );
-}
+});

@@ -216,6 +216,7 @@ serve(async (req) => {
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   } catch (e: any) {
     console.error("news-telegram-format error", e);
     return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {

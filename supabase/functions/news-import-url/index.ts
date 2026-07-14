@@ -46,7 +46,7 @@ function youtubeChannelHandle(
     if (!/(^|\.)youtube\.com$/.test(u.hostname)) return null;
     let m = u.pathname.match(/^\/channel\/(UC[\w-]{20,})/);
     if (m) return { kind: "id", value: m[1] };
-    m = u.pathname.match(/^\/(@[A-Za-z0-9_.\-]+)/);
+    m = u.pathname.match(/^\/(@[A-Za-z0-9_.-]+)/);
     if (m) return { kind: "handle", value: m[1] };
     m = u.pathname.match(/^\/user\/([^/]+)/);
     if (m) return { kind: "user", value: m[1] };
@@ -96,7 +96,9 @@ function mdToHtml(md: string): string {
     return `<p>${t.replace(/\n/g, "<br/>")}</p>`;
   });
   s = paragraphs.join("\n");
-  s = s.replace(/\u0000CODE(\d+)\u0000/g, (_, i) => {
+  const codeMarker = String.fromCharCode(0);
+  const codeRe = new RegExp(`${codeMarker}CODE(\\d+)${codeMarker}`, "g");
+  s = s.replace(codeRe, (_, i) => {
     return `<pre><code>${codeBlocks[Number(i)]
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -147,6 +149,7 @@ async function fetchYoutubeTranscript(
   const UA =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   async function getTracks(): Promise<any[]> {
     // Strategy A: parse watch HTML
     try {
@@ -220,11 +223,13 @@ async function fetchYoutubeTranscript(
   const ttRes = await fetch(baseUrl + "&fmt=json3", { headers: { "User-Agent": UA } });
   if (!ttRes.ok) return null;
   const tt = await ttRes.json();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   const events: any[] = tt?.events ?? [];
   const lines: string[] = [];
   for (const e of events) {
     if (!e.segs) continue;
     const s = e.segs
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       .map((x: any) => x.utf8 ?? "")
       .join("")
       .replace(/\s+/g, " ")

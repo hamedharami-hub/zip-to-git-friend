@@ -238,6 +238,7 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any;
   try {
     parsed = typeof argStr === "string" ? JSON.parse(argStr) : argStr;
@@ -251,6 +252,7 @@ Deno.serve(async (req) => {
   const sevs = new Set(["minor", "major"]);
   const grammar_markers = Array.isArray(parsed.grammar_markers)
     ? parsed.grammar_markers
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .map((m: any) => ({
           span: String(m?.span ?? "").trim(),
           correction: String(m?.correction ?? "").trim(),
@@ -258,16 +260,19 @@ Deno.serve(async (req) => {
           explanation: String(m?.explanation ?? "").trim(),
           severity: sevs.has(m?.severity) ? m.severity : "minor",
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .filter((m: any) => m.span && m.correction)
     : [];
 
   const target_usage = Array.isArray(parsed.target_usage)
     ? parsed.target_usage
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .map((u: any) => ({
           id: String(u?.id ?? ""),
           used: !!u?.used,
           similarity: typeof u?.similarity === "number" ? u.similarity : u?.used ? 1 : 0,
         }))
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .filter((u: any) => u.id)
     : [];
 

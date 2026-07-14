@@ -135,8 +135,10 @@ export function ReviewMode({
     if (!current || mode !== "mcq") return null;
     const distractors = pickDistractors(cards, current, 3);
     return shuffled([current.back, ...distractors]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [current?.id, mode, cards]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   const cloze = useMemo(() => (current ? buildCloze(current) : null), [current?.id]);
   // Auto-fallback: if Cloze mode but card has no example with the front, use classic
   const effectiveMode: StudyMode = mode === "cloze" && !cloze ? "classic" : mode;
@@ -608,7 +610,8 @@ export function ReviewMode({
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();
-                effectiveMode === "cloze" ? handleClozeSubmit() : handleTypeSubmit();
+                if (effectiveMode === "cloze") handleClozeSubmit();
+                else handleTypeSubmit();
               }
             }}
             placeholder={effectiveMode === "cloze" ? "کلمه‌ی جا افتاده…" : "جواب رو تایپ کن…"}

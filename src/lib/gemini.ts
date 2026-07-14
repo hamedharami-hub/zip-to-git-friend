@@ -68,6 +68,7 @@ async function callGemini(prompt: string, apiKey: string, model: string): Promis
     throw new GeminiError("unknown", `Gemini error (${res.status}).`);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let data: any;
   try {
     data = await res.json();
@@ -75,6 +76,7 @@ async function callGemini(prompt: string, apiKey: string, model: string): Promis
     throw new GeminiError("invalid_response", "Gemini returned non-JSON.");
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   const text = data?.candidates?.[0]?.content?.parts?.map((p: any) => p?.text ?? "").join("") ?? "";
   if (!text) throw new GeminiError("invalid_response", "Gemini returned empty content.");
   return text;
@@ -87,6 +89,7 @@ export async function analyzeSegment(
 ): Promise<SegmentAnalysis> {
   const raw = await callGemini(buildAnalysisPrompt(text), apiKey, model);
   const cleaned = stripFences(raw);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any;
   try {
     parsed = JSON.parse(cleaned);
@@ -103,7 +106,9 @@ export async function analyzeSegment(
 
   const vocabulary = Array.isArray(parsed?.vocabulary)
     ? parsed.vocabulary
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .map((v: any) => ({
           word: String(v.word),
           translation: String(v.translation),
@@ -113,7 +118,9 @@ export async function analyzeSegment(
     : [];
   const idioms = Array.isArray(parsed?.idioms)
     ? parsed.idioms
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .filter((i: any) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         .map((i: any) => ({
           phrase: String(i.phrase),
           meaning: String(i.meaning),
@@ -177,6 +184,7 @@ ${lines}`;
 
   const raw = await callGemini(prompt, apiKey, model);
   const cleaned = stripFences(raw);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   let parsed: any;
   try {
     parsed = JSON.parse(cleaned);
@@ -199,7 +207,9 @@ ${lines}`;
 
     const vocabulary = Array.isArray(r?.vocabulary)
       ? r.vocabulary
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           .filter((v: any) => v && typeof v.word === "string" && typeof v.translation === "string")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           .map((v: any) => ({
             word: String(v.word),
             translation: String(v.translation),
@@ -209,7 +219,9 @@ ${lines}`;
       : [];
     const idioms = Array.isArray(r?.idioms)
       ? r.idioms
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           .filter((i: any) => i && typeof i.phrase === "string" && typeof i.meaning === "string")
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           .map((i: any) => ({
             phrase: String(i.phrase),
             meaning: String(i.meaning),

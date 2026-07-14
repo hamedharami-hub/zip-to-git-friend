@@ -52,6 +52,9 @@ export function useArticleRewrite({
   const articleRef = useRef(article);
   const rewritesRef = useRef(rewrites);
   const voiceRef = useRef(voice);
+  const activeRewriteRef = useRef(activeRewrite);
+  const modelRefRef = useRef(modelRef);
+  const settingsRef = useRef(settings);
 
   useEffect(() => {
     articleRef.current = article;
@@ -64,6 +67,18 @@ export function useArticleRewrite({
   useEffect(() => {
     voiceRef.current = voice;
   }, [voice]);
+
+  useEffect(() => {
+    activeRewriteRef.current = activeRewrite;
+  }, [activeRewrite]);
+
+  useEffect(() => {
+    modelRefRef.current = modelRef;
+  }, [modelRef]);
+
+  useEffect(() => {
+    settingsRef.current = settings;
+  }, [settings]);
 
   const setActiveRewrite = useCallback((length: RewriteLength) => {
     setActiveRewriteState(length);
@@ -136,8 +151,9 @@ export function useArticleRewrite({
           sourceId: currentArticle.sourceId,
           topic: `article:${currentArticle.id}`,
           windowHours: 24,
-          model: modelRef.model,
-          simplifyLevel: length === "simple" ? (settings.simplifyLevel ?? "a2-b1") : undefined,
+          model: modelRefRef.current.model,
+          simplifyLevel:
+            length === "simple" ? (settingsRef.current.simplifyLevel ?? "a2-b1") : undefined,
           voice: voiceRef.current,
         });
         setRewrites((m) => {
@@ -156,8 +172,54 @@ export function useArticleRewrite({
         setRewriteBusy(null);
       }
     },
-    [modelRef, settings, onViewChange, setActiveRewrite],
+    [onViewChange, setActiveRewrite],
   );
+
+  // Auto-load rewrites and generate the default rewrite when the article
+  // changes. This keeps NewsArticle.tsx focused on layout.
+  useEffect(() => {
+    const currentArticle = articleRef.current;
+    if (!currentArticle) return;
+    void (async () => {
+      await loadRewrites(currentArticle);
+      if (!navigator.onLine) return;
+      const wantSimple = !!settingsRef.current.defaultSimplifyArticles;
+      const currentVoice = voiceRef.current;
+      const currentActive = activeRewriteRef.current;
+      try {
+        if (wantSimple) {
+          const { data: existingSimple } = await supabase
+            .from("news_digests" as never)
+            .select("id")
+            .eq("topic", `article:${currentArticle.id}`)
+            .eq("length", "simple")
+            .eq("voice", currentVoice)
+            .limit(1);
+          const has = Array.isArray(existingSimple) && existingSimple.length > 0;
+          if (!has) {
+            void handleRewrite("simple", false).catch(() => undefined);
+          } else {
+            setActiveRewrite("simple");
+            onViewChange?.("rewrite");
+          }
+        } else {
+          const { data: existing } = await supabase
+            .from("news_digests" as never)
+            .select("id")
+            .eq("topic", `article:${currentArticle.id}`)
+            .eq("length", currentActive)
+            .eq("voice", currentVoice)
+            .limit(1);
+          const hasAny = Array.isArray(existing) && existing.length > 0;
+          if (!hasAny) {
+            void handleRewrite(currentActive, false).catch(() => undefined);
+          }
+        }
+      } catch {
+        /* ignore auto-init failures */
+      }
+    })();
+  }, [article?.id, loadRewrites, handleRewrite, setActiveRewrite, onViewChange]);
 
   const deleteRewrite = useCallback(async (length: RewriteLength) => {
     const key = rewriteKey(length, voiceRef.current);

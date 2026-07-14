@@ -22,6 +22,7 @@ import { GamificationHUD } from "@/components/sentence-lab/GamificationHUD";
 
 const QUICK_SLUGS = ["grammar", "aussie_life", "professional", "general"];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 const QUICK_ICONS: Record<string, any> = {
   grammar: GraduationCap,
   aussie_life: Globe2,
@@ -57,6 +58,7 @@ export default function SentenceLabPage() {
         if (c.category) map.set(c.category, (map.get(c.category) ?? 0) + 1);
       }
       const ordered: QuickCat[] = QUICK_SLUGS.map((slug) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const c = (cats ?? []).find((x: any) => x.slug === slug);
         return c ? { slug, name: c.name, count: map.get(slug) ?? 0 } : null;
       }).filter(Boolean) as QuickCat[];

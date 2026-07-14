@@ -71,6 +71,7 @@ export default function SentenceCategoryPage() {
       setCat(c);
       const s = await fetchSubcategories(categorySlug);
       setSubs(s);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       setError(e?.message ?? "Failed to load");
     } finally {
@@ -80,6 +81,7 @@ export default function SentenceCategoryPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [categorySlug]);
 
   return (

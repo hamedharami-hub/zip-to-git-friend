@@ -51,10 +51,12 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
                 if (cancelled) return;
                 try {
                   v.currentTime = next.startMs / 1000;
-                } catch {}
+                } catch {
+                  /* no-op */
+                }
                 advanceTo(next);
                 pausingRef.current = false;
-                v.play().catch(() => {});
+                v.play().catch(() => undefined);
               }, config.pauseBetweenMs);
               return;
             }
@@ -62,7 +64,7 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
           // No next cue (or chaining disabled) — stop and resume normal playback.
           stopLoop();
           if (!wasPaused) {
-            v.play().catch(() => {});
+            v.play().catch(() => undefined);
           }
           pausingRef.current = false;
           return;
@@ -72,12 +74,14 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
           if (cancelled) return;
           try {
             v.currentTime = cue.startMs / 1000;
-          } catch {}
+          } catch {
+            /* no-op */
+          }
           setIteration(nextIter);
           const vis = config.visibilityPattern[nextIter - 1] ?? "both";
           setVisibility(vis);
           pausingRef.current = false;
-          v.play().catch(() => {});
+          v.play().catch(() => undefined);
         }, config.pauseBetweenMs);
         return;
       }
@@ -89,6 +93,7 @@ export function useLoop(videoRef: RefObject<HTMLVideoElement>) {
       cancelAnimationFrame(raf);
       pausingRef.current = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [
     videoRef,
     config.enabled,

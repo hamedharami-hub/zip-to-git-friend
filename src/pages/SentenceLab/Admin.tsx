@@ -79,6 +79,7 @@ export default function SentenceAdminPage() {
       setDoneRuns((n) => n + 1);
       toast.success(msg);
       await loadStats();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       console.error(e);
       toast.error(`Batch failed: ${e?.message ?? e}`);

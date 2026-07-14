@@ -44,7 +44,6 @@ export function ParagraphTTSButton({ text, className, lang = "en" }: Props) {
 
   useEffect(() => {
     return () => cleanup();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function cleanup() {

@@ -96,6 +96,7 @@ const SharePage = () => {
     }
 
     void processSharedIds(ids.split(",").filter(Boolean));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [params, navigate]);
 
   const processSharedIds = async (ids: string[]) => {

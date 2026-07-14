@@ -78,7 +78,7 @@ const Player = () => {
         return;
       }
       // Remember as last opened.
-      setAppState("lastVideoId", videoId).catch(() => {});
+      setAppState("lastVideoId", videoId).catch(() => undefined);
 
       // 1) Try the existing in-memory blob URL (still alive in this tab).
       let usable = await verifyBlobUrl(v.blobUrl);
@@ -116,6 +116,7 @@ const Player = () => {
       // Don't revoke createdObjectUrl — it's referenced by the persisted Video record
       // and may be reused if the user comes back without a reload.
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [videoId]);
 
   // Auto-enter immersive on mobile landscape — ONLY when explicitly enabled
@@ -161,7 +162,7 @@ const Player = () => {
         }
       ).orientation;
       window.setTimeout(() => {
-        orientation?.lock?.("landscape").catch(() => {});
+        orientation?.lock?.("landscape").catch(() => undefined);
       }, 150);
     } else {
       const orientation = (
@@ -173,7 +174,7 @@ const Player = () => {
       if (document.fullscreenElement || docAny.webkitFullscreenElement) {
         const exit =
           document.exitFullscreen?.bind(document) || docAny.webkitExitFullscreen?.bind(docAny);
-        Promise.resolve(exit?.()).catch(() => {});
+        Promise.resolve(exit?.()).catch(() => undefined);
       }
     }
   }, [immersive]);
@@ -190,8 +191,10 @@ const Player = () => {
         const req =
           docEl.requestFullscreen?.bind(docEl) || docEl.webkitRequestFullscreen?.bind(docEl);
         try {
-          Promise.resolve(req?.()).catch(() => {});
-        } catch {}
+          Promise.resolve(req?.()).catch(() => undefined);
+        } catch {
+          /* no-op */
+        }
       }
     }
     setImmersive(true);
@@ -234,7 +237,9 @@ const Player = () => {
     if (meta.blobUrl && meta.blobUrl.startsWith("blob:")) {
       try {
         URL.revokeObjectURL(meta.blobUrl);
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
     const blobUrl = URL.createObjectURL(file);
     const next: Video = { ...meta, blobUrl, fileName: file.name };

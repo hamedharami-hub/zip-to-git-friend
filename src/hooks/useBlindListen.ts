@@ -42,13 +42,16 @@ export function useBlindListen(
           pausedForCueRef.current = cue.id;
           try {
             mediaEl.pause();
-          } catch {}
+          } catch {
+            /* no-op */
+          }
         }
       }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [enabled, mediaEl, activeCue?.id]);
 
   const isRevealed = activeCue ? revealedIds.has(activeCue.id) : false;
@@ -65,20 +68,26 @@ export function useBlindListen(
     const cur = activeCue;
     if (!cur) {
       try {
-        mediaEl.play().catch(() => {});
-      } catch {}
+        mediaEl.play().catch(() => undefined);
+      } catch {
+        /* no-op */
+      }
       return;
     }
     const target = allCues.find((c) => c.startMs > cur.startMs + 10);
     if (target) {
       try {
         mediaEl.currentTime = target.startMs / 1000;
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     }
     pausedForCueRef.current = null;
     try {
-      mediaEl.play().catch(() => {});
-    } catch {}
+      mediaEl.play().catch(() => undefined);
+    } catch {
+      /* no-op */
+    }
   };
 
   return { enabled, isRevealed, reveal, next };

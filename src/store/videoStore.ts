@@ -63,7 +63,9 @@ export const useVideoStore = create<VideoState>((set, get) => ({
       if (wasPlayingBeforeHold) {
         try {
           mediaEl.pause();
-        } catch {}
+        } catch {
+          /* no-op */
+        }
       }
     }
     holdCount += 1;
@@ -72,8 +74,10 @@ export const useVideoStore = create<VideoState>((set, get) => ({
     holdCount = Math.max(0, holdCount - 1);
     if (holdCount === 0 && mediaEl && wasPlayingBeforeHold) {
       try {
-        mediaEl.play().catch(() => {});
-      } catch {}
+        mediaEl.play().catch(() => undefined);
+      } catch {
+        /* no-op */
+      }
       wasPlayingBeforeHold = false;
     }
   },

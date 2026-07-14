@@ -312,7 +312,7 @@ ${body}
   var K='llvp-html-prefs-v2';
   var DEFAULTS = { mode:'both', theme:'light', font:'sans', align:'start', fs:17 };
   var prefs = Object.assign({}, DEFAULTS);
-  try { Object.assign(prefs, JSON.parse(localStorage.getItem(K)||'{}')||{}); } catch(e){}
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(K)||'{}')||{}); } catch(e) { /* no-op */ }
   var root = document.documentElement;
   function applyAll(){
     root.style.setProperty('--fs', prefs.fs+'px');
@@ -323,7 +323,7 @@ ${body}
       });
     });
   }
-  function save(){ try { localStorage.setItem(K, JSON.stringify(prefs)); } catch(e){} }
+  function save(){ try { localStorage.setItem(K, JSON.stringify(prefs)); } catch(e) { /* no-op */ } }
 
   document.querySelectorAll('.toolbar button, .panel button').forEach(function(btn){
     btn.addEventListener('click', function(e){
@@ -464,6 +464,7 @@ export function NewsShareMenu({
       });
       setFilename(safeFilename(name));
       toast.success("نام فارسی پیشنهاد شد.");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "پیشنهاد نام فایل شکست خورد.");
     } finally {
@@ -502,6 +503,7 @@ export function NewsShareMenu({
       ).length;
       toast.success(`فایل ذخیره شد — ${withFa} ترجمه، ${withAnx} پردازش، ${imgs} عکس.`);
       setDialogOpen(false);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "ذخیره فایل شکست خورد.");
     } finally {
@@ -527,6 +529,7 @@ export function NewsShareMenu({
         `${title}\n${siteName ? siteName + (url ? " · " + url : "") : (url ?? "")}\n\n${body}`.trim();
       await navigator.clipboard.writeText(out);
       toast.success("متن خام کپی شد.");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "کپی شکست خورد.");
     } finally {
@@ -563,6 +566,7 @@ export function NewsShareMenu({
           .trim(),
       );
       toast.success(`متن فارسی کپی شد — ${withFa} پاراگراف.`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "کپی شکست خورد.");
     } finally {
@@ -589,6 +593,7 @@ export function NewsShareMenu({
       });
       await copyRich(res.html, res.plain);
       toast.success("متن آماده تلگرام کپی شد ✨");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "بازنویسی شکست خورد.");
     } finally {

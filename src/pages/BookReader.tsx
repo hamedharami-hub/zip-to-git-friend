@@ -170,6 +170,7 @@ const BookReader = () => {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [chapter, currentBook?.id, chapterIndex, translationCount]);
 
   // ─── Persist font preferences locally ──

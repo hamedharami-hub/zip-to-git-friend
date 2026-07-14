@@ -21,7 +21,7 @@ export function useListeningTracker(media: HTMLMediaElement | null) {
       accumulatedRef.current = 0;
       lastTickRef.current = null;
       if (seconds >= 1) {
-        addListeningSeconds(seconds).catch(() => {});
+        addListeningSeconds(seconds).catch(() => undefined);
       }
     };
 

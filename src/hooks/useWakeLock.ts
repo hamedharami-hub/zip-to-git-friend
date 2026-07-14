@@ -14,6 +14,7 @@ export function useWakeLock(active: boolean): void {
   const sentinelRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const nav = typeof navigator !== "undefined" ? (navigator as any) : null;
     if (!nav?.wakeLock?.request) return;
 

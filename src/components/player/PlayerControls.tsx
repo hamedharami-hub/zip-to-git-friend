@@ -95,7 +95,9 @@ export function PlayerControls({
             if (!v.paused) {
               try {
                 v.pause();
-              } catch {}
+              } catch {
+                /* no-op */
+              }
             }
           }
           setScrub(val);
@@ -104,7 +106,7 @@ export function PlayerControls({
           if (v) {
             v.currentTime = val;
             if (wasPlayingBeforeScrubRef.current) {
-              v.play().catch(() => {});
+              v.play().catch(() => undefined);
             }
           }
           wasPlayingBeforeScrubRef.current = false;
@@ -120,7 +122,8 @@ export function PlayerControls({
           className={iconBtn}
           onClick={() => {
             if (!v) return;
-            v.paused ? v.play() : v.pause();
+            if (v.paused) v.play();
+            else v.pause();
           }}
           aria-label={paused ? "Play" : "Pause"}
         >

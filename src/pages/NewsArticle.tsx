@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { useArticleLoad } from "@/hooks/useArticleLoad";
 import { useArticleRewrite } from "@/hooks/useArticleRewrite";
+import { useArticleTranslation } from "@/hooks/useArticleTranslation";
+import { useArticleLightbox } from "@/hooks/useArticleLightbox";
 import { loadNewsDisplayLang, saveNewsDisplayLang } from "@/lib/newsDisplayLang";
-import { rewriteKey } from "@/lib/news";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
@@ -25,48 +27,23 @@ import { EmptyState } from "@/components/EmptyState";
 import { InteractiveBookText, type DisplayLang } from "@/components/books/InteractiveBookText";
 import { ChapterTTSPlayer } from "@/components/books/ChapterTTSPlayer";
 import { ReaderTTSQuickSettings } from "@/components/books/ReaderTTSQuickSettings";
-
-import type { BookChapter } from "@/types";
-import {
-  getArticleById,
-  importUrl,
-  scrapeArticle,
-  setArticleSaved,
-  upsertArticle,
-  type NewsArticle,
-} from "@/lib/news";
-import { supabase } from "@/integrations/supabase/client";
+import { setArticleSaved } from "@/lib/news";
+import { cacheArticle } from "@/lib/newsOfflineCache";
 import { useSettingsStore } from "@/store/settingsStore";
 import { coerceBookModel } from "@/lib/aiModels";
-import { batchAnalyzeChapter, extractAnalysableParagraphs } from "@/lib/batchAnalyzeChapter";
-import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
-import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
-import { injectArticleImages } from "@/lib/injectArticleImages";
 import { toast } from "sonner";
-import { cacheArticle, getCachedArticle } from "@/lib/newsOfflineCache";
-import { NewsShareMenu } from "@/components/news/NewsShareMenu";
-import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
-import { NewsTocMenu } from "@/components/news/NewsTocMenu";
-import { ImageLightbox } from "@/components/news/ImageLightbox";
 import { usePinchFontStep } from "@/hooks/usePinchZoom";
 import { useReadingMode } from "@/hooks/useReadingMode";
-import { extractArticleImages, type LightboxImage } from "@/lib/extractArticleImages";
 import { BidiText } from "@/components/BidiText";
 import { cn } from "@/lib/utils";
-import { isSeen, markSeen } from "@/lib/seenArticles";
 import { LangCycleButton } from "@/components/news/LangCycleButton";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
 import { ArticleRewriteTabs } from "@/components/news/ArticleRewriteTabs";
 import type { BookAIModelRef } from "@/types";
-
-function isYoutubeUrl(url: string): boolean {
-  try {
-    const u = new URL(url);
-    return /(^|\.)youtube\.com$/.test(u.hostname) || u.hostname === "youtu.be";
-  } catch {
-    return false;
-  }
-}
+import { ImageLightbox } from "@/components/news/ImageLightbox";
+import { NewsShareMenu } from "@/components/news/NewsShareMenu";
+import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
+import { NewsTocMenu } from "@/components/news/NewsTocMenu";
 
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
@@ -77,9 +54,9 @@ const NewsArticleReader = () => {
     if (window.history.length > 1) navigate(-1);
     else navigate("/news");
   };
-  const [article, setArticle] = useState<NewsArticle | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [scraping, setScraping] = useState(false);
+
+  const { article, setArticle, loading, scraping, runScrape } = useArticleLoad(articleId);
+
   usePageMeta({
     title: article?.title ? `${article.title} — خبر` : "خبر — Lingua",
     description: article?.excerpt || article?.title || "خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.",
@@ -99,7 +76,7 @@ const NewsArticleReader = () => {
   useEffect(() => {
     saveNewsDisplayLang(rwDisplayLang);
   }, [rwDisplayLang]);
-  const [faTtsText, setFaTtsText] = useState<string>("");
+
   // Reader typography (font size + family) — persisted via NewsTypographyMenu.
   const [typo, setTypo] = useState<{
     sizeClass: string;
@@ -141,231 +118,29 @@ const NewsArticleReader = () => {
     setVoice,
     handleRewrite,
     deleteRewrite,
-    loadRewrites,
   } = useArticleRewrite({ article, modelRef: newsRewriteRef, settings, onViewChange: setView });
 
-  useEffect(() => {
-    if (!articleId) return;
-    void (async () => {
-      // 1) Hydrate from offline cache first so the UI is instant + offline-safe.
-      const cached = getCachedArticle(articleId);
-      if (cached) setArticle(cached);
-      try {
-        const a = await getArticleById(articleId).catch(() => null);
-        const useArticle = a ?? cached;
-        if (useArticle) {
-          if (a) {
-            setArticle(a);
-            cacheArticle(a);
-          }
-          document.title = `${useArticle.title} — News`;
-          await loadRewrites(useArticle);
-          const alreadySeen = isSeen(useArticle.url);
-          // Only scrape when we have NO body at all and are online.
-          if (
-            !useArticle.contentHtml &&
-            useArticle.contentMd !== "__SCRAPE_FAILED__" &&
-            navigator.onLine
-          ) {
-            await runScrape(useArticle, false);
-          }
-          // Decide what to auto-generate on first open:
-          // - if user enabled "default simplify", make the everyday-simple
-          //   version from the start (and switch the reader to it);
-          // - otherwise behave as before and pre-bake the auto-max rewrite.
-          const wantSimple = !!settings.defaultSimplifyArticles;
-          if (wantSimple) {
-            try {
-              const { data: existingSimple } = await supabase
-                .from("news_digests" as never)
-                .select("id")
-                .eq("topic", `article:${useArticle.id}`)
-                .eq("length", "simple")
-                .eq("voice", voice)
-                .limit(1);
-              const has = Array.isArray(existingSimple) && existingSimple.length > 0;
-              if (!has && navigator.onLine) {
-                void handleRewrite("simple", false).catch(() => {});
-              } else {
-                // Already cached — switch to the simple tab on open.
-                setActiveRewrite("simple");
-                setView("rewrite");
-              }
-            } catch {
-              /* ignore */
-            }
-            if (!alreadySeen) markSeen(useArticle.url);
-          } else if (!alreadySeen && navigator.onLine) {
-            try {
-              const { data: existing } = await supabase
-                .from("news_digests" as never)
-                .select("id")
-                .eq("topic", `article:${useArticle.id}`)
-                .eq("length", activeRewrite)
-                .eq("voice", voice)
-                .limit(1);
-              const hasAny = Array.isArray(existing) && existing.length > 0;
-              if (!hasAny) {
-                void handleRewrite(activeRewrite, false).catch(() => {});
-              }
-            } catch {
-              /* ignore */
-            }
-            markSeen(useArticle.url);
-          }
-        }
-      } catch (e) {
-        if (!cached) toast.error(e instanceof Error ? e.message : "Failed to load article.");
-      } finally {
-        setLoading(false);
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [articleId]);
+  const { faTtsText, ttsText, origChapter, rwChapter, rewriteHtmlWithImages, activeRewriteDoc } =
+    useArticleTranslation({
+      article,
+      view,
+      activeRewrite,
+      voice,
+      rewrites,
+      newsModelRef,
+    });
 
-  // Auto-translate the active chapter into Persian as soon as it's available
-  // and assemble a Persian TTS script from cached translations. Reuses the
-  // same per-paragraph cache as the manual TranslateChapterButton, so this
-  // only hits the AI when needed.
-  /* eslint-disable react-hooks/exhaustive-deps */
-  useEffect(() => {
-    if (!article) return;
-    let cancelled = false;
-    const controller = new AbortController();
+  const {
+    lightboxOpen,
+    setLightboxOpen,
+    lightboxImages,
+    setLightboxImages,
+    lightboxIndex,
+    setLightboxIndex,
+    openLightbox,
+  } = useArticleLightbox({ article, rewriteHtmlWithImages });
 
-    const activeDoc = view === "rewrite" ? rewrites[rewriteKey(activeRewrite, voice)] : undefined;
-    const activeBookId = activeDoc?.contentHtml
-      ? `news-rw-${article.id}-${activeRewrite}-${voice}`
-      : `news-${article.id}`;
-    const activeHtml = activeDoc?.contentHtml ?? article.contentHtml;
-    if (!activeHtml) return;
-
-    const chapter: BookChapter = {
-      id: `${activeBookId}:0`,
-      bookId: activeBookId,
-      index: 0,
-      title: activeDoc?.title || article.title,
-      html: activeHtml,
-      text: "",
-      wordCount: 0,
-    };
-
-    const buildFaText = async () => {
-      const items = extractAnalysableParagraphs(chapter);
-      const out: string[] = [];
-      for (const it of items) {
-        const cached = await getCachedParagraphAnalysis(activeBookId, 0, it.text);
-        const fa = cached?.translation?.trim();
-        if (fa) out.push(fa);
-      }
-      if (!cancelled) setFaTtsText(out.join("\n\n"));
-    };
-
-    void (async () => {
-      try {
-        // batchAnalyzeChapter reuses the per-paragraph cache, so re-opens
-        // are free (no AI calls). Always run it so first-time opens still
-        // produce Persian translations under each paragraph.
-        const final = await batchAnalyzeChapter(activeBookId, chapter, {
-          concurrency: 5,
-          signal: controller.signal,
-          modelRef: newsModelRef,
-          onProgress: (snap) => {
-            emitChapterAnalyses(activeBookId, 0, snap.results);
-          },
-        });
-        if (cancelled) return;
-        emitChapterAnalyses(activeBookId, 0, final.results);
-        await buildFaText();
-        if (article) markSeen(article.url);
-      } catch {
-        // best-effort; the user can still trigger translate manually
-        await buildFaText();
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [article?.id, article?.contentHtml, view, activeRewrite, voice, rewrites]);
-  /* eslint-enable react-hooks/exhaustive-deps */
-
-  const runScrape = async (a: NewsArticle, manual = true) => {
-    setScraping(true);
-    try {
-      // YouTube videos: use importUrl (transcript → first-person AI article).
-      if (isYoutubeUrl(a.url)) {
-        const result = await importUrl(a.url);
-        if (result.kind === "article" || result.kind === "youtube") {
-          const art = result.article;
-          const updated = await upsertArticle({
-            sourceId: a.sourceId,
-            url: a.url,
-            title: art.title || a.title,
-            author: art.author,
-            excerpt: art.excerpt,
-            contentMd: art.contentMd,
-            contentHtml: art.contentHtml,
-            imageUrl: art.imageUrl ?? a.imageUrl,
-            siteName: art.siteName ?? a.siteName,
-            language: art.language,
-            publishedAt: art.publishedAt ?? a.publishedAt,
-            wordCount: art.wordCount,
-          });
-          setArticle(updated);
-          cacheArticle(updated);
-          return;
-        }
-      }
-      const scraped = await scrapeArticle(a.url, {
-        excerpt: a.excerpt ?? undefined,
-        imageUrl: a.imageUrl ?? undefined,
-        siteName: a.siteName ?? undefined,
-      });
-      const updated = await upsertArticle({
-        sourceId: a.sourceId,
-        url: a.url,
-        title: scraped.title || a.title,
-        author: scraped.author,
-        excerpt: scraped.excerpt || a.excerpt,
-        contentMd: scraped.contentMd,
-        contentHtml: scraped.contentHtml,
-        imageUrl: scraped.imageUrl ?? a.imageUrl,
-        siteName: scraped.siteName ?? a.siteName,
-        language: scraped.language,
-        publishedAt: scraped.publishedAt ?? a.publishedAt,
-        wordCount: scraped.wordCount,
-      });
-      setArticle(updated);
-      cacheArticle(updated);
-      if (scraped.blocked && manual) {
-        toast.info("این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.");
-      }
-    } catch (e) {
-      if (manual) toast.error(e instanceof Error ? e.message : "Scrape failed.");
-      try {
-        const failed = await upsertArticle({
-          sourceId: a.sourceId,
-          url: a.url,
-          title: a.title,
-          excerpt: a.excerpt,
-          contentMd: "__SCRAPE_FAILED__",
-          contentHtml: null,
-          imageUrl: a.imageUrl,
-          siteName: a.siteName,
-          language: a.language,
-          publishedAt: a.publishedAt,
-          wordCount: 0,
-        });
-        setArticle(failed);
-      } catch {
-        /* ignore */
-      }
-    } finally {
-      setScraping(false);
-    }
-  };
+  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
 
   const toggleSave = async () => {
     if (!article) return;
@@ -380,54 +155,6 @@ const NewsArticleReader = () => {
       toast.error(e instanceof Error ? e.message : "Save failed.");
     }
   };
-
-  const activeKey = rewriteKey(activeRewrite, voice);
-  const activeRewriteDoc = rewrites[activeKey];
-  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
-
-  // Inject inline images from the original article into the rewritten HTML so
-  // shorter/AI rewrites still show the photos at roughly the same positions.
-  const rewriteHtmlWithImages = activeRewriteDoc?.contentHtml
-    ? injectArticleImages(activeRewriteDoc.contentHtml, article?.contentHtml, {
-        skipUrl: article?.imageUrl,
-      })
-    : activeRewriteDoc?.contentHtml;
-
-  // Collect all images for the hero + inline gallery lightbox.
-  const articleImageUrl = article?.imageUrl;
-  const articleContentHtml = article?.contentHtml;
-  const articleTitle = article?.title;
-  const allImages = useMemo<LightboxImage[]>(() => {
-    const map = new Map<string, LightboxImage>();
-    const add = (html: string | null | undefined) => {
-      for (const img of extractArticleImages(html, { skipUrl: articleImageUrl })) {
-        if (!map.has(img.src)) map.set(img.src, img);
-      }
-    };
-    if (articleImageUrl) map.set(articleImageUrl, { src: articleImageUrl, alt: articleTitle });
-    if (articleContentHtml) add(articleContentHtml);
-    if (rewriteHtmlWithImages) add(rewriteHtmlWithImages);
-    return Array.from(map.values());
-  }, [articleImageUrl, articleContentHtml, articleTitle, rewriteHtmlWithImages]);
-
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxImages, setLightboxImages] = useState<LightboxImage[]>([]);
-  const [lightboxIndex, setLightboxIndex] = useState(0);
-
-  const openLightbox = useCallback(
-    (src: string) => {
-      const idx = allImages.findIndex((img) => img.src === src);
-      if (idx >= 0) {
-        setLightboxImages(allImages);
-        setLightboxIndex(idx);
-      } else {
-        setLightboxImages([{ src, alt: "" }]);
-        setLightboxIndex(0);
-      }
-      setLightboxOpen(true);
-    },
-    [allImages],
-  );
 
   if (loading) {
     return (
@@ -454,55 +181,6 @@ const NewsArticleReader = () => {
       </div>
     );
   }
-
-  // Build pseudo-chapters so TranslateChapterButton (which expects a BookChapter)
-  // can drive whole-text translation against the same `analyze-paragraph` cache.
-  const origChapter: BookChapter | undefined = article.contentHtml
-    ? {
-        id: `news-${article.id}:0`,
-        bookId: `news-${article.id}`,
-        index: 0,
-        title: article.title,
-        html: article.contentHtml,
-        text: article.contentMd ?? "",
-        wordCount: article.wordCount,
-      }
-    : undefined;
-  const rwChapter: BookChapter | undefined = rewriteHtmlWithImages
-    ? {
-        id: `news-rw-${article.id}-${activeRewrite}-${voice}:0`,
-        bookId: `news-rw-${article.id}-${activeRewrite}-${voice}`,
-        index: 0,
-        title: activeRewriteDoc!.title || article.title,
-        html: rewriteHtmlWithImages,
-        text: activeRewriteDoc!.contentMd,
-        wordCount: activeRewriteDoc!.wordCount,
-      }
-    : undefined;
-
-  // Plain text for TTS — prefer current view (rewrite if user is on it).
-  // IMPORTANT: keep blank-line separators between blocks so the TTS chunker
-  // splits headings into their own utterance instead of merging them with
-  // the next paragraph.
-  const ttsText = (() => {
-    const md =
-      view === "rewrite" && activeRewriteDoc ? activeRewriteDoc.contentMd : article.contentMd;
-    if (!md || md === "__SCRAPE_FAILED__") return article.excerpt ?? "";
-    return (
-      md
-        .replace(/```[\s\S]*?```/g, " ")
-        .replace(/!\[[^\]]*\]\([^)]+\)/g, " ")
-        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-        .replace(/<[^>]+>/g, " ")
-        // Strip leading markdown markers but keep the line content + line breaks.
-        .replace(/^[ \t]*[#>*_`~-]+[ \t]*/gm, "")
-        .replace(/[`*_~]+/g, "")
-        // Collapse spaces/tabs only — preserve newlines for block boundaries.
-        .replace(/[ \t]+/g, " ")
-        .replace(/\n{3,}/g, "\n\n")
-        .trim()
-    );
-  })();
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">

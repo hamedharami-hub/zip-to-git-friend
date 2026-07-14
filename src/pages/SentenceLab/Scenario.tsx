@@ -156,6 +156,7 @@ export default function SentenceScenarioPage() {
         return;
       }
       setTargets(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         (data ?? []).map((r: any) => ({
           id: r.id,
           english: r.english,
@@ -188,6 +189,7 @@ export default function SentenceScenarioPage() {
         },
       });
       if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       const list = (data as any)?.scenarios as Scenario[] | undefined;
       if (!list || list.length === 0) throw new Error("No scenarios returned.");
       setScenarios(list);
@@ -200,12 +202,14 @@ export default function SentenceScenarioPage() {
           category_slug: categorySlug,
           sub_slugs: selectedSubSlugs,
           category_label: category?.name ?? null,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           scenarios: list as any,
           target_sentence_ids: targets.map((t) => t.id),
         })
         .select("id")
         .single();
       if (sessionRow?.id) setSessionId(sessionRow.id);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({
         title: "Generation failed",
@@ -240,6 +244,7 @@ export default function SentenceScenarioPage() {
       void supabase
         .from("scenario_sessions")
         .update({
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           messages: messages as any,
           used_sentence_ids: Array.from(usedIds),
           chosen_index: chosen
@@ -350,6 +355,7 @@ export default function SentenceScenarioPage() {
       recogRef.current = ctrl;
       setRecording(true);
       micPermissionGrantedRef.current = true;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       console.error("[mic] startWebSpeech failed", e);
       toast({
@@ -375,7 +381,7 @@ export default function SentenceScenarioPage() {
               });
             }
           })
-          .catch(() => {});
+          .catch(() => undefined);
       }
     }, 1500);
   }, [recording, busy, aiSpeaking, toast, interim]);
@@ -419,6 +425,7 @@ export default function SentenceScenarioPage() {
         },
       });
       if (error) throw error;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       const r = data as any;
       const usage: TurnUsage[] = Array.isArray(r.target_usage) ? r.target_usage : [];
       const newlyUsed = usage.filter((u) => u.used).map((u) => u.id);
@@ -450,6 +457,7 @@ export default function SentenceScenarioPage() {
       if (r.scenario_complete) {
         setComplete({ reason: String(r.completion_reason ?? "Scenario complete!") });
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({
         title: "Reply failed",
@@ -1075,6 +1083,7 @@ function HistoryDialog({
         .select("*")
         .order("created_at", { ascending: false })
         .limit(30);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       setRows((data as any) ?? []);
     })();
   }, [open]);

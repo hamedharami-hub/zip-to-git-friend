@@ -42,6 +42,7 @@ export function ModelVisibilityDialog() {
       groqWhisper: getAllGroqWhisperModels(settings),
       gateway: getAllGatewayModels(settings),
     }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
     [settings.customModels],
   );
 

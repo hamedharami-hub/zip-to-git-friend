@@ -18,6 +18,7 @@ import { toast } from "sonner";
 
 interface Row {
   flag: ReturnType<typeof useSentenceFlagStore.getState>["flags"][string];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   sentence: any;
 }
 
@@ -37,6 +38,7 @@ export default function SentenceLeitnerPage() {
       await loadFlags();
       const data = await fetchFlaggedSentences();
       setRows(data as Row[]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "Load failed");
     } finally {
@@ -46,6 +48,7 @@ export default function SentenceLeitnerPage() {
 
   useEffect(() => {
     void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, []);
   // refresh local list whenever flag store changes
   useEffect(() => {

@@ -115,6 +115,7 @@ export function ImportSentencesDialog({
       setText("");
       setFileName(null);
       onImported?.();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast({
         title: "Import failed",

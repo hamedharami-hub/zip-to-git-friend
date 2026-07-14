@@ -21,9 +21,11 @@ export const Route = createFileRoute("/api/public/seed-sentence-lab")({
           );
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const data = SENTENCE_BACKUP as any;
         const results = { categories: 0, paths: 0, sentences: 0, errors: [] as string[] };
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const cats = data.categories.map((c: any) => ({
           id: c.id,
           slug: c.slug,
@@ -47,6 +49,7 @@ export const Route = createFileRoute("/api/public/seed-sentence-lab")({
           else results.categories += Math.min(200, cats.length - i);
         }
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const paths = data.paths.map((p: any) => ({
           id: p.id,
           user_id: null,
@@ -67,6 +70,7 @@ export const Route = createFileRoute("/api/public/seed-sentence-lab")({
         if (pErr) results.errors.push(`paths: ${pErr.message}`);
         else results.paths = paths.length;
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const sents = data.sentences.map((s: any) => ({
           id: s.id,
           status: s.status ?? "published",

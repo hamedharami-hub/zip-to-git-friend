@@ -70,6 +70,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
       if (filtered.length === 0) {
         toast.info("چیزی پیدا نشد. شاید موضوع خیلی تازه یا خاص است.");
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "جستجوی اخبار مرتبط شکست خورد.");
     } finally {
@@ -101,6 +102,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
         wordCount: a.wordCount,
       });
       navigate(`/news/article/${saved.id}`);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "باز کردن این خبر شکست خورد.");
     } finally {
@@ -128,6 +130,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
         model: modelRef.model,
       });
       setCompare(result);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "مقایسه شکست خورد.");
     } finally {

@@ -177,7 +177,7 @@ export function useScreenWakeLock(active: boolean) {
     return () => {
       cancelled = true;
       document.removeEventListener("visibilitychange", onVisibility);
-      lock?.release().catch(() => {});
+      lock?.release().catch(() => undefined);
       lock = null;
     };
   }, [active]);

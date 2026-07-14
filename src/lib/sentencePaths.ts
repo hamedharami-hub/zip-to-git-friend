@@ -19,6 +19,7 @@ export interface SentencePath {
   sortOrder: number;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function map(row: any): SentencePath {
   return {
     id: row.id,
@@ -79,6 +80,7 @@ export async function createPath(input: CreatePathInput): Promise<SentencePath> 
       color: input.color ?? "sky",
       domain: input.domain ?? "general",
       is_builtin: false,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       recipe: input.recipe as any,
     })
     .select()

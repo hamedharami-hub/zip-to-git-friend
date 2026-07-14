@@ -58,6 +58,7 @@ serve(async (req) => {
     }
     const cleaned = items
       .slice(0, MAX_ITEMS)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       .map((it: any, i: number) => ({
         id: String(it?.id ?? i),
         title: String(it?.title ?? "")
@@ -134,6 +135,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     let parsed: any;
     try {
       parsed = JSON.parse(argsStr);
@@ -143,6 +145,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const raw: any[] = Array.isArray(parsed.results) ? parsed.results : [];
     const results = cleaned.map((it, i) => {
       const r = raw[i] ?? {};

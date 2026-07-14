@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
       userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
       componentStack: info.componentStack,
     };
-    // eslint-disable-next-line no-console
+
     console.error("[ErrorBoundary]", error.message, ctx, error);
   }
 

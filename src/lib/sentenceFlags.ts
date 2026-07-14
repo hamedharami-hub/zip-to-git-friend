@@ -28,6 +28,7 @@ export const FLAG_COLOR_META: Record<
 
 export const FLAG_COLORS: FlagColor[] = ["red", "orange", "yellow", "blue"];
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function mapRow(r: any): SentenceFlag {
   return {
     id: r.id,
@@ -92,6 +93,7 @@ export async function removeFlag(sentenceId: string): Promise<void> {
 /** Fetch the actual sentences that have flags. */
 export async function fetchFlaggedSentences(opts?: {
   colors?: FlagColor[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 }): Promise<Array<{ flag: SentenceFlag; sentence: any }>> {
   const flags = await fetchAllFlags();
   const filtered = opts?.colors?.length
@@ -101,6 +103,7 @@ export async function fetchFlaggedSentences(opts?: {
   const ids = filtered.map((f) => f.sentenceId);
   const { data, error } = await supabase.from("sentence_lab").select("*").in("id", ids);
   if (error) throw error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   const byId = new Map((data ?? []).map((r: any) => [r.id, r]));
   return filtered
     .map((f) => ({ flag: f, sentence: byId.get(f.sentenceId) }))

@@ -410,7 +410,6 @@ export function ChapterTTSPlayer({
       }
       // 'play-one' is handled by the menu's instant speechSynthesis call.
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, chapterIndexProp, textProp, textFa, browserVoiceId, rate]);
 
   // Lazy-load voices the first time the panel opens.
@@ -487,7 +486,6 @@ export function ChapterTTSPlayer({
     browserCtrlRef.current = null;
     setBrowserPlaying(false);
     resumeIndexRef.current = 0;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, effectiveChapterIndex, voice, engine]);
 
   function revokeUrl() {
@@ -856,7 +854,7 @@ export function ChapterTTSPlayer({
     {
       onPlay:
         engine === "gemini"
-          ? () => audioRef.current?.play().catch(() => {})
+          ? () => audioRef.current?.play().catch(() => undefined)
           : () => {
               if (browserCtrlRef.current?.isPaused) {
                 browserCtrlRef.current.resume();

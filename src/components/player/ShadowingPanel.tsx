@@ -238,6 +238,7 @@ interface TakeRowProps {
 
 function TakeRow({ take, groqApiKey, transcribeModel, onChanged }: TakeRowProps) {
   const [scoring, setScoring] = useState(false);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   const audioUrl = useMemo(() => URL.createObjectURL(take.blob), [take.blob, take.id]);
   useEffect(() => {
     return () => URL.revokeObjectURL(audioUrl);

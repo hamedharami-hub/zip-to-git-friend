@@ -74,6 +74,7 @@ interface SentenceState {
 const QUEUE_SIZE = 15;
 const DUE_RATIO = 0.7;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function mapSentence(row: any): SentenceLabItem {
   return {
     id: row.id,
@@ -95,6 +96,7 @@ function mapSentence(row: any): SentenceLabItem {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function mapProgress(row: any): SentenceProgress {
   return {
     id: row.id,
@@ -140,9 +142,11 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
             .eq("category", step.category)
             .eq("subcategory", step.subcategory)
             .limit(step.count * 2);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           const picks = (rows ?? []).filter((r: any) => !seenPath.has(r.id)).slice(0, step.count);
           for (const r of picks) seenPath.add(r.id);
           buckets.push(
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
             picks.map((r: any) => ({
               sentence: mapSentence(r),
               progress: null,
@@ -171,6 +175,7 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
             .select("*")
             .eq("user_id", userId)
             .in("sentence_id", ids);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
           const progMap = new Map<string, any>();
           for (const p of prog ?? []) progMap.set(p.sentence_id, p);
           for (const q of woven) {
@@ -235,12 +240,14 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
 
       let progressedIds = new Set<string>();
       if (userId && newRows && newRows.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         const ids = newRows.map((r: any) => r.id);
         const { data: prog } = await supabase
           .from("sentence_progress")
           .select("sentence_id")
           .eq("user_id", userId)
           .in("sentence_id", ids);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
         progressedIds = new Set((prog ?? []).map((p: any) => p.sentence_id));
       }
 
@@ -267,6 +274,7 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
               .from("sentence_lab")
               .select("*")
               .in("id", sample);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
             const flaggedItems: SentenceQueueItem[] = (flagRows ?? []).map((row: any) => ({
               sentence: mapSentence(row),
               progress: null,
@@ -291,6 +299,7 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
       }
 
       set({ queue, currentIndex: 0, loading: false });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       console.error("[sentenceStore] fetchDailyQueue failed", e);
       set({ loading: false, error: e?.message ?? "Failed to load queue" });
@@ -343,6 +352,7 @@ export const useSentenceStore = create<SentenceState>((set, get) => ({
         last_reviewed_at: nextState.lastReviewedAt,
       };
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       let savedRow: any = null;
       if (item.progress?.id) {
         const { data, error } = await supabase

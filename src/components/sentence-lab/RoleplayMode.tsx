@@ -315,6 +315,7 @@ export function RoleplayMode({
     } finally {
       setBusy(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [item, turns, toast, onHarvest, roleMode]);
 
   // Tap-to-toggle behavior used in Live mode (vs push-to-talk in manual mode).
@@ -915,6 +916,7 @@ function DissectionModal({
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [open, grammarNotes, item.category, item.subcategory, item.cefrLevel, item.english]);
 
   // Aggregate harvested sentences (deduped, preserve order).

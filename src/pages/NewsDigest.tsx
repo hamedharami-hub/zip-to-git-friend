@@ -80,6 +80,7 @@ const NewsDigestReader = () => {
         const d = await getDigestById(digestId);
         setDigest(d);
         if (d) document.title = `${d.title} — Digest`;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       } catch (e: any) {
         toast.error(e.message ?? "Failed to load digest.");
       } finally {
@@ -156,6 +157,7 @@ const NewsDigestReader = () => {
           failed: final.failed,
           total: final.total,
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       } catch (e: any) {
         console.error("[NewsDigest] translate error", e);
         toast.error(`ترجمه با خطا مواجه شد: ${e?.message ?? "unknown"}`);
@@ -180,6 +182,7 @@ const NewsDigestReader = () => {
       await deleteDigest(digest.id);
       toast.success("حذف شد.");
       navigate("/news");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e.message ?? "Delete failed.");
     }

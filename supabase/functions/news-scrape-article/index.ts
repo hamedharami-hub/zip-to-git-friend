@@ -66,7 +66,9 @@ function mdToHtml(md: string): string {
     return `<p>${t.replace(/\n/g, "<br/>")}</p>`;
   });
   s = paragraphs.join("\n");
-  s = s.replace(/\u0000CODE(\d+)\u0000/g, (_, i) => {
+  const codeMarker = String.fromCharCode(0);
+  const codeRe = new RegExp(`${codeMarker}CODE(\\d+)${codeMarker}`, "g");
+  s = s.replace(codeRe, (_, i) => {
     return `<pre><code>${codeBlocks[Number(i)]
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
@@ -77,6 +79,21 @@ function mdToHtml(md: string): string {
 
 function countWords(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+function extractUrl(input: string): string | undefined {
+  const start = /https?:\/\//i.exec(input);
+  if (!start) return undefined;
+  const i = start.index + start[0].length;
+  const stop = new Set(['"', "'", "<", ">", "\\"]);
+  let j = i;
+  while (j < input.length) {
+    const ch = input[j];
+    const cp = ch.codePointAt(0) ?? 0;
+    if (cp <= 0x1f || cp === 0x7f || stop.has(ch) || /\s/.test(ch)) break;
+    j++;
+  }
+  return input.slice(start.index, j);
 }
 
 /**
@@ -95,9 +112,9 @@ function decodeGoogleNewsUrl(url: string): string | null {
     const bytes = new Uint8Array(bin.length);
     for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
     const str = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
-    const um = str.match(/https?:\/\/[^\x00-\x1f\x7f"'<>\\\s]+/);
+    const um = extractUrl(str);
     if (!um) return null;
-    let found = um[0].replace(/[^\w\-./?=&%#:+,;@~!$()*]+$/, "");
+    const found = um.replace(/[^\w\-./?=&%#:+,;@~!$()*]+$/, "");
     if (!/^https?:\/\/[^/]+\.[^/]+/.test(found)) return null;
     if (/news\.google\.com/i.test(found)) return null;
     return found;

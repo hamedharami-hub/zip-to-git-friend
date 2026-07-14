@@ -193,6 +193,7 @@ function htmlToBlocks(html: string): Block[] {
 // batch analyzer so cached translations match every rendered chunk).
 
 /** Stable DOM id for a heading — used by the news TOC to scroll into view. */
+// eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
 export function headingSlug(text: string): string {
   const base = text
     .toLowerCase()
@@ -618,6 +619,7 @@ function Paragraph({
       ...idiomPhrases.map((p) => ({ text: p, kind: "idiom" as const })),
       ...vocabWords.map((p) => ({ text: p, kind: "idiom" as const })),
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
     [highlights, targetPhrases.join("|"), idiomPhrases.join("|"), vocabWords.join("|")],
   );
 

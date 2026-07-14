@@ -6,10 +6,13 @@
  * Android (server-assisted on desktop Chrome), no API key needed.
  */
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 type SR = typeof window extends { SpeechRecognition: infer T } ? T : any;
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 function getSpeechRecognition(): any {
   if (typeof window === "undefined") return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   return (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition || null;
 }
 
@@ -44,6 +47,7 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
 
   let finalText = "";
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   rec.onresult = (event: any) => {
     let interim = "";
     for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -57,6 +61,7 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
     if (interim) opts.onPartial?.(interim);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   rec.onerror = (e: any) => {
     opts.onError?.(e?.error ?? "unknown");
   };
@@ -68,6 +73,7 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
 
   try {
     rec.start();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
   } catch (e: any) {
     opts.onError?.(e?.message ?? "Failed to start");
     return null;
@@ -77,12 +83,16 @@ export function startRecognition(opts: RecognitionOptions): RecognitionHandle | 
     stop: () => {
       try {
         rec.stop();
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     },
     abort: () => {
       try {
         rec.abort();
-      } catch {}
+      } catch {
+        /* no-op */
+      }
     },
   };
 }

@@ -113,6 +113,12 @@ export const ShadowingPanel = memo(function ShadowingPanel({ videoId, cue }: Pro
       prevAutoPauseRef.current = settings.autoPauseAtCueEnd;
       updateSettings({ autoPauseAtCueEnd: true });
     }
+    return () => {
+      if (prevAutoPauseRef.current !== null) {
+        updateSettings({ autoPauseAtCueEnd: prevAutoPauseRef.current });
+        prevAutoPauseRef.current = null;
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 

@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useVideoStore } from "@/store/videoStore";
 import { useSubtitleStore } from "@/store/subtitleStore";
@@ -14,6 +14,8 @@ import { LoopControls } from "./LoopControls";
 import { BlindListenBar } from "./BlindListenBar";
 import { useBlindListen } from "@/hooks/useBlindListen";
 import { SubtitleRenderer } from "@/components/subtitles/SubtitleRenderer";
+import { KaraokeSubtitle } from "@/components/subtitles/KaraokeSubtitle";
+import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
 import { AnalysisPanel } from "@/components/ai/AnalysisPanel";
 import { ShadowingPanel } from "@/components/player/ShadowingPanel";
 import {
@@ -23,6 +25,7 @@ import {
   Play,
   Pause,
   Maximize2,
+  X,
   PauseCircle,
   Loader2,
 } from "lucide-react";
@@ -31,13 +34,24 @@ import { useMediaSession } from "@/hooks/useMediaSession";
 interface VideoPlayerProps {
   videoId?: string;
   onEnterImmersive?: () => void;
+  immersive?: boolean;
+  onExitImmersive?: () => void;
+  onActiveCueChange?: (id: string | null) => void;
 }
 
 export const VideoPlayer = memo(function VideoPlayer({
   videoId,
   onEnterImmersive,
+  immersive = false,
+  onExitImmersive,
+  onActiveCueChange,
 }: VideoPlayerProps = {}) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoEl, setVideoEl] = useState<HTMLVideoElement | null>(null);
+  const setVideoRef = useCallback((node: HTMLVideoElement | null) => {
+    videoRef.current = node;
+    setVideoEl(node);
+  }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const current = useVideoStore((s) => s.current);
   const setCurrentTime = useVideoStore((s) => s.setCurrentTime);
@@ -59,6 +73,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   const [controlsVisible, setControlsVisible] = useState(true);
   const [feedback, setFeedback] = useState<"play" | "pause" | "prev" | "next" | null>(null);
+  const [analysisOpen, setAnalysisOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
@@ -69,15 +84,15 @@ export const VideoPlayer = memo(function VideoPlayer({
   /** Pending external seek (seconds) — applied once metadata is loaded. */
   const pendingSeekRef = useRef<{ time: number; play: boolean } | null>(null);
 
-  const { activePrimary, activeSecondary } = useActiveCues(videoRef.current, primary, secondary);
-  useLoop(videoRef);
+  const { activePrimary, activeSecondary } = useActiveCues(videoEl, primary, secondary);
+  useLoop(videoEl);
   // Auto-pause at cue end (suppressed when loop is running so loop owns playback).
-  useAutoPauseAtCueEnd(videoRef.current, activePrimary, {
+  useAutoPauseAtCueEnd(videoEl, activePrimary, {
     enabled: autoPauseAtCueEnd,
     suppressed: loopEnabled,
   });
-  const blind = useBlindListen(videoRef.current, activePrimary, primary?.cues ?? []);
-  useListeningTracker(videoRef.current);
+  const blind = useBlindListen(videoEl, activePrimary, primary?.cues ?? []);
+  useListeningTracker(videoEl);
 
   // Mask cues based on loop visibility for the current iteration.
   const showPrimary = !loopEnabled || loopVisibility === "both" || loopVisibility === "primary";
@@ -86,9 +101,14 @@ export const VideoPlayer = memo(function VideoPlayer({
   const visibleSecondary = showSecondary ? activeSecondary : null;
   const hideSubtitleText = blind.enabled && !blind.isRevealed;
 
+  // Notify parent whenever the active cue changes (used for list scroll/highlight).
+  useEffect(() => {
+    onActiveCueChange?.(activePrimary?.id ?? null);
+  }, [activePrimary?.id, onActiveCueChange]);
+
   // Initialize from saved state
   useEffect(() => {
-    const v = videoRef.current;
+    const v = videoEl;
     if (!v || !current) return;
     v.volume = current.volume;
     v.playbackRate = current.playbackSpeed;
@@ -100,7 +120,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
-  }, [current?.id]);
+  }, [current?.id, videoEl]);
 
   // Initial controls hint — show for 2.5s on mount so first-time users see them.
   useEffect(() => {
@@ -109,9 +129,19 @@ export const VideoPlayer = memo(function VideoPlayer({
     return () => window.clearTimeout(t);
   }, [current?.id]);
 
+  // Prevent body scrolling when the player is in immersive mode.
+  useEffect(() => {
+    if (!immersive) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [immersive]);
+
   // Buffering / error listeners — surface a spinner and toast bad files.
   useEffect(() => {
-    const v = videoRef.current;
+    const v = videoEl;
     if (!v) return;
     const onWaiting = () => setIsBuffering(true);
     const onPlaying = () => setIsBuffering(false);
@@ -158,25 +188,30 @@ export const VideoPlayer = memo(function VideoPlayer({
       v.removeEventListener("stalled", onStalled);
       v.removeEventListener("error", onError);
     };
-  }, [current?.id]);
+  }, [current?.id, videoEl]);
 
   // Register the active media element so popovers can pause/resume it globally.
   useEffect(() => {
-    registerMedia(videoRef.current);
+    registerMedia(videoEl);
     return () => registerMedia(null);
-  }, [registerMedia, current?.id]);
+  }, [registerMedia, current?.id, videoEl]);
 
   // Wire OS lock-screen / Bluetooth / AirPods controls so audio keeps
   // playing in the background even when the screen is off.
+  const sessionMeta = useMemo(
+    () =>
+      current
+        ? {
+            title: current.title,
+            artist: current.mediaType === "audio" ? "Podcast" : "Video",
+            album: "Language Learning Player",
+          }
+        : null,
+    [current],
+  );
   useMediaSession(
-    videoRef.current,
-    current
-      ? {
-          title: current.title,
-          artist: current.mediaType === "audio" ? "Podcast" : "Video",
-          album: "Language Learning Player",
-        }
-      : null,
+    videoEl,
+    sessionMeta,
     {
       onPlay: () => videoRef.current?.play().catch(() => undefined),
       onPause: () => videoRef.current?.pause(),
@@ -229,9 +264,9 @@ export const VideoPlayer = memo(function VideoPlayer({
   // so the last position is never more than a few seconds stale even if the
   // user kills the tab or backgrounds the app.
   useEffect(() => {
-    if (!current) return;
+    if (!current || !videoEl) return;
     const flush = () => {
-      const v = videoRef.current;
+      const v = videoEl;
       if (!v) return;
       updateCurrent({
         lastPosition: v.currentTime,
@@ -257,12 +292,12 @@ export const VideoPlayer = memo(function VideoPlayer({
       flush();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
-  }, [current?.id, updateCurrent]);
+  }, [current?.id, updateCurrent, videoEl]);
 
   // Respond to external seek requests (e.g. clicking a cue in the list).
   // If metadata isn't ready yet, defer until `canplay` fires.
   useEffect(() => {
-    const v = videoRef.current;
+    const v = videoEl;
     if (!v || !seekRequest) return;
     if (v.readyState < 1) {
       pendingSeekRef.current = { time: Math.max(0, seekRequest.time), play: !!seekRequest.play };
@@ -277,7 +312,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       safePlay(v);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
-  }, [seekRequest?.token]);
+  }, [seekRequest?.token, videoEl]);
 
   // Hotkeys
   usePlayerHotkeys({
@@ -387,13 +422,15 @@ export const VideoPlayer = memo(function VideoPlayer({
     }
   }, []);
 
-  const onLoaded = useCallback(() => {
-    const v = videoRef.current;
-    if (!v) return;
-    if (!current?.duration && v.duration) {
-      updateCurrent({ duration: v.duration });
-    }
-  }, [current?.duration, updateCurrent]);
+  const onLoaded = useCallback(
+    (e: React.SyntheticEvent<HTMLVideoElement>) => {
+      const v = e.currentTarget;
+      if (!current?.duration && v.duration) {
+        updateCurrent({ duration: v.duration });
+      }
+    },
+    [current?.duration, updateCurrent],
+  );
 
   const showControlsTemporarily = useCallback(() => {
     setControlsVisible(true);
@@ -523,6 +560,14 @@ export const VideoPlayer = memo(function VideoPlayer({
     [onEnterImmersive],
   );
 
+  const handleExitImmersive = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      onExitImmersive?.();
+    },
+    [onExitImmersive],
+  );
+
   const toggleAutoPause = useCallback(
     () => updateSettings({ autoPauseAtCueEnd: !autoPauseAtCueEnd }),
     [updateSettings, autoPauseAtCueEnd],
@@ -531,16 +576,29 @@ export const VideoPlayer = memo(function VideoPlayer({
   if (!current) return null;
 
   const isAudio = current.mediaType === "audio";
+  const currentMs = (videoEl?.currentTime ?? 0) * 1000;
 
   return (
-    <div className="flex flex-col gap-1.5">
+    <div
+      className={
+        immersive
+          ? "fixed inset-0 z-50 flex flex-col bg-black overflow-hidden"
+          : "flex flex-col gap-1.5"
+      }
+    >
       <div
         ref={containerRef}
-        className={`relative bg-black sm:rounded-lg overflow-hidden group ${isAudio ? "aspect-[5/2] sm:aspect-[7/2]" : "aspect-video"} ${isFullscreen ? "!aspect-auto w-screen h-screen sm:rounded-none" : ""}`}
-        onMouseMove={showControlsTemporarily}
-        onMouseLeave={handleMouseLeave}
+        className={`relative bg-black overflow-hidden group ${
+          immersive
+            ? "flex-1 min-h-0"
+            : `sm:rounded-lg ${isAudio ? "aspect-[5/2] sm:aspect-[7/2]" : "aspect-video"} ${
+                isFullscreen ? "!aspect-auto w-screen h-screen sm:rounded-none" : ""
+              }`
+        }`}
+        onMouseMove={!immersive ? showControlsTemporarily : undefined}
+        onMouseLeave={!immersive ? handleMouseLeave : undefined}
       >
-        {isAudio && (
+        {isAudio && !immersive && (
           <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-white/70 bg-gradient-to-br from-primary/30 via-black to-black">
             <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center mb-2">
               <svg viewBox="0 0 24 24" fill="none" className="h-8 w-8" aria-hidden>
@@ -555,14 +613,17 @@ export const VideoPlayer = memo(function VideoPlayer({
           </div>
         )}
         <video
-          ref={videoRef}
+          ref={setVideoRef}
           src={current.blobUrl}
-          className={`w-full h-full ${isAudio ? "opacity-0 pointer-events-none" : ""}`}
+          className={`absolute inset-0 w-full h-full ${immersive ? "object-contain" : ""} ${
+            isAudio ? "opacity-0 pointer-events-none" : ""
+          }`}
           onLoadedMetadata={onLoaded}
           onTimeUpdate={handleTimeUpdate}
           onPlay={handlePlay}
           onPause={handlePause}
           preload="metadata"
+          playsInline
         />
 
         {/* Tap layer for gesture handling. Sits above the video but below controls/subtitles. */}
@@ -583,7 +644,7 @@ export const VideoPlayer = memo(function VideoPlayer({
 
         {/* Subtitle overlay — non-interactive (overlay variant has no clickable words),
             so it must not block the underlying tap layer. */}
-        {(displayMode === "inside" || displayMode === "hybrid") && (
+        {(displayMode === "inside" || displayMode === "hybrid") && !immersive && (
           <div className="absolute inset-x-0 bottom-16 px-4 pointer-events-none z-20">
             <SubtitleRenderer
               primaryCue={visiblePrimary}
@@ -611,7 +672,7 @@ export const VideoPlayer = memo(function VideoPlayer({
         )}
 
         {/* Expand to immersive study mode (top-right). */}
-        {onEnterImmersive && (
+        {!immersive && onEnterImmersive && (
           <button
             type="button"
             onClick={handleEnterImmersive}
@@ -622,6 +683,19 @@ export const VideoPlayer = memo(function VideoPlayer({
             title="Immersive study mode"
           >
             <Maximize2 className="h-4 w-4" />
+          </button>
+        )}
+
+        {/* Exit immersive mode (top-right). */}
+        {immersive && onExitImmersive && (
+          <button
+            type="button"
+            onClick={handleExitImmersive}
+            className="absolute top-3 right-3 z-30 inline-flex items-center justify-center h-9 w-9 rounded-md bg-black/55 text-white hover:bg-black/75 transition-opacity"
+            aria-label="Exit immersive study mode"
+            title="Exit immersive study mode"
+          >
+            <X className="h-4 w-4" />
           </button>
         )}
 
@@ -638,25 +712,104 @@ export const VideoPlayer = memo(function VideoPlayer({
         )}
 
         {/* Controls overlay — fades in on tap / hover. */}
-        <div
-          className={`absolute inset-x-0 bottom-0 z-30 px-2 pb-2 transition-opacity duration-200 ${
-            controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-        >
-          <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-md pt-6">
-            <PlayerControls
-              videoRef={videoRef}
-              variant="overlay"
-              onToggleFullscreen={toggleFullscreen}
-              isFullscreen={isFullscreen}
-            />
+        {!immersive && (
+          <div
+            className={`absolute inset-x-0 bottom-0 z-30 px-2 pb-2 transition-opacity duration-200 ${
+              controlsVisible ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <div className="bg-gradient-to-t from-black/80 via-black/50 to-transparent rounded-md pt-6">
+              <PlayerControls
+                videoEl={videoEl}
+                onToggleFullscreen={toggleFullscreen}
+                isFullscreen={isFullscreen}
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Immersive bottom strip — same cues/tools as normal, but full-width. */}
+        {immersive && (
+          <div className="absolute bottom-0 left-0 right-0 z-20 bg-black/85 backdrop-blur-md border-t border-white/10 text-white pointer-events-auto">
+            <div className="px-3 py-2 w-full max-w-none space-y-1">
+              {visiblePrimary ? (
+                hideSubtitleText ? (
+                  <p className="text-center tracking-widest text-white/50 text-base select-none leading-tight">
+                    ••• ••• •••
+                  </p>
+                ) : visiblePrimary.words && visiblePrimary.words.length > 0 ? (
+                  <KaraokeSubtitle
+                    cue={visiblePrimary}
+                    currentMs={currentMs}
+                    videoId={videoId}
+                    className="block text-center text-[15px] sm:text-base font-medium leading-tight tracking-tight"
+                  />
+                ) : (
+                  <InteractiveSubtitle
+                    text={visiblePrimary.text}
+                    context={visiblePrimary.text}
+                    videoId={videoId}
+                    cueId={visiblePrimary.id}
+                    className="block text-center text-[15px] sm:text-base font-medium leading-tight tracking-tight"
+                  />
+                )
+              ) : (
+                <p className="text-center text-white/50 text-xs leading-tight">— no subtitle —</p>
+              )}
+
+              {visibleSecondary && !hideSubtitleText && (
+                <p
+                  dir="auto"
+                  className="text-center text-[14px] sm:text-[15px] leading-tight tracking-tight"
+                  style={{ color: "hsl(var(--primary))" }}
+                >
+                  {visibleSecondary.text}
+                </p>
+              )}
+            </div>
+
+            {/* Compact action row: blind-listen + analyse toggle */}
+            <div className="px-3 pb-1.5 flex items-center gap-2 justify-between">
+              <div className="flex-1 min-w-0">
+                <BlindListenBar
+                  enabled={blind.enabled}
+                  revealed={blind.isRevealed}
+                  onReveal={blind.reveal}
+                  onNext={blind.next}
+                  variant="overlay"
+                />
+              </div>
+              {visiblePrimary && !hideSubtitleText && (
+                <button
+                  type="button"
+                  onClick={() => setAnalysisOpen((v) => !v)}
+                  className="text-[11px] text-white/80 hover:text-white px-2 py-0.5 rounded border border-white/15 shrink-0"
+                >
+                  {analysisOpen ? "بستن تحلیل" : "تحلیل"}
+                </button>
+              )}
+            </div>
+
+            {/* Optional collapsible analysis (does not steal subtitle space). */}
+            {analysisOpen && visiblePrimary && !hideSubtitleText && (
+              <div className="border-t border-white/10 max-h-[35vh] overflow-y-auto px-3 py-2">
+                <div className="rounded-md bg-white/5 border border-white/10 p-2.5">
+                  <AnalysisPanel
+                    videoId={videoId}
+                    cue={visiblePrimary}
+                    autoRun={autoShowAnalysis}
+                    showTranslate={!visibleSecondary}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Persian sentence + vocab/idioms — sits IMMEDIATELY under the video for tight visual link.
           Fixed min-height so the panel doesn't open/close between cues and strain the eyes. */}
-      {videoId && (
+      {!immersive && videoId && (
         <div className="mx-3 sm:mx-0 rounded-lg bg-card border border-border p-3 space-y-2 min-h-[88px] flex flex-col justify-center">
           {activePrimary ? (
             displayMode === "inside" ? (
@@ -693,7 +846,7 @@ export const VideoPlayer = memo(function VideoPlayer({
         </div>
       )}
 
-      {videoId && (
+      {!immersive && videoId && (
         <div className="mx-3 sm:mx-0 rounded-lg border border-primary/20 bg-card/50 p-3 min-h-[120px]">
           {activePrimary ? (
             <AnalysisPanel
@@ -711,7 +864,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       )}
 
       {/* Loop controls live below the analysis. */}
-      {videoId && activePrimary && (
+      {!immersive && videoId && activePrimary && (
         <div className="mx-3 sm:mx-0 rounded-lg border border-border bg-card/30 p-2 flex items-center justify-between gap-2 flex-wrap">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Current cue
@@ -737,7 +890,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       )}
 
       {/* Shadowing study panel — record yourself & compare. */}
-      {videoId && activePrimary && (
+      {!immersive && videoId && activePrimary && (
         <div className="mx-3 sm:mx-0">
           <ShadowingPanel videoId={videoId} cue={activePrimary} />
         </div>

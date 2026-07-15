@@ -12,7 +12,7 @@
  * book TTS we already use <audio src=blobUrl>, so the OS will continue
  * decoding audio in the background.
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export interface MediaSessionMeta {
   title: string;
@@ -37,6 +37,13 @@ export function useMediaSession(
   handlers: MediaSessionHandlers = {},
   active = true,
 ) {
+  // Keep the latest handlers accessible without tearing down the media-session
+  // registration every time the caller re-creates the handler object.
+  const handlersRef = useRef(handlers);
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
+
   // Push metadata + action handlers.
   useEffect(() => {
     if (!active) return;
@@ -71,22 +78,13 @@ export function useMediaSession(
       }
     };
 
-    setHandler("play", handlers.onPlay ? () => handlers.onPlay?.() : null);
-    setHandler("pause", handlers.onPause ? () => handlers.onPause?.() : null);
-    setHandler(
-      "seekbackward",
-      handlers.onSeekBackward ? (d) => handlers.onSeekBackward?.(d?.seekOffset ?? 10) : null,
-    );
-    setHandler(
-      "seekforward",
-      handlers.onSeekForward ? (d) => handlers.onSeekForward?.(d?.seekOffset ?? 10) : null,
-    );
-    setHandler(
-      "previoustrack",
-      handlers.onPreviousTrack ? () => handlers.onPreviousTrack?.() : null,
-    );
-    setHandler("nexttrack", handlers.onNextTrack ? () => handlers.onNextTrack?.() : null);
-    setHandler("stop", handlers.onStop ? () => handlers.onStop?.() : null);
+    setHandler("play", () => handlersRef.current.onPlay?.());
+    setHandler("pause", () => handlersRef.current.onPause?.());
+    setHandler("seekbackward", (d) => handlersRef.current.onSeekBackward?.(d?.seekOffset ?? 10));
+    setHandler("seekforward", (d) => handlersRef.current.onSeekForward?.(d?.seekOffset ?? 10));
+    setHandler("previoustrack", () => handlersRef.current.onPreviousTrack?.());
+    setHandler("nexttrack", () => handlersRef.current.onNextTrack?.());
+    setHandler("stop", () => handlersRef.current.onStop?.());
 
     return () => {
       const allActions: MediaSessionAction[] = [
@@ -100,15 +98,17 @@ export function useMediaSession(
       ];
       for (const a of allActions) setHandler(a, null);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, meta?.title, meta?.artist, meta?.album, meta?.artwork]);
+  }, [active, meta]);
 
   // Mirror the media element's playback state so the OS shows the right icon.
+  // Throttle `setPositionState` calls to avoid hammering the OS on every
+  // timeupdate tick.
   useEffect(() => {
     if (!active) return;
     if (typeof navigator === "undefined" || !("mediaSession" in navigator)) return;
     if (!mediaEl) return;
 
+    let lastPositionState = 0;
     const sync = () => {
       try {
         navigator.mediaSession.playbackState = mediaEl.paused ? "paused" : "playing";
@@ -117,6 +117,10 @@ export function useMediaSession(
       }
       try {
         if (Number.isFinite(mediaEl.duration) && mediaEl.duration > 0) {
+          const now = performance.now();
+          // Limit position-state pushes to ~4 per second.
+          if (now - lastPositionState < 250) return;
+          lastPositionState = now;
           navigator.mediaSession.setPositionState({
             duration: mediaEl.duration,
             playbackRate: mediaEl.playbackRate || 1,
@@ -131,13 +135,18 @@ export function useMediaSession(
     const events: (keyof HTMLMediaElementEventMap)[] = [
       "play",
       "pause",
-      "timeupdate",
       "ratechange",
       "durationchange",
       "ended",
     ];
+    // timeupdate fires often; throttle inside the handler instead of adding/removing.
+    const onTimeUpdate = () => sync();
+    mediaEl.addEventListener("timeupdate", onTimeUpdate);
     events.forEach((e) => mediaEl.addEventListener(e, sync));
-    return () => events.forEach((e) => mediaEl.removeEventListener(e, sync));
+    return () => {
+      mediaEl.removeEventListener("timeupdate", onTimeUpdate);
+      events.forEach((e) => mediaEl.removeEventListener(e, sync));
+    };
   }, [active, mediaEl]);
 }
 

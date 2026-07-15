@@ -232,7 +232,7 @@ Tone and language:
 - Speak directly to the reader as "you". Use "I" only in the final question or a rare aside.
 - Do not use third-person framing like "the author says" or "this article reports".
 - Keep sentences short and clear.
-- Use the LENGTH NOTE above to control overall size and detail. For 'simple', use the simplest A2–B1 English while keeping every fact and the same structure.`;
+- Use the LENGTH NOTE below to control overall size and detail. For 'simple', use the simplest A2–B1 English while keeping every fact and the same structure.`;
 
 /** Tiny markdown→HTML converter (mirror of news-scrape-article). */
 function mdToHtml(md: string): string {

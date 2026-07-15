@@ -182,6 +182,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   const chunkUrlsRef = useRef<string[]>([]);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const [playingChunk, setPlayingChunk] = useState<number | null>(null);
+  const [rate, setRate] = useState(1);
 
   function revokeChunkUrls() {
     for (const u of chunkUrlsRef.current) {
@@ -219,7 +220,6 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [rate, setRate] = useState(1);
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const lastUrlRef = useRef<string | null>(null);

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useArticleLoad } from "@/hooks/useArticleLoad";
-import { useArticleRewrite } from "@/hooks/useArticleRewrite";
 import { useArticleTranslation } from "@/hooks/useArticleTranslation";
 import { useArticleLightbox } from "@/hooks/useArticleLightbox";
 import { loadNewsDisplayLang, saveNewsDisplayLang } from "@/lib/newsDisplayLang";
@@ -38,21 +37,19 @@ import { BidiText } from "@/components/BidiText";
 import { cn } from "@/lib/utils";
 import { LangCycleButton } from "@/components/news/LangCycleButton";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
-import { ArticleRewriteTabs } from "@/components/news/ArticleRewriteTabs";
-import type { BookAIModelRef } from "@/types";
 import { ImageLightbox } from "@/components/news/ImageLightbox";
 import { NewsShareMenu } from "@/components/news/NewsShareMenu";
 import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
 import { NewsTocMenu } from "@/components/news/NewsTocMenu";
+import { DEFAULT_REWRITE_VOICE } from "@/lib/news";
 
 const NewsArticleReader = () => {
   const { articleId } = useParams<{ articleId: string }>();
   const navigate = useNavigate();
   const goBack = () => {
-    // Prefer going back so the user lands on the exact source/folder they were
-    // browsing. Fall back to /news when there's no history (e.g. cold load).
-    if (window.history.length > 1) navigate(-1);
-    else navigate("/news");
+    // Always return to the main news feed. The browser history may contain
+    // redirects or other routes, so navigate(-1) often overshoots.
+    navigate("/news");
   };
 
   const { article, setArticle, loading, scraping, runScrape } = useArticleLoad(articleId);
@@ -64,18 +61,12 @@ const NewsArticleReader = () => {
     image: article?.imageUrl || undefined,
   });
 
-  const [view, setView] = useState<"original" | "rewrite">("original");
   const [origDisplayLang, setOrigDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
   const [origTranslationCount, setOrigTranslationCount] = useState(0);
-  const [rwDisplayLang, setRwDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
-  const [rwTranslationCount, setRwTranslationCount] = useState(0);
   // Persist language choice globally so re-opens / back navigation keep it.
   useEffect(() => {
     saveNewsDisplayLang(origDisplayLang);
   }, [origDisplayLang]);
-  useEffect(() => {
-    saveNewsDisplayLang(rwDisplayLang);
-  }, [rwDisplayLang]);
 
   // Reader typography (font size + family) — persisted via NewsTypographyMenu.
   const [typo, setTypo] = useState<{
@@ -95,7 +86,6 @@ const NewsArticleReader = () => {
   const { extraLineHeight } = useReadingMode();
 
   const settings = useSettingsStore((s) => s.settings);
-  const update = useSettingsStore((s) => s.update);
   // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
     settings.newsBatchAnalysisModelRef ??
@@ -103,32 +93,15 @@ const NewsArticleReader = () => {
       settings.bookBatchAnalysisModelRef ??
       "google/gemini-3.1-flash-lite-preview",
   );
-  // Rewrite model (the "بازنویسی AI" tabs). Persisted globally so the next
-  // article opens with the same choice.
-  const newsRewriteRef = coerceBookModel(
-    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
-  );
 
-  const {
-    rewrites,
-    activeRewrite,
-    rewriteBusy,
-    setActiveRewrite,
-    voice,
-    setVoice,
-    handleRewrite,
-    deleteRewrite,
-  } = useArticleRewrite({ article, modelRef: newsRewriteRef, settings, onViewChange: setView });
-
-  const { faTtsText, ttsText, origChapter, rwChapter, rewriteHtmlWithImages, activeRewriteDoc } =
-    useArticleTranslation({
-      article,
-      view,
-      activeRewrite,
-      voice,
-      rewrites,
-      newsModelRef,
-    });
+  const { faTtsText, ttsText, origChapter } = useArticleTranslation({
+    article,
+    view: "original",
+    activeRewrite: "long",
+    voice: DEFAULT_REWRITE_VOICE,
+    rewrites: {},
+    newsModelRef,
+  });
 
   const {
     lightboxOpen,
@@ -138,9 +111,7 @@ const NewsArticleReader = () => {
     lightboxIndex,
     setLightboxIndex,
     openLightbox,
-  } = useArticleLightbox({ article, rewriteHtmlWithImages });
-
-  const hasAnyRewrite = Object.values(rewrites).some(Boolean);
+  } = useArticleLightbox({ article, rewriteHtmlWithImages: undefined });
 
   const toggleSave = async () => {
     if (!article) return;
@@ -200,39 +171,21 @@ const NewsArticleReader = () => {
           </button>
           <div className="flex-1" />
           <LangCycleButton
-            value={view === "rewrite" ? rwDisplayLang : origDisplayLang}
-            onChange={view === "rewrite" ? setRwDisplayLang : setOrigDisplayLang}
-            hasAnyTranslation={(view === "rewrite" ? rwTranslationCount : origTranslationCount) > 0}
+            value={origDisplayLang}
+            onChange={setOrigDisplayLang}
+            hasAnyTranslation={origTranslationCount > 0}
           />
           <NewsTypographyMenu onChange={handleTypoChange} showReadingMode={true} />
           <ReaderTTSQuickSettings faAvailable={!!faTtsText} />
-          <NewsTocMenu
-            html={
-              view === "rewrite" && activeRewriteDoc && rewriteHtmlWithImages
-                ? rewriteHtmlWithImages
-                : (article.contentHtml ?? "")
-            }
-          />
+          <NewsTocMenu html={article.contentHtml ?? ""} />
           <ReadingModeControls containerSelector="#news-reading-root" />
-          {(view === "rewrite" ? rwChapter : origChapter) && (
+          {origChapter && (
             <NewsShareMenu
-              bookId={view === "rewrite" ? rwChapter!.bookId : origChapter!.bookId}
+              bookId={origChapter.bookId}
               chapterIndex={0}
-              title={
-                view === "rewrite" && activeRewriteDoc
-                  ? activeRewriteDoc.title || article.title
-                  : article.title
-              }
-              contentHtml={
-                view === "rewrite" && activeRewriteDoc && rewriteHtmlWithImages
-                  ? rewriteHtmlWithImages
-                  : (article.contentHtml ?? "")
-              }
-              contentMd={
-                view === "rewrite" && activeRewriteDoc
-                  ? activeRewriteDoc.contentMd
-                  : article.contentMd
-              }
+              title={article.title}
+              contentHtml={article.contentHtml ?? ""}
+              contentMd={article.contentMd}
               url={article.url}
               siteName={article.siteName}
               aiModel={newsModelRef.model}
@@ -276,17 +229,9 @@ const NewsArticleReader = () => {
 
       {ttsText && (
         <ChapterTTSPlayer
-          bookId={
-            view === "rewrite" && activeRewriteDoc
-              ? `news-rw-${article.id}-${activeRewrite}-${voice}`
-              : `news-${article.id}`
-          }
+          bookId={`news-${article.id}`}
           chapterIndex={0}
-          chapterTitle={
-            view === "rewrite" && activeRewriteDoc
-              ? activeRewriteDoc.title || article.title
-              : article.title
-          }
+          chapterTitle={article.title}
           text={ttsText}
           textFa={faTtsText || undefined}
           coverUrl={article.imageUrl ?? undefined}
@@ -344,65 +289,16 @@ const NewsArticleReader = () => {
                 </div>
               </header>
 
-              {/* View toggle */}
-              {hasAnyRewrite && (
-                <div className="mb-4 inline-flex rounded-lg border border-border bg-muted/40 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setView("original")}
-                    className={
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors " +
-                      (view === "original" ? "bg-background shadow-sm" : "text-muted-foreground")
-                    }
-                  >
-                    اصل خبر
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setView("rewrite")}
-                    className={
-                      "px-3 py-1.5 text-xs font-medium rounded-md transition-colors " +
-                      (view === "rewrite" ? "bg-background shadow-sm" : "text-muted-foreground")
-                    }
-                  >
-                    بازنویسی AI
-                  </button>
-                </div>
-              )}
-
-              {view === "original" && (
-                <InteractiveBookText
-                  html={article.contentHtml}
-                  bookId={`news-${article.id}`}
-                  chapterIndex={0}
-                  fontSizeClass={typo.sizeClass}
-                  fontFamilyClass={typo.familyClass}
-                  displayLang={origDisplayLang}
-                  onTranslationCountChange={setOrigTranslationCount}
-                  sourceKind="news"
-                  sourceTitle={article.title}
-                  onImageClick={openLightbox}
-                />
-              )}
-
-              <ArticleRewriteTabs
-                articleId={article.id}
-                articleTitle={article.title}
-                rewrites={rewrites}
-                activeRewrite={activeRewrite}
-                onActiveRewriteChange={setActiveRewrite}
-                voice={voice}
-                onVoiceChange={setVoice}
-                rewriteBusy={rewriteBusy}
-                onRewrite={handleRewrite}
-                onDeleteRewrite={deleteRewrite}
-                rewriteHtmlWithImages={rewriteHtmlWithImages ?? undefined}
-                typo={typo}
-                rwDisplayLang={rwDisplayLang}
-                onRwTranslationCountChange={setRwTranslationCount}
-                modelRef={newsRewriteRef}
-                onModelChange={(ref: BookAIModelRef) => void update({ newsRewriteModelRef: ref })}
-                settings={settings}
+              <InteractiveBookText
+                html={article.contentHtml}
+                bookId={`news-${article.id}`}
+                chapterIndex={0}
+                fontSizeClass={typo.sizeClass}
+                fontFamilyClass={typo.familyClass}
+                displayLang={origDisplayLang}
+                onTranslationCountChange={setOrigTranslationCount}
+                sourceKind="news"
+                sourceTitle={article.title}
                 onImageClick={openLightbox}
               />
             </>

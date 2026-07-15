@@ -316,15 +316,8 @@ export type SimplifyLevel = "a2-b1" | "b1-b2";
 /** News rewrite length options exposed in the reader UI. */
 export type RewriteLength = "long" | "max" | "auto-max" | "simple";
 
-/** Persona / voice for the news rewrite. */
-export type RewriteVoice =
-  | "auto"
-  | "storyteller"
-  | "friend"
-  | "teacher"
-  | "socratic"
-  | "journalist"
-  | "copilot";
+/** Persona / voice for the news digest/rewrite. */
+export type RewriteVoice = "storyteller" | "teacher" | "journalist" | "copilot";
 
 export interface BookChapterRewrite {
   /** Composite key: `${bookId}:${chapterIndex}:${style}`. */

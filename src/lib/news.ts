@@ -88,19 +88,30 @@ export function rewriteKey(length: DigestLength, voice: RewriteVoice): string {
   return `${length}:${voice}`;
 }
 
-/** Persian labels for the available rewrite personas. */
+/** Persian labels for the available digest personas. */
 export const VOICE_LABELS: Record<RewriteVoice, string> = {
-  auto: "رسمی مجله‌ای (مانند قبل)",
-  storyteller: "داستان‌سرا",
-  friend: "دوستانه",
-  teacher: "معلمانه",
-  socratic: "سقراطی",
-  journalist: "خبری-تحلیلی",
-  copilot: "کمک‌هوشمند (Copilot-style + ایموجی)",
+  journalist: "خبرنگار (کوتاه و تحلیلی)",
+  teacher: "معلم (با توضیح و مثال)",
+  storyteller: "داستان‌سرا (صحنه و روایت)",
+  copilot: "کمک‌هوشمند (Copilot + ایموجی)",
 };
 
 /** Default persona used when the user has not explicitly chosen one. */
-export const DEFAULT_REWRITE_VOICE: RewriteVoice = "storyteller";
+export const DEFAULT_REWRITE_VOICE: RewriteVoice = "journalist";
+
+/** Maps old/legacy voices to the new reduced set. */
+const LEGACY_VOICE_MAP: Record<string, RewriteVoice> = {
+  auto: "journalist",
+  friend: "teacher",
+  socratic: "storyteller",
+};
+
+/** Normalize any voice string to a valid current voice. */
+export function normalizeVoice(voice: string | null | undefined): RewriteVoice {
+  const v = (voice ?? DEFAULT_REWRITE_VOICE).trim();
+  if (v in VOICE_LABELS) return v as RewriteVoice;
+  return LEGACY_VOICE_MAP[v] ?? DEFAULT_REWRITE_VOICE;
+}
 
 // ─────────── Sources CRUD ───────────
 
@@ -564,7 +575,7 @@ export function rowToDigest(row: Record<string, unknown>): NewsDigest {
     sourceArticles: (row.source_articles as NewsDigest["sourceArticles"]) ?? [],
     wordCount: (row.word_count as number | null | undefined) ?? 0,
     model: row.model as string | null,
-    voice: (row.voice as RewriteVoice) ?? "auto",
+    voice: normalizeVoice(row.voice as string),
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
@@ -616,7 +627,7 @@ export async function generateDigest(opts: {
   simplifyLevel?: "a2-b1" | "b1-b2";
   voice?: RewriteVoice;
 }): Promise<NewsDigest> {
-  const voice = opts.voice ?? "auto";
+  const voice = normalizeVoice(opts.voice);
   const { data, error } = await supabase.functions.invoke<{
     title: string;
     contentMd: string;

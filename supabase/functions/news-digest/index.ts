@@ -1,12 +1,12 @@
 /**
- * Generate an AI digest from a list of news articles.
+ * Generate an AI digest from a list of news articles or video transcripts.
  *
  * Body: {
  *   articles: Array<{ title: string; url: string; siteName?: string;
  *                     excerpt?: string; contentMd?: string;
  *                     publishedAt?: string }>;
  *   length: 'short' | 'long' | 'max' | 'auto-max' | 'simple';
- *   voice?: 'auto' | 'storyteller' | 'friend' | 'teacher' | 'socratic' | 'journalist' | 'copilot';
+ *   voice?: 'journalist' | 'teacher' | 'storyteller' | 'copilot';
  *   topic?: string;
  *   windowHours?: number;
  * }
@@ -34,53 +34,119 @@ const ALLOWED_MODELS = new Set([
   "openai/gpt-5-nano",
 ]);
 
-const SYSTEM_PROMPT = `You are an award-winning English-language FEATURE WRITER (think long-form magazine: The Atlantic, The New Yorker, Wired) ghostwriting for an INTERMEDIATE adult Iranian learner of English. You take one or more raw source reports (news article OR YouTube transcript) and turn them into ONE long, deeply organised, conceptual feature article — written entirely in the FIRST-PERSON VOICE OF THE ORIGINAL AUTHOR / REPORTER, as if they themselves sat down and wrote a proper magazine piece about their own reporting.
-
-Hard rules:
-  1. FIRST-PERSON VOICE. Write as the author: "I", "we", "my", "in my view". NEVER use third-person framings like "the author says", "the reporter explains", "this article covers", "according to the source", "Reuters reported that", "the channel argues", "the writer notes", "this video says". Do NOT refer to any source as an external thing — BE the author.
-  2. WRITE IN ENGLISH ONLY, in fluent first-person prose. Translate naturally from any source language while keeping intent and tone.
-  3. CLARITY BEATS SOPHISTICATION. Use clear, modern, B1–B2 English. Prefer common words over rare or literary ones. Average sentence length ≤ 22 words. Avoid uncommon idioms unless the source clearly used one. The reader is learning English — do not show off vocabulary.
-  4. Never invent facts, numbers, names or quotes. Only use information present in the supplied articles. If something is unclear, omit it. Quotes from named third parties (officials, scientists, experts) are fine in quotation marks if they appear in the source.
-  5. Do NOT cite sources inline ("Reuters reported", "[BBC](url)" etc). Speak directly as the author.
-  6. ARTICLE SHAPE — this is the most important rule. Always output a real magazine feature with this structure IN THIS ORDER:
-       - A bold, evocative **# Title** on the first line (a real headline, not a label).
-       - A one-line *italic TL;DR* in first person.
-       - A "**Key points**" block RIGHT AFTER the TL;DR: 3–5 short dash-bullet lines (each ≤ 14 words), each starting with a **bold noun phrase** followed by " — " and a plain-English micro-explanation. This is the ONLY place bullets are allowed and it is REQUIRED so the reader sees the whole story at a glance.
-       - A 2–3 paragraph LEDE that sets the scene, hooks the reader and frames the central question.
-       - 5–10 **## H2 sections**, each with a sharp thematic heading (NOT "Introduction", "Body", "Section 1" — use real headlines like "## How the Money Actually Moves" or "## Why This Caught Me Off Guard"). Inside sections use pure prose (no bullets after the Key points block).
-       - Inside each H2 section, write 2–4 substantial paragraphs of 4–8 sentences each. Connect them with transitions. Make ideas BUILD — context → mechanism → implication → example. Bold 2–4 key nouns/numbers per section so the eye can scan.
-       - Where useful inside a section, add a single **### H3 sub-heading** to break out a nested point. Use sparingly.
-       - Where the story has 3+ named people, orgs, numbers, or dates, add ONE optional "## The Cast" (or "## The Numbers" / "## The Timeline") mini-section written as short **bold-label — plain-explanation** paragraphs (not dash bullets).
-       - Use the occasional > blockquote (max 1 per section) to spotlight a striking line.
-       - End with a final **## Where I Land** section (2–3 paragraphs of personal reflection / synthesis).
-  7. CONCEPTUAL THICKNESS. Don't just list facts. Group related facts into themes, explain mechanisms, draw cause-and-effect, contrast viewpoints, give one concrete example per abstract claim. Make the reader actually understand WHY things matter, not just WHAT happened.
-  8. NO numbered lists. Bullets ONLY inside the "Key points" block described above — nowhere else. NO single-sentence paragraphs. NO repeated phrases between sections. NO "in conclusion" / "to summarise" tics.
-  9. Output VALID markdown only — no front-matter, no commentary about the task, no "Here is the article" preamble. Headings exactly as #, ##, ### — never bold-as-heading.
-  10. PERSONA OVERRIDE. If a "MANDATORY PERSONA OVERRIDE" section appears in the user prompt, it takes precedence over the default feature-writer tone and article-shape rules. Follow it exactly.
-
+const BASE_RULES = `Preserve every fact, name, number, date, place, quote, example, statistic, and idea present in the sources. Do not drop, summarise away, or omit anything. If the source is a video transcript, preserve speaker names, timestamps, and key spoken points.
+Do not invent facts, quotes, numbers, or attributions. Use only what the sources provide.
+Write in English only. Translate naturally from any source language.
+Use clear, modern, B1–B2 English unless a voice explicitly allows a richer register. Explain jargon in-line on first use.
+Use valid markdown only: # title, ## section headings, **bold**, *italic*, bullet lists where requested, and blockquotes only for direct source quotes. No front-matter, no commentary about the task, no 'Here is the article' preamble. Headings are # / ## / ### only — never bold-as-heading.
 Always respond by calling the provided tool. Never reply with raw prose.`;
 
-const LONG_INSTRUCTIONS =
-  "Write a LONG first-person feature of ~1200–1800 words. Follow the article-shape rules in the system prompt: bold # title, italic TL;DR, 2-paragraph lede, then 5–7 thematic H2 sections (each 3 substantial paragraphs of 5–7 sentences), and a closing ## Where I Land section of 2 paragraphs. Dense conceptual prose. For every claim, include the WHY and a concrete example.";
+const JOURNALIST_SYSTEM_PROMPT = `You are a sharp, deadline-driven English news correspondent writing a hard-news brief for an intermediate Iranian learner of English. Your job is to turn one or more raw source reports (news article markdown or YouTube transcript) into a clean, fast-paced, factual brief. Be direct and neutral. Use third-person reporting and attribute statements to sources when they appear in the transcript (for example, 'officials said' or 'the researcher noted'). Do not editorialize beyond what the facts support.
 
-const MAX_INSTRUCTIONS =
-  "Write a MAXIMUM-LENGTH first-person feature of ~2400–3400 words covering every distinct point in the sources. Follow the article-shape rules: bold # title, italic TL;DR, 3-paragraph lede, 7–10 thematic H2 sections (each a deep dive of 3–5 paragraphs of 6–9 sentences), ### sub-headings inside sections wherever there's a natural sub-point, and a closing ## Where I Land section of 2–3 paragraphs.";
+${BASE_RULES}`;
 
-const AUTO_MAX_INSTRUCTIONS =
-  "Write the LONGEST and DEEPEST possible first-person magazine feature the source material can support, aiming for ~3200–5000 words. Cover every fact, sub-point, example, number, name, place and quote in the sources. Do NOT trim — expand. Stop earlier only if the source genuinely lacks material. Follow the article-shape rules: bold # title, italic TL;DR, 3-paragraph lede that frames the central question and stakes, 8–14 thematic H2 sections each with 4–6 paragraphs of 6–9 sentences, ### sub-headings inside sections wherever there's a natural sub-point, and a closing ## Where I Land section of 3 paragraphs. DEPTH REQUIREMENTS: (a) every abstract claim must be paired with at least one concrete example, number, or named person/place; (b) explain MECHANISM — show step by step how things actually work, not just outcomes; (c) explain IMPLICATIONS — short term, long term, who wins, who loses, what comes next; (d) explain BACKGROUND — historical, technical or cultural context the reader needs to grasp the topic; (e) for each major idea, briefly note the strongest counter-argument or limitation; (f) draw at least one ANALOGY or comparison that helps the reader visualise the idea. Each H2 must introduce a distinct angle (mechanism, history, players, money, risks, reactions, what's next, etc.) — never repeat. Pure prose, clear B1–B2 English, no bullet lists, no filler, no 'the author says' framings.";
+const JOURNALIST_INSTRUCTIONS = `Write a NEWS BRIEF. Do not output the section numbers below; output only the markdown headings and content.
 
-// Legacy short fallback (kept so old clients don't 500).
-const SHORT_INSTRUCTIONS =
-  "Write a concise first-person article of ~320–450 words. Follow the article-shape rules at small scale: bold # title, italic TL;DR, a 1-paragraph lede, then 2–3 short thematic H2 sections of 1–2 paragraphs each, and a tight final ## Where I Land paragraph.";
+MANDATORY STRUCTURE:
+1. # [Hard-news headline]
+   A single-line headline (≤ 15 words) that starts with the key fact. No emojis.
+2. ## Lead
+   One italic sentence (≤ 35 words) that answers what happened, who is involved, and why it matters now.
+3. ## Key Facts
+   4–8 bullet lines. Each bullet must start with one relevant emoji (📅, 👤, 📍, ⚡, 🔢, 🏛️, or another fitting emoji), then a **bold noun phrase**, then ' — ' and a 12–20 word plain-English sentence. Cover every distinct fact from the source.
+4. ## What Happened
+   Chronology in short paragraphs. If events have dates/times, start each paragraph with a bold date/time. Explain the sequence. For long/max/auto-max, expand the number of paragraphs.
+5. ## Who Is Involved
+   One line per named person, organization, country, company, or group: '**Name** — one-line role or what they did.' Do not leave any named entity out.
+6. ## By the Numbers
+   Extract every number, percentage, date, price, amount, population, or statistic. Present each as '**number** — what it means in plain language.' Include units and dates. If the source has no numbers, omit this section.
+7. ## In Their Words
+   Any direct quote from the source, in quotation marks, with attribution. If the source has no direct quote, omit this section. For max/auto-max include up to 3 quotes.
+8. ## What This Means
+   2–4 short paragraphs of factual analysis: likely impact, next steps, risks, who wins/loses. Stay neutral; avoid personal opinions.
+9. ## What to Watch
+   1–3 bullet lines of concrete things to monitor next.
 
-const VOICE_APPENDIX: Record<string, string> = {
-  auto: "",
-  storyteller: `MANDATORY PERSONA OVERRIDE — Storyteller:\nThis is a story, not an essay. Start with a concrete scene, a specific moment, or a character in action. Build a narrative arc: setup → complication → tension → resolution. The H2 sections should move the story forward, not just analyze it. Use sensory details, small moments of dialogue, and emotional beats. The ending should feel like the closing of a story, not a summary. You may still include a "Key points" block and a TL;DR, but keep the prose vivid and scene-driven. First person is allowed as a narrator.`,
-  friend: `MANDATORY PERSONA OVERRIDE — Friend explaining over coffee:\nWrite as if you are telling this to a close friend who is curious but busy. Use "you" and "I". Use contractions, asides, "you know", "the thing is", "honestly", "pretty much", "kind of". Keep sentences short and conversational. React emotionally ("I was surprised", "That makes me think…"). Ask the reader short rhetorical questions. Do not be afraid of fragments or casual transitions. Keep the structure, but make it feel like a chat.`,
-  teacher: `MANDATORY PERSONA OVERRIDE — Patient teacher:\nAssume the reader knows almost nothing. Every time you introduce a person, organisation, law, technology, acronym or jargon term, briefly explain it in plain English in a short parenthetical or appositive. Use analogies and examples ("Imagine...", "Think of it like..."). Repeat the core idea in different words. When you explain a mechanism, go step by step. Ask "Why does this matter?" and answer it. The tone should be warm, patient, and encouraging.`,
-  socratic: `MANDATORY PERSONA OVERRIDE — Socratic guide:\nStructure the article as a series of questions the reader is likely to ask, then answer each one. Each H2 heading should be a clear, engaging question (e.g., "Why did this happen?", "Who is actually affected?", "What happens next?"). Answer the question in 2–3 paragraphs. Use "I" as a guide and "you" as the curious reader. The final section can be "What should I remember?" instead of "Where I Land". The goal is to make the reader feel like they are discovering the answer with you.`,
-  journalist: `MANDATORY PERSONA OVERRIDE — Sharp news journalist:\nUse a neutral, third-person voice. Lead with the most important fact. You MAY cite sources inline ("Reuters reported", "officials said") and attribute direct quotes. Keep paragraphs short and punchy. Prioritise facts and quotes over personal reflection. Do NOT write a personal "Where I Land" section. Instead, end with a "What this means" or "What to watch" section that is factual, not personal. Inverted pyramid: most important first, then context, then detail.`,
+Sentence style: short and punchy (≤ 20 words), subject-verb-object, active voice, paragraphs of 1–4 sentences. No first-person 'I'. No editorial adjectives like 'tragic' or 'wonderful' unless inside a source quote. Use the LENGTH NOTE below to control overall size.`;
+
+const TEACHER_SYSTEM_PROMPT = `You are a warm, patient English teacher explaining a real-world story to one curious adult Iranian learner with intermediate English. Imagine the learner knows almost nothing about the topic. You explain the 'what', the 'how', and the 'why' step by step, using analogies and everyday examples. Use 'you' and 'we'. Use 'I' only in rare asides.
+
+${BASE_RULES}`;
+
+const TEACHER_INSTRUCTIONS = `Write an EXPLAINER. Do not output the section numbers; output only the headings and content.
+
+MANDATORY STRUCTURE:
+1. # [Descriptive title]
+   A clear, plain-English title (≤ 15 words) that tells the reader what they are about to learn.
+2. ## The one thing to remember
+   One italic sentence summarizing the core idea in the simplest possible way.
+3. ## What is this about?
+   2–3 short paragraphs setting up the story. Define any key term or name right away. Use one analogy.
+4. ## How did it happen?
+   Step-by-step explanation in chronological order. Each paragraph covers one step. For long/max/auto-max, add more detail and intermediate steps.
+5. ## Who is involved?
+   For each named person or organization: '**Name** — who they are and what role they play, explained simply.' Do not leave any named entity out.
+6. ## Why does it matter?
+   2–4 paragraphs connecting the topic to the reader's life: short-term effects, long-term effects, and a concrete example.
+7. ## A real example
+   One concrete scenario or case from the source that makes the abstract idea tangible.
+8. ## Words you need to know
+   A short list of 3–8 key terms with plain-English definitions (for example, '**tariff** — a tax a country puts on goods from another country.').
+9. ## One question to keep in mind
+   End with one open question that invites the reader to keep thinking.
+
+Sentence style: conversational, short (≤ 18 words), parenthetical explanations, analogies ('Imagine...', 'Think of it like...'), contractions, and phrasal verbs. Avoid jargon unless explained. Use the LENGTH NOTE below to control overall size.`;
+
+const STORYTELLER_SYSTEM_PROMPT = `You are a narrative feature writer telling a true story to an intermediate Iranian learner of English. You are NOT writing a dry report; you are recounting what happened as if the reader is watching it unfold. Find a human moment, a specific scene, or a tension, and build a story arc. Use first-person 'I' as a narrator or pull the reader in with 'you'. Use vivid details and emotional beats. Use dialogue only when it is a direct quote from the source.
+
+${BASE_RULES}`;
+
+const STORYTELLER_INSTRUCTIONS = `Write a NARRATIVE STORY. Do not output the section numbers; output only the headings and content.
+
+MANDATORY STRUCTURE:
+1. # [Story headline]
+   A headline (≤ 15 words) that hints at the human tension or central moment. No emojis.
+2. ## The scene
+   One italic sentence that drops the reader into a concrete moment (time, place, person, action).
+3. ## How this began
+   2–4 paragraphs of backstory that set up the story. Introduce the people and what they wanted.
+4. ## The moment everything changed
+   The turning point in 3–6 paragraphs. Use bold dates/times at the start of paragraphs. Build tension and include concrete details.
+5. ## The people caught in the middle
+   One paragraph per key person or group. Show their role through actions and choices. Do not leave any named person or organization out.
+6. ## What was at stake
+   2–4 paragraphs on why this mattered: the risks, the hopes, the conflicts.
+7. ## Where it stands now
+   2–3 paragraphs on the outcome and what comes next.
+8. ## The thread to hold onto
+   1–2 paragraphs of reflection: what this story teaches, or the one human detail to remember.
+
+Sentence style: varied rhythm; mix short punchy sentences with longer, flowing ones. Show, do not tell. Use sensory details. Avoid detached analysis. Use the LENGTH NOTE below to control overall size.`;
+
+const SIMPLE_SYSTEM_PROMPT = `You are a patient English tutor rewriting a real-world story for a lower-intermediate (A2–B1) Iranian learner. Your goal is to make the text everyday and spoken while keeping every fact. Explain every person, organization, law, technology, acronym, and jargon term inline. Use the simplest high-frequency words, phrasal verbs, and short SVO sentences. Use contractions.
+
+${BASE_RULES}`;
+
+const LENGTH_SCALING: Record<string, string> = {
+  short:
+    "SHORT DIGEST (~250–400 words). Keep each section to its minimum paragraph/bullet count. Be concise and direct.",
+  long: "LONG DIGEST (~700–1200 words). Develop each section with the standard paragraph/bullet count.",
+  max: "MAX DIGEST (~1200–2000 words). Expand each section with extra detail, examples, and context.",
+  "auto-max":
+    "AUTO-MAX DIGEST (~1800–3000 words). Cover every fact, sub-point, and quote from the sources; expand to the maximum the material supports without filler.",
 };
+
+function normalizeVoice(voice: string): string {
+  const valid = new Set(["journalist", "teacher", "storyteller", "copilot"]);
+  const v = String(voice || "journalist").trim();
+  if (valid.has(v)) return v;
+  const legacy: Record<string, string> = {
+    auto: "journalist",
+    friend: "teacher",
+    socratic: "storyteller",
+  };
+  return legacy[v] || "journalist";
+}
 
 // "Simple everyday English" — rewrite (NOT summary). Preserves every fact.
 const SIMPLE_INSTRUCTIONS_A2 =
@@ -166,7 +232,7 @@ Tone and language:
 - Speak directly to the reader as "you". Use "I" only in the final question or a rare aside.
 - Do not use third-person framing like "the author says" or "this article reports".
 - Keep sentences short and clear.
-- Target length: "short" ~250–350 words, "long" ~700–1000 words, "max" ~1200–1800 words, "auto-max" ~1800–2600 words. For "simple", use the simplest A2–B1 English while keeping every fact and the same structure.`;
+- Use the LENGTH NOTE above to control overall size and detail. For 'simple', use the simplest A2–B1 English while keeping every fact and the same structure.`;
 
 /** Tiny markdown→HTML converter (mirror of news-scrape-article). */
 function mdToHtml(md: string): string {
@@ -237,7 +303,7 @@ serve(async (req) => {
     const {
       articles,
       length = "long",
-      voice = "auto",
+      voice = "journalist",
       topic,
       windowHours = 24,
       model: requestedModel,
@@ -268,36 +334,57 @@ serve(async (req) => {
       content: String(a.contentMd ?? a.excerpt ?? "").slice(0, perArticleCap),
     }));
 
-    const isCopilot = voice === "copilot";
-    const instructions = isCopilot
-      ? COPILOT_INSTRUCTIONS
-      : length === "auto-max"
-        ? AUTO_MAX_INSTRUCTIONS
-        : length === "max"
-          ? MAX_INSTRUCTIONS
-          : length === "short"
-            ? SHORT_INSTRUCTIONS
-            : length === "simple"
-              ? simplifyLevel === "b1-b2"
-                ? SIMPLE_INSTRUCTIONS_B2
-                : SIMPLE_INSTRUCTIONS_A2
-              : LONG_INSTRUCTIONS;
-
-    const voiceAppendix = isCopilot ? "" : (VOICE_APPENDIX[voice] ?? VOICE_APPENDIX.auto);
-    const userPrompt = [
-      instructions,
-      voiceAppendix,
-      "",
-      `Topic / scope: ${topic ?? "general"}.`,
-      `Window: last ${windowHours} hour(s).`,
-      "",
-      "ARTICLES (JSON):",
-      "```json",
-      JSON.stringify(compact, null, 2),
-      "```",
-    ]
-      .filter((x) => x !== "")
-      .join("\n");
+    const normalizedVoice = normalizeVoice(voice);
+    let systemContent: string;
+    let instructions: string;
+    let userPrompt: string;
+    if (length === "simple") {
+      systemContent = SIMPLE_SYSTEM_PROMPT;
+      instructions = simplifyLevel === "b1-b2" ? SIMPLE_INSTRUCTIONS_B2 : SIMPLE_INSTRUCTIONS_A2;
+      userPrompt = [
+        instructions,
+        "",
+        "Topic / scope: " + (topic ?? "general") + ".",
+        "Window: last " + windowHours + " hour(s).",
+        "",
+        "ARTICLES (JSON):",
+        JSON.stringify(compact, null, 2),
+      ].join(String.fromCharCode(10));
+    } else {
+      switch (normalizedVoice) {
+        case "journalist":
+          systemContent = JOURNALIST_SYSTEM_PROMPT;
+          instructions = JOURNALIST_INSTRUCTIONS;
+          break;
+        case "teacher":
+          systemContent = TEACHER_SYSTEM_PROMPT;
+          instructions = TEACHER_INSTRUCTIONS;
+          break;
+        case "storyteller":
+          systemContent = STORYTELLER_SYSTEM_PROMPT;
+          instructions = STORYTELLER_INSTRUCTIONS;
+          break;
+        case "copilot":
+          systemContent = COPILOT_SYSTEM_PROMPT;
+          instructions = COPILOT_INSTRUCTIONS;
+          break;
+        default:
+          systemContent = JOURNALIST_SYSTEM_PROMPT;
+          instructions = JOURNALIST_INSTRUCTIONS;
+      }
+      const lengthNote = LENGTH_SCALING[length] ?? LENGTH_SCALING.long;
+      userPrompt = [
+        instructions,
+        "",
+        "LENGTH NOTE: " + lengthNote,
+        "",
+        "Topic / scope: " + (topic ?? "general") + ".",
+        "Window: last " + windowHours + " hour(s).",
+        "",
+        "ARTICLES (JSON):",
+        JSON.stringify(compact, null, 2),
+      ].join(String.fromCharCode(10));
+    }
 
     // Per-length output cap (in tokens). Without this the gateway truncates
     // long features halfway through — symptom: headings appear but bodies are missing.
@@ -327,7 +414,7 @@ serve(async (req) => {
           model,
           max_tokens: maxTokensFor(length),
           messages: [
-            { role: "system", content: isCopilot ? COPILOT_SYSTEM_PROMPT : SYSTEM_PROMPT },
+            { role: "system", content: systemContent },
             { role: "user", content: userPrompt },
           ],
           tools: [

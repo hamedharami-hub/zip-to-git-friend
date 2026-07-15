@@ -80,8 +80,7 @@ import {
   listBlockedDomains,
   blockDomain,
   unblockDomain,
-  VOICE_LABELS,
-  DEFAULT_REWRITE_VOICE,
+  normalizeVoice,
   type DiscoveryResult,
   type DiscoveredSite,
   type FeedItem,
@@ -715,7 +714,7 @@ const News = () => {
         topic: activeSource?.topic ?? activeSource?.name,
         windowHours: Number(windowHours),
         model: newsModelRef.model,
-        voice: settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE,
+        voice: normalizeVoice(settings.defaultRewriteVoice),
       });
       setDigests((prev) => [digest, ...prev]);
       toast.success("خلاصه آماده شد.");
@@ -758,7 +757,7 @@ const News = () => {
           topic: topicText,
           windowHours: 24,
           model: newsModelRef.model,
-          voice: settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE,
+          voice: normalizeVoice(settings.defaultRewriteVoice),
         });
         setDigests((prev) => [digest, ...prev]);
         toast.success(

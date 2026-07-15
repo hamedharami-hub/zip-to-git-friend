@@ -1,46 +1,88 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-interface PlayerHotkeyHandlers {
-  togglePlay: () => void;
-  seekBy: (deltaSec: number) => void;
-  changeVolume: (delta: number) => void;
+export interface PlayerHotkeyHandlers {
+  togglePlay?: () => void;
+  seekBy?: (seconds: number) => void;
+  changeVolume?: (delta: number) => void;
+  toggleMute?: () => void;
+  cycleSpeed?: () => void;
 }
 
+const SEEK_SECONDS = 10;
+
+/**
+ * Global keyboard shortcuts for the media player.
+ *
+ * Only a single listener is attached to `window`, and the latest handler
+ * object is stored in a ref so callers can pass a fresh object each render
+ * without re-binding the listener.
+ */
 export function usePlayerHotkeys(handlers: PlayerHotkeyHandlers, enabled = true) {
+  const handlersRef = useRef(handlers);
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
+
   useEffect(() => {
     if (!enabled) return;
-    const onKey = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement | null;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      // Ignore when typing in inputs / textareas / contenteditable.
+      const target = e.target as HTMLElement;
       if (
-        target &&
-        (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        target.isContentEditable
       ) {
         return;
       }
-      switch (e.key) {
-        case " ":
+
+      switch (e.code) {
+        case "Space":
           e.preventDefault();
-          handlers.togglePlay();
+          handlersRef.current.togglePlay?.();
           break;
         case "ArrowLeft":
-          e.preventDefault();
-          handlers.seekBy(-10);
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlersRef.current.seekBy?.(-SEEK_SECONDS);
+          } else if (handlersRef.current.seekBy) {
+            e.preventDefault();
+            handlersRef.current.seekBy?.(-5);
+          }
           break;
         case "ArrowRight":
-          e.preventDefault();
-          handlers.seekBy(10);
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlersRef.current.seekBy?.(SEEK_SECONDS);
+          } else if (handlersRef.current.seekBy) {
+            e.preventDefault();
+            handlersRef.current.seekBy?.(5);
+          }
           break;
         case "ArrowUp":
           e.preventDefault();
-          handlers.changeVolume(0.05);
+          handlersRef.current.changeVolume?.(0.05);
           break;
         case "ArrowDown":
           e.preventDefault();
-          handlers.changeVolume(-0.05);
+          handlersRef.current.changeVolume?.(-0.05);
+          break;
+        case "KeyM":
+          e.preventDefault();
+          handlersRef.current.toggleMute?.();
+          break;
+        case "KeyS":
+          if (e.shiftKey) {
+            e.preventDefault();
+            handlersRef.current.cycleSpeed?.();
+          }
           break;
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [handlers, enabled]);
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [enabled]);
 }

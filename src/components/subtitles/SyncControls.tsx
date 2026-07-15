@@ -9,10 +9,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useEffect, useState } from "react";
 import type { SubtitleTrack } from "@/types";
 
 function TrackSync({ track, label }: { track: SubtitleTrack; label: string }) {
   const updateTrack = useSubtitleStore((s) => s.updateTrack);
+  const [delayMs, setDelayMs] = useState(track.delayMs);
+  const [speedMultiplier, setSpeedMultiplier] = useState(track.speedMultiplier);
+
+  // Keep local sliders in sync when the track is loaded/changed from outside.
+  useEffect(() => {
+    setDelayMs(track.delayMs);
+    setSpeedMultiplier(track.speedMultiplier);
+  }, [track.delayMs, track.speedMultiplier]);
+
   return (
     <div className="space-y-3 rounded-md border border-border p-3">
       <div className="flex items-center justify-between">
@@ -24,29 +34,29 @@ function TrackSync({ track, label }: { track: SubtitleTrack; label: string }) {
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <Label>Delay</Label>
-          <span className="text-muted-foreground tabular-nums">{track.delayMs} ms</span>
+          <span className="text-muted-foreground tabular-nums">{delayMs} ms</span>
         </div>
         <Slider
-          value={[track.delayMs]}
+          value={[delayMs]}
           min={-5000}
           max={5000}
           step={50}
-          onValueChange={([v]) => updateTrack(track.role, { delayMs: v })}
+          onValueChange={([v]) => setDelayMs(v)}
+          onValueCommit={([v]) => updateTrack(track.role, { delayMs: v })}
         />
       </div>
       <div className="space-y-2">
         <div className="flex justify-between text-xs">
           <Label>Speed</Label>
-          <span className="text-muted-foreground tabular-nums">
-            {track.speedMultiplier.toFixed(2)}×
-          </span>
+          <span className="text-muted-foreground tabular-nums">{speedMultiplier.toFixed(2)}×</span>
         </div>
         <Slider
-          value={[track.speedMultiplier]}
+          value={[speedMultiplier]}
           min={0.5}
           max={2}
           step={0.01}
-          onValueChange={([v]) => updateTrack(track.role, { speedMultiplier: v })}
+          onValueChange={([v]) => setSpeedMultiplier(v)}
+          onValueCommit={([v]) => updateTrack(track.role, { speedMultiplier: v })}
         />
       </div>
     </div>

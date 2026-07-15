@@ -28,7 +28,6 @@ import { PreStudy } from "@/components/ai/PreStudy";
 import { ReviewMode } from "@/components/leitner/ReviewMode";
 import { InstallButton } from "@/components/pwa/InstallButton";
 import { CueListWithAnalysis } from "@/components/subtitles/CueListWithAnalysis";
-import { ImmersiveStudyMode } from "@/components/player/ImmersiveStudyMode";
 import { SubtitleSettingsMenu } from "@/components/player/SubtitleSettingsMenu";
 import { AccountButton } from "@/components/auth/AccountButton";
 import { toast } from "sonner";
@@ -50,6 +49,7 @@ const Player = () => {
   const [meta, setMeta] = useState<Video | null>(null);
   const [showReview, setShowReview] = useState(false);
   const [immersive, setImmersive] = useState(false);
+  const [activeCueId, setActiveCueId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const cards = useLeitnerStore((s) => s.cards);
   const removeCard = useLeitnerStore((s) => s.deleteCard);
@@ -93,10 +93,14 @@ const Player = () => {
           setMeta(next);
           setCurrent(next);
           usable = true;
-        } else {
+        } else if (!v.blobUrl || v.blobUrl.startsWith("blob:")) {
           setMeta(v);
           setNeedReattach(true);
           setCurrent(null);
+        } else {
+          // Third-party / remote URL — assume it's playable.
+          setMeta(v);
+          setCurrent(v);
         }
       } else {
         setMeta(v);
@@ -113,8 +117,7 @@ const Player = () => {
       cancelled = true;
       resetSubs();
       setCurrent(null);
-      // Don't revoke createdObjectUrl — it's referenced by the persisted Video record
-      // and may be reused if the user comes back without a reload.
+      if (createdObjectUrl) URL.revokeObjectURL(createdObjectUrl);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [videoId]);
@@ -333,7 +336,13 @@ const Player = () => {
         ) : (
           <div className={showReview ? "grid gap-6 lg:grid-cols-[1fr_320px]" : ""}>
             <div className="space-y-3 sm:space-y-6 min-w-0">
-              <VideoPlayer videoId={videoId} onEnterImmersive={enterImmersive} />
+              <VideoPlayer
+                videoId={videoId}
+                immersive={immersive}
+                onEnterImmersive={enterImmersive}
+                onExitImmersive={() => setImmersive(false)}
+                onActiveCueChange={setActiveCueId}
+              />
               {videoId && (
                 <section className="space-y-4 px-3 sm:px-0 pb-6 sm:pb-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -361,7 +370,11 @@ const Player = () => {
                         Cue list ({primary.cues.length})
                       </summary>
                       <div className="p-3">
-                        <CueListWithAnalysis videoId={videoId!} cues={primary.cues} />
+                        <CueListWithAnalysis
+                          videoId={videoId!}
+                          cues={primary.cues}
+                          activeCueId={activeCueId ?? undefined}
+                        />
                       </div>
                     </details>
                   )}
@@ -449,16 +462,15 @@ const Player = () => {
           </div>
         )}
       </main>
-
-      {immersive && videoId && (
-        <ImmersiveStudyMode videoId={videoId} onExit={() => setImmersive(false)} />
-      )}
     </div>
   );
 };
 
 async function verifyBlobUrl(url: string): Promise<boolean> {
-  if (!url || !url.startsWith("blob:")) return false;
+  if (!url) return false;
+  // Remote URLs (http/https) are considered usable; we don't have a local cache
+  // to fall back to, so re-attachment would be the wrong UX.
+  if (!url.startsWith("blob:")) return true;
   try {
     const r = await fetch(url, { method: "HEAD" });
     return r.ok;

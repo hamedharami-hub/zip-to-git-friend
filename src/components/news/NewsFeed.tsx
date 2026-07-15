@@ -29,7 +29,7 @@ import { siteFromUrl, WINDOW_OPTIONS } from "@/lib/newsPageHelpers";
 import { isUrlCached } from "@/lib/newsOfflineCache";
 import { isSeen } from "@/lib/seenArticles";
 import { useSettingsStore } from "@/store/settingsStore";
-import { VOICE_LABELS, DEFAULT_REWRITE_VOICE } from "@/lib/news";
+import { VOICE_LABELS, DEFAULT_REWRITE_VOICE, normalizeVoice } from "@/lib/news";
 import type { PublicTopic } from "@/lib/newsPublicTopics";
 import type { User } from "@supabase/supabase-js";
 import type { FeedItem, NewsSource, NewsFolder } from "@/lib/news";
@@ -230,8 +230,10 @@ export const NewsFeed = memo(function NewsFeed({
                   لحن بازنویسی:
                 </span>
                 <Select
-                  value={settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
-                  onValueChange={(v) => void update({ defaultRewriteVoice: v as RewriteVoice })}
+                  value={normalizeVoice(settings.defaultRewriteVoice)}
+                  onValueChange={(v) =>
+                    void update({ defaultRewriteVoice: normalizeVoice(v) as RewriteVoice })
+                  }
                 >
                   <SelectTrigger className="h-8 w-[140px] text-xs">
                     <SelectValue />

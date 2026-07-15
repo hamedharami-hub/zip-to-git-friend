@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useArticleLoad } from "@/hooks/useArticleLoad";
 import { useArticleTranslation } from "@/hooks/useArticleTranslation";
@@ -94,12 +94,13 @@ const NewsArticleReader = () => {
       "google/gemini-3.1-flash-lite-preview",
   );
 
+  const emptyRewrites = useMemo(() => ({}), []);
   const { faTtsText, ttsText, origChapter } = useArticleTranslation({
     article,
     view: "original",
     activeRewrite: "long",
     voice: DEFAULT_REWRITE_VOICE,
-    rewrites: {},
+    rewrites: emptyRewrites,
     newsModelRef,
   });
 

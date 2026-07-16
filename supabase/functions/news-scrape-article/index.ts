@@ -123,41 +123,103 @@ function decodeGoogleNewsUrl(url: string): string | null {
   }
 }
 
+function unescapeHtml(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 /**
- * Ask Google News' batchexecute endpoint to resolve a modern (ID-only)
- * article URL to the publisher URL. Best-effort.
+ * Resolve a modern Google News article redirect by extracting the signed
+ * batchexecute payload from the article page and calling Google's internal
+ * Fbv4je rpc. This mirrors the resolution flow the Google News web app uses.
  */
-async function resolveViaBatchExecute(articleId: string): Promise<string | null> {
+async function resolveGoogleNewsUrl(url: string): Promise<string | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 8000);
-    const body = new URLSearchParams({
-      "f.req": JSON.stringify([
-        [
-          [
-            "Fbv4je",
-            `["garturlreq",[["X","X",["X","X"],null,null,1,1,"US:en",null,1,null,null,null,null,null,0,1],"X","X",1,[1,1,1],1,1,null,0,0,null,0],"${articleId}",${Math.floor(Date.now() / 1000)},"0"]`,
-          ],
-        ],
-      ]),
+    const pageRes = await fetch(url, {
+      method: "GET",
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: { "User-Agent": BROWSER_UA, Accept: "text/html,*/*" },
     });
+    clearTimeout(t);
+    if (!pageRes.ok) return null;
+    const html = await pageRes.text();
+
+    const match = html.match(/<c-wiz[^>]+data-p="([^"]+)"/i);
+    if (!match) return null;
+
+    let dataP = unescapeHtml(match[1]);
+    if (dataP.startsWith("%.@.")) {
+      dataP = dataP.replace("%.@.", '["garturlreq",');
+    } else {
+      return null;
+    }
+    if (!dataP.endsWith("]")) dataP += "]";
+
+    const obj = JSON.parse(dataP);
+    if (!Array.isArray(obj) || obj.length < 7) return null;
+    const rpcInner = JSON.stringify([...obj.slice(0, -6), ...obj.slice(-2)]);
+    const fReq = JSON.stringify([[["Fbv4je", rpcInner, "null", "generic"]]]);
+
+    const body = new URLSearchParams({ "f.req": fReq });
+    const postCtrl = new AbortController();
+    const postT = setTimeout(() => postCtrl.abort(), 8000);
     const res = await fetch(
       "https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je",
       {
         method: "POST",
-        signal: ctrl.signal,
+        signal: postCtrl.signal,
         headers: {
           "User-Agent": BROWSER_UA,
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+          Referer: "https://news.google.com/",
         },
         body,
       },
     );
-    clearTimeout(t);
+    clearTimeout(postT);
     if (!res.ok) return null;
-    const text = await res.text();
-    const m = text.match(/"(https?:\/\/(?!news\.google\.com)[^"\\]+)"/);
-    return m ? m[1] : null;
+
+    let text = await res.text();
+    if (text.startsWith(")]}'")) {
+      text = text.slice(4);
+    }
+    text = text.trimStart();
+    const firstNewline = text.indexOf("\n");
+    const firstLine = firstNewline > 0 ? text.slice(0, firstNewline).trim() : "";
+    if (/^\d+$/.test(firstLine)) {
+      text = text.slice(firstNewline + 1);
+    }
+
+    const envelopes = JSON.parse(text);
+    if (!Array.isArray(envelopes)) return null;
+    for (const env of envelopes) {
+      if (
+        Array.isArray(env) &&
+        env.length >= 3 &&
+        env[0] === "wrb.fr" &&
+        env[1] === "Fbv4je" &&
+        typeof env[2] === "string"
+      ) {
+        const payload = JSON.parse(env[2]);
+        if (
+          Array.isArray(payload) &&
+          payload.length >= 2 &&
+          payload[0] === "garturlres" &&
+          typeof payload[1] === "string" &&
+          !/news\.google\.com/i.test(payload[1])
+        ) {
+          return payload[1];
+        }
+      }
+    }
+    return null;
   } catch {
     return null;
   }
@@ -170,11 +232,8 @@ async function resolveFinalUrl(url: string): Promise<string> {
   const decoded = decodeGoogleNewsUrl(url);
   if (decoded) return decoded;
 
-  const idMatch = url.match(/articles\/([A-Za-z0-9_-]+)/i);
-  if (idMatch) {
-    const via = await resolveViaBatchExecute(idMatch[1]);
-    if (via) return via;
-  }
+  const via = await resolveGoogleNewsUrl(url);
+  if (via) return via;
 
   try {
     const ctrl = new AbortController();

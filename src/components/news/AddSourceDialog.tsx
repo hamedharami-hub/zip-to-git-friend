@@ -1,6 +1,15 @@
 import { useState } from "react";
 import type React from "react";
-import { Plus, Rss, Globe2, Search, Loader2, Sparkles, ChevronDown } from "lucide-react";
+import {
+  Plus,
+  Rss,
+  Globe2,
+  Search,
+  Loader2,
+  Sparkles,
+  ChevronDown,
+  LayoutGrid,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +24,8 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { SourceCatalog } from "./SourceCatalog";
+import { type SourceCatalogItem } from "@/lib/newsPublicTopics";
 import {
   addSource,
   discoverRss,
@@ -275,6 +286,8 @@ function RssDiscovery({
   );
 }
 
+type TabValue = "catalog" | NewsSourceKind;
+
 export function AddSourceDialog({
   onAdded,
   trigger,
@@ -294,40 +307,32 @@ export function AddSourceDialog({
     setInternalOpen(value);
     onOpenChange?.(value);
   };
+  const [tab, setTab] = useState<TabValue>("catalog");
   const [kind, setKind] = useState<NewsSourceKind>("rss");
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [topic, setTopic] = useState("");
   const [busy, setBusy] = useState(false);
+  const [catalogBusyId, setCatalogBusyId] = useState<string | null>(null);
 
   const reset = () => {
+    setTab("catalog");
     setKind("rss");
     setName("");
     setUrl("");
     setTopic("");
   };
 
-  const handleSubmit = async () => {
+  const submitSource = async (payload: {
+    kind: NewsSourceKind;
+    name: string;
+    url: string | null;
+    topic: string | null;
+    language: string | null;
+  }) => {
     setBusy(true);
     try {
-      const finalName =
-        name.trim() ||
-        (kind === "topic"
-          ? topic.trim()
-          : (() => {
-              try {
-                return new URL(url).hostname.replace(/^www\./, "");
-              } catch {
-                return "Untitled source";
-              }
-            })());
-      const created = await addSource({
-        kind,
-        name: finalName,
-        url: kind === "topic" ? null : url.trim() || null,
-        topic: kind === "rss" ? null : topic.trim() || null,
-        language: null,
-      });
+      const created = await addSource(payload);
       onAdded(created);
       toast.success("منبع اضافه شد.");
       setOpen(false);
@@ -336,6 +341,50 @@ export function AddSourceDialog({
       toast.error((e as Error).message ?? "Failed to add source.");
     } finally {
       setBusy(false);
+    }
+  };
+
+  const handleSubmit = async () => {
+    const finalName =
+      name.trim() ||
+      (kind === "topic"
+        ? topic.trim()
+        : (() => {
+            try {
+              return new URL(url).hostname.replace(/^www\./, "");
+            } catch {
+              return "Untitled source";
+            }
+          })());
+    await submitSource({
+      kind,
+      name: finalName,
+      url: kind === "topic" ? null : url.trim() || null,
+      topic: kind === "rss" ? null : topic.trim() || null,
+      language: null,
+    });
+  };
+
+  const handleAddFromCatalog = async (s: SourceCatalogItem) => {
+    setCatalogBusyId(s.id);
+    try {
+      await submitSource({
+        kind: "rss",
+        name: s.nameFa || s.name,
+        url: s.url,
+        topic: null,
+        language: s.language,
+      });
+    } finally {
+      setCatalogBusyId(null);
+    }
+  };
+
+  const handleTabChange = (v: string) => {
+    const value = v as TabValue;
+    setTab(value);
+    if (value !== "catalog") {
+      setKind(value as NewsSourceKind);
     }
   };
 
@@ -359,12 +408,17 @@ export function AddSourceDialog({
         <DialogHeader>
           <DialogTitle>افزودن منبع خبر</DialogTitle>
           <DialogDescription>
-            فید RSS یک سایت، یا یک موضوع برای جستجو با هوش مصنوعی.
+            از کاتالوگ انتخاب کن، فید RSS وارد کن، یا یک موضوع برای جستجو بگذار.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={kind} onValueChange={(v) => setKind(v as NewsSourceKind)} className="mt-2">
-          <TabsList className="grid grid-cols-3 w-full">
+        <Tabs value={tab} onValueChange={handleTabChange} className="mt-2">
+          <TabsList className="grid grid-cols-4 w-full">
+            <TabsTrigger value="catalog" className="gap-1 text-xs">
+              <LayoutGrid className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">کاتالوگ</span>
+              <span className="sm:hidden">کاتالوگ</span>
+            </TabsTrigger>
             <TabsTrigger value="rss" className="gap-1 text-xs">
               <Rss className="h-3.5 w-3.5" />
               RSS
@@ -378,6 +432,10 @@ export function AddSourceDialog({
               سایت
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="catalog" className="space-y-3 mt-4">
+            <SourceCatalog onAdd={handleAddFromCatalog} busyId={catalogBusyId} />
+          </TabsContent>
 
           <TabsContent value="rss" className="space-y-3 mt-4">
             <div className="space-y-1.5">
@@ -473,24 +531,26 @@ export function AddSourceDialog({
           </TabsContent>
         </Tabs>
 
-        <DialogFooter className="mt-4">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            انصراف
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={
-              busy ||
-              (kind === "rss" && !url.trim()) ||
-              (kind === "topic" && !topic.trim()) ||
-              (kind === "site" && !url.trim())
-            }
-            className="gap-1.5"
-          >
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-            افزودن
-          </Button>
-        </DialogFooter>
+        {tab !== "catalog" && (
+          <DialogFooter className="mt-4">
+            <Button variant="ghost" onClick={() => setOpen(false)}>
+              انصراف
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={
+                busy ||
+                (kind === "rss" && !url.trim()) ||
+                (kind === "topic" && !topic.trim()) ||
+                (kind === "site" && !url.trim())
+              }
+              className="gap-1.5"
+            >
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              افزودن
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );

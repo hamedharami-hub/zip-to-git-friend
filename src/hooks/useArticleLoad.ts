@@ -65,7 +65,7 @@ export function useArticleLoad(articleId: string | undefined): UseArticleLoadRet
       });
       const updated = await upsertArticle({
         sourceId: a.sourceId,
-        url: a.url,
+        url: scraped.finalUrl || a.url,
         title: scraped.title || a.title,
         author: scraped.author,
         excerpt: scraped.excerpt || a.excerpt,

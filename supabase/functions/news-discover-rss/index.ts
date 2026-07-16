@@ -125,13 +125,16 @@ async function gatherTopDomains(opts: {
       const link = stripTags(pick(block, "link") ?? "");
       const sourceTag = pick(block, "source") ?? "";
       const siteName = stripTags(sourceTag);
-      const real = await resolveRealUrl(link);
+      // Google News RSS exposes the publisher homepage in <source url="...">.
+      const sourceUrl = sourceTag.match(/url=["']([^"']+)["']/i)?.[1];
+      const real = sourceUrl || (await resolveRealUrl(link));
       try {
         const u = new URL(real);
+        const domain = u.hostname.replace(/^www\./, "");
         return {
-          domain: u.hostname.replace(/^www\./, ""),
+          domain,
           homepage: `${u.protocol}//${u.hostname}`,
-          siteName: siteName || u.hostname.replace(/^www\./, ""),
+          siteName: siteName || domain,
         };
       } catch {
         return null;

@@ -15,6 +15,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { CuratedFeeds } from "@/components/news/CuratedFeeds";
 import {
   addSource,
   discoverRss,
@@ -298,6 +299,7 @@ export function AddSourceDialog({
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [topic, setTopic] = useState("");
+  const [language, setLanguage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const reset = () => {
@@ -305,6 +307,7 @@ export function AddSourceDialog({
     setName("");
     setUrl("");
     setTopic("");
+    setLanguage(null);
   };
 
   const handleSubmit = async () => {
@@ -326,7 +329,7 @@ export function AddSourceDialog({
         name: finalName,
         url: kind === "topic" ? null : url.trim() || null,
         topic: kind === "rss" ? null : topic.trim() || null,
-        language: null,
+        language: kind === "rss" ? language : null,
       });
       onAdded(created);
       toast.success("منبع اضافه شد.");
@@ -410,10 +413,19 @@ export function AddSourceDialog({
                 onPick={(feed) => {
                   setUrl(feed.url);
                   if (!name.trim()) setName(feed.name);
+                  setLanguage(null);
                 }}
                 onInstantDigest={onInstantDigest}
               />
             </div>
+
+            <CuratedFeeds
+              onPick={(feed) => {
+                setUrl(feed.url);
+                if (!name.trim()) setName(feed.name);
+                setLanguage(feed.language);
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="topic" className="space-y-3 mt-4">

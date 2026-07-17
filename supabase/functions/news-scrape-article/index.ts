@@ -123,96 +123,58 @@ function decodeGoogleNewsUrl(url: string): string | null {
   }
 }
 
-/**
- * Resolve a modern Google News article URL (`.../articles/CBMi...`) to the
- * original publisher URL. Post-2024 URLs require fetching the article landing
- * page to obtain a per-article signature (`data-n-a-sg`) and timestamp
- * (`data-n-a-ts`), then calling the `Fbv4je` batchexecute RPC.
- *
- * Based on the public "Resolve post-2024 style Google News article URLs"
- * approach (scott2b / google-news-url-decoder).
- */
-async function resolveViaBatchExecute(articleUrl: string): Promise<string | null> {
-  const articleId = articleUrl.match(/articles\/([A-Za-z0-9_-]+)/i)?.[1];
-  if (!articleId) return null;
+function unescapeHtml(s: string): string {
+  return s
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
 
-  let html: string;
+/**
+ * Resolve a modern Google News article redirect by extracting the signed
+ * batchexecute payload from the article page and calling Google's internal
+ * Fbv4je rpc. This mirrors the resolution flow the Google News web app uses.
+ */
+async function resolveGoogleNewsUrl(url: string): Promise<string | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 8000);
-    const res = await fetch(articleUrl, {
+    const pageRes = await fetch(url, {
       method: "GET",
       redirect: "follow",
       signal: ctrl.signal,
-      headers: {
-        "User-Agent": BROWSER_UA,
-        Accept: "text/html,*/*",
-        Referer: "https://news.google.com/",
-      },
+      headers: { "User-Agent": BROWSER_UA, Accept: "text/html,*/*" },
     });
     clearTimeout(t);
-    if (!res.ok) return null;
-    html = await res.text();
-  } catch {
-    return null;
-  }
+    if (!pageRes.ok) return null;
+    const html = await pageRes.text();
 
-  const sigMatch = html.match(/data-n-a-sg=["']([^"']+)["']/i);
-  const tsMatch = html.match(/data-n-a-ts=["']([^"']+)["']/i);
-  if (!sigMatch || !tsMatch) return null;
-  const signature = sigMatch[1];
-  const timestamp = tsMatch[1];
+    const match = html.match(/<c-wiz[^>]+data-p="([^"]+)"/i);
+    if (!match) return null;
 
-  try {
-    const rpcInner = JSON.stringify([
-      "garturlreq",
-      [
-        [
-          "X",
-          "X",
-          ["X", "X"],
-          null,
-          null,
-          1,
-          1,
-          "US:en",
-          null,
-          1,
-          null,
-          null,
-          null,
-          null,
-          null,
-          0,
-          1,
-        ],
-        "X",
-        "X",
-        1,
-        [1, 1, 1],
-        1,
-        1,
-        null,
-        0,
-        0,
-        null,
-        0,
-      ],
-      articleId,
-      Number(timestamp),
-      signature,
-    ]);
+    let dataP = unescapeHtml(match[1]);
+    if (dataP.startsWith("%.@.")) {
+      dataP = dataP.replace("%.@.", '["garturlreq",');
+    } else {
+      return null;
+    }
+    if (!dataP.endsWith("]")) dataP += "]";
 
-    const fReq = JSON.stringify([["Fbv4je", rpcInner, null, "generic"]]);
+    const obj = JSON.parse(dataP);
+    if (!Array.isArray(obj) || obj.length < 7) return null;
+    const rpcInner = JSON.stringify([...obj.slice(0, -6), ...obj.slice(-2)]);
+    const fReq = JSON.stringify([[["Fbv4je", rpcInner, "null", "generic"]]]);
+
     const body = new URLSearchParams({ "f.req": fReq });
-
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 8000);
+    const postCtrl = new AbortController();
+    const postT = setTimeout(() => postCtrl.abort(), 8000);
     const res = await fetch(
       "https://news.google.com/_/DotsSplashUi/data/batchexecute?rpcids=Fbv4je",
       {
         method: "POST",
-        signal: ctrl.signal,
+        signal: postCtrl.signal,
         headers: {
           "User-Agent": BROWSER_UA,
           "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -221,17 +183,18 @@ async function resolveViaBatchExecute(articleUrl: string): Promise<string | null
         body,
       },
     );
-    clearTimeout(t);
+    clearTimeout(postT);
     if (!res.ok) return null;
 
     let text = await res.text();
     if (text.startsWith(")]}'")) {
-      text = text.split("\n").slice(1).join("\n");
+      text = text.slice(4);
     }
     text = text.trimStart();
-    const lines = text.split("\n");
-    if (/^\d+$/.test(lines[0]?.trim() ?? "")) {
-      text = lines.slice(1).join("\n");
+    const firstNewline = text.indexOf("\n");
+    const firstLine = firstNewline > 0 ? text.slice(0, firstNewline).trim() : "";
+    if (/^\d+$/.test(firstLine)) {
+      text = text.slice(firstNewline + 1);
     }
 
     const envelopes = JSON.parse(text);
@@ -245,7 +208,13 @@ async function resolveViaBatchExecute(articleUrl: string): Promise<string | null
         typeof env[2] === "string"
       ) {
         const payload = JSON.parse(env[2]);
-        if (payload && payload[0] === "garturlres" && typeof payload[1] === "string") {
+        if (
+          Array.isArray(payload) &&
+          payload.length >= 2 &&
+          payload[0] === "garturlres" &&
+          typeof payload[1] === "string" &&
+          !/news\.google\.com/i.test(payload[1])
+        ) {
           return payload[1];
         }
       }
@@ -263,8 +232,8 @@ async function resolveFinalUrl(url: string): Promise<string> {
   const decoded = decodeGoogleNewsUrl(url);
   if (decoded) return decoded;
 
-  const viaBatch = await resolveViaBatchExecute(url);
-  if (viaBatch) return viaBatch;
+  const via = await resolveGoogleNewsUrl(url);
+  if (via) return via;
 
   try {
     const ctrl = new AbortController();
@@ -431,104 +400,6 @@ function buildFallback(opts: {
   };
 }
 
-async function tryJinaReader(
-  url: string,
-): Promise<{ title: string; markdown: string; publishedAt?: string } | null> {
-  try {
-    const target = `https://r.jina.ai/http://${url.replace(/^https?:\/\//, "")}`;
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12000);
-    const res = await fetch(target, {
-      method: "GET",
-      signal: ctrl.signal,
-      headers: { "User-Agent": BROWSER_UA },
-    });
-    clearTimeout(t);
-    if (!res.ok) return null;
-    const text = await res.text();
-    if (!text || text.trim().startsWith("{")) return null;
-
-    const titleMatch = text.match(/^Title:\s*(.+)\n/);
-    const timeMatch = text.match(/^Published Time:\s*(.+)\n/m);
-    const marker = "\n\nMarkdown Content:\n";
-    const idx = text.indexOf(marker);
-    const markdown = idx >= 0 ? text.slice(idx + marker.length).trim() : text.trim();
-    if (!markdown) return null;
-
-    return {
-      title: titleMatch?.[1]?.trim() || "Untitled",
-      markdown,
-      publishedAt: timeMatch?.[1]?.trim(),
-    };
-  } catch {
-    return null;
-  }
-}
-
-async function finalizeFromMarkdown(opts: {
-  finalUrl: string;
-  title: string;
-  markdown: string;
-  siteName?: string | null;
-  author?: string | null;
-  publishedAt?: string | null;
-  imageUrl?: string | null;
-  fallbackImageUrl?: string;
-  fallbackExcerpt?: string;
-  rewrite: boolean;
-  aiKey?: string;
-}) {
-  let finalTitle = opts.title;
-  let finalMd = opts.markdown;
-  let language: string | null = null;
-
-  if (opts.rewrite && opts.aiKey && finalMd.trim().length > 100) {
-    try {
-      const out = await aiCleanAndTranslate(opts.aiKey, {
-        title: finalTitle,
-        author: opts.author ?? undefined,
-        siteName: opts.siteName ?? undefined,
-        markdown: finalMd,
-        sourceUrl: opts.finalUrl,
-      });
-      finalTitle = out.title;
-      finalMd = out.markdown;
-      language = "en";
-    } catch (e) {
-      console.error("AI rewrite skipped:", e);
-    }
-  }
-
-  const text = finalMd
-    .replace(/[#>*_`-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  return {
-    blocked: false,
-    finalUrl: opts.finalUrl,
-    title: finalTitle,
-    author: opts.author ?? null,
-    contentMd: finalMd,
-    contentHtml: mdToHtml(finalMd),
-    excerpt: (opts.fallbackExcerpt ?? "").trim() || text.slice(0, 280),
-    imageUrl: opts.imageUrl ?? opts.fallbackImageUrl ?? null,
-    siteName: opts.siteName ?? null,
-    language,
-    publishedAt: opts.publishedAt ?? null,
-    wordCount: countWords(text),
-  };
-}
-
-async function respondWithMarkdown(
-  opts: Parameters<typeof finalizeFromMarkdown>[0],
-): Promise<Response> {
-  return new Response(JSON.stringify(await finalizeFromMarkdown(opts)), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -553,30 +424,8 @@ serve(async (req) => {
     // Step 1: resolve any redirect (Google News, t.co, lnkd.in, etc.).
     const finalUrl = await resolveFinalUrl(url);
 
-    const siteName = (() => {
-      try {
-        return fallbackSiteName ?? new URL(finalUrl).hostname.replace(/^www\./, "");
-      } catch {
-        return fallbackSiteName ?? null;
-      }
-    })();
-
     if (!apiKey) {
-      const jina = await tryJinaReader(finalUrl);
-      if (jina) {
-        return respondWithMarkdown({
-          finalUrl,
-          title: jina.title,
-          markdown: jina.markdown,
-          siteName,
-          publishedAt: jina.publishedAt,
-          fallbackImageUrl,
-          fallbackExcerpt,
-          rewrite,
-          aiKey,
-        });
-      }
-      // No Firecrawl key configured -- return graceful fallback rather than 500.
+      // No Firecrawl key configured — return graceful fallback rather than 500.
       return new Response(
         JSON.stringify(
           buildFallback({
@@ -585,7 +434,7 @@ serve(async (req) => {
             fallbackExcerpt,
             fallbackImageUrl,
             fallbackSiteName,
-            reason: "Firecrawl is not configured and Jina Reader failed.",
+            reason: "Firecrawl is not configured.",
           }),
         ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -602,20 +451,6 @@ serve(async (req) => {
       });
     } catch (e) {
       console.error("Firecrawl network error", e);
-      const jina = await tryJinaReader(finalUrl);
-      if (jina) {
-        return respondWithMarkdown({
-          finalUrl,
-          title: jina.title,
-          markdown: jina.markdown,
-          siteName,
-          publishedAt: jina.publishedAt,
-          fallbackImageUrl,
-          fallbackExcerpt,
-          rewrite,
-          aiKey,
-        });
-      }
       return new Response(
         JSON.stringify(
           buildFallback({
@@ -624,7 +459,7 @@ serve(async (req) => {
             fallbackExcerpt,
             fallbackImageUrl,
             fallbackSiteName,
-            reason: "Network error contacting Firecrawl and Jina Reader failed.",
+            reason: "Network error contacting Firecrawl.",
           }),
         ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -634,20 +469,8 @@ serve(async (req) => {
     const data = await fcRes.json().catch(() => ({}));
     if (!fcRes.ok) {
       console.error("Firecrawl scrape failed", fcRes.status, data);
-      const jina = await tryJinaReader(finalUrl);
-      if (jina) {
-        return respondWithMarkdown({
-          finalUrl,
-          title: jina.title,
-          markdown: jina.markdown,
-          siteName,
-          publishedAt: jina.publishedAt,
-          fallbackImageUrl,
-          fallbackExcerpt,
-          rewrite,
-          aiKey,
-        });
-      }
+      // Graceful fallback for blocked/forbidden/payment errors so the UI
+      // can render the RSS excerpt + image instead of an error screen.
       return new Response(
         JSON.stringify(
           buildFallback({
@@ -667,21 +490,8 @@ serve(async (req) => {
     const md: string = doc?.markdown ?? "";
     const meta = doc?.metadata ?? {};
 
+    // If Firecrawl returned essentially no content, fallback gracefully.
     if (!md || md.trim().length < 80) {
-      const jina = await tryJinaReader(finalUrl);
-      if (jina) {
-        return respondWithMarkdown({
-          finalUrl,
-          title: jina.title,
-          markdown: jina.markdown,
-          siteName,
-          publishedAt: jina.publishedAt,
-          fallbackImageUrl,
-          fallbackExcerpt,
-          rewrite,
-          aiKey,
-        });
-      }
       return new Response(
         JSON.stringify(
           buildFallback({
@@ -690,25 +500,65 @@ serve(async (req) => {
             fallbackExcerpt,
             fallbackImageUrl,
             fallbackSiteName,
-            reason: "Publisher returned no readable content and Jina Reader failed.",
+            reason: "Publisher returned no readable content.",
           }),
         ),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
-    return respondWithMarkdown({
+    const siteName = (() => {
+      try {
+        return meta.siteName ?? new URL(finalUrl).hostname.replace(/^www\./, "");
+      } catch {
+        return fallbackSiteName ?? null;
+      }
+    })();
+
+    let finalTitle = String(meta.title ?? meta.ogTitle ?? "Untitled");
+    let finalMd = md;
+    let language: string | null = meta.language ?? null;
+
+    if (rewrite && aiKey && md.trim().length > 100) {
+      try {
+        const out = await aiCleanAndTranslate(aiKey, {
+          title: finalTitle,
+          author: meta.author ?? meta.byline ?? undefined,
+          siteName: siteName ?? undefined,
+          markdown: md,
+          sourceUrl: finalUrl,
+        });
+        finalTitle = out.title;
+        finalMd = out.markdown;
+        language = "en";
+      } catch (e) {
+        console.error("AI rewrite skipped:", e);
+      }
+    }
+
+    const text = finalMd
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const result = {
+      blocked: false,
       finalUrl,
-      title: String(meta.title ?? meta.ogTitle ?? "Untitled"),
-      markdown: md,
-      siteName: meta.siteName || fallbackSiteName || null,
+      title: finalTitle,
       author: meta.author ?? meta.byline ?? null,
+      contentMd: finalMd,
+      contentHtml: mdToHtml(finalMd),
+      excerpt: meta.description ?? text.slice(0, 280),
+      imageUrl: meta.ogImage ?? meta.image ?? fallbackImageUrl ?? null,
+      siteName,
+      language,
       publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
-      imageUrl: meta.ogImage ?? meta.image ?? null,
-      fallbackImageUrl,
-      fallbackExcerpt,
-      rewrite,
-      aiKey,
+      wordCount: countWords(text),
+    };
+
+    return new Response(JSON.stringify(result), {
+      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("news-scrape-article error", e);

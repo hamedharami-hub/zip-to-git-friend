@@ -9,151 +9,491 @@ export const PUBLIC_TOPICS: PublicTopic[] = [
   { label: "World", labelFa: "جهان", query: "world news", language: "en" },
   { label: "Iran", labelFa: "ایران", query: "ایران", language: "fa" },
   { label: "Technology", labelFa: "تکنولوژی", query: "technology news", language: "en" },
-  { label: "AI", labelFa: "هوش مصنوعی", query: "artificial intelligence", language: "en" },
-  { label: "Science", labelFa: "علم", query: "science news", language: "en" },
+  { label: "AI", labelFa: "هوش مصنوعی", query: "artificial intelligence news", language: "en" },
   { label: "Health", labelFa: "سلامت", query: "health news", language: "en" },
+  { label: "Science", labelFa: "علم", query: "science news", language: "en" },
   { label: "Business", labelFa: "اقتصاد", query: "business news", language: "en" },
   { label: "Startups", labelFa: "استارتاپ", query: "startup funding", language: "en" },
   { label: "Politics", labelFa: "سیاست", query: "politics news", language: "en" },
   { label: "Sports", labelFa: "ورزش", query: "sports news", language: "en" },
   { label: "Culture", labelFa: "فرهنگ", query: "culture news", language: "en" },
+  { label: "Climate", labelFa: "اقلیم", query: "climate change news", language: "en" },
+  { label: "Middle East", labelFa: "خاورمیانه", query: "Middle East news", language: "en" },
 ];
 
-export type CuratedFeed = {
+export type CatalogCategory =
+  | "tech"
+  | "think_tank"
+  | "science"
+  | "business"
+  | "world"
+  | "health"
+  | "sports"
+  | "culture"
+  | "persian";
+
+export interface CatalogCategoryDef {
+  id: CatalogCategory;
+  label: string;
+  labelFa: string;
+}
+
+export const CATALOG_CATEGORIES: CatalogCategoryDef[] = [
+  { id: "tech", label: "Technology", labelFa: "تکنولوژی" },
+  { id: "think_tank", label: "Think Tanks", labelFa: "تینک‌تنک‌ها" },
+  { id: "science", label: "Science", labelFa: "علم" },
+  { id: "business", label: "Business", labelFa: "اقتصاد" },
+  { id: "world", label: "World News", labelFa: "اخبار جهان" },
+  { id: "health", label: "Health", labelFa: "سلامت" },
+  { id: "sports", label: "Sports", labelFa: "ورزش" },
+  { id: "culture", label: "Culture", labelFa: "فرهنگ" },
+  { id: "persian", label: "Persian / ایران", labelFa: "فارسی / ایران" },
+];
+
+export interface SourceCatalogItem {
+  id: string;
   name: string;
+  nameFa: string;
+  category: CatalogCategory;
   url: string;
   language: string;
-};
+}
 
-export type CuratedCategory = {
-  category: string;
-  categoryFa: string;
-  feeds: CuratedFeed[];
-};
+export const SOURCE_CATALOG: SourceCatalogItem[] = [
+  // Tech
+  {
+    id: "techcrunch",
+    name: "TechCrunch",
+    nameFa: "تک‌کرانچ",
+    category: "tech",
+    url: "https://techcrunch.com/feed/",
+    language: "en",
+  },
+  {
+    id: "the-verge",
+    name: "The Verge",
+    nameFa: "د ورج",
+    category: "tech",
+    url: "https://www.theverge.com/rss/index.xml",
+    language: "en",
+  },
+  {
+    id: "wired",
+    name: "Wired",
+    nameFa: "وایرد",
+    category: "tech",
+    url: "https://www.wired.com/feed/rss",
+    language: "en",
+  },
+  {
+    id: "ars-technica",
+    name: "Ars Technica",
+    nameFa: "آرس تکنیکا",
+    category: "tech",
+    url: "https://arstechnica.com/feed/",
+    language: "en",
+  },
+  {
+    id: "engadget",
+    name: "Engadget",
+    nameFa: "انگجت",
+    category: "tech",
+    url: "https://www.engadget.com/rss.xml",
+    language: "en",
+  },
+  {
+    id: "9to5mac",
+    name: "9to5Mac",
+    nameFa: "ناین تو فایو مک",
+    category: "tech",
+    url: "https://9to5mac.com/feed/",
+    language: "en",
+  },
+  {
+    id: "9to5google",
+    name: "9to5Google",
+    nameFa: "ناین تو فایو گوگل",
+    category: "tech",
+    url: "https://9to5google.com/feed/",
+    language: "en",
+  },
+  {
+    id: "thenextweb",
+    name: "The Next Web",
+    nameFa: "نکست وب",
+    category: "tech",
+    url: "https://thenextweb.com/feed/",
+    language: "en",
+  },
+  {
+    id: "gizmodo",
+    name: "Gizmodo",
+    nameFa: "گیزمودو",
+    category: "tech",
+    url: "https://gizmodo.com/rss",
+    language: "en",
+  },
+  {
+    id: "cnet",
+    name: "CNET",
+    nameFa: "سی‌نت",
+    category: "tech",
+    url: "https://www.cnet.com/rss/news/",
+    language: "en",
+  },
+  {
+    id: "hackernews",
+    name: "Hacker News",
+    nameFa: "هکرنیوز",
+    category: "tech",
+    url: "https://news.ycombinator.com/rss",
+    language: "en",
+  },
 
-export const CURATED_CATEGORIES: CuratedCategory[] = [
+  // Think tanks / policy
   {
-    category: "Technology",
-    categoryFa: "تکنولوژی",
-    feeds: [
-      { name: "The Verge", url: "https://www.theverge.com/rss/index.xml", language: "en" },
-      { name: "TechCrunch", url: "https://techcrunch.com/feed/", language: "en" },
-      { name: "Wired", url: "https://www.wired.com/feed/rss", language: "en" },
-      { name: "Ars Technica", url: "https://arstechnica.com/feed/", language: "en" },
-      { name: "Engadget", url: "https://www.engadget.com/rss.xml", language: "en" },
-      { name: "Gizmodo", url: "https://gizmodo.com/rss", language: "en" },
-      { name: "CNET", url: "https://www.cnet.com/rss/news/", language: "en" },
-      { name: "ZDNet", url: "https://www.zdnet.com/news/rss.xml", language: "en" },
-      { name: "Hacker News", url: "https://news.ycombinator.com/rss", language: "en" },
-    ],
+    id: "atlantic-council",
+    name: "Atlantic Council",
+    nameFa: "آتلانتیک کونسیل",
+    category: "think_tank",
+    url: "https://www.atlanticcouncil.org/feed/",
+    language: "en",
   },
   {
-    category: "Science",
-    categoryFa: "علم",
-    feeds: [
-      {
-        name: "Scientific American",
-        url: "https://www.scientificamerican.com/rss/news.rss",
-        language: "en",
-      },
-      { name: "Nature News", url: "https://www.nature.com/nature.rss", language: "en" },
-      { name: "ScienceDaily", url: "https://www.sciencedaily.com/rss/all.xml", language: "en" },
-      {
-        name: "The Conversation",
-        url: "https://theconversation.com/global/en/articles.atom",
-        language: "en",
-      },
-    ],
+    id: "foreign-policy",
+    name: "Foreign Policy",
+    nameFa: "فارن پالیسی",
+    category: "think_tank",
+    url: "https://foreignpolicy.com/feed/",
+    language: "en",
   },
   {
-    category: "Business",
-    categoryFa: "اقتصاد و کسب‌وکار",
-    feeds: [
-      { name: "Reuters Business", url: "https://www.reuters.com/business/rss/", language: "en" },
-      { name: "MarketWatch", url: "https://www.marketwatch.com/rss", language: "en" },
-      { name: "Business Insider", url: "https://www.businessinsider.com/rss", language: "en" },
-      { name: "Fortune", url: "https://fortune.com/feed/", language: "en" },
-      { name: "Financial Times", url: "https://www.ft.com/rss/home/uk", language: "en" },
-    ],
+    id: "the-diplomat",
+    name: "The Diplomat",
+    nameFa: "دیپلمات",
+    category: "think_tank",
+    url: "https://thediplomat.com/feed/",
+    language: "en",
   },
   {
-    category: "World News",
-    categoryFa: "اخبار جهان",
-    feeds: [
-      { name: "BBC World", url: "https://feeds.bbci.co.uk/news/world/rss.xml", language: "en" },
-      { name: "The Guardian World", url: "https://www.theguardian.com/world/rss", language: "en" },
-      {
-        name: "Al Jazeera English",
-        url: "https://www.aljazeera.com/xml/rss/all.xml",
-        language: "en",
-      },
-      { name: "Reuters World", url: "https://www.reuters.com/world/rss/", language: "en" },
-      { name: "AP News Top", url: "https://apnews.com/hub/world-news/rss", language: "en" },
-      { name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml", language: "en" },
-      { name: "Axios", url: "https://www.axios.com/feeds/streams/all.rss", language: "en" },
-      { name: "The Atlantic", url: "https://www.theatlantic.com/feed/all/", language: "en" },
-    ],
+    id: "al-monitor",
+    name: "Al-Monitor",
+    nameFa: "ال‌مانیتور",
+    category: "think_tank",
+    url: "https://www.al-monitor.com/rss",
+    language: "en",
   },
   {
-    category: "Think Tanks",
-    categoryFa: "تینک تانک‌ها و سیاست",
-    feeds: [
-      { name: "Brookings Institution", url: "https://www.brookings.edu/feed/", language: "en" },
-      { name: "Council on Foreign Relations", url: "https://www.cfr.org/rss.xml", language: "en" },
-      { name: "Chatham House", url: "https://www.chathamhouse.org/rss", language: "en" },
-      { name: "Carnegie Endowment", url: "https://carnegieendowment.org/rss", language: "en" },
-      { name: "CSIS", url: "https://www.csis.org/rss", language: "en" },
-      { name: "RAND Corporation", url: "https://www.rand.org/rss/news.xml", language: "en" },
-      { name: "Atlantic Council", url: "https://www.atlanticcouncil.org/feed/", language: "en" },
-      { name: "Foreign Affairs", url: "https://www.foreignaffairs.com/rss.xml", language: "en" },
-    ],
+    id: "warontherocks",
+    name: "War on the Rocks",
+    nameFa: "وار آن د راکس",
+    category: "think_tank",
+    url: "https://warontherocks.com/feed/",
+    language: "en",
   },
   {
-    category: "Health",
-    categoryFa: "سلامت",
-    feeds: [
-      { name: "WHO", url: "https://www.who.int/rss-feeds/news-english.xml", language: "en" },
-      {
-        name: "NIH News",
-        url: "https://www.nih.gov/news-events/news-releases/rss.xml",
-        language: "en",
-      },
-      {
-        name: "Medical News Today",
-        url: "https://www.medicalnewstoday.com/news/feed",
-        language: "en",
-      },
-    ],
+    id: "crisis-group",
+    name: "International Crisis Group",
+    nameFa: "گروه بحران بین‌الملل",
+    category: "think_tank",
+    url: "https://www.crisisgroup.org/rss",
+    language: "en",
   },
   {
-    category: "Sports",
-    categoryFa: "ورزش",
-    feeds: [
-      { name: "ESPN", url: "https://www.espn.com/espn/rss/news", language: "en" },
-      {
-        name: "BBC Sport",
-        url: "https://feeds.bbci.co.uk/sport/rss.xml?edition=uk",
-        language: "en",
-      },
-    ],
+    id: "carnegie-npp",
+    name: "Carnegie Nuclear Policy",
+    nameFa: "کارنگی سیاست هسته‌ای",
+    category: "think_tank",
+    url: "https://feeds.feedburner.com/carnegie/NPP",
+    language: "en",
+  },
+
+  // Science
+  {
+    id: "nature",
+    name: "Nature News",
+    nameFa: "نیچر",
+    category: "science",
+    url: "https://www.nature.com/nature.rss",
+    language: "en",
   },
   {
-    category: "Culture & Design",
-    categoryFa: "فرهنگ و طراحی",
-    feeds: [
-      { name: "Dezeen", url: "https://www.dezeen.com/rss/", language: "en" },
-      { name: "Vox", url: "https://www.vox.com/rss/index.xml", language: "en" },
-      { name: "Aeon", url: "https://aeon.co/feed.rss", language: "en" },
-    ],
+    id: "new-scientist",
+    name: "New Scientist",
+    nameFa: "نیو ساینتیست",
+    category: "science",
+    url: "https://www.newscientist.com/feed/",
+    language: "en",
   },
   {
-    category: "Persian",
-    categoryFa: "فارسی",
-    feeds: [
-      { name: "BBC Persian", url: "https://feeds.bbci.co.uk/persian/rss.xml", language: "fa" },
-      { name: "Deutsche Welle Persian", url: "https://rss.dw.com/rdf/rss-per-all", language: "fa" },
-      { name: "Radio Farda", url: "https://www.rferl.org/api/epiqq", language: "fa" },
-    ],
+    id: "physorg",
+    name: "Phys.org",
+    nameFa: "فیز دات ارگ",
+    category: "science",
+    url: "https://phys.org/rss-feed/",
+    language: "en",
+  },
+  {
+    id: "sciencemag",
+    name: "Science",
+    nameFa: "ساینس",
+    category: "science",
+    url: "https://www.science.org/rss/news_current.xml",
+    language: "en",
+  },
+
+  // Business
+  {
+    id: "cnbc-top",
+    name: "CNBC Top News",
+    nameFa: "سی‌ان‌بی‌سی",
+    category: "business",
+    url: "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+    language: "en",
+  },
+  {
+    id: "cnbc-tech",
+    name: "CNBC Technology",
+    nameFa: "سی‌ان‌بی‌سی تکنولوژی",
+    category: "business",
+    url: "https://www.cnbc.com/id/100727362/device/rss/rss.html",
+    language: "en",
+  },
+  {
+    id: "fortune",
+    name: "Fortune",
+    nameFa: "فورچون",
+    category: "business",
+    url: "https://fortune.com/feed/",
+    language: "en",
+  },
+  {
+    id: "forbes-business",
+    name: "Forbes Business",
+    nameFa: "فوربز بیزینس",
+    category: "business",
+    url: "https://www.forbes.com/business/feed/",
+    language: "en",
+  },
+  {
+    id: "marketwatch",
+    name: "MarketWatch",
+    nameFa: "مارکت‌واچ",
+    category: "business",
+    url: "https://feeds.marketwatch.com/marketwatch/topstories/",
+    language: "en",
+  },
+  {
+    id: "business-insider",
+    name: "Business Insider",
+    nameFa: "بیزینس اینسایدر",
+    category: "business",
+    url: "https://www.businessinsider.com/rss",
+    language: "en",
+  },
+
+  // World news
+  {
+    id: "bbc-world",
+    name: "BBC World",
+    nameFa: "بی‌بی‌سی جهان",
+    category: "world",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    language: "en",
+  },
+  {
+    id: "guardian-world",
+    name: "The Guardian",
+    nameFa: "گاردین",
+    category: "world",
+    url: "https://www.theguardian.com/world/rss",
+    language: "en",
+  },
+  {
+    id: "aljazeera",
+    name: "Al Jazeera",
+    nameFa: "الجزیره",
+    category: "world",
+    url: "https://www.aljazeera.com/xml/rss/all.xml",
+    language: "en",
+  },
+  {
+    id: "npr",
+    name: "NPR News",
+    nameFa: "ان‌پی‌آر",
+    category: "world",
+    url: "https://feeds.npr.org/1001/rss.xml",
+    language: "en",
+  },
+  {
+    id: "the-hill",
+    name: "The Hill",
+    nameFa: "د هیل",
+    category: "world",
+    url: "https://thehill.com/homenews/feed/",
+    language: "en",
+  },
+  {
+    id: "axios",
+    name: "Axios",
+    nameFa: "اکسیوس",
+    category: "world",
+    url: "https://www.axios.com/feeds/feed.rss",
+    language: "en",
+  },
+  {
+    id: "middle-east-eye",
+    name: "Middle East Eye",
+    nameFa: "میدل ایست آی",
+    category: "world",
+    url: "https://www.middleeasteye.net/rss",
+    language: "en",
+  },
+
+  // Persian
+  {
+    id: "bbc-persian",
+    name: "BBC Persian",
+    nameFa: "بی‌بی‌سی فارسی",
+    category: "persian",
+    url: "https://feeds.bbci.co.uk/persian/rss.xml",
+    language: "fa",
+  },
+  {
+    id: "radio-farda",
+    name: "Radio Farda",
+    nameFa: "رادیو فردا",
+    category: "persian",
+    url: "https://www.radiofarda.com/api/",
+    language: "fa",
+  },
+  {
+    id: "kayhan-london",
+    name: "Kayhan London",
+    nameFa: "کیهان لندن",
+    category: "persian",
+    url: "https://kayhan.london/fa/feed/",
+    language: "fa",
+  },
+  {
+    id: "isna",
+    name: "ISNA",
+    nameFa: "ایسنا",
+    category: "persian",
+    url: "https://www.isna.ir/rss",
+    language: "fa",
+  },
+  {
+    id: "dw-persian",
+    name: "Deutsche Welle Persian",
+    nameFa: "دویچه وله فارسی",
+    category: "persian",
+    url: "https://rss.dw.com/rdf/rss-per-all",
+    language: "fa",
+  },
+
+  // Health
+  {
+    id: "who",
+    name: "WHO",
+    nameFa: "سازمان بهداشت جهانی",
+    category: "health",
+    url: "https://www.who.int/rss-feeds/news-english.xml",
+    language: "en",
+  },
+  {
+    id: "nih",
+    name: "NIH News",
+    nameFa: "ان‌آی‌اچ",
+    category: "health",
+    url: "https://www.nih.gov/news-events/news-releases/rss.xml",
+    language: "en",
+  },
+  {
+    id: "medical-newstoday",
+    name: "Medical News Today",
+    nameFa: "مدیکال نیوز تودی",
+    category: "health",
+    url: "https://www.medicalnewstoday.com/news/feed",
+    language: "en",
+  },
+
+  // Sports
+  {
+    id: "espn",
+    name: "ESPN",
+    nameFa: "ای‌اس‌پی‌ان",
+    category: "sports",
+    url: "https://www.espn.com/espn/rss/news",
+    language: "en",
+  },
+  {
+    id: "bbc-sport",
+    name: "BBC Sport",
+    nameFa: "بی‌بی‌سی ورزش",
+    category: "sports",
+    url: "https://feeds.bbci.co.uk/sport/rss.xml?edition=uk",
+    language: "en",
+  },
+
+  // Culture
+  {
+    id: "dezeen",
+    name: "Dezeen",
+    nameFa: "دیزین",
+    category: "culture",
+    url: "https://www.dezeen.com/rss/",
+    language: "en",
+  },
+  {
+    id: "vox",
+    name: "Vox",
+    nameFa: "وکس",
+    category: "culture",
+    url: "https://www.vox.com/rss/index.xml",
+    language: "en",
+  },
+  {
+    id: "aeon",
+    name: "Aeon",
+    nameFa: "ایون",
+    category: "culture",
+    url: "https://aeon.co/feed.rss",
+    language: "en",
+  },
+
+  // Think tanks (additional)
+  {
+    id: "brookings",
+    name: "Brookings Institution",
+    nameFa: "بروکینگز",
+    category: "think_tank",
+    url: "https://www.brookings.edu/feed/",
+    language: "en",
+  },
+  {
+    id: "cfr",
+    name: "Council on Foreign Relations",
+    nameFa: "شورای روابط خارجی",
+    category: "think_tank",
+    url: "https://www.cfr.org/rss.xml",
+    language: "en",
+  },
+  {
+    id: "rand",
+    name: "RAND Corporation",
+    nameFa: "رند",
+    category: "think_tank",
+    url: "https://www.rand.org/rss/news.xml",
+    language: "en",
+  },
+  {
+    id: "foreign-affairs",
+    name: "Foreign Affairs",
+    nameFa: "فارن افرز",
+    category: "think_tank",
+    url: "https://www.foreignaffairs.com/rss.xml",
+    language: "en",
   },
 ];
 
@@ -176,37 +516,16 @@ export const SAMPLE_SOURCES: {
   },
   {
     kind: "rss",
+    name: "بی‌بی‌سی فارسی",
+    url: "https://feeds.bbci.co.uk/persian/rss.xml",
+    topic: null,
+    language: "fa",
+  },
+  {
+    kind: "rss",
     name: "TechCrunch",
     url: "https://techcrunch.com/feed/",
     topic: null,
     language: "en",
-  },
-  {
-    kind: "rss",
-    name: "Reuters World",
-    url: "https://www.reuters.com/world/rss/",
-    topic: null,
-    language: "en",
-  },
-  {
-    kind: "rss",
-    name: "The Verge",
-    url: "https://www.theverge.com/rss/index.xml",
-    topic: null,
-    language: "en",
-  },
-  {
-    kind: "rss",
-    name: "Brookings Institution",
-    url: "https://www.brookings.edu/feed/",
-    topic: null,
-    language: "en",
-  },
-  {
-    kind: "rss",
-    name: "BBC Persian",
-    url: "https://feeds.bbci.co.uk/persian/rss.xml",
-    topic: null,
-    language: "fa",
   },
 ];

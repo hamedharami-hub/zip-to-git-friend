@@ -13,11 +13,24 @@ export const PUBLIC_TOPICS: PublicTopic[] = [
   { label: "Health", labelFa: "سلامت", query: "health news", language: "en" },
   { label: "Science", labelFa: "علم", query: "science news", language: "en" },
   { label: "Business", labelFa: "اقتصاد", query: "business news", language: "en" },
+  { label: "Startups", labelFa: "استارتاپ", query: "startup funding", language: "en" },
+  { label: "Politics", labelFa: "سیاست", query: "politics news", language: "en" },
+  { label: "Sports", labelFa: "ورزش", query: "sports news", language: "en" },
+  { label: "Culture", labelFa: "فرهنگ", query: "culture news", language: "en" },
   { label: "Climate", labelFa: "اقلیم", query: "climate change news", language: "en" },
   { label: "Middle East", labelFa: "خاورمیانه", query: "Middle East news", language: "en" },
 ];
 
-export type CatalogCategory = "tech" | "think_tank" | "science" | "business" | "world" | "persian";
+export type CatalogCategory =
+  | "tech"
+  | "think_tank"
+  | "science"
+  | "business"
+  | "world"
+  | "health"
+  | "sports"
+  | "culture"
+  | "persian";
 
 export interface CatalogCategoryDef {
   id: CatalogCategory;
@@ -31,6 +44,9 @@ export const CATALOG_CATEGORIES: CatalogCategoryDef[] = [
   { id: "science", label: "Science", labelFa: "علم" },
   { id: "business", label: "Business", labelFa: "اقتصاد" },
   { id: "world", label: "World News", labelFa: "اخبار جهان" },
+  { id: "health", label: "Health", labelFa: "سلامت" },
+  { id: "sports", label: "Sports", labelFa: "ورزش" },
+  { id: "culture", label: "Culture", labelFa: "فرهنگ" },
   { id: "persian", label: "Persian / ایران", labelFa: "فارسی / ایران" },
 ];
 
@@ -366,6 +382,118 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     category: "persian",
     url: "https://www.isna.ir/rss",
     language: "fa",
+  },
+  {
+    id: "dw-persian",
+    name: "Deutsche Welle Persian",
+    nameFa: "دویچه وله فارسی",
+    category: "persian",
+    url: "https://rss.dw.com/rdf/rss-per-all",
+    language: "fa",
+  },
+
+  // Health
+  {
+    id: "who",
+    name: "WHO",
+    nameFa: "سازمان بهداشت جهانی",
+    category: "health",
+    url: "https://www.who.int/rss-feeds/news-english.xml",
+    language: "en",
+  },
+  {
+    id: "nih",
+    name: "NIH News",
+    nameFa: "ان‌آی‌اچ",
+    category: "health",
+    url: "https://www.nih.gov/news-events/news-releases/rss.xml",
+    language: "en",
+  },
+  {
+    id: "medical-newstoday",
+    name: "Medical News Today",
+    nameFa: "مدیکال نیوز تودی",
+    category: "health",
+    url: "https://www.medicalnewstoday.com/news/feed",
+    language: "en",
+  },
+
+  // Sports
+  {
+    id: "espn",
+    name: "ESPN",
+    nameFa: "ای‌اس‌پی‌ان",
+    category: "sports",
+    url: "https://www.espn.com/espn/rss/news",
+    language: "en",
+  },
+  {
+    id: "bbc-sport",
+    name: "BBC Sport",
+    nameFa: "بی‌بی‌سی ورزش",
+    category: "sports",
+    url: "https://feeds.bbci.co.uk/sport/rss.xml?edition=uk",
+    language: "en",
+  },
+
+  // Culture
+  {
+    id: "dezeen",
+    name: "Dezeen",
+    nameFa: "دیزین",
+    category: "culture",
+    url: "https://www.dezeen.com/rss/",
+    language: "en",
+  },
+  {
+    id: "vox",
+    name: "Vox",
+    nameFa: "وکس",
+    category: "culture",
+    url: "https://www.vox.com/rss/index.xml",
+    language: "en",
+  },
+  {
+    id: "aeon",
+    name: "Aeon",
+    nameFa: "ایون",
+    category: "culture",
+    url: "https://aeon.co/feed.rss",
+    language: "en",
+  },
+
+  // Think tanks (additional)
+  {
+    id: "brookings",
+    name: "Brookings Institution",
+    nameFa: "بروکینگز",
+    category: "think_tank",
+    url: "https://www.brookings.edu/feed/",
+    language: "en",
+  },
+  {
+    id: "cfr",
+    name: "Council on Foreign Relations",
+    nameFa: "شورای روابط خارجی",
+    category: "think_tank",
+    url: "https://www.cfr.org/rss.xml",
+    language: "en",
+  },
+  {
+    id: "rand",
+    name: "RAND Corporation",
+    nameFa: "رند",
+    category: "think_tank",
+    url: "https://www.rand.org/rss/news.xml",
+    language: "en",
+  },
+  {
+    id: "foreign-affairs",
+    name: "Foreign Affairs",
+    nameFa: "فارن افرز",
+    category: "think_tank",
+    url: "https://www.foreignaffairs.com/rss.xml",
+    language: "en",
   },
 ];
 

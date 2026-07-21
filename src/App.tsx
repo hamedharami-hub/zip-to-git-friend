@@ -18,6 +18,7 @@ import { useEdgeSwipeBack } from "./hooks/useEdgeSwipeBack";
 import { Haptic } from "./components/Haptic";
 
 import { PlayerSkeleton } from "@/components/player/PlayerSkeleton";
+import { PWAUpdateBanner } from "@/components/pwa/PWAUpdateBanner";
 
 const Home = lazy(() => import("./pages/Home"));
 const Videos = lazy(() => import("./pages/Videos"));
@@ -148,6 +149,7 @@ const App = () => (
         <FirebaseAuthProvider>
           <SettingsBootstrap>
             <SyncBridge />
+            <PWAUpdateBanner />
             <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <Haptic />
               <NativeGestures />

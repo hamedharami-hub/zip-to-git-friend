@@ -70,14 +70,11 @@ export function subscribePWA(l: Listener): () => void {
 /** Manually trigger an update check (reads the registration's update endpoint). */
 export async function checkForUpdate(): Promise<void> {
   if (!isBrowser || !("serviceWorker" in navigator)) return;
-  if (updateSWFn) {
-    try {
-      await updateSWFn(false);
-    } catch {
-      /* swallow */
-    }
+  const reg = await navigator.serviceWorker.getRegistration().catch(() => undefined);
+  if (reg) {
+    await reg.update().catch(() => undefined);
   } else {
-    const regs = await navigator.serviceWorker.getRegistrations();
+    const regs = await navigator.serviceWorker.getRegistrations().catch(() => []);
     await Promise.all(regs.map((r) => r.update().catch(() => undefined)));
   }
   set({ lastChecked: Date.now() });
@@ -156,16 +153,44 @@ export function registerPWA() {
 
   set({ enabled: true });
 
-  window.addEventListener("online", () => set({ online: true }));
-  window.addEventListener("offline", () => set({ online: false }));
+  const onOnline = () => {
+    set({ online: true });
+    // Coming back online is a good time to check for a newer build.
+    void checkForUpdate();
+  };
+  const onOffline = () => set({ online: false });
+
+  window.addEventListener("online", onOnline);
+  window.addEventListener("offline", onOffline);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      void checkForUpdate();
+    }
+  });
+
+  // Detect when a waiting service worker takes control (update applied).
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    set({ active: true, updateAvailable: false, registered: true });
+    measureCacheBytes();
+  });
 
   // Lazy-load the virtual module so it never executes in preview.
   import("virtual:pwa-register")
     .then(({ registerSW }) => {
       const updateSW = registerSW({
         immediate: true,
+        onRegisterError(err) {
+          console.error("PWA registration failed", err);
+          set({ registered: false });
+          toast.error("ثبت service worker ناموفق بود. برنامه ممکن است به‌روز نشود.");
+        },
         onRegisteredSW(_url, reg) {
-          set({ registered: !!reg, lastChecked: Date.now() });
+          set({
+            registered: !!reg,
+            active: !!reg?.active && !!navigator.serviceWorker.controller,
+            lastChecked: Date.now(),
+          });
           refreshRegistrationState();
           measureCacheBytes();
         },
@@ -190,8 +215,7 @@ export function registerPWA() {
       // Poll for updates every 60 min while app is open.
       setInterval(
         () => {
-          updateSW().catch(() => undefined);
-          set({ lastChecked: Date.now() });
+          void checkForUpdate();
         },
         60 * 60 * 1000,
       );

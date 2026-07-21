@@ -47,7 +47,8 @@ export default defineConfig({
           globDirectory: ".output/public",
           globPatterns: ["**/*.{js,css,html,svg,png,ico,woff2,webmanifest}"],
           swDest: ".output/public/sw.js",
-          navigateFallback: "/",
+          cleanupOutdatedCaches: true,
+          navigateFallback: "/offline.html",
           navigateFallbackDenylist: [
             /^\/api\//,
             /^\/~oauth/,
@@ -57,6 +58,7 @@ export default defineConfig({
             /^\/\.well-known/,
             /^\/\.lovable/,
           ],
+          maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
           runtimeCaching: [
             {
               urlPattern: ({ request }) => request.mode === "navigate",

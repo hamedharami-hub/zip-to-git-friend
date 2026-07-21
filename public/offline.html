@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0F172A" />
+    <title>آفلاین هستید | Sync Learn</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        font-family: "Inter Tight", "Vazirmatn", system-ui, -apple-system, sans-serif;
+        background: #0f172a;
+        color: #e2e8f0;
+        text-align: center;
+      }
+      .card {
+        max-width: 360px;
+        width: 100%;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        border-radius: 20px;
+        padding: 32px;
+        background: rgba(30, 41, 59, 0.6);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+      }
+      h1 {
+        margin: 16px 0 8px;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      p {
+        margin: 0 0 24px;
+        line-height: 1.7;
+        color: #94a3b8;
+        font-size: 0.95rem;
+      }
+      .icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background: rgba(245, 158, 11, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon svg {
+        width: 32px;
+        height: 32px;
+        stroke: #f59e0b;
+      }
+      .actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      button,
+      a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 16px;
+        border: 0;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+        transition: opacity 0.15s ease;
+      }
+      button:hover,
+      a:hover {
+        opacity: 0.9;
+      }
+      .primary {
+        background: #3b82f6;
+        color: white;
+      }
+      .secondary {
+        background: transparent;
+        color: #94a3b8;
+        border: 1px solid rgba(148, 163, 184, 0.25);
+      }
+      .hidden {
+        display: none;
+      }
+      #status {
+        margin-top: 16px;
+        font-size: 0.85rem;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+          <line x1="8" y1="12" x2="16" y2="12" />
+        </svg>
+      </div>
+      <h1>شما آفلاین هستید</h1>
+      <p>
+        این صفحه قبلاً باز نشده و بدون اینترنت در دسترس نیست. اگر قبلاً صفحات دیگری را باز کرده‌اید، با اتصال دوباره می‌توانید به آن‌ها برگردید.
+      </p>
+      <div class="actions">
+        <button id="retry" class="primary">تلاش دوباره</button>
+        <a href="/" class="secondary">رفتن به صفحه اصلی</a>
+      </div>
+      <div id="status"></div>
+    </div>
+    <script>
+      const retry = document.getElementById("retry");
+      const status = document.getElementById("status");
+      function setOnline() {
+        status.textContent = "اتصال برگشت؛ در حال بارگذاری مجدد...";
+        setTimeout(() => window.location.reload(), 700);
+      }
+      window.addEventListener("online", setOnline);
+      retry.addEventListener("click", () => {
+        if (navigator.onLine) {
+          setOnline();
+          return;
+        }
+        status.textContent = "هنوز اینترنت وصل نشده. لطفاً اتصال را بررسی کنید.";
+      });
+    </script>
+  </body>
+</html>

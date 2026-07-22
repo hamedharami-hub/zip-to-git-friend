@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, Settings, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { pingGemini, GeminiError } from "@/lib/gemini";
 import { pingGroq, GroqError } from "@/lib/groq";
-import { refreshAllModels } from "@/lib/refreshModels";
+import { refreshAllModels, refreshGeminiModels, refreshGroqModels } from "@/lib/refreshModels";
 import { useSettingsStore } from "@/store/settingsStore";
 import { ApiKeyInput } from "./ApiKeyInput";
 import { ModelVisibilityDialog } from "./ModelVisibilityDialog";
@@ -31,9 +31,9 @@ export function KeysSettings() {
   const [testingHf, setTestingHf] = useState(false);
   const [testingPlayHt, setTestingPlayHt] = useState(false);
   const [testingOpenTts, setTestingOpenTts] = useState(false);
-  const [refreshingModels, setRefreshingModels] = useState(false);
-
-  useEffect(() => {}, []);
+  const [refreshingGemini, setRefreshingGemini] = useState(false);
+  const [refreshingGroq, setRefreshingGroq] = useState(false);
+  const [refreshingAll, setRefreshingAll] = useState(false);
 
   useEffect(() => {
     setGemini(settings.geminiApiKey);
@@ -236,11 +236,42 @@ export function KeysSettings() {
     }
   };
 
-  const refreshModels = async () => {
+  const doRefreshGemini = async () => {
+    if (gemini !== settings.geminiApiKey) await update({ geminiApiKey: gemini });
+    setRefreshingGemini(true);
+    try {
+      const { patch, result } = await refreshGeminiModels(gemini, settings.customModels);
+      await update(patch);
+      toast.success(`Gemini updated — ${result.geminiCount ?? 0} models`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gemini refresh failed.");
+    } finally {
+      setRefreshingGemini(false);
+    }
+  };
+
+  const doRefreshGroq = async () => {
+    if (groq !== settings.groqApiKey) await update({ groqApiKey: groq });
+    setRefreshingGroq(true);
+    try {
+      const { patch, result } = await refreshGroqModels(groq, settings.customModels);
+      await update(patch);
+      const parts: string[] = [];
+      if (result.groqChatCount) parts.push(`chat ${result.groqChatCount}`);
+      if (result.groqWhisperCount) parts.push(`whisper ${result.groqWhisperCount}`);
+      toast.success(`Groq updated — ${parts.join(" · ") || "0 models"}`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Groq refresh failed.");
+    } finally {
+      setRefreshingGroq(false);
+    }
+  };
+
+  const refreshAll = async () => {
     if (gemini !== settings.geminiApiKey || groq !== settings.groqApiKey) {
       await update({ geminiApiKey: gemini, groqApiKey: groq });
     }
-    setRefreshingModels(true);
+    setRefreshingAll(true);
     try {
       const { patch, result } = await refreshAllModels({
         geminiApiKey: gemini,
@@ -249,38 +280,105 @@ export function KeysSettings() {
       });
       await update(patch);
       const parts: string[] = [];
-      if (result.geminiCount) parts.push(`Gemini: ${result.geminiCount}`);
-      if (result.groqChatCount) parts.push(`Groq chat: ${result.groqChatCount}`);
-      if (result.groqWhisperCount) parts.push(`Whisper: ${result.groqWhisperCount}`);
+      if (result.geminiCount) parts.push(`Gemini ${result.geminiCount}`);
+      if (result.groqChatCount) parts.push(`Groq chat ${result.groqChatCount}`);
+      if (result.groqWhisperCount) parts.push(`Whisper ${result.groqWhisperCount}`);
       if (parts.length) toast.success(`Refreshed — ${parts.join(" · ")}`);
       if (result.errors.length) toast.message(result.errors.join(" · "));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Refresh failed.");
     } finally {
-      setRefreshingModels(false);
+      setRefreshingAll(false);
     }
   };
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-semibold">AI</h2>
+    <section className="space-y-6">
+      <div className="space-y-1">
+        <h2 className="text-lg font-semibold">کلیدهای API</h2>
+        <p className="text-sm text-muted-foreground">
+          کلیدها را وارد کن تا بخش‌های مختلف برنامه از مدل‌های مستقیم Gemini / Groq استفاده کنند.
+          Lovable AI Gateway بدون کلید هم کار می‌کند.
+        </p>
+      </div>
+
+      {/* ─── Text / chat LLMs ───────────────────────────────────────── */}
       <div className="space-y-4 rounded-lg border border-border p-4">
-        <ApiKeyInput
-          label="Gemini API key"
-          value={gemini}
-          onChange={setGemini}
-          placeholder="AIza..."
-          onTest={testGemini}
-          testing={testingGemini}
-        />
-        <ApiKeyInput
-          label="Groq API key"
-          value={groq}
-          onChange={setGroq}
-          placeholder="gsk_..."
-          onTest={testGroq}
-          testing={testingGroq}
-        />
+        <h3 className="text-sm font-semibold text-muted-foreground">هوش مصنوعی متن / چت</h3>
+
+        <div className="space-y-3">
+          <ApiKeyInput
+            label="Gemini API key"
+            value={gemini}
+            onChange={setGemini}
+            placeholder="AIza..."
+            onTest={testGemini}
+            testing={testingGemini}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={doRefreshGemini}
+              disabled={refreshingGemini || !gemini.trim()}
+              className="gap-1.5"
+            >
+              {refreshingGemini ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              به‌روزرسانی مدل‌های Gemini
+            </Button>
+            <ModelVisibilityDialog initialTab="gemini">
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5">
+                <Settings className="h-3.5 w-3.5" />
+                نمایش/مخفی Gemini
+              </Button>
+            </ModelVisibilityDialog>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <ApiKeyInput
+            label="Groq API key"
+            value={groq}
+            onChange={setGroq}
+            placeholder="gsk_..."
+            onTest={testGroq}
+            testing={testingGroq}
+          />
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={doRefreshGroq}
+              disabled={refreshingGroq || !groq.trim()}
+              className="gap-1.5"
+            >
+              {refreshingGroq ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              به‌روزرسانی مدل‌های Groq
+            </Button>
+            <ModelVisibilityDialog initialTab="groqChat">
+              <Button type="button" variant="ghost" size="sm" className="gap-1.5">
+                <Settings className="h-3.5 w-3.5" />
+                نمایش/مخفی Groq
+              </Button>
+            </ModelVisibilityDialog>
+          </div>
+        </div>
+      </div>
+
+      {/* ─── Text-to-speech ─────────────────────────────────────────── */}
+      <div className="space-y-4 rounded-lg border border-border p-4">
+        <h3 className="text-sm font-semibold text-muted-foreground">متن‌به‌صدا (TTS)</h3>
+
         <div className="space-y-1.5">
           <ApiKeyInput
             label="Gemini TTS API key (text-to-speech)"
@@ -295,6 +393,7 @@ export function KeysSettings() {
             <span className="font-mono">aistudio.google.com/apikey</span>.
           </p>
         </div>
+
         <div className="space-y-1.5">
           <ApiKeyInput
             label="ElevenLabs API key (premium TTS)"
@@ -471,35 +570,47 @@ export function KeysSettings() {
             <span className="font-mono"> github.com/synesthesiam/opentts</span>.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={save}>Save API keys</Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={refreshModels}
-            disabled={refreshingModels || (!gemini && !groq)}
-          >
-            {refreshingModels ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4 mr-2" />
-            )}
-            به‌روزرسانی لیست مدل‌ها
-          </Button>
-          <ModelVisibilityDialog />
-        </div>
-        {settings.customModels?.refreshedAt && (
-          <p className="text-[11px] text-muted-foreground">
-            آخرین به‌روزرسانی: {new Date(settings.customModels.refreshedAt).toLocaleString()}
-            {settings.customModels.gemini?.length
-              ? ` · Gemini ${settings.customModels.gemini.length}`
-              : ""}
-            {settings.customModels.groqChat?.length
-              ? ` · Groq ${settings.customModels.groqChat.length}`
-              : ""}
-          </p>
-        )}
       </div>
+
+      {/* ─── Global actions ─────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-2">
+        <Button onClick={save}>Save API keys</Button>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={refreshAll}
+          disabled={refreshingAll || (!gemini && !groq)}
+          className="gap-1.5"
+        >
+          {refreshingAll ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+          به‌روزرسانی همه‌ی مدل‌ها
+        </Button>
+        <ModelVisibilityDialog>
+          <Button type="button" variant="secondary" className="gap-1.5">
+            <Wand2 className="h-4 w-4" />
+            مدیریت مدل‌های قابل نمایش
+          </Button>
+        </ModelVisibilityDialog>
+      </div>
+
+      {settings.customModels?.refreshedAt && (
+        <p className="text-[11px] text-muted-foreground">
+          آخرین به‌روزرسانی: {new Date(settings.customModels.refreshedAt).toLocaleString()}
+          {settings.customModels.gemini?.length
+            ? ` · Gemini ${settings.customModels.gemini.length}`
+            : ""}
+          {settings.customModels.groqChat?.length
+            ? ` · Groq chat ${settings.customModels.groqChat.length}`
+            : ""}
+          {settings.customModels.groqWhisper?.length
+            ? ` · Whisper ${settings.customModels.groqWhisper.length}`
+            : ""}
+        </p>
+      )}
     </section>
   );
 }

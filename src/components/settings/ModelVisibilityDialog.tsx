@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -31,9 +31,25 @@ const TABS: { key: Provider; label: string }[] = [
   { key: "groqWhisper", label: "Whisper" },
 ];
 
-export function ModelVisibilityDialog() {
+interface ModelVisibilityDialogProps {
+  initialTab?: Provider;
+  /** Optional trigger node. If omitted, a default "مدل‌های قابل نمایش" button is rendered. */
+  children?: React.ReactNode;
+}
+
+export function ModelVisibilityDialog({ initialTab, children }: ModelVisibilityDialogProps) {
   const { settings, update } = useSettingsStore();
   const [open, setOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<Provider>(initialTab ?? "gateway");
+
+  useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
+  // When opening, jump to the requested provider tab.
+  useEffect(() => {
+    if (open && initialTab) setActiveTab(initialTab);
+  }, [open, initialTab]);
 
   const all = useMemo(
     () => ({
@@ -53,6 +69,16 @@ export function ModelVisibilityDialog() {
     groqWhisper: new Set(settings.customModels?.hidden?.groqWhisper ?? []),
     gateway: new Set(settings.customModels?.hidden?.gateway ?? []),
   }));
+
+  // Sync local mirror when settings change while dialog is open.
+  useEffect(() => {
+    setHidden({
+      gemini: new Set(settings.customModels?.hidden?.gemini ?? []),
+      groqChat: new Set(settings.customModels?.hidden?.groqChat ?? []),
+      groqWhisper: new Set(settings.customModels?.hidden?.groqWhisper ?? []),
+      gateway: new Set(settings.customModels?.hidden?.gateway ?? []),
+    });
+  }, [settings.customModels?.hidden]);
 
   const toggle = (p: Provider, value: string) => {
     setHidden((prev) => {
@@ -82,10 +108,12 @@ export function ModelVisibilityDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button type="button" variant="outline" className="gap-1.5">
-          <SettingsIcon className="h-4 w-4" />
-          مدل‌های قابل نمایش
-        </Button>
+        {children ?? (
+          <Button type="button" variant="outline" className="gap-1.5">
+            <SettingsIcon className="h-4 w-4" />
+            مدل‌های قابل نمایش
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -96,7 +124,7 @@ export function ModelVisibilityDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="gateway" className="mt-2">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as Provider)} className="mt-2">
           <TabsList className="grid grid-cols-4 w-full">
             {TABS.map((t) => (
               <TabsTrigger key={t.key} value={t.key} className="text-xs">

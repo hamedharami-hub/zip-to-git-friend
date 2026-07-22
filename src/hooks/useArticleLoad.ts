@@ -114,11 +114,20 @@ export function useArticleLoad(articleId: string | undefined): UseArticleLoadRet
       if (cached) setArticle(cached);
       try {
         const a = await getArticleById(articleId).catch(() => null);
-        const useArticle = a ?? cached;
+
+        // Prefer the server copy when it has content, otherwise fall back to
+        // the local cache so a feed-list upsert that omitted the body does not
+        // wipe the article we already scraped.
+        const hasContent = (art: NewsArticle | null) =>
+          !!art?.contentHtml || art?.contentMd === "__SCRAPE_FAILED__";
+        const useArticle = hasContent(a) ? a : hasContent(cached) ? cached : (a ?? cached);
+
         if (useArticle) {
-          if (a) {
+          if (useArticle === a && a) {
             setArticle(a);
             cacheArticle(a);
+          } else if (useArticle === cached && cached) {
+            setArticle(cached);
           }
           document.title = `${useArticle.title} — News`;
           const alreadySeen = isSeen(useArticle.url);

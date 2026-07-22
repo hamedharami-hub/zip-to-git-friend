@@ -428,13 +428,40 @@
 
 /* Bionic bolding — visible in both light and dark modes. */
 b.rm-bionic {
-  font-weight: 800 !important;
+  font-weight: 900 !important;
   color: hsl(var(--foreground)) !important;
+  /* Thicken strokes by drawing tiny duplicate copies around each glyph. */
+  text-shadow:
+    0.4px 0 0 hsl(var(--foreground)),
+    -0.4px 0 0 hsl(var(--foreground)),
+    0 0.4px 0 hsl(var(--foreground)),
+    0 -0.4px 0 hsl(var(--foreground));
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
-.dark b.rm-bionic {
-  font-weight: 800 !important;
-  color: hsl(var(--foreground)) !important;
+
+/* Persian/Arabic (RTL) glyphs can look less bold than Latin; keep the weight maxed. */
+:where([lang="fa"], [dir="rtl"]) b.rm-bionic {
+  font-weight: 900 !important;
 }
+
+/* Dark mode / night mode: pure-white bold part with a subtle glow so it pops. */
+.dark b.rm-bionic,
+html.rm-night b.rm-bionic {
+  color: hsl(0, 0%, 100%) !important;
+  text-shadow:
+    0.4px 0 0 hsl(0, 0%, 100%),
+    -0.4px 0 0 hsl(0, 0%, 100%),
+    0 0.4px 0 hsl(0, 0%, 100%),
+    0 -0.4px 0 hsl(0, 0%, 100%),
+    0 0 2px hsla(0, 0%, 100%, 0.25);
+}
+
+/* Night mode dims the whole page; lift bionic text back out a little. */
+html.rm-night b.rm-bionic {
+  filter: brightness(1.2) contrast(1.05);
+}
+
 .rm-bionic-word {
   font-weight: inherit;
 }

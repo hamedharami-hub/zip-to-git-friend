@@ -513,26 +513,28 @@ export async function upsertArticle(input: {
 }): Promise<NewsArticle> {
   const userId = (await supabase.auth.getUser()).data.user?.id;
   if (!userId) throw new Error("Not signed in.");
+
+  // Only set the body columns when they are explicitly provided so an
+  // upsert from the feed list does not wipe an already-scraped article body.
+  const payload: Record<string, unknown> = {
+    user_id: userId,
+    source_id: input.sourceId ?? null,
+    url: input.url,
+    title: input.title,
+    author: input.author ?? null,
+    excerpt: input.excerpt ?? null,
+    image_url: input.imageUrl ?? null,
+    site_name: input.siteName ?? null,
+    language: input.language ?? null,
+    published_at: input.publishedAt ?? null,
+    word_count: input.wordCount ?? 0,
+  };
+  if (input.contentMd !== undefined) payload.content_md = input.contentMd ?? null;
+  if (input.contentHtml !== undefined) payload.content_html = input.contentHtml ?? null;
+
   const { data, error } = await supabase
     .from("news_articles" as never)
-    .upsert(
-      {
-        user_id: userId,
-        source_id: input.sourceId ?? null,
-        url: input.url,
-        title: input.title,
-        author: input.author ?? null,
-        excerpt: input.excerpt ?? null,
-        content_md: input.contentMd ?? null,
-        content_html: input.contentHtml ?? null,
-        image_url: input.imageUrl ?? null,
-        site_name: input.siteName ?? null,
-        language: input.language ?? null,
-        published_at: input.publishedAt ?? null,
-        word_count: input.wordCount ?? 0,
-      } as never,
-      { onConflict: "user_id,url" },
-    )
+    .upsert(payload as never, { onConflict: "user_id,url" })
     .select()
     .single();
   if (error) throw error;

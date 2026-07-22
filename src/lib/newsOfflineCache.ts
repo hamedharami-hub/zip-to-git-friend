@@ -8,12 +8,15 @@
  * a prefetched article even when offline (otherwise the `upsertArticle`
  * call would fail and we'd have no `id` to navigate to).
  */
+import type { BookChapter } from "@/types";
 import type { NewsArticle, NewsDigest, FeedItem } from "@/lib/news";
+import { batchAnalyzeChapter } from "@/lib/batchAnalyzeChapter";
 import { scrapeArticle, upsertArticle, importUrl } from "@/lib/news";
 
 const ARTICLE_PREFIX = "news.cache.article.v1:";
 const REWRITES_PREFIX = "news.cache.rewrites.v1:";
 const URL_INDEX_KEY = "news.cache.urlIndex.v1";
+const TRANSLATION_PREFIX = "news.cache.translations.v1:";
 
 // ── Article body ─────────────────────────────────────────────────────────
 export function cacheArticle(a: NewsArticle): void {
@@ -81,7 +84,24 @@ export function isUrlCached(url: string): boolean {
   const id = getCachedIdForUrl(url);
   if (!id) return false;
   const a = getCachedArticle(id);
-  return !!a?.contentMd && a.contentMd !== "__SCRAPE_FAILED__";
+  if (!a?.contentMd || a.contentMd === "__SCRAPE_FAILED__") return false;
+  return hasArticleTranslationsCached(id);
+}
+
+export function markArticleTranslationsCached(id: string): void {
+  try {
+    localStorage.setItem(TRANSLATION_PREFIX + id, "1");
+  } catch {
+    /* */
+  }
+}
+
+export function hasArticleTranslationsCached(id: string): boolean {
+  try {
+    return localStorage.getItem(TRANSLATION_PREFIX + id) === "1";
+  } catch {
+    return false;
+  }
 }
 
 // ── Prefetch ─────────────────────────────────────────────────────────────
@@ -96,73 +116,94 @@ function isYoutubeUrl(url: string): boolean {
 
 /**
  * Download, scrape and persist a single feed item for offline use.
+ * Also fetches and caches per-paragraph translations so the full reader
+ * experience works offline.
+ *
  * Returns the resulting NewsArticle (already saved on the server + cached).
- * Skips work if the article body is already cached locally (unless force).
+ * Skips work if the article body and its translations are already cached
+ * locally (unless force).
  */
 export async function prefetchArticleForOffline(
   item: FeedItem,
-  opts: { sourceId?: string | null; force?: boolean } = {},
+  opts: {
+    sourceId?: string | null;
+    force?: boolean;
+    signal?: AbortSignal;
+    withTranslations?: boolean;
+  } = {},
 ): Promise<NewsArticle> {
-  // Fast-path: already cached with real content.
+  const withTranslations = opts.withTranslations !== false;
+
+  // Fast-path: already cached with real content and translations.
   const existingId = getCachedIdForUrl(item.url);
   if (!opts.force && existingId) {
     const ex = getCachedArticle(existingId);
-    if (ex?.contentMd && ex.contentMd !== "__SCRAPE_FAILED__") return ex;
+    if (
+      ex?.contentMd &&
+      ex.contentMd !== "__SCRAPE_FAILED__" &&
+      (!withTranslations || hasArticleTranslationsCached(existingId))
+    ) {
+      return ex;
+    }
   }
 
   // 1. Make sure the article row exists so we have a stable id.
-  const base = await upsertArticle({
-    sourceId: opts.sourceId ?? null,
-    url: item.url,
-    title: item.title,
-    excerpt: item.excerpt ?? null,
-    imageUrl: item.imageUrl ?? null,
-    siteName: item.siteName ?? null,
-    publishedAt: item.publishedAt ?? null,
-  });
+  let updated: NewsArticle | null = existingId ? getCachedArticle(existingId) : null;
+  if (!updated) {
+    updated = await upsertArticle({
+      sourceId: opts.sourceId ?? null,
+      url: item.url,
+      title: item.title,
+      excerpt: item.excerpt ?? null,
+      imageUrl: item.imageUrl ?? null,
+      siteName: item.siteName ?? null,
+      publishedAt: item.publishedAt ?? null,
+    });
+  }
 
   // 2. YouTube → transcript-to-article via importUrl; everything else → scrape.
-  let updated: NewsArticle = base;
   try {
-    if (isYoutubeUrl(item.url)) {
-      const result = await importUrl(item.url);
-      if (result.kind === "article" || result.kind === "youtube") {
-        const art = result.article;
+    if (!updated.contentMd || opts.force) {
+      if (isYoutubeUrl(item.url)) {
+        const result = await importUrl(item.url);
+        if (result.kind === "article" || result.kind === "youtube") {
+          const art = result.article;
+          updated = await upsertArticle({
+            sourceId: updated.sourceId,
+            url: updated.url,
+            title: art.title || updated.title,
+            author: art.author,
+            excerpt: art.excerpt,
+            contentMd: art.contentMd,
+            contentHtml: art.contentHtml,
+            imageUrl: art.imageUrl ?? updated.imageUrl,
+            siteName: art.siteName ?? updated.siteName,
+            language: art.language,
+            publishedAt: art.publishedAt ?? updated.publishedAt,
+            wordCount: art.wordCount,
+          });
+        }
+      } else {
+        const scraped = await scrapeArticle(item.url, {
+          excerpt: item.excerpt ?? undefined,
+          imageUrl: item.imageUrl ?? undefined,
+          siteName: item.siteName ?? undefined,
+        });
         updated = await upsertArticle({
-          sourceId: base.sourceId,
-          url: base.url,
-          title: art.title || base.title,
-          author: art.author,
-          excerpt: art.excerpt,
-          contentMd: art.contentMd,
-          contentHtml: art.contentHtml,
-          imageUrl: art.imageUrl ?? base.imageUrl,
-          siteName: art.siteName ?? base.siteName,
-          language: art.language,
-          publishedAt: art.publishedAt ?? base.publishedAt,
-          wordCount: art.wordCount,
+          sourceId: updated.sourceId,
+          url: updated.url,
+          title: scraped.title || updated.title,
+          author: scraped.author,
+          excerpt: scraped.excerpt || updated.excerpt,
+          contentMd: scraped.contentMd,
+          contentHtml: scraped.contentHtml,
+          imageUrl: scraped.imageUrl ?? updated.imageUrl,
+          siteName: scraped.siteName ?? updated.siteName,
+          language: scraped.language,
+          publishedAt: scraped.publishedAt ?? updated.publishedAt,
+          wordCount: scraped.wordCount,
         });
       }
-    } else {
-      const scraped = await scrapeArticle(item.url, {
-        excerpt: item.excerpt ?? undefined,
-        imageUrl: item.imageUrl ?? undefined,
-        siteName: item.siteName ?? undefined,
-      });
-      updated = await upsertArticle({
-        sourceId: base.sourceId,
-        url: base.url,
-        title: scraped.title || base.title,
-        author: scraped.author,
-        excerpt: scraped.excerpt || base.excerpt,
-        contentMd: scraped.contentMd,
-        contentHtml: scraped.contentHtml,
-        imageUrl: scraped.imageUrl ?? base.imageUrl,
-        siteName: scraped.siteName ?? base.siteName,
-        language: scraped.language,
-        publishedAt: scraped.publishedAt ?? base.publishedAt,
-        wordCount: scraped.wordCount,
-      });
     }
   } catch (e) {
     // Even if scrape failed, cache the bare row so the user lands on a real
@@ -172,6 +213,34 @@ export async function prefetchArticleForOffline(
   }
 
   cacheArticle(updated);
+
+  // 3. Cache paragraph translations for offline reading.
+  if (withTranslations && updated.contentHtml) {
+    const bookId = `news-${updated.id}`;
+    const chapter: BookChapter = {
+      id: `${bookId}:0`,
+      bookId,
+      index: 0,
+      title: updated.title,
+      html: updated.contentHtml,
+      text: updated.contentMd ?? "",
+      wordCount: updated.wordCount ?? 0,
+    };
+    try {
+      if (opts.signal?.aborted) throw new Error("cancelled");
+      const progress = await batchAnalyzeChapter(bookId, chapter, {
+        concurrency: 1,
+        signal: opts.signal,
+      });
+      if (progress.failed === 0) {
+        markArticleTranslationsCached(updated.id);
+      }
+    } catch {
+      // Translations are optional for offline; the article body is already cached.
+      console.warn("[news offline] paragraph translation prefetch failed", item.url);
+    }
+  }
+
   return updated;
 }
 
@@ -217,6 +286,8 @@ export async function prefetchManyForOffline(
             await prefetchArticleForOffline(item, {
               sourceId: opts.sourceIdByUrl?.(item.url) ?? null,
               force: opts.force,
+              signal: opts.signal,
+              withTranslations: true,
             });
           } catch (e) {
             failed += 1;

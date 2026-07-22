@@ -4,6 +4,7 @@ import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
 import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
 import { injectArticleImages } from "@/lib/injectArticleImages";
 import { rewriteKey } from "@/lib/news";
+import { markArticleTranslationsCached } from "@/lib/newsOfflineCache";
 import { markSeen } from "@/lib/seenArticles";
 import type {
   BookAIModelRef,
@@ -117,6 +118,9 @@ export function useArticleTranslation({
         if (cancelled) return;
         emitChapterAnalyses(activeBookId, 0, final.results);
         await buildFaText();
+        if (articleId && activeBookId === `news-${articleId}` && final.failed === 0) {
+          markArticleTranslationsCached(articleId);
+        }
         if (articleUrl) markSeen(articleUrl);
       } catch {
         await buildFaText();

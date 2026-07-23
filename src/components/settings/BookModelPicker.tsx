@@ -2,7 +2,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -32,19 +34,25 @@ export function BookModelPicker({ label, hint, value, onChange, options }: BookM
         </SelectTrigger>
         <SelectContent>
           {Object.entries(groups).map(([group, items]) => (
-            <div key={group}>
-              <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+            <SelectGroup key={group}>
+              <SelectLabel className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                 {group}
-              </div>
+              </SelectLabel>
               {items.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
+                <SelectItem key={o.value} value={o.value} disabled={o.disabled}>
                   <span className="flex flex-col">
                     <span>{o.label}</span>
-                    {o.hint && <span className="text-xs text-muted-foreground">{o.hint}</span>}
+                    {(o.hint || o.disabledReason) && (
+                      <span
+                        className={`text-xs ${o.disabled ? "text-destructive/70" : "text-muted-foreground"}`}
+                      >
+                        {o.disabled ? o.disabledReason : o.hint}
+                      </span>
+                    )}
                   </span>
                 </SelectItem>
               ))}
-            </div>
+            </SelectGroup>
           ))}
         </SelectContent>
       </Select>

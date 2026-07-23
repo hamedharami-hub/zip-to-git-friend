@@ -121,6 +121,48 @@ async function fetchGeminiModels(apiKey: string): Promise<ModelEntry[]> {
 
 // ─── Public API ────────────────────────────────────────────────────────────
 
+export interface ProviderRefreshResult {
+  provider: "gemini" | "groq";
+  geminiCount?: number;
+  groqChatCount?: number;
+  groqWhisperCount?: number;
+}
+
+/** Refresh the Gemini model list for the given API key. */
+export async function refreshGeminiModels(
+  apiKey: string,
+  existing?: AppSettings["customModels"],
+): Promise<{ patch: Partial<AppSettings>; result: ProviderRefreshResult }> {
+  const list = await fetchGeminiModels(apiKey.trim());
+  const next: NonNullable<AppSettings["customModels"]> = {
+    ...(existing ?? {}),
+    gemini: list,
+    refreshedAt: Date.now(),
+  };
+  return {
+    patch: { customModels: next },
+    result: { provider: "gemini", geminiCount: list.length },
+  };
+}
+
+/** Refresh the Groq chat/whisper model lists for the given API key. */
+export async function refreshGroqModels(
+  apiKey: string,
+  existing?: AppSettings["customModels"],
+): Promise<{ patch: Partial<AppSettings>; result: ProviderRefreshResult }> {
+  const { chat, whisper } = await fetchGroqModels(apiKey.trim());
+  const next: NonNullable<AppSettings["customModels"]> = {
+    ...(existing ?? {}),
+    groqChat: chat,
+    groqWhisper: whisper,
+    refreshedAt: Date.now(),
+  };
+  return {
+    patch: { customModels: next },
+    result: { provider: "groq", groqChatCount: chat.length, groqWhisperCount: whisper.length },
+  };
+}
+
 export async function refreshAllModels(
   settings: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
 ): Promise<{ patch: Partial<AppSettings>; result: RefreshResult }> {
@@ -133,15 +175,14 @@ export async function refreshAllModels(
   let groqChatCount = 0;
   let groqWhisperCount = 0;
 
-  // Run in parallel — they're independent.
   const tasks: Promise<void>[] = [];
 
   if (settings.geminiApiKey?.trim()) {
     tasks.push(
-      fetchGeminiModels(settings.geminiApiKey.trim())
-        .then((list) => {
-          next.gemini = list;
-          geminiCount = list.length;
+      refreshGeminiModels(settings.geminiApiKey.trim(), settings.customModels)
+        .then(({ patch, result }) => {
+          Object.assign(next, patch.customModels);
+          geminiCount = result.geminiCount ?? 0;
         })
         .catch((e) => {
           errors.push(`Gemini: ${e instanceof Error ? e.message : String(e)}`);
@@ -153,12 +194,11 @@ export async function refreshAllModels(
 
   if (settings.groqApiKey?.trim()) {
     tasks.push(
-      fetchGroqModels(settings.groqApiKey.trim())
-        .then(({ chat, whisper }) => {
-          next.groqChat = chat;
-          next.groqWhisper = whisper;
-          groqChatCount = chat.length;
-          groqWhisperCount = whisper.length;
+      refreshGroqModels(settings.groqApiKey.trim(), settings.customModels)
+        .then(({ patch, result }) => {
+          Object.assign(next, patch.customModels);
+          groqChatCount = result.groqChatCount ?? 0;
+          groqWhisperCount = result.groqWhisperCount ?? 0;
         })
         .catch((e) => {
           errors.push(`Groq: ${e instanceof Error ? e.message : String(e)}`);

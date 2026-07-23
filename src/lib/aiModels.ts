@@ -29,6 +29,8 @@ export interface ModelOption {
   value: string;
   label: string;
   hint?: string;
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export const GEMINI_MODELS: { value: GeminiModel; label: string; hint?: string }[] = [
@@ -54,86 +56,94 @@ export const GROQ_WHISPER_MODELS: { value: GroqWhisperModel; label: string; hint
 
 /** Merge built-in defaults with any custom (refreshed) entries from settings.
  *  Custom entries take precedence on duplicate `value`. */
-function mergeModels<T extends { value: string; label: string; hint?: string }>(
-  defaults: T[],
-  custom?: { value: string; label: string; hint?: string }[],
-): { value: string; label: string; hint?: string }[] {
-  const map = new Map<string, { value: string; label: string; hint?: string }>();
-  for (const d of defaults) map.set(d.value, { value: d.value, label: d.label, hint: d.hint });
-  if (custom) for (const c of custom) map.set(c.value, c);
+function mergeModels(defaults: ModelOption[], custom?: ModelOption[]): ModelOption[] {
+  const map = new Map<string, ModelOption>();
+  for (const d of defaults) map.set(d.value, { ...d });
+  if (custom) for (const c of custom) map.set(c.value, { ...c });
   return Array.from(map.values());
 }
 
 /** Filter a merged model list using the user's per-provider hidden list. */
-function applyHidden(
-  list: { value: string; label: string; hint?: string }[],
-  hidden?: string[],
-): { value: string; label: string; hint?: string }[] {
+function applyHidden(list: ModelOption[], hidden?: string[]): ModelOption[] {
   if (!hidden || hidden.length === 0) return list;
   const set = new Set(hidden);
   return list.filter((m) => !set.has(m.value));
 }
 
 /** Build the FULL list (no hidden filter) — used by the visibility editor. */
-export function getAllGeminiModels(s?: Pick<AppSettings, "customModels">) {
+export function getAllGeminiModels(s?: Pick<AppSettings, "customModels">): ModelOption[] {
   return mergeModels(GEMINI_MODELS, s?.customModels?.gemini);
 }
-export function getAllGroqChatModels(s?: Pick<AppSettings, "customModels">) {
+export function getAllGroqChatModels(s?: Pick<AppSettings, "customModels">): ModelOption[] {
   return mergeModels(GROQ_CHAT_MODELS, s?.customModels?.groqChat);
 }
-export function getAllGroqWhisperModels(s?: Pick<AppSettings, "customModels">) {
+export function getAllGroqWhisperModels(s?: Pick<AppSettings, "customModels">): ModelOption[] {
   return mergeModels(GROQ_WHISPER_MODELS, s?.customModels?.groqWhisper);
 }
-export function getAllGatewayModels(s?: Pick<AppSettings, "customModels">) {
+export function getAllGatewayModels(s?: Pick<AppSettings, "customModels">): ModelOption[] {
   return mergeModels(BOOK_ANALYSIS_MODELS, s?.customModels?.gateway);
 }
 
 /** Gemini chat models — built-ins merged with refreshed list, minus hidden. */
 export function getGeminiModels(
-  settings?: Pick<AppSettings, "customModels">,
-): { value: string; label: string; hint?: string }[] {
+  settings?: Pick<AppSettings, "geminiApiKey" | "customModels">,
+): ModelOption[] {
   return applyHidden(getAllGeminiModels(settings), settings?.customModels?.hidden?.gemini);
 }
 
 /** Groq chat models — built-ins merged with refreshed list, minus hidden. */
 export function getGroqChatModels(
-  settings?: Pick<AppSettings, "customModels">,
-): { value: string; label: string; hint?: string }[] {
+  settings?: Pick<AppSettings, "groqApiKey" | "customModels">,
+): ModelOption[] {
   return applyHidden(getAllGroqChatModels(settings), settings?.customModels?.hidden?.groqChat);
 }
 
-/** Groq Whisper models — built-ins merged with refreshed list, minus hidden. */
+/** Groq Whisper models — built-ins merged with refreshed list, minus hidden.
+ *  Disabled if no Groq key is configured. */
 export function getGroqWhisperModels(
-  settings?: Pick<AppSettings, "customModels">,
-): { value: string; label: string; hint?: string }[] {
-  return applyHidden(
+  settings?: Pick<AppSettings, "groqApiKey" | "customModels">,
+): ModelOption[] {
+  const list = applyHidden(
     getAllGroqWhisperModels(settings),
     settings?.customModels?.hidden?.groqWhisper,
   );
+  const noKey = !settings?.groqApiKey?.trim();
+  return withDisabled(list, noKey, "ابتدا کلید Groq را وارد کنید");
 }
 
 /** Gateway (Lovable AI) models — built-ins merged with refreshed list, minus hidden. */
-export function getGatewayModels(
-  settings?: Pick<AppSettings, "customModels">,
-): { value: string; label: string; hint?: string }[] {
+export function getGatewayModels(settings?: Pick<AppSettings, "customModels">): ModelOption[] {
   return applyHidden(getAllGatewayModels(settings), settings?.customModels?.hidden?.gateway);
+}
+
+function withDisabled(list: ModelOption[], disabled: boolean, reason?: string): ModelOption[] {
+  if (!disabled) return list;
+  return list.map((m) => ({ ...m, disabled: true, disabledReason: reason ?? m.disabledReason }));
 }
 
 /** Build a flat list of "provider:model" options for chat-style tasks. */
 export function chatModelOptions(
-  settings?: Pick<AppSettings, "customModels">,
-): { value: string; label: string; hint?: string }[] {
+  settings?: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
+): ModelOption[] {
+  const geminiDisabled = !settings?.geminiApiKey?.trim();
+  const groqDisabled = !settings?.groqApiKey?.trim();
   return [
-    ...getGeminiModels(settings).map((m) => ({
+    ...withDisabled(
+      getGeminiModels(settings),
+      geminiDisabled,
+      "ابتدا کلید Gemini را وارد کنید",
+    ).map((m) => ({
+      ...m,
       value: `gemini:${m.value}`,
       label: `Gemini · ${m.label}`,
-      hint: m.hint,
     })),
-    ...getGroqChatModels(settings).map((m) => ({
-      value: `groq:${m.value}`,
-      label: `Groq · ${m.label}`,
-      hint: m.hint,
-    })),
+    ...withDisabled(getGroqChatModels(settings), groqDisabled, "ابتدا کلید Groq را وارد کنید").map(
+      (m) => ({
+        ...m,
+        value: `groq:${m.value}`,
+        label: `Groq · ${m.label}`,
+      }),
+    ),
   ];
 }
 
@@ -159,6 +169,8 @@ export interface BookModelOption {
   label: string;
   hint?: string;
   group: "Lovable AI (free)" | "Gemini (your key)" | "Groq (your key)";
+  disabled?: boolean;
+  disabledReason?: string;
 }
 
 export function bookRefToValue(ref: BookAIModelRef): string {
@@ -189,13 +201,16 @@ export function coerceBookModel(
   return fallback;
 }
 
-/** Build the picker list for any book AI task, respecting which API keys
- *  the user has entered in Settings. Lovable AI Gateway is always included.
- *  Merges in any refreshed model lists from settings.customModels. */
+/** Build the picker list for any book AI task.
+ *  Lovable AI Gateway is always available. Gemini/Groq items appear even when
+ *  no key is entered so the user can see what's available, but they are
+ *  disabled until the matching API key is saved. */
 export function getAvailableBookModels(
   settings: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
 ): BookModelOption[] {
   const out: BookModelOption[] = [];
+  const geminiKey = settings.geminiApiKey?.trim();
+  const groqKey = settings.groqApiKey?.trim();
 
   // 1. Lovable AI Gateway (always available — uses LOVABLE_API_KEY in edge function).
   for (const m of getGatewayModels(settings)) {
@@ -209,9 +224,10 @@ export function getAvailableBookModels(
     });
   }
 
-  // 2. Gemini direct (only if user entered a Gemini key in Settings).
-  if (settings.geminiApiKey?.trim()) {
-    for (const m of getGeminiModels(settings)) {
+  // 2. Gemini direct (disabled until the user has entered a Gemini key).
+  const geminiModels = getGeminiModels(settings);
+  if (geminiModels.length) {
+    for (const m of geminiModels) {
       out.push({
         value: `gemini:${m.value}`,
         provider: "gemini",
@@ -219,13 +235,16 @@ export function getAvailableBookModels(
         label: m.label,
         hint: m.hint,
         group: "Gemini (your key)",
+        disabled: !geminiKey,
+        disabledReason: geminiKey ? undefined : "ابتدا کلید Gemini را وارد کنید",
       });
     }
   }
 
-  // 3. Groq direct (only if user entered a Groq key).
-  if (settings.groqApiKey?.trim()) {
-    for (const m of getGroqChatModels(settings)) {
+  // 3. Groq direct (disabled until the user has entered a Groq key).
+  const groqModels = getGroqChatModels(settings);
+  if (groqModels.length) {
+    for (const m of groqModels) {
       out.push({
         value: `groq:${m.value}`,
         provider: "groq",
@@ -233,6 +252,8 @@ export function getAvailableBookModels(
         label: m.label,
         hint: m.hint,
         group: "Groq (your key)",
+        disabled: !groqKey,
+        disabledReason: groqKey ? undefined : "ابتدا کلید Groq را وارد کنید",
       });
     }
   }

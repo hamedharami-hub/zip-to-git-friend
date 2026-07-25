@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Volume2,
   ExternalLink,
@@ -193,7 +193,7 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
     }
   };
 
-  const tokens = tokenize(text);
+  const tokens = useMemo(() => tokenize(text), [text]);
   const activeWordModel = settings.wordMeaningModel ?? settings.translateModel;
   const hasKey = !!getApiKeyFor(activeWordModel, settings);
   const statusMap = useAllWordStatus();
@@ -202,7 +202,7 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
 
   // Find character ranges of multi-word Leitner phrases inside this text so
   // each token that falls inside one gets the yellow highlight too.
-  const phraseRanges = (() => {
+  const phraseRanges = useMemo(() => {
     const ranges: Array<[number, number]> = [];
     const lower = text.toLowerCase();
     for (const k of leitnerKeys) {
@@ -216,7 +216,7 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
       }
     }
     return ranges;
-  })();
+  }, [text, leitnerKeys]);
   const isInPhraseRange = (start: number, end: number) =>
     phraseRanges.some(([s, e]) => start < e && end > s);
 

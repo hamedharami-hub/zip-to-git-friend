@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Volume2, ExternalLink, Plus, Loader2, Check, GraduationCap, EyeOff } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,6 @@ import { toast } from "sonner";
 
 interface Props {
   cue: SubtitleCue;
-  /** Current playback time in ms (used to highlight the active word). */
-  currentMs: number;
   className?: string;
   videoId?: string;
 }
@@ -48,8 +46,9 @@ function clean(w: string): string {
  * Each word is clickable → Leitner popover (translation + add).
  * Requires `cue.words` (Whisper word-level timestamps).
  */
-export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
-  const words = cue.words ?? [];
+export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, videoId }: Props) {
+  const words = useMemo(() => cue.words ?? [], [cue.words]);
+  const currentMs = useVideoStore((s) => Math.round(s.currentTime * 1000));
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const [anchorRect, setAnchorRect] = useState<{ x: number; y: number } | null>(null);
@@ -78,18 +77,28 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
   const inLeitner = !!findByFront(cleaned);
   const hasKey = !!getApiKeyFor(settings.translateModel, settings);
 
+  const cleanedWords = useMemo(
+    () =>
+      words.map((w) => ({
+        ...w,
+        key: clean(w.text).toLowerCase(),
+      })),
+    [words],
+  );
+
   // Determine which word is currently being spoken (by playback time).
-  const playingIdx = (() => {
+  const playingIdx = useMemo(() => {
     if (!words.length) return -1;
     for (let i = 0; i < words.length; i++) {
       if (currentMs >= words[i].startMs && currentMs <= words[i].endMs) return i;
     }
-    // No exact match — find last word whose end is past
+    // No exact match — current time is either before the first word, after the
+    // last word, or in a gap between words.
     for (let i = words.length - 1; i >= 0; i--) {
       if (currentMs >= words[i].endMs) return -1;
     }
     return -1;
-  })();
+  }, [currentMs, words]);
 
   useEffect(() => {
     if (!open || !cleaned) return;
@@ -145,11 +154,10 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
   return (
     <>
       <span className={className}>
-        {words.map((w, i) => {
+        {cleanedWords.map((w, i) => {
           const isPlaying = i === playingIdx;
           const isPast = playingIdx >= 0 && i < playingIdx;
-          const wKey = clean(w.text).toLowerCase();
-          const st = statusMap[wKey] ?? "new";
+          const st = statusMap[w.key] ?? "new";
           return (
             <span key={i}>
               <button
@@ -169,7 +177,7 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
               >
                 {w.text}
               </button>
-              {i < words.length - 1 && " "}
+              {i < cleanedWords.length - 1 && " "}
             </span>
           );
         })}
@@ -285,4 +293,4 @@ export function KaraokeSubtitle({ cue, currentMs, className, videoId }: Props) {
       </Popover>
     </>
   );
-}
+});

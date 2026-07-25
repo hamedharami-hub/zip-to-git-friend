@@ -1,6 +1,5 @@
 import type { SubtitleCue } from "@/types";
 import { useSettingsStore } from "@/store/settingsStore";
-import { useVideoStore } from "@/store/videoStore";
 import { useLeitnerStore } from "@/store/leitnerStore";
 import { cn } from "@/lib/utils";
 import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
@@ -47,8 +46,6 @@ export const SubtitleRenderer = memo(function SubtitleRenderer({
   const fontSize = useSettingsStore((s) => s.settings.fontSize);
   const showInlineTranslation = useSettingsStore((s) => s.settings.showInlineTranslation);
   const sizeClass = FONT_SIZE[fontSize];
-  const currentTime = useVideoStore((s) => s.currentTime);
-  const currentMs = currentTime * 1000;
 
   const cards = useLeitnerStore((s) => s.cards);
   const addCard = useLeitnerStore((s) => s.addCard);
@@ -126,7 +123,6 @@ export const SubtitleRenderer = memo(function SubtitleRenderer({
         ) : interactivePrimary && hasWords ? (
           <KaraokeSubtitle
             cue={primaryCue}
-            currentMs={currentMs}
             videoId={videoId}
             className={cn(baseClass, sizeClass, "font-medium")}
           />

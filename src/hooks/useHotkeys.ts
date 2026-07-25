@@ -6,6 +6,8 @@ export interface PlayerHotkeyHandlers {
   changeVolume?: (delta: number) => void;
   toggleMute?: () => void;
   cycleSpeed?: () => void;
+  toggleFullscreen?: () => void;
+  togglePiP?: () => void;
 }
 
 const SEEK_SECONDS = 10;
@@ -78,6 +80,14 @@ export function usePlayerHotkeys(handlers: PlayerHotkeyHandlers, enabled = true)
             e.preventDefault();
             handlersRef.current.cycleSpeed?.();
           }
+          break;
+        case "KeyF":
+          e.preventDefault();
+          handlersRef.current.toggleFullscreen?.();
+          break;
+        case "KeyP":
+          e.preventDefault();
+          handlersRef.current.togglePiP?.();
           break;
       }
     };

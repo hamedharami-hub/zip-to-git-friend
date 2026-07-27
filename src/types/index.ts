@@ -19,6 +19,8 @@ export interface Video {
   mediaType?: "video" | "audio";
   /** Best-effort mime type for audio playback after reload. */
   mimeType?: string;
+  /** Optional base64/JPEG thumbnail captured at import for the library grid. */
+  thumbnailUrl?: string;
 }
 
 export interface SubtitleCue {

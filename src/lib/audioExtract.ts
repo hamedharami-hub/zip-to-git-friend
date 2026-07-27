@@ -6,7 +6,8 @@
  * into time-aligned chunks so each chunk stays well under provider upload limits
  * (Groq currently 25 MB; we target ~18 MB per chunk to leave headroom).
  *
- * No external libs required — fully runs in the browser.
+ * The heavy work is off-loaded to a Web Worker when possible; if the browser does
+ * not support WebAudio in workers, we fall back to the main thread.
  */
 
 const TARGET_SAMPLE_RATE = 16000; // mono 16 kHz is plenty for speech
@@ -98,12 +99,8 @@ function encodeWav(samples: Float32Array, sampleRate: number): Blob {
   return new Blob([buffer], { type: "audio/wav" });
 }
 
-/**
- * Extract mono 16 kHz WAV chunks from any audio/video file.
- * Returns one or more chunks each well under the upload size limit, with
- * absolute time offsets so transcription cues can be re-aligned.
- */
-export async function extractAudioChunks(file: File | Blob): Promise<AudioChunk[]> {
+/** Main-thread implementation used as a fallback. */
+async function extractAudioChunksMain(file: File | Blob): Promise<AudioChunk[]> {
   const samples = await decodeToMono16k(file);
   const totalBytes = samples.length * BYTES_PER_SAMPLE;
   const samplesPerChunk = Math.floor(TARGET_CHUNK_BYTES / BYTES_PER_SAMPLE);
@@ -124,4 +121,44 @@ export async function extractAudioChunks(file: File | Blob): Promise<AudioChunk[
     });
   }
   return chunks;
+}
+
+/** Use a Web Worker when supported, otherwise fall back to the main thread. */
+export async function extractAudioChunks(file: File | Blob): Promise<AudioChunk[]> {
+  if (typeof Worker === "undefined") {
+    return extractAudioChunksMain(file);
+  }
+
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./audioExtract.worker.ts", import.meta.url), {
+      type: "module",
+    });
+
+    worker.onmessage = (
+      event: MessageEvent<{ type: string; chunks?: AudioChunk[]; message?: string }>,
+    ) => {
+      worker.terminate();
+      const { type, chunks, message } = event.data;
+      if (type === "complete" && chunks) {
+        resolve(chunks);
+      } else if (type === "error") {
+        reject(new Error(message ?? "Audio extraction failed in worker."));
+      } else {
+        reject(new Error("Unexpected message from audio extraction worker."));
+      }
+    };
+
+    worker.onerror = (err) => {
+      worker.terminate();
+      reject(err);
+    };
+
+    worker.postMessage({ file });
+  }).catch((err) => {
+    // If the worker fails (e.g. AudioContext is not available inside a worker in
+    // this browser), run the same logic on the main thread. This keeps the
+    // feature working everywhere, at the cost of blocking the UI for large files.
+    console.warn("Audio worker failed, falling back to main thread:", err);
+    return extractAudioChunksMain(file);
+  });
 }

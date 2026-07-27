@@ -9,46 +9,71 @@ import { addListeningSeconds } from "@/lib/db";
  * on pause / unmount / page-hide.
  */
 export function useListeningTracker(media: HTMLMediaElement | null) {
-  const lastTickRef = useRef<number | null>(null);
   const accumulatedRef = useRef(0);
 
   useEffect(() => {
     if (!media) return;
-    let raf = 0;
 
     const flush = () => {
       const seconds = accumulatedRef.current;
       accumulatedRef.current = 0;
-      lastTickRef.current = null;
       if (seconds >= 1) {
         addListeningSeconds(seconds).catch(() => undefined);
       }
     };
 
+    let interval: ReturnType<typeof setInterval> | null = null;
+    let lastTick: number | null = null;
+
     const tick = () => {
-      const now = performance.now();
       if (!media.paused && media.readyState >= 2 && document.visibilityState === "visible") {
-        if (lastTickRef.current !== null) {
-          const dt = (now - lastTickRef.current) / 1000;
-          // Cap dt at 2s to avoid huge jumps (tab backgrounded etc.)
+        const now = performance.now();
+        if (lastTick !== null) {
+          const dt = (now - lastTick) / 1000;
           if (dt > 0 && dt < 2) accumulatedRef.current += dt;
         }
-        lastTickRef.current = now;
+        lastTick = now;
+        if (accumulatedRef.current >= 10) flush();
       } else {
-        lastTickRef.current = null;
+        lastTick = null;
       }
-      // Persist every ~10 accumulated seconds to avoid losing data on crash.
-      if (accumulatedRef.current >= 10) flush();
-      raf = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
 
-    const onHide = () => flush();
+    const onPlay = () => {
+      lastTick = performance.now();
+      if (!interval) interval = setInterval(tick, 1000);
+    };
+
+    const onPause = () => {
+      tick();
+      flush();
+      lastTick = null;
+    };
+
+    const onHide = () => {
+      tick();
+      flush();
+      lastTick = null;
+    };
+
+    media.addEventListener("play", onPlay);
+    media.addEventListener("playing", onPlay);
+    media.addEventListener("pause", onPause);
+    media.addEventListener("ended", onPause);
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("pagehide", onHide);
 
+    // If the media is already playing when the hook mounts, start ticking.
+    if (!media.paused) {
+      onPlay();
+    }
+
     return () => {
-      cancelAnimationFrame(raf);
+      if (interval) clearInterval(interval);
+      media.removeEventListener("play", onPlay);
+      media.removeEventListener("playing", onPlay);
+      media.removeEventListener("pause", onPause);
+      media.removeEventListener("ended", onPause);
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("pagehide", onHide);
       flush();

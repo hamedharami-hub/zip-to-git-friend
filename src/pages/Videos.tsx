@@ -45,6 +45,7 @@ import { importLLP } from "@/lib/llpPack";
 import { validateMediaFile } from "@/lib/fileValidation";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { captureVideoThumbnail } from "@/lib/videoThumbnail";
 
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -141,6 +142,10 @@ const Videos = () => {
       v.onerror = () => resolve(0);
     });
 
+    const thumbnailUrl = file.type.startsWith("video/")
+      ? await captureVideoThumbnail(blobUrl, 0.5)
+      : undefined;
+
     const video: Video = {
       id,
       title: file.name.replace(/\.[^.]+$/, ""),
@@ -153,6 +158,7 @@ const Videos = () => {
       createdAt: Date.now(),
       mediaType: "video",
       mimeType: file.type || "video/mp4",
+      thumbnailUrl,
     };
     try {
       await saveVideoBlob(id, file);
@@ -445,10 +451,19 @@ const Videos = () => {
                 >
                   <Link
                     to={`/player/${v.id}`}
-                    className="aspect-video bg-muted flex items-center justify-center"
+                    className="aspect-video bg-muted flex items-center justify-center overflow-hidden"
                     aria-label={`Open ${v.title}`}
                   >
-                    <Film className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+                    {v.thumbnailUrl ? (
+                      <img
+                        src={v.thumbnailUrl}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <Film className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+                    )}
                   </Link>
                   <div className="p-3 flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">

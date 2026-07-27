@@ -4,15 +4,12 @@ import { useVideoStore } from "@/store/videoStore";
 import { useSubtitleStore } from "@/store/subtitleStore";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useLoopStore } from "@/store/loopStore";
-import { useActiveCues } from "@/hooks/useVideoSync";
+import { useVideoSync } from "@/hooks/useVideoSync";
 import { usePlayerHotkeys } from "@/hooks/useHotkeys";
-import { useLoop } from "@/hooks/useLoop";
-import { useAutoPauseAtCueEnd } from "@/hooks/useAutoPauseAtCueEnd";
 import { useListeningTracker } from "@/hooks/useListeningTracker";
 import { PlayerControls } from "./PlayerControls";
 import { LoopControls } from "./LoopControls";
 import { BlindListenBar } from "./BlindListenBar";
-import { useBlindListen } from "@/hooks/useBlindListen";
 import { SubtitleRenderer } from "@/components/subtitles/SubtitleRenderer";
 import { KaraokeSubtitle } from "@/components/subtitles/KaraokeSubtitle";
 import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
@@ -85,14 +82,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   /** Pending external seek (seconds) — applied once metadata is loaded. */
   const pendingSeekRef = useRef<{ time: number; play: boolean } | null>(null);
 
-  const { activePrimary, activeSecondary } = useActiveCues(videoEl, primary, secondary);
-  useLoop(videoEl);
-  // Auto-pause at cue end (suppressed when loop is running so loop owns playback).
-  useAutoPauseAtCueEnd(videoEl, activePrimary, {
-    enabled: autoPauseAtCueEnd,
-    suppressed: loopEnabled,
-  });
-  const blind = useBlindListen(videoEl, activePrimary, primary?.cues ?? []);
+  const { activePrimary, activeSecondary, blind } = useVideoSync(videoEl, primary, secondary);
   useListeningTracker(videoEl);
 
   // Mask cues based on loop visibility for the current iteration.

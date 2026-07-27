@@ -29,7 +29,7 @@ import {
   PauseCircle,
   Loader2,
 } from "lucide-react";
-import { useMediaSession } from "@/hooks/useMediaSession";
+import { useMediaSession, useScreenWakeLock } from "@/hooks/useMediaSession";
 
 interface VideoPlayerProps {
   videoId?: string;
@@ -54,6 +54,7 @@ export const VideoPlayer = memo(function VideoPlayer({
   }, []);
   const containerRef = useRef<HTMLDivElement>(null);
   const current = useVideoStore((s) => s.current);
+  const isPlaying = useVideoStore((s) => s.isPlaying);
   const setCurrentTime = useVideoStore((s) => s.setCurrentTime);
   const setIsPlaying = useVideoStore((s) => s.setIsPlaying);
   const updateCurrent = useVideoStore((s) => s.updateCurrent);
@@ -260,6 +261,9 @@ export const VideoPlayer = memo(function VideoPlayer({
     !!current,
   );
 
+  // Keep the screen awake while the video is actively playing.
+  useScreenWakeLock(isPlaying);
+
   // Periodic save (every 5s) + immediate flush on pause / tab-hide / unload
   // so the last position is never more than a few seconds stale even if the
   // user kills the tab or backgrounds the app.
@@ -332,6 +336,8 @@ export const VideoPlayer = memo(function VideoPlayer({
       if (!v) return;
       v.volume = Math.max(0, Math.min(1, v.volume + delta));
     },
+    toggleFullscreen,
+    togglePiP,
   });
 
   // Sync fullscreen state with browser events (handles ESC, system gesture, swipe-down on Android).
@@ -420,6 +426,23 @@ export const VideoPlayer = memo(function VideoPlayer({
     } catch {
       /* no-op */
     }
+  }, []);
+
+  const togglePiP = useCallback(() => {
+    const v = videoRef.current;
+    if (!v || !document.pictureInPictureEnabled) return;
+    const docAny = document as Document & {
+      pictureInPictureElement?: Element | null;
+      exitPictureInPicture?: () => Promise<void>;
+    };
+    if (docAny.pictureInPictureElement === v) {
+      docAny.exitPictureInPicture?.().catch(() => undefined);
+      return;
+    }
+    const vAny = v as HTMLVideoElement & {
+      requestPictureInPicture?: () => Promise<PictureInPictureWindow>;
+    };
+    vAny.requestPictureInPicture?.().catch(() => undefined);
   }, []);
 
   const onLoaded = useCallback(
@@ -576,7 +599,6 @@ export const VideoPlayer = memo(function VideoPlayer({
   if (!current) return null;
 
   const isAudio = current.mediaType === "audio";
-  const currentMs = (videoEl?.currentTime ?? 0) * 1000;
 
   return (
     <div
@@ -740,7 +762,6 @@ export const VideoPlayer = memo(function VideoPlayer({
                 ) : visiblePrimary.words && visiblePrimary.words.length > 0 ? (
                   <KaraokeSubtitle
                     cue={visiblePrimary}
-                    currentMs={currentMs}
                     videoId={videoId}
                     className="block text-center text-[15px] sm:text-base font-medium leading-tight tracking-tight"
                   />

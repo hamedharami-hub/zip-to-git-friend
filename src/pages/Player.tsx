@@ -262,9 +262,9 @@ const Player = () => {
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
         <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          <Link to="/">
+          <Link to="/videos">
             <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Library
+              <ArrowLeft className="h-4 w-4 mr-2" /> Videos
             </Button>
           </Link>
           <h1 className="text-base font-medium truncate flex-1 text-center">

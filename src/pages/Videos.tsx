@@ -12,8 +12,18 @@ import {
   Play,
   Package,
   ArrowLeft,
+  Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   getAllVideos,
   saveVideo,
@@ -49,6 +59,9 @@ const Videos = () => {
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastVideoId, setLastVideoId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"recent" | "title" | "duration">("recent");
+  const [dragActive, setDragActive] = useState(false);
   const cards = useLeitnerStore((s) => s.cards);
   const stats = useMemo(() => {
     const now = Date.now();
@@ -168,6 +181,49 @@ const Videos = () => {
     [lastVideoId, videos],
   );
 
+  const filteredVideos = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let list = term
+      ? videos.filter(
+          (v) => v.title.toLowerCase().includes(term) || v.fileName.toLowerCase().includes(term),
+        )
+      : videos;
+    if (sortBy === "title") {
+      list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    } else if (sortBy === "duration") {
+      list = [...list].sort((a, b) => (b.duration || 0) - (a.duration || 0));
+    } else {
+      list = [...list].sort((a, b) => b.createdAt - a.createdAt);
+    }
+    return list;
+  }, [videos, search, sortBy]);
+
+  const handleFiles = async (files: FileList | null) => {
+    const f = files?.[0];
+    if (!f) return;
+    if (f.name.toLowerCase().endsWith(".llp")) {
+      await handleImportLLP(f);
+    } else {
+      await handleUpload(f);
+    }
+  };
+
+  const onDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(true);
+  };
+
+  const onDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+  };
+
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    void handleFiles(e.dataTransfer.files);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <header className="border-b border-border">
@@ -205,8 +261,20 @@ const Videos = () => {
 
       <PullToRefreshIndicator progress={ptr.progress} refreshing={ptr.refreshing} />
 
-      <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
-        <section className="flex items-center justify-between gap-4">
+      <main
+        className="relative max-w-[1400px] mx-auto px-6 py-8 space-y-6"
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {dragActive && (
+          <div className="absolute inset-0 z-50 m-4 rounded-xl border-2 border-dashed border-primary bg-primary/10 flex flex-col items-center justify-center text-primary">
+            <Upload className="h-10 w-10 mb-2" />
+            <p className="font-medium">Drop video or .llp file here</p>
+          </div>
+        )}
+
+        <section className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold">Your video library</h2>
             <p className="text-sm text-muted-foreground inline-flex items-center gap-2 flex-wrap">
@@ -214,6 +282,30 @@ const Videos = () => {
               <SyncBadge />
             </p>
           </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 sm:flex-none">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search videos…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
+              <SelectTrigger className="w-full sm:w-40">
+                <ArrowUpDown className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="recent">Most recent</SelectItem>
+                <SelectItem value="title">Title (A–Z)</SelectItem>
+                <SelectItem value="duration">Longest first</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <input
             ref={fileRef}
             type="file"
@@ -271,6 +363,16 @@ const Videos = () => {
                   Resume from {formatDur(lastVideo.lastPosition)} · {formatDur(lastVideo.duration)}{" "}
                   total
                 </p>
+                {lastVideo.duration > 0 && (
+                  <div className="mt-1.5 h-1 w-full bg-primary/20 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full"
+                      style={{
+                        width: `${Math.min(100, (lastVideo.lastPosition / lastVideo.duration) * 100)}%`,
+                      }}
+                    />
+                  </div>
+                )}
               </div>
             </Link>
           </section>
@@ -329,45 +431,67 @@ const Videos = () => {
               </Button>
             }
           />
+        ) : filteredVideos.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No videos match your search.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {videos.map((v) => (
-              <article
-                key={v.id}
-                className="group rounded-lg border border-border bg-card overflow-hidden flex flex-col transition-colors hover:border-primary/50"
-              >
-                <Link
-                  to={`/player/${v.id}`}
-                  className="aspect-video bg-muted flex items-center justify-center"
-                  aria-label={`Open ${v.title}`}
+            {filteredVideos.map((v) => {
+              const progressPct =
+                v.duration > 0 ? Math.min(100, (v.lastPosition / v.duration) * 100) : 0;
+              return (
+                <article
+                  key={v.id}
+                  className="group rounded-lg border border-border bg-card overflow-hidden flex flex-col transition-colors hover:border-primary/50"
                 >
-                  <Film className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-                </Link>
-                <div className="p-3 flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <Link to={`/player/${v.id}`} className="block">
-                      <h3 className="font-medium truncate" title={v.title}>
-                        {v.title}
-                      </h3>
-                    </Link>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {v.fileName} · {formatDur(v.duration)}
-                    </p>
+                  <Link
+                    to={`/player/${v.id}`}
+                    className="aspect-video bg-muted flex items-center justify-center"
+                    aria-label={`Open ${v.title}`}
+                  >
+                    <Film className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
+                  </Link>
+                  <div className="p-3 flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <Link to={`/player/${v.id}`} className="block">
+                        <h3 className="font-medium truncate" title={v.title}>
+                          {v.title}
+                        </h3>
+                      </Link>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {v.fileName} · {formatDur(v.duration)}
+                        {v.lastPosition > 5 && v.duration > 0 && (
+                          <>
+                            {" · "}
+                            <span className="text-primary">{formatDur(v.lastPosition)}</span>
+                            {" / "}
+                            {formatDur(v.duration)}
+                          </>
+                        )}
+                      </p>
+                      {v.duration > 0 && (
+                        <div className="mt-1.5 h-1 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${progressPct}%` }}
+                          />
+                        </div>
+                      )}
+                    </div>
+                    <ConfirmDialog
+                      title="Delete this video?"
+                      description={`"${v.title}" will be removed from your library. Subtitles and analyses for this video will also be deleted.`}
+                      confirmLabel="Delete"
+                      onConfirm={() => handleDelete(v.id)}
+                      trigger={
+                        <Button size="icon" variant="ghost" aria-label={`Delete ${v.title}`}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
                   </div>
-                  <ConfirmDialog
-                    title="Delete this video?"
-                    description={`"${v.title}" will be removed from your library. Subtitles and analyses for this video will also be deleted.`}
-                    confirmLabel="Delete"
-                    onConfirm={() => handleDelete(v.id)}
-                    trigger={
-                      <Button size="icon" variant="ghost" aria-label={`Delete ${v.title}`}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         )}
       </main>
@@ -376,9 +500,13 @@ const Videos = () => {
 };
 
 function formatDur(s: number) {
-  if (!s) return "—";
-  const m = Math.floor(s / 60);
+  if (!s || !Number.isFinite(s) || s < 0) return "—";
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
   const sec = Math.floor(s % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  }
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 

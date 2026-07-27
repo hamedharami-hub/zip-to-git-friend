@@ -10,6 +10,7 @@ export const BROWSER_LANG_KEY = "llvp-tts-browser-lang";
 export const ELEVEN_VOICE_KEY = "llvp-tts-eleven-voice";
 export const ELEVEN_MODEL_KEY = "llvp-tts-eleven-model";
 export const TTS_LANG_KEY = "llvp-tts-lang";
+export const RATE_KEY = "llvp-tts-rate";
 
 export type Engine =
   | "browser"

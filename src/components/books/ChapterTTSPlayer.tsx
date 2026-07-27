@@ -70,6 +70,7 @@ import {
   ELEVEN_VOICE_KEY,
   ELEVEN_MODEL_KEY,
   TTS_LANG_KEY,
+  RATE_KEY,
   type Engine,
   isEngine,
   fmtTime as fmt,
@@ -182,7 +183,22 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   const chunkUrlsRef = useRef<string[]>([]);
   const previewAudioRef = useRef<HTMLAudioElement | null>(null);
   const [playingChunk, setPlayingChunk] = useState<number | null>(null);
-  const [rate, setRate] = useState(1);
+  const [rate, setRate] = useState(() => {
+    try {
+      const saved = localStorage.getItem(RATE_KEY);
+      const n = saved ? Number.parseFloat(saved) : NaN;
+      return Number.isFinite(n) && n >= 0.5 && n <= 3 ? n : 1;
+    } catch {
+      return 1;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(RATE_KEY, rate.toString());
+    } catch {
+      /* noop */
+    }
+  }, [rate]);
 
   function revokeChunkUrls() {
     for (const u of chunkUrlsRef.current) {

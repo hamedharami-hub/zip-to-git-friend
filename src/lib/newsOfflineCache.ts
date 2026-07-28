@@ -130,9 +130,11 @@ export async function prefetchArticleForOffline(
     force?: boolean;
     signal?: AbortSignal;
     withTranslations?: boolean;
+    withImages?: boolean;
   } = {},
 ): Promise<NewsArticle> {
   const withTranslations = opts.withTranslations !== false;
+  const withImages = opts.withImages !== false;
 
   // Fast-path: already cached with real content and translations.
   const existingId = getCachedIdForUrl(item.url);
@@ -214,7 +216,16 @@ export async function prefetchArticleForOffline(
 
   cacheArticle(updated);
 
-  // 3. Cache paragraph translations for offline reading.
+  // 3. Warm image cache for offline thumbnails and article header images.
+  if (withImages) {
+    const imageUrls = [item.imageUrl, updated.imageUrl].filter((u): u is string => !!u);
+    if (updated.contentHtml) {
+      imageUrls.push(...extractInlineImageUrls(updated.contentHtml, updated.url));
+    }
+    void warmImageCache(imageUrls, opts.signal, 3);
+  }
+
+  // 4. Cache paragraph translations for offline reading.
   if (withTranslations && updated.contentHtml) {
     const bookId = `news-${updated.id}`;
     const chapter: BookChapter = {
@@ -302,4 +313,80 @@ export async function prefetchManyForOffline(
   }
   await Promise.all(workers);
   return { done, total, failed };
+}
+
+// ─────────── Image cache warming helpers ───────────
+
+function isValidImageUrl(url: string): boolean {
+  if (!url || url.startsWith("data:") || url.startsWith("blob:")) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function resolveUrl(base: string, src: string): string | null {
+  try {
+    return new URL(src, base).href;
+  } catch {
+    return null;
+  }
+}
+
+function extractInlineImageUrls(html: string, baseUrl: string, max = 5): string[] {
+  const urls: string[] = [];
+  if (!html) return urls;
+  const re = /<img[^>]+src=["']([^"'>]+)["']/gi;
+  let match;
+  while ((match = re.exec(html)) && urls.length < max) {
+    const resolved = resolveUrl(baseUrl, match[1]);
+    if (resolved) urls.push(resolved);
+  }
+  return urls;
+}
+
+function warmImageCache(urls: string[], signal?: AbortSignal, concurrency = 3): Promise<void> {
+  if (typeof Image === "undefined" || typeof document === "undefined") {
+    return Promise.resolve();
+  }
+  const unique = [...new Set(urls.filter(isValidImageUrl))];
+  if (unique.length === 0) return Promise.resolve();
+
+  const loadOne = (url: string) =>
+    new Promise<void>((resolve) => {
+      if (signal?.aborted) {
+        resolve();
+        return;
+      }
+      const img = new Image();
+      img.decoding = "async";
+      const done = () => resolve();
+      img.onload = done;
+      img.onerror = done;
+      if (signal) {
+        const abort = () => {
+          img.src = "";
+          done();
+        };
+        signal.addEventListener("abort", abort, { once: true });
+      }
+      img.src = url;
+    });
+
+  const queue = [...unique];
+  const workers: Promise<void>[] = [];
+  const count = Math.max(1, Math.min(concurrency, queue.length));
+  for (let i = 0; i < count; i++) {
+    workers.push(
+      (async () => {
+        while (queue.length > 0) {
+          const url = queue.shift()!;
+          await loadOne(url);
+        }
+      })(),
+    );
+  }
+  return Promise.all(workers).then(() => {});
 }

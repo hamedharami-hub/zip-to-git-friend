@@ -1,5 +1,5 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,16 +11,21 @@ import {
   Headphones,
   Star,
   Repeat,
+  Download,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLeitnerStore } from "@/store/leitnerStore";
+import { useLeitnerFolderStore } from "@/store/leitnerFolderStore";
 import { ReviewMode, type ReviewProfile } from "@/components/leitner/ReviewMode";
 import { FoldersSidebar } from "@/components/leitner/FoldersSidebar";
 import { CardList } from "@/components/leitner/CardList";
 import { CardEditor } from "@/components/leitner/CardEditor";
 import { StatsExtras } from "@/components/leitner/StatsExtras";
 import { AccountButton, SyncBadge } from "@/components/auth/AccountButton";
+import { downloadBackup, importBackupFromFile } from "@/lib/leitnerBackup";
+import { toast } from "sonner";
 import type { LeitnerCard } from "@/types";
 
 const PROFILES: Array<{ key: ReviewProfile; label: string; icon: typeof Zap; hint: string }> = [
@@ -50,6 +55,10 @@ const Leitner = () => {
     description: "مرور واژگان با روش لایتنر — تمرین هوشمند برای حفظ ماندگار.",
   });
   const cards = useLeitnerStore((s) => s.cards);
+  const loadCards = useLeitnerStore((s) => s.load);
+  const folders = useLeitnerFolderStore((s) => s.folders);
+  const loadFolders = useLeitnerFolderStore((s) => s.load);
+  const importInputRef = useRef<HTMLInputElement>(null);
   const [folderId, setFolderId] = useState<string | null>(null);
   const [tab, setTab] = useState<"browse" | "review" | "stats">("browse");
   const [editing, setEditing] = useState<LeitnerCard | null>(null);
@@ -87,6 +96,28 @@ const Leitner = () => {
   }, [cards, editing]);
 
   useEffect(() => {}, []);
+
+  const handleExport = () => {
+    downloadBackup(cards, folders);
+    toast.success("Backup downloaded");
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const res = await importBackupFromFile(file);
+      await loadCards();
+      await loadFolders();
+      toast.success(
+        `Imported ${res.cardsAdded} cards, ${res.foldersAdded} folders (skipped ${res.cardsSkipped + res.foldersSkipped})`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Import failed");
+    } finally {
+      if (importInputRef.current) importInputRef.current.value = "";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
@@ -248,6 +279,43 @@ const Leitner = () => {
                 No cards yet. Add words from subtitle analyses, books, or news.
               </div>
             )}
+
+            <section className="rounded-[20px] border border-border bg-card p-5 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-semibold">پشتیبان‌گیری</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    خروجی یا ورودی JSON تمام کارت‌ها و فولدرها
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleExport}
+                    disabled={cards.length === 0 && folders.length === 0}
+                  >
+                    <Download className="h-4 w-4 mr-1.5" />
+                    خروجی
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => importInputRef.current?.click()}
+                  >
+                    <Upload className="h-4 w-4 mr-1.5" />
+                    ورودی
+                  </Button>
+                </div>
+              </div>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json,application/json"
+                className="hidden"
+                onChange={handleImport}
+              />
+            </section>
           </TabsContent>
         </Tabs>
       </main>

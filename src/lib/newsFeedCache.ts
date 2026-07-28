@@ -13,6 +13,7 @@ import type { FeedItem } from "./news";
 
 const PREFIX = "news.feed.";
 const MAX_ITEMS = 300;
+export const FEED_CACHE_TTL_MS = 1000 * 60 * 30; // 30 minutes
 
 interface StoredItem extends FeedItem {
   cachedAt: string;
@@ -80,4 +81,19 @@ export function clearCachedFeed(sourceId: string): void {
   } catch {
     /* ignore */
   }
+}
+
+export function getFeedLastCachedAt(sourceId: string): number | null {
+  const arr = loadCachedFeed(sourceId) as StoredItem[];
+  if (!arr.length) return null;
+  const latest = Math.max(
+    ...arr.map((it) => Date.parse(it.cachedAt ?? "1970-01-01T00:00:00Z") || 0),
+  );
+  return Number.isFinite(latest) ? latest : null;
+}
+
+export function isFeedFresh(sourceId: string, maxAgeMs: number = FEED_CACHE_TTL_MS): boolean {
+  const last = getFeedLastCachedAt(sourceId);
+  if (!last) return false;
+  return Date.now() - last < maxAgeMs;
 }

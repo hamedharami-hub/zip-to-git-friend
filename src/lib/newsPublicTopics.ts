@@ -32,11 +32,15 @@ export type CatalogCategory =
   | "tech"
   | "think_tank"
   | "science"
+  | "space"
+  | "security"
   | "business"
   | "world"
   | "health"
   | "sports"
   | "culture"
+  | "design"
+  | "film"
   | "persian";
 
 export interface CatalogCategoryDef {
@@ -49,11 +53,15 @@ export const CATALOG_CATEGORIES: CatalogCategoryDef[] = [
   { id: "tech", label: "Technology", labelFa: "تکنولوژی" },
   { id: "think_tank", label: "Think Tanks", labelFa: "تینک‌تنک‌ها" },
   { id: "science", label: "Science", labelFa: "علم" },
+  { id: "space", label: "Space", labelFa: "فضا" },
+  { id: "security", label: "Cybersecurity", labelFa: "امنیت سایبری" },
   { id: "business", label: "Business", labelFa: "اقتصاد" },
   { id: "world", label: "World News", labelFa: "اخبار جهان" },
   { id: "health", label: "Health", labelFa: "سلامت" },
   { id: "sports", label: "Sports", labelFa: "ورزش" },
   { id: "culture", label: "Culture", labelFa: "فرهنگ" },
+  { id: "design", label: "Design", labelFa: "طراحی" },
+  { id: "film", label: "Film", labelFa: "سینما" },
   { id: "persian", label: "Persian / ایران", labelFa: "فارسی / ایران" },
 ];
 
@@ -188,6 +196,14 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     url: "https://news.ycombinator.com/rss",
     language: "en",
   },
+  {
+    id: "techmeme",
+    name: "Techmeme",
+    nameFa: "تک‌میم",
+    category: "tech",
+    url: "https://www.techmeme.com/feed.xml",
+    language: "en",
+  },
 
   // Think tanks / policy
   {
@@ -304,6 +320,82 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     url: "https://www.science.org/rss/news_current.xml",
     language: "en",
   },
+  {
+    id: "scientific-american",
+    name: "Scientific American",
+    nameFa: "ساینتیفیک آمریکن",
+    category: "science",
+    url: "https://www.scientificamerican.com/feed/atom",
+    language: "en",
+  },
+  {
+    id: "nautilus",
+    name: "Nautilus",
+    nameFa: "ناتیلوس",
+    category: "science",
+    url: "https://nautil.us/feed/",
+    language: "en",
+  },
+
+  // Space
+  {
+    id: "nasa",
+    name: "NASA",
+    nameFa: "ناسا",
+    category: "space",
+    url: "https://www.nasa.gov/feed/",
+    language: "en",
+  },
+  {
+    id: "space-com",
+    name: "Space.com",
+    nameFa: "اسپیس دات کام",
+    category: "space",
+    url: "https://www.space.com/feeds/all",
+    language: "en",
+  },
+  {
+    id: "spacenews",
+    name: "SpaceNews",
+    nameFa: "اسپیس نیوز",
+    category: "space",
+    url: "https://spacenews.com/feed/",
+    language: "en",
+  },
+
+  // Security
+  {
+    id: "bleepingcomputer",
+    name: "BleepingComputer",
+    nameFa: "بلیپینگ کامپیوتر",
+    category: "security",
+    url: "https://www.bleepingcomputer.com/feed/",
+    language: "en",
+  },
+  {
+    id: "krebsonsecurity",
+    name: "Krebs on Security",
+    nameFa: "کربز آن سکیوریتی",
+    category: "security",
+    url: "https://krebsonsecurity.com/feed/",
+    language: "en",
+  },
+  {
+    id: "darkreading",
+    name: "Dark Reading",
+    nameFa: "دارک ریدینگ",
+    category: "security",
+    url: "https://www.darkreading.com/rss.xml",
+    language: "en",
+  },
+  {
+    id: "cso-online",
+    name: "CSO Online",
+    nameFa: "سی‌اس‌آنلاین",
+    category: "security",
+    url: "https://www.csoonline.com/feed/",
+    language: "en",
+  },
 
   // Business
   {
@@ -352,6 +444,14 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     nameFa: "بیزینس اینسایدر",
     category: "business",
     url: "https://www.businessinsider.com/rss",
+    language: "en",
+  },
+  {
+    id: "the-economist",
+    name: "The Economist",
+    nameFa: "اکونومیست",
+    category: "business",
+    url: "https://www.economist.com/latest/rss.xml",
     language: "en",
   },
 
@@ -494,6 +594,14 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     url: "https://www.iranintl.com/feeds/latest",
     language: "fa",
   },
+  {
+    id: "mehr-news",
+    name: "Mehr News",
+    nameFa: "مهر نیوز",
+    category: "persian",
+    url: "https://www.mehrnews.com/rss",
+    language: "fa",
+  },
 
   // Health
   {
@@ -562,6 +670,58 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
     nameFa: "ایون",
     category: "culture",
     url: "https://aeon.co/feed.rss",
+    language: "en",
+  },
+
+  // Design
+  {
+    id: "archdaily",
+    name: "ArchDaily",
+    nameFa: "آرک‌دیلی",
+    category: "design",
+    url: "https://www.archdaily.com/feed",
+    language: "en",
+  },
+  {
+    id: "design-milk",
+    name: "Design Milk",
+    nameFa: "دیزاین میلک",
+    category: "design",
+    url: "https://design-milk.com/feed/",
+    language: "en",
+  },
+  {
+    id: "its-nice-that",
+    name: "It's Nice That",
+    nameFa: "ایتس نایس دت",
+    category: "design",
+    url: "https://www.itsnicethat.com/feed",
+    language: "en",
+  },
+
+  // Film
+  {
+    id: "variety",
+    name: "Variety",
+    nameFa: "واریتی",
+    category: "film",
+    url: "https://variety.com/feed/",
+    language: "en",
+  },
+  {
+    id: "indiewire",
+    name: "IndieWire",
+    nameFa: "ایندی‌وایر",
+    category: "film",
+    url: "https://www.indiewire.com/feed/rss/",
+    language: "en",
+  },
+  {
+    id: "deadline",
+    name: "Deadline",
+    nameFa: "ددلاین",
+    category: "film",
+    url: "https://deadline.com/feed/",
     language: "en",
   },
 

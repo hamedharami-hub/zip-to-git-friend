@@ -9,7 +9,8 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "deploy:news": "npx --yes supabase@latest functions deploy news-compare news-digest news-discover-rss news-fetch-rss news-import-url news-scrape-article news-search news-telegram-format news-translate-titles news-trending news-youtube-channel"
   },
   "dependencies": {
     "@capacitor/app": "^8.1.0",

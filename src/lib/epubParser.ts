@@ -27,8 +27,15 @@ export interface ParseProgress {
  * Strip <script>/<style>/<link>/<meta> and inline event handlers from raw
  * chapter HTML. We keep semantic tags (headings, paragraphs, lists, images)
  * so the reader can render real book layout, not a flat blob of text.
+ *
+ * Images and SVG <image> elements are preserved and their ZIP-local refs are
+ * rewritten as base64 data URLs so the book renders fully offline.
  */
-function sanitizeChapterHtml(raw: string): { html: string; text: string } {
+async function sanitizeChapterHtml(
+  raw: string,
+  basePath: string,
+  zip: JSZip,
+): Promise<{ html: string; text: string }> {
   // Parse as XML first (xhtml) and fall back to html for tag soup.
   let doc: Document;
   try {
@@ -45,8 +52,7 @@ function sanitizeChapterHtml(raw: string): { html: string; text: string } {
   doc
     .querySelectorAll("script, style, link, meta, iframe, object, embed")
     .forEach((n) => n.remove());
-  // Strip inline event handlers + javascript: links and external image refs
-  // (they point to ZIP-internal paths the browser can't resolve).
+  // Strip inline event handlers + javascript: links and external image refs.
   doc.querySelectorAll<Element>("*").forEach((el) => {
     [...el.attributes].forEach((attr) => {
       const name = attr.name.toLowerCase();
@@ -56,8 +62,11 @@ function sanitizeChapterHtml(raw: string): { html: string; text: string } {
       }
     });
   });
-  // Drop images we can't resolve — they would 404 in the reader.
-  doc.querySelectorAll("img, svg image").forEach((n) => n.remove());
+
+  // Resolve ZIP-local images to embedded data URLs so the book works offline.
+  await inlineImages(doc, basePath, zip);
+  // srcset would point to unresolved ZIP paths; drop it after inlining the main image.
+  doc.querySelectorAll("img[srcset]").forEach((img) => img.removeAttribute("srcset"));
 
   const body = doc.querySelector("body") ?? doc.documentElement;
   const html = (body?.innerHTML ?? "").trim();
@@ -90,6 +99,84 @@ function resolvePath(basePath: string, href: string): string {
     else out.push(p);
   }
   return out.join("/");
+}
+
+function mimeTypeFromPath(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase();
+  switch (ext) {
+    case "png":
+      return "image/png";
+    case "jpg":
+    case "jpeg":
+      return "image/jpeg";
+    case "gif":
+      return "image/gif";
+    case "svg":
+    case "svgz":
+      return "image/svg+xml";
+    case "webp":
+      return "image/webp";
+    case "avif":
+      return "image/avif";
+    default:
+      return "image/png";
+  }
+}
+
+function findZipFile(zip: JSZip, path: string): JSZip.JSZipObject | null {
+  const direct = zip.file(path);
+  if (direct) return direct;
+  try {
+    const decoded = decodeURIComponent(path);
+    if (decoded !== path) {
+      const d = zip.file(decoded);
+      if (d) return d;
+    }
+  } catch {
+    /* ignore */
+  }
+  const lower = path.toLowerCase();
+  for (const [name, obj] of Object.entries(zip.files)) {
+    if (!obj.dir && name.toLowerCase() === lower) return obj;
+  }
+  return null;
+}
+
+async function inlineImages(doc: Document, basePath: string, zip: JSZip): Promise<void> {
+  const MAX_INLINE_BYTES = 512 * 1024;
+  const nodes = Array.from(doc.querySelectorAll<HTMLImageElement | SVGImageElement>("img, image"));
+  await Promise.all(
+    nodes.map(async (el) => {
+      let rawSrc: string | null = null;
+      let attrName: string | null = null;
+      if (el.tagName.toLowerCase() === "img") {
+        rawSrc = el.getAttribute("src");
+        attrName = "src";
+      } else {
+        rawSrc = el.getAttribute("href") || el.getAttribute("xlink:href");
+        attrName = el.hasAttribute("href") ? "href" : "xlink:href";
+      }
+      if (!rawSrc) return;
+      const src = rawSrc.trim();
+      if (/^(data|https?|file):/i.test(src)) return;
+
+      const resolved = resolvePath(basePath, src);
+      const file = findZipFile(zip, resolved);
+      if (!file) return;
+
+      try {
+        const blob = await file.async("blob");
+        if (blob.size > MAX_INLINE_BYTES) return;
+        const typedBlob = new Blob([blob], { type: blob.type || mimeTypeFromPath(resolved) });
+        const dataUrl = await blobToDataUrl(typedBlob);
+        if (dataUrl && attrName) {
+          el.setAttribute(attrName, dataUrl);
+        }
+      } catch {
+        /* leave original */
+      }
+    }),
+  );
 }
 
 function stripFragment(href: string): string {
@@ -214,7 +301,7 @@ export async function parseEpub(
     }
     if (!raw) continue;
 
-    const { html, text } = sanitizeChapterHtml(raw);
+    const { html, text } = await sanitizeChapterHtml(raw, chapterPath, zip);
     if (!text || text.length < 20) continue; // skip empty/cover-only items
 
     const tocTitle = tocMap.get(stripFragment(m.href)) ?? extractTitle(raw) ?? "";

@@ -13,6 +13,8 @@ import { useOnline } from "./hooks/useOnline";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import { startSync, stopSync } from "./lib/leitnerSync";
+import { getPWAStatus, subscribePWA } from "./lib/pwa";
+import { useBookStore } from "./store/bookStore";
 import { useNativeBackButton } from "./hooks/useNativeBackButton";
 import { useEdgeSwipeBack } from "./hooks/useEdgeSwipeBack";
 import { Haptic } from "./components/Haptic";
@@ -78,17 +80,33 @@ const onIdle = (cb: () => void, timeout = 2000) => {
 
 const SyncBridge = () => {
   const { user } = useAuth();
+  const bookSyncWithCloud = useBookStore((s) => s.syncWithCloud);
+
   useEffect(() => {
-    if (user) {
-      // Defer the (potentially heavy) sync setup until the browser is idle so it
-      // never competes with first paint or route hydration.
+    if (!user) return;
+    let active = true;
+
+    const syncNow = () => {
+      if (!active || !getPWAStatus().online) return;
+      // Defer the potentially heavy sync setup so it never competes with first paint/route hydration.
       onIdle(() => {
         startSync(user.id).catch((e) => console.error("startSync failed", e));
+        bookSyncWithCloud().catch((e) => console.error("book cloud sync failed", e));
       });
-    } else {
+    };
+
+    // Initial sync + re-sync whenever the browser comes back online.
+    const unsubscribe = subscribePWA((status) => {
+      if (status.online) syncNow();
+    });
+    syncNow();
+
+    return () => {
+      active = false;
+      unsubscribe();
       stopSync().catch(() => undefined);
-    }
-  }, [user]);
+    };
+  }, [user, bookSyncWithCloud]);
   return null;
 };
 

@@ -72,6 +72,47 @@ export default defineConfig({
               options: { cacheName: "assets" },
             },
             {
+              urlPattern: ({ request }) => request.destination === "font",
+              handler: "CacheFirst",
+              options: {
+                cacheName: "fonts",
+                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+            {
+              urlPattern: ({ request, url }) =>
+                request.method === "POST" && url.pathname.startsWith("/api/"),
+              handler: "NetworkOnly",
+              options: {
+                backgroundSync: {
+                  name: "api-post-queue",
+                  options: { maxRetentionTime: 24 * 60 },
+                },
+              },
+            },
+            {
+              urlPattern: ({ url, request }) =>
+                request.method === "GET" && url.pathname.startsWith("/api/"),
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "api",
+                networkTimeoutSeconds: 3,
+                backgroundSync: {
+                  name: "api-get-queue",
+                  options: { maxRetentionTime: 60 },
+                },
+              },
+            },
+            {
+              urlPattern: ({ url }) =>
+                /supabase\.co\/storage\/v1\/object\/public\//i.test(url.href),
+              handler: "CacheFirst",
+              options: {
+                cacheName: "supabase-public",
+                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              },
+            },
+            {
               urlPattern: ({ request }) => request.destination === "image",
               handler: "CacheFirst",
               options: {

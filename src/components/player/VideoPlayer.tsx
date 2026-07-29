@@ -416,6 +416,29 @@ export const VideoPlayer = memo(function VideoPlayer({
     vAny.requestPictureInPicture?.().catch(() => undefined);
   }, []);
 
+  // Hotkeys (registered after toggleFullscreen/togglePiP are declared to avoid TDZ ReferenceError).
+  usePlayerHotkeys({
+    togglePlay: () => {
+      const v = videoRef.current;
+      if (!v) return;
+      if (v.paused) safePlay(v);
+      else v.pause();
+    },
+    seekBy: (delta) => {
+      const v = videoRef.current;
+      if (!v) return;
+      v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + delta));
+    },
+    changeVolume: (delta) => {
+      const v = videoRef.current;
+      if (!v) return;
+      v.volume = Math.max(0, Math.min(1, v.volume + delta));
+    },
+    toggleFullscreen,
+    togglePiP,
+  });
+
+
   const onLoaded = useCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
       const v = e.currentTarget;

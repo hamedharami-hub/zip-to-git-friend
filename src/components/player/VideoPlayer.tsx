@@ -308,27 +308,8 @@ export const VideoPlayer = memo(function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
   }, [seekRequest?.token, videoEl]);
 
-  // Hotkeys
-  usePlayerHotkeys({
-    togglePlay: () => {
-      const v = videoRef.current;
-      if (!v) return;
-      if (v.paused) safePlay(v);
-      else v.pause();
-    },
-    seekBy: (delta) => {
-      const v = videoRef.current;
-      if (!v) return;
-      v.currentTime = Math.max(0, Math.min(v.duration || 0, v.currentTime + delta));
-    },
-    changeVolume: (delta) => {
-      const v = videoRef.current;
-      if (!v) return;
-      v.volume = Math.max(0, Math.min(1, v.volume + delta));
-    },
-    toggleFullscreen,
-    togglePiP,
-  });
+  // Hotkeys registration moved below toggleFullscreen/togglePiP declarations to avoid TDZ.
+
 
   // Sync fullscreen state with browser events (handles ESC, system gesture, swipe-down on Android).
   useEffect(() => {

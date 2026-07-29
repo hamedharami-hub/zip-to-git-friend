@@ -167,22 +167,18 @@ export async function refreshAllModels(
   settings: Pick<AppSettings, "geminiApiKey" | "groqApiKey" | "customModels">,
 ): Promise<{ patch: Partial<AppSettings>; result: RefreshResult }> {
   const errors: string[] = [];
-  const next: NonNullable<AppSettings["customModels"]> = {
-    ...(settings.customModels ?? {}),
-  };
 
-  let geminiCount = 0;
-  let groqChatCount = 0;
-  let groqWhisperCount = 0;
+  let geminiList: ModelEntry[] | undefined;
+  let groqChatList: ModelEntry[] | undefined;
+  let groqWhisperList: ModelEntry[] | undefined;
 
   const tasks: Promise<void>[] = [];
 
   if (settings.geminiApiKey?.trim()) {
     tasks.push(
-      refreshGeminiModels(settings.geminiApiKey.trim(), settings.customModels)
-        .then(({ patch, result }) => {
-          Object.assign(next, patch.customModels);
-          geminiCount = result.geminiCount ?? 0;
+      fetchGeminiModels(settings.geminiApiKey.trim())
+        .then((list) => {
+          geminiList = list;
         })
         .catch((e) => {
           errors.push(`Gemini: ${e instanceof Error ? e.message : String(e)}`);
@@ -194,11 +190,10 @@ export async function refreshAllModels(
 
   if (settings.groqApiKey?.trim()) {
     tasks.push(
-      refreshGroqModels(settings.groqApiKey.trim(), settings.customModels)
-        .then(({ patch, result }) => {
-          Object.assign(next, patch.customModels);
-          groqChatCount = result.groqChatCount ?? 0;
-          groqWhisperCount = result.groqWhisperCount ?? 0;
+      fetchGroqModels(settings.groqApiKey.trim())
+        .then(({ chat, whisper }) => {
+          groqChatList = chat;
+          groqWhisperList = whisper;
         })
         .catch((e) => {
           errors.push(`Groq: ${e instanceof Error ? e.message : String(e)}`);
@@ -210,10 +205,23 @@ export async function refreshAllModels(
 
   await Promise.all(tasks);
 
+  // Merge in one shot — no race between provider callbacks.
+  const next: NonNullable<AppSettings["customModels"]> = {
+    ...(settings.customModels ?? {}),
+  };
+  if (geminiList) next.gemini = geminiList;
+  if (groqChatList) next.groqChat = groqChatList;
+  if (groqWhisperList) next.groqWhisper = groqWhisperList;
   next.refreshedAt = Date.now();
 
   return {
     patch: { customModels: next },
-    result: { geminiCount, groqChatCount, groqWhisperCount, errors },
+    result: {
+      geminiCount: geminiList?.length ?? 0,
+      groqChatCount: groqChatList?.length ?? 0,
+      groqWhisperCount: groqWhisperList?.length ?? 0,
+      errors,
+    },
   };
 }
+

@@ -92,16 +92,12 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
   const releasePlayback = useVideoStore((s) => s.releasePlayback);
   const addCard = useLeitnerStore((s) => s.addCard);
-  const findByFront = useLeitnerStore((s) => s.findByFront);
-  // Subscribe to cards so re-renders happen when adding
-  const cards = useLeitnerStore((s) => s.cards);
-  void cards;
 
   const [translation, setTranslation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const cleaned = cleanWord(activeWord);
-  const inLeitner = !!findByFront(cleaned);
+  const inLeitner = useLeitnerStore((s) => (cleaned ? !!s.findByFront(cleaned) : false));
 
   // Pause underlying media while popover is open; resume on close / add.
   useEffect(() => {

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SubtitleCue } from "@/types";
 import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
-import { AnalysisPanel } from "@/components/ai/AnalysisPanel";
+import { LazyAnalysisPanel } from "@/components/ai/LazyAnalysisPanel";
 import { useVideoStore } from "@/store/videoStore";
 import { Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -117,7 +117,7 @@ export function CueListWithAnalysis({ videoId, cues, activeCueId }: Props) {
                     className="text-base leading-relaxed font-medium flex-1"
                   />
                 </div>
-                <AnalysisPanel videoId={videoId} cue={cue} autoRun={true} showTranslate />
+                <LazyAnalysisPanel videoId={videoId} cue={cue} autoRun={true} showTranslate />
               </div>
             )}
           </div>

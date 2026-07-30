@@ -103,10 +103,13 @@ const News = () => {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
 
-  const settings = useSettingsStore((s) => s.settings);
+  const newsRewriteModelRef = useSettingsStore((s) => s.settings.newsRewriteModelRef);
+  const bookRewriteModelRef = useSettingsStore((s) => s.settings.bookRewriteModelRef);
+  const newsSearchModelRef = useSettingsStore((s) => s.settings.newsSearchModelRef);
+  const defaultRewriteVoice = useSettingsStore((s) => s.settings.defaultRewriteVoice);
   const update = useSettingsStore((s) => s.update);
   const newsModelRef = coerceBookModel(
-    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
+    newsRewriteModelRef ?? bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
 
   const [sources, setSources] = useState<NewsSource[]>([]);
@@ -308,7 +311,7 @@ const News = () => {
     try {
       const blockedList = blocked.map((b) => b.domain);
       let items: FeedItem[] = [];
-      const searchModel = settings.newsSearchModelRef?.model;
+      const searchModel = newsSearchModelRef?.model;
       if (activeSource.kind === "rss" && activeSource.url) {
         const r = await fetchRss(activeSource.url, 30);
         items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
@@ -368,7 +371,7 @@ const News = () => {
     } finally {
       setFeedLoading(false);
     }
-  }, [activeSource, windowHours, blocked, settings.newsSearchModelRef]);
+  }, [activeSource, windowHours, blocked, newsSearchModelRef]);
 
   // On source change: show cache only, do NOT auto-fetch.
   useEffect(() => {
@@ -436,7 +439,7 @@ const News = () => {
         sourcesInFolder.map(async (src) => {
           try {
             let items: FeedItem[] = [];
-            const searchModel = settings.newsSearchModelRef?.model;
+            const searchModel = newsSearchModelRef?.model;
             if (src.kind === "rss" && src.url) {
               const r = await fetchRss(src.url, 30);
               items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
@@ -506,14 +509,7 @@ const News = () => {
     } finally {
       setFolderLoading(false);
     }
-  }, [
-    activeFolderId,
-    sources,
-    blocked,
-    windowHours,
-    loadFolderFromCache,
-    settings.newsSearchModelRef,
-  ]);
+  }, [activeFolderId, sources, blocked, windowHours, loadFolderFromCache, newsSearchModelRef]);
 
   useEffect(() => {
     if (activeFolderId) loadFolderFromCache(activeFolderId);
@@ -554,7 +550,7 @@ const News = () => {
         sources.map(async (src) => {
           try {
             let items: FeedItem[] = [];
-            const searchModel = settings.newsSearchModelRef?.model;
+            const searchModel = newsSearchModelRef?.model;
             if (src.kind === "rss" && src.url) {
               const r = await fetchRss(src.url, 30);
               items = r.items.filter((it) => !isBlockedUrl(it.url, blockedList));
@@ -600,7 +596,7 @@ const News = () => {
     } finally {
       setAllLoading(false);
     }
-  }, [sources, blocked, windowHours, loadAllFromCache, settings.newsSearchModelRef]);
+  }, [sources, blocked, windowHours, loadAllFromCache, newsSearchModelRef]);
 
   useEffect(() => {
     if (allMode) loadAllFromCache();
@@ -714,7 +710,7 @@ const News = () => {
         topic: activeSource?.topic ?? activeSource?.name,
         windowHours: Number(windowHours),
         model: newsModelRef.model,
-        voice: normalizeVoice(settings.defaultRewriteVoice),
+        voice: normalizeVoice(defaultRewriteVoice),
       });
       setDigests((prev) => [digest, ...prev]);
       toast.success("خلاصه آماده شد.");
@@ -731,7 +727,7 @@ const News = () => {
     windowHours,
     navigate,
     newsModelRef.model,
-    settings.defaultRewriteVoice,
+    defaultRewriteVoice,
   ]);
 
   /** Quick-summary from a topic feed URL (Google News / Bing News RSS). */
@@ -757,7 +753,7 @@ const News = () => {
           topic: topicText,
           windowHours: 24,
           model: newsModelRef.model,
-          voice: normalizeVoice(settings.defaultRewriteVoice),
+          voice: normalizeVoice(defaultRewriteVoice),
         });
         setDigests((prev) => [digest, ...prev]);
         toast.success(
@@ -768,7 +764,7 @@ const News = () => {
         toast.error((e as Error).message ?? "ساخت خلاصه شکست خورد.");
       }
     },
-    [navigate, newsModelRef.model, settings.defaultRewriteVoice],
+    [navigate, newsModelRef.model, defaultRewriteVoice],
   );
 
   const handleDeleteSource = useCallback(

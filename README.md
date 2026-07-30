@@ -29,14 +29,17 @@
    - npm یا bun
 
 2. نصب وابستگی‌ها:
+
    ```bash
    npm install
    ```
 
 3. ساخت فایل `.env` از روی `.env.example`:
+
    ```bash
    cp .env.example .env
    ```
+
    سپس مقادیر واقعی Supabase را در `.env` قرار دهید.
 
 4. اجرای dev server:
@@ -77,4 +80,3 @@
 2. تغییرات را کامیت کنید.
 3. Pull Request به `main` بزنید.
 4. پس از merge، Lovable تغییرات را از `main` دریافت می‌کند.
-

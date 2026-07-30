@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import {
   Brain,
   Eye,
@@ -77,7 +77,7 @@ const MODES: Array<{ key: StudyMode; label: string; icon: typeof Pencil; hint: s
   { key: "cloze", label: "Cloze", icon: Keyboard, hint: "Fill the blank in the example" },
 ];
 
-export function ReviewMode({
+export const ReviewMode = memo(function ReviewMode({
   compact = false,
   folderId = null,
   profile = "due",
@@ -672,4 +672,4 @@ export function ReviewMode({
       )}
     </div>
   );
-}
+});

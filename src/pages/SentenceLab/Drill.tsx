@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Loader2, RefreshCw, Headphones, Mic, BarChart3, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,16 @@ export default function SentenceDrillPage() {
   const pathId = params.pathId ?? "";
   const navigate = useNavigate();
 
-  const { queue, currentIndex, loading, error, fetchDailyQueue, next } = useSentenceStore();
+  const { queue, currentIndex, loading, error, fetchDailyQueue, next } = useSentenceStore(
+    useShallow((s) => ({
+      queue: s.queue,
+      currentIndex: s.currentIndex,
+      loading: s.loading,
+      error: s.error,
+      fetchDailyQueue: s.fetchDailyQueue,
+      next: s.next,
+    })),
+  );
 
   const [category, setCategory] = useState<SentenceCategory | null>(null);
   const [sub, setSub] = useState<SentenceCategory | null>(null);

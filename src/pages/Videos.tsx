@@ -1,11 +1,10 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Upload,
   Settings as SettingsIcon,
   Film,
-  Trash2,
   Brain,
   Trophy,
   WifiOff,
@@ -35,7 +34,7 @@ import {
 import { useLeitnerStore } from "@/store/leitnerStore";
 import type { Video } from "@/types";
 import { toast } from "sonner";
-import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { VideoCard } from "@/components/VideoCard";
 import { VideoGridSkeleton } from "@/components/VideoCardSkeleton";
 import { InstallButton } from "@/components/pwa/InstallButton";
 import { EmptyState } from "@/components/EmptyState";
@@ -46,6 +45,7 @@ import { validateMediaFile } from "@/lib/fileValidation";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { captureVideoThumbnail } from "@/lib/videoThumbnail";
+import { formatDuration } from "@/lib/utils";
 
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -106,14 +106,14 @@ const Videos = () => {
     }
   };
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     const all = await getAllVideos();
     const videosOnly = all.filter((v) => (v.mediaType ?? "video") === "video");
     setVideos(videosOnly.sort((a, b) => b.createdAt - a.createdAt));
     const last = await getAppState<string>("lastVideoId");
     setLastVideoId(last);
     setLoading(false);
-  };
+  }, []);
 
   const ptr = usePullToRefresh({
     onRefresh: async () => {
@@ -124,7 +124,7 @@ const Videos = () => {
 
   useEffect(() => {
     refresh();
-  }, []);
+  }, [refresh]);
 
   const handleUpload = async (file: File) => {
     const v = validateMediaFile(file, "video");
@@ -172,15 +172,18 @@ const Videos = () => {
     navigate(`/player/${id}`);
   };
 
-  const handleDelete = async (id: string) => {
-    await deleteVideo(id);
-    if (lastVideoId === id) {
-      await setAppState("lastVideoId", null);
-      setLastVideoId(null);
-    }
-    toast.success("Video deleted.");
-    refresh();
-  };
+  const handleDelete = useCallback(
+    async (id: string) => {
+      await deleteVideo(id);
+      if (lastVideoId === id) {
+        await setAppState("lastVideoId", null);
+        setLastVideoId(null);
+      }
+      toast.success("Video deleted.");
+      refresh();
+    },
+    [lastVideoId, refresh],
+  );
 
   const lastVideo = useMemo(
     () => (lastVideoId ? (videos.find((v) => v.id === lastVideoId) ?? null) : null),
@@ -366,8 +369,8 @@ const Videos = () => {
                 <p className="text-xs text-muted-foreground">Continue watching</p>
                 <p className="font-semibold truncate">{lastVideo.title}</p>
                 <p className="text-xs text-muted-foreground">
-                  Resume from {formatDur(lastVideo.lastPosition)} · {formatDur(lastVideo.duration)}{" "}
-                  total
+                  Resume from {formatDuration(lastVideo.lastPosition)} ·{" "}
+                  {formatDuration(lastVideo.duration)} total
                 </p>
                 {lastVideo.duration > 0 && (
                   <div className="mt-1.5 h-1 w-full bg-primary/20 rounded-full overflow-hidden">
@@ -441,88 +444,14 @@ const Videos = () => {
           <p className="text-center text-muted-foreground py-8">No videos match your search.</p>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredVideos.map((v) => {
-              const progressPct =
-                v.duration > 0 ? Math.min(100, (v.lastPosition / v.duration) * 100) : 0;
-              return (
-                <article
-                  key={v.id}
-                  className="group rounded-lg border border-border bg-card overflow-hidden flex flex-col transition-colors hover:border-primary/50"
-                >
-                  <Link
-                    to={`/player/${v.id}`}
-                    className="aspect-video bg-muted flex items-center justify-center overflow-hidden"
-                    aria-label={`Open ${v.title}`}
-                  >
-                    {v.thumbnailUrl ? (
-                      <img
-                        src={v.thumbnailUrl}
-                        alt=""
-                        className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <Film className="h-10 w-10 text-muted-foreground" aria-hidden="true" />
-                    )}
-                  </Link>
-                  <div className="p-3 flex items-start justify-between gap-2">
-                    <div className="min-w-0 flex-1">
-                      <Link to={`/player/${v.id}`} className="block">
-                        <h3 className="font-medium truncate" title={v.title}>
-                          {v.title}
-                        </h3>
-                      </Link>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {v.fileName} · {formatDur(v.duration)}
-                        {v.lastPosition > 5 && v.duration > 0 && (
-                          <>
-                            {" · "}
-                            <span className="text-primary">{formatDur(v.lastPosition)}</span>
-                            {" / "}
-                            {formatDur(v.duration)}
-                          </>
-                        )}
-                      </p>
-                      {v.duration > 0 && (
-                        <div className="mt-1.5 h-1 w-full bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-primary rounded-full"
-                            style={{ width: `${progressPct}%` }}
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <ConfirmDialog
-                      title="Delete this video?"
-                      description={`"${v.title}" will be removed from your library. Subtitles and analyses for this video will also be deleted.`}
-                      confirmLabel="Delete"
-                      onConfirm={() => handleDelete(v.id)}
-                      trigger={
-                        <Button size="icon" variant="ghost" aria-label={`Delete ${v.title}`}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      }
-                    />
-                  </div>
-                </article>
-              );
-            })}
+            {filteredVideos.map((v) => (
+              <VideoCard key={v.id} video={v} onDelete={handleDelete} />
+            ))}
           </div>
         )}
       </main>
     </div>
   );
 };
-
-function formatDur(s: number) {
-  if (!s || !Number.isFinite(s) || s < 0) return "—";
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = Math.floor(s % 60);
-  if (h > 0) {
-    return `${h}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  }
-  return `${m}:${sec.toString().padStart(2, "0")}`;
-}
 
 export default Videos;

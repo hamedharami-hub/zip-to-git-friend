@@ -10,7 +10,7 @@
  *    (font / size / alignment) restored
  *  - export options + in-document reader prefs persisted in localStorage
  */
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Share2, Loader2, FileDown, Copy, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -424,7 +424,7 @@ function saveExportPrefs(p: ExportPrefs) {
   }
 }
 
-export function NewsShareMenu({
+export const NewsShareMenu = memo(function NewsShareMenu({
   bookId,
   chapterIndex,
   title,
@@ -719,4 +719,4 @@ export function NewsShareMenu({
       </Dialog>
     </>
   );
-}
+});

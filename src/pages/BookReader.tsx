@@ -26,7 +26,7 @@ import { TranslateChapterButton } from "@/components/books/TranslateChapterButto
 import type { DisplayLang } from "@/components/books/InteractiveBookText";
 import { ChapterTTSPlayer } from "@/components/books/ChapterTTSPlayer";
 import { ReaderTTSQuickSettings } from "@/components/books/ReaderTTSQuickSettings";
-import { ChapterRewriteTabs } from "@/components/books/ChapterRewriteTabs";
+import { LazyChapterRewriteTabs } from "@/components/books/LazyChapterRewriteTabs";
 import { BookNotesSheet } from "@/components/books/BookNotesSheet";
 import { ReaderSelectionToolbar } from "@/components/books/ReaderSelectionToolbar";
 import { BookSearchSheet } from "@/components/books/BookSearchSheet";
@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { extractAnalysableParagraphs } from "@/lib/batchAnalyzeChapter";
 import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
+import type { BookParagraphAnalysis } from "@/types";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
 
 const SCROLL_SAVE_DEBOUNCE = 600;
@@ -105,6 +106,9 @@ const BookReader = () => {
   const saveTimerRef = useRef<number | null>(null);
   /** Initial restore must run after chapter HTML mounts; track per chapter. */
   const restoredChapterRef = useRef<number | null>(null);
+  /** Live scroll ratio used by the reading-time tracker; state is throttled for UI. */
+  const scrollRatioRef = useRef(0);
+  const scrollThrottleRef = useRef<number | null>(null);
 
   // Highlights & bookmarks for the open book.
   const {
@@ -219,7 +223,13 @@ const BookReader = () => {
     if (!el || !currentBook) return;
     const max = el.scrollHeight - el.clientHeight;
     const ratio = max > 0 ? el.scrollTop / max : 0;
-    setScrollRatio(ratio);
+    scrollRatioRef.current = ratio;
+    if (scrollThrottleRef.current === null) {
+      scrollThrottleRef.current = window.setTimeout(() => {
+        setScrollRatio(scrollRatioRef.current);
+        scrollThrottleRef.current = null;
+      }, 150);
+    }
     if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
     saveTimerRef.current = window.setTimeout(() => {
       void upsert({
@@ -243,12 +253,12 @@ const BookReader = () => {
       const elapsed = (now - lastPing) / 1000;
       lastPing = now;
       // Roughly attribute words by current scroll ratio.
-      const seenWords = Math.max(0, Math.round((chapter.wordCount ?? 0) * scrollRatio));
+      const seenWords = Math.max(0, Math.round((chapter.wordCount ?? 0) * scrollRatioRef.current));
       void addReadingTime(elapsed, 0).then(() => seenWords);
     };
     const id = window.setInterval(tick, READ_PING_MS);
     return () => window.clearInterval(id);
-  }, [chapter, scrollRatio]);
+  }, [chapter]);
 
   // ─── Chapter navigation ──
   /** Pending scroll ratio to apply right after the chapter mounts (used by bookmark jump). */
@@ -282,6 +292,16 @@ const BookReader = () => {
       });
     },
     [currentBook, currentChapters.length, chapterIndex, upsert],
+  );
+
+  const handleAdded = useCallback((newIndex: number) => goToChapter(newIndex), [goToChapter]);
+
+  const handleBatchResults = useCallback(
+    (results: Record<string, BookParagraphAnalysis>) => {
+      if (!currentBook) return;
+      emitChapterAnalyses(currentBook.id, chapterIndex, results);
+    },
+    [currentBook, chapterIndex],
   );
 
   // After a jump-to-bookmark, override the default scroll restore.
@@ -406,13 +426,13 @@ const BookReader = () => {
                 <AddLanguageChapterDialog
                   book={currentBook}
                   existingChapterCount={0}
-                  onAdded={() => setChapterIndex(0)}
+                  onAdded={handleAdded}
                 />
               ) : isManual ? (
                 <AddChapterDialog
                   book={currentBook}
                   existingChapterCount={0}
-                  onAdded={() => setChapterIndex(0)}
+                  onAdded={handleAdded}
                   trigger={
                     <Button size="lg" className="gap-2">
                       <BookOpen className="h-4 w-4" />
@@ -461,7 +481,7 @@ const BookReader = () => {
           <BatchAnalyzeChapterButton
             bookId={currentBook.id}
             chapter={chapter}
-            onResults={(results) => emitChapterAnalyses(currentBook.id, chapterIndex, results)}
+            onResults={handleBatchResults}
           />
           <TranslateChapterButton
             bookId={currentBook.id}
@@ -488,13 +508,13 @@ const BookReader = () => {
             <AddLanguageChapterDialog
               book={currentBook}
               existingChapterCount={currentChapters.length}
-              onAdded={(newIdx) => goToChapter(newIdx)}
+              onAdded={handleAdded}
             />
           ) : currentBook && (!currentBook.fileName || /\.manual$/i.test(currentBook.fileName)) ? (
             <AddChapterDialog
               book={currentBook}
               existingChapterCount={currentChapters.length}
-              onAdded={(newIdx) => goToChapter(newIdx)}
+              onAdded={handleAdded}
             />
           ) : null}
           <Button
@@ -663,7 +683,7 @@ const BookReader = () => {
                 />
               </div>
 
-              <ChapterRewriteTabs
+              <LazyChapterRewriteTabs
                 bookId={currentBook.id}
                 chapterIndex={chapterIndex}
                 chapterTitle={chapter.title || `Chapter ${chapterIndex + 1}`}

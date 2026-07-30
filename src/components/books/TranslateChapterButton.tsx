@@ -9,7 +9,7 @@
  * Reuses the existing `analyze-paragraph` cache, so reopening a previously
  * translated chapter is instant and free.
  */
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { Languages, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -42,7 +42,7 @@ interface Props {
 
 const CONCURRENCY = 5;
 
-export function TranslateChapterButton({
+export const TranslateChapterButton = memo(function TranslateChapterButton({
   bookId,
   chapter,
   displayLang,
@@ -210,4 +210,4 @@ export function TranslateChapterButton({
       )}
     </div>
   );
-}
+});

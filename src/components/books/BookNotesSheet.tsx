@@ -4,7 +4,7 @@
  * Each row jumps to its chapter (and roughly its scroll position for bookmarks).
  * Notes can be edited inline; entries can be deleted.
  */
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,7 +25,7 @@ interface Props {
   onDeleteBookmark: (id: string) => void;
 }
 
-export function BookNotesSheet({
+export const BookNotesSheet = memo(function BookNotesSheet({
   highlights,
   bookmarks,
   chapters,
@@ -125,7 +125,7 @@ export function BookNotesSheet({
       </SheetContent>
     </Sheet>
   );
-}
+});
 
 /* ─────────────────────────────────────────── rows ── */
 

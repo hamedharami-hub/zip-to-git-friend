@@ -8,7 +8,7 @@
  * On finish, the parent passes the result map back into the reader so every
  * paragraph in view can lazy-render its translation + idiom underlines.
  */
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import {
   Sheet,
@@ -61,7 +61,11 @@ function stripVocab(
   return out;
 }
 
-export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props) {
+export const BatchAnalyzeChapterButton = memo(function BatchAnalyzeChapterButton({
+  bookId,
+  chapter,
+  onResults,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState<BatchProgress | null>(null);
   const [running, setRunning] = useState(false);
@@ -288,7 +292,7 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
       </SheetContent>
     </Sheet>
   );
-}
+});
 
 interface StatProps {
   label: string;

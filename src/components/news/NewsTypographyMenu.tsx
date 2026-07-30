@@ -7,7 +7,7 @@
  * When `showReadingMode` is true, also exposes the shared reading-mode theme
  * and extra line-height controls from useReadingMode.
  */
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { AlignJustify, Palette, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -61,7 +61,10 @@ interface Props {
   showReadingMode?: boolean;
 }
 
-export function NewsTypographyMenu({ onChange, showReadingMode = false }: Props) {
+export const NewsTypographyMenu = memo(function NewsTypographyMenu({
+  onChange,
+  showReadingMode = false,
+}: Props) {
   const [size, setSize] = useState<NewsFontSize>(() => {
     try {
       return (localStorage.getItem(SIZE_KEY) as NewsFontSize) || "base";
@@ -220,4 +223,4 @@ export function NewsTypographyMenu({ onChange, showReadingMode = false }: Props)
       </PopoverContent>
     </Popover>
   );
-}
+});

@@ -38,7 +38,7 @@ import { BidiText } from "@/components/BidiText";
 import { cn } from "@/lib/utils";
 import { LangCycleButton } from "@/components/news/LangCycleButton";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
-import { ImageLightbox } from "@/components/news/ImageLightbox";
+import { LazyImageLightbox } from "@/components/news/LazyImageLightbox";
 import { NewsShareMenu } from "@/components/news/NewsShareMenu";
 import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
 import { NewsTocMenu } from "@/components/news/NewsTocMenu";
@@ -326,7 +326,7 @@ const NewsArticleReader = () => {
         </main>
       </div>
 
-      <ImageLightbox
+      <LazyImageLightbox
         images={lightboxImages}
         open={lightboxOpen}
         startIndex={lightboxIndex}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Sparkles, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -24,7 +25,13 @@ interface Props {
 const PARALLEL_BATCHES = 2;
 
 export function BatchAnalyze({ videoId }: Props) {
-  const settings = useSettingsStore((s) => s.settings);
+  const { batchModel, geminiApiKey, groqApiKey } = useSettingsStore(
+    useShallow((s) => ({
+      batchModel: s.settings.batchModel,
+      geminiApiKey: s.settings.geminiApiKey,
+      groqApiKey: s.settings.groqApiKey,
+    })),
+  );
   const primary = useSubtitleStore((s) => s.primary);
   const online = useOnline();
   const [running, setRunning] = useState(false);
@@ -45,7 +52,8 @@ export function BatchAnalyze({ videoId }: Props) {
       toast.error("No primary subtitles loaded.");
       return;
     }
-    const choice = settings.batchModel;
+    const choice = batchModel;
+    const settings = { geminiApiKey, groqApiKey };
     if (!getApiKeyFor(choice, settings)) {
       toast.error(
         choice.provider === "gemini"

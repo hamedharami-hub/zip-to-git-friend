@@ -1,4 +1,5 @@
 import { memo, useEffect, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Sparkles, Plus, Loader2, Languages, Check, WifiOff } from "lucide-react";
 import type { SubtitleCue, SegmentAnalysis } from "@/types";
 import { Button } from "@/components/ui/button";
@@ -25,10 +26,16 @@ export const AnalysisPanel = memo(function AnalysisPanel({
   autoRun = false,
   showTranslate = false,
 }: Props) {
-  const settings = useSettingsStore((s) => s.settings);
+  const { analyzeModel, translateModel, geminiApiKey, groqApiKey } = useSettingsStore(
+    useShallow((s) => ({
+      analyzeModel: s.settings.analyzeModel,
+      translateModel: s.settings.translateModel,
+      geminiApiKey: s.settings.geminiApiKey,
+      groqApiKey: s.settings.groqApiKey,
+    })),
+  );
   const addCard = useLeitnerStore((s) => s.addCard);
   const findByFront = useLeitnerStore((s) => s.findByFront);
-  const leitnerCards = useLeitnerStore((s) => s.cards);
   const online = useOnline();
   const [analysis, setAnalysis] = useState<SegmentAnalysis | null>(null);
   const [loading, setLoading] = useState(false);
@@ -54,9 +61,6 @@ export const AnalysisPanel = memo(function AnalysisPanel({
       toast.success(`Added ${kind}: ${front}`);
     }
   };
-  // Reference leitnerCards so re-renders happen on add — read for side-effect.
-  void leitnerCards;
-
   // Reset state when cue changes
   useEffect(() => {
     setAnalysis(null);
@@ -80,7 +84,8 @@ export const AnalysisPanel = memo(function AnalysisPanel({
   }, [cue?.id, videoId]);
 
   const runAnalyzeNow = async (c: SubtitleCue, silent = false) => {
-    const choice = settings.analyzeModel;
+    const choice = analyzeModel;
+    const settings = { geminiApiKey, groqApiKey };
     if (!getApiKeyFor(choice, settings)) {
       if (!silent)
         toast.error(
@@ -103,7 +108,7 @@ export const AnalysisPanel = memo(function AnalysisPanel({
       let finalResult = result;
       if (!result.translation) {
         try {
-          const t = await runTranslate(c.text, settings.translateModel, settings);
+          const t = await runTranslate(c.text, translateModel, settings);
           finalResult = { ...result, translation: t.trim() };
         } catch {
           /* keep going without translation */
@@ -120,7 +125,8 @@ export const AnalysisPanel = memo(function AnalysisPanel({
   };
 
   const runTranslateNow = async (c: SubtitleCue) => {
-    const choice = settings.translateModel;
+    const choice = translateModel;
+    const settings = { geminiApiKey, groqApiKey };
     if (!getApiKeyFor(choice, settings)) {
       toast.error(
         choice.provider === "gemini"

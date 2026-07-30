@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,7 +30,12 @@ interface Props {
 }
 
 /** Append a new chapter to an existing book by pasting plain text. */
-export function AddChapterDialog({ book, existingChapterCount, onAdded, trigger }: Props) {
+export const AddChapterDialog = memo(function AddChapterDialog({
+  book,
+  existingChapterCount,
+  onAdded,
+  trigger,
+}: Props) {
   const upsert = useBookStore((s) => s.upsert);
 
   const [open, setOpen] = useState(false);
@@ -148,4 +153,4 @@ export function AddChapterDialog({ book, existingChapterCount, onAdded, trigger 
       </DialogContent>
     </Dialog>
   );
-}
+});

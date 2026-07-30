@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Plus, Sparkles, Loader2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +31,12 @@ interface Props {
 }
 
 /** Append a new AI-generated chapter to an existing language book. */
-export function AddLanguageChapterDialog({ book, existingChapterCount, onAdded, trigger }: Props) {
+export const AddLanguageChapterDialog = memo(function AddLanguageChapterDialog({
+  book,
+  existingChapterCount,
+  onAdded,
+  trigger,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [aiResult, setAiResult] = useState<LanguageChapterAIResult | null>(null);
@@ -261,4 +266,4 @@ export function AddLanguageChapterDialog({ book, existingChapterCount, onAdded, 
       </DialogContent>
     </Dialog>
   );
-}
+});

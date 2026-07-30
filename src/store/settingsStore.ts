@@ -58,6 +58,15 @@ const DEFAULTS: AppSettings = {
   paragraphTextAlign: "start",
 };
 
+// Shallow equality for settings objects (avoids no-op re-renders).
+function settingsEqual(a: AppSettings, b: AppSettings): boolean {
+  const keys = Object.keys(a) as Array<keyof AppSettings>;
+  for (const k of keys) {
+    if ((a[k] as unknown) !== (b[k] as unknown)) return false;
+  }
+  return true;
+}
+
 // Smart merge: cloud value wins when present & non-empty; otherwise local fills it.
 function smartMerge(local: AppSettings, cloud: Partial<AppSettings>): AppSettings {
   const merged = { ...local } as Record<string, unknown>;
@@ -115,7 +124,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
     applyTheme(theme);
   },
   update: async (patch) => {
-    const next = { ...get().settings, ...patch };
+    const current = get().settings;
+    const next = { ...current, ...patch };
+    if (settingsEqual(current, next)) return;
     set({ settings: next });
     await saveSettings(next);
     if (patch.theme) applyTheme(patch.theme);
@@ -137,6 +148,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const local = get().settings;
       const cloud = (data?.settings ?? {}) as Partial<AppSettings>;
       const merged = smartMerge(local, cloud);
+      if (settingsEqual(local, merged)) return;
       set({ settings: merged });
       await saveSettings(merged);
       applyTheme(merged.theme);

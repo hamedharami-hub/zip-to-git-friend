@@ -8,6 +8,7 @@
  * Cached results render instantly; "Re-analyze" forces a fresh AI call.
  */
 import { useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   Loader2,
   Plus,
@@ -61,15 +62,16 @@ export function ParagraphAnalysisCard({
   const [loading, setLoading] = useState(!initial);
   const [collapsed, setCollapsed] = useState(false);
   const online = useOnline();
-  const settings = useSettingsStore((s) => s.settings);
-  const modelRef = coerceBookModel(
-    settings.bookSingleAnalysisModelRef ?? settings.bookSingleAnalysisModel,
+  const { bookSingleAnalysisModelRef, bookSingleAnalysisModel } = useSettingsStore(
+    useShallow((s) => ({
+      bookSingleAnalysisModelRef: s.settings.bookSingleAnalysisModelRef,
+      bookSingleAnalysisModel: s.settings.bookSingleAnalysisModel,
+    })),
   );
+  const modelRef = coerceBookModel(bookSingleAnalysisModelRef ?? bookSingleAnalysisModel);
 
   const addCard = useLeitnerStore((s) => s.addCard);
   const findByFront = useLeitnerStore((s) => s.findByFront);
-  const cards = useLeitnerStore((s) => s.cards);
-  void cards;
 
   const run = async (force = false, refOverride?: BookAIModelRef) => {
     if (!online) {

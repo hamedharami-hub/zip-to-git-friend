@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Sparkles, Languages, Loader2 } from "lucide-react";
 import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
 import { useParagraphGestures, speakText } from "@/hooks/useParagraphGestures";
@@ -58,13 +59,18 @@ const Paragraph = memo(function Paragraph({
   const [localLoading, setLocalLoading] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { bookSingleAnalysisModelRef, bookSingleAnalysisModel, paragraphGestures } =
+    useSettingsStore(
+      useShallow((s) => ({
+        bookSingleAnalysisModelRef: s.settings.bookSingleAnalysisModelRef,
+        bookSingleAnalysisModel: s.settings.bookSingleAnalysisModel,
+        paragraphGestures: s.settings.paragraphGestures,
+      })),
+    );
   const online = useOnline();
-  const modelRef = coerceBookModel(
-    settings.bookSingleAnalysisModelRef ?? settings.bookSingleAnalysisModel,
-  );
+  const modelRef = coerceBookModel(bookSingleAnalysisModelRef ?? bookSingleAnalysisModel);
 
-  const gesturesEnabled = !!settings.paragraphGestures;
+  const gesturesEnabled = !!paragraphGestures;
 
   const [starred, setStarred] = useState<boolean>(() => {
     try {

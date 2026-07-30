@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { Link, useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, Newspaper, Sparkles, Trash2, MoreVertical } from "lucide-react";
@@ -68,9 +69,14 @@ const NewsDigestReader = () => {
     saveNewsDisplayLang(displayLang);
   }, [displayLang]);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { newsRewriteModelRef, bookRewriteModelRef } = useSettingsStore(
+    useShallow((s) => ({
+      newsRewriteModelRef: s.settings.newsRewriteModelRef,
+      bookRewriteModelRef: s.settings.bookRewriteModelRef,
+    })),
+  );
   const newsModelRef = coerceBookModel(
-    settings.newsRewriteModelRef ?? settings.bookRewriteModelRef ?? "google/gemini-3-flash-preview",
+    newsRewriteModelRef ?? bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
 
   useEffect(() => {

@@ -9,7 +9,8 @@
  * Reuses the existing `analyze-paragraph` cache, so reopening a previously
  * translated chapter is instant and free.
  */
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Languages, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -41,7 +42,7 @@ interface Props {
 
 const CONCURRENCY = 5;
 
-export function TranslateChapterButton({
+export const TranslateChapterButton = memo(function TranslateChapterButton({
   bookId,
   chapter,
   displayLang,
@@ -53,11 +54,16 @@ export function TranslateChapterButton({
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const online = useOnline();
-  const settings = useSettingsStore((s) => s.settings);
+  const { paragraphBatchModelRef, bookBatchAnalysisModelRef, bookBatchAnalysisModel } =
+    useSettingsStore(
+      useShallow((s) => ({
+        paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
+        bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
+        bookBatchAnalysisModel: s.settings.bookBatchAnalysisModel,
+      })),
+    );
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef ??
-      settings.bookBatchAnalysisModelRef ??
-      settings.bookBatchAnalysisModel,
+    paragraphBatchModelRef ?? bookBatchAnalysisModelRef ?? bookBatchAnalysisModel,
   );
 
   useEffect(() => () => abortRef.current?.abort(), []);
@@ -204,4 +210,4 @@ export function TranslateChapterButton({
       )}
     </div>
   );
-}
+});

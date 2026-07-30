@@ -1,11 +1,26 @@
 import { Subtitles } from "lucide-react";
+import { useShallow } from "zustand/shallow";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useSettingsStore } from "@/store/settingsStore";
 
 export function SubtitleSettingsMenu() {
-  const settings = useSettingsStore((s) => s.settings);
+  const {
+    autoShowAnalysis,
+    blindListen,
+    autoPauseAtCueEnd,
+    autoImmersiveOnLandscape,
+    showInlineTranslation,
+  } = useSettingsStore(
+    useShallow((s) => ({
+      autoShowAnalysis: s.settings.autoShowAnalysis,
+      blindListen: s.settings.blindListen,
+      autoPauseAtCueEnd: s.settings.autoPauseAtCueEnd,
+      autoImmersiveOnLandscape: s.settings.autoImmersiveOnLandscape,
+      showInlineTranslation: s.settings.showInlineTranslation,
+    })),
+  );
   const update = useSettingsStore((s) => s.update);
 
   const Row = ({
@@ -43,31 +58,31 @@ export function SubtitleSettingsMenu() {
         <Row
           title="Auto-show analysis"
           desc="Automatically run AI analysis on the current subtitle (uses cached results when available)."
-          checked={settings.autoShowAnalysis}
+          checked={autoShowAnalysis}
           onChange={(v) => update({ autoShowAnalysis: v })}
         />
         <Row
           title="Blind listen mode"
           desc="Hide the subtitle text and auto-pause at the end of every sentence."
-          checked={settings.blindListen}
+          checked={blindListen}
           onChange={(v) => update({ blindListen: v })}
         />
         <Row
           title="Auto-pause at end of every cue"
           desc="The video pauses after each subtitle line so you can think or repeat."
-          checked={settings.autoPauseAtCueEnd}
+          checked={autoPauseAtCueEnd}
           onChange={(v) => update({ autoPauseAtCueEnd: v })}
         />
         <Row
           title="Auto-fullscreen on landscape"
           desc="چرخاندن گوشی به landscape باعث ورود خودکار به immersive می‌شود."
-          checked={settings.autoImmersiveOnLandscape ?? false}
+          checked={autoImmersiveOnLandscape ?? false}
           onChange={(v) => update({ autoImmersiveOnLandscape: v })}
         />
         <Row
           title="Show inline translation (dual subtitles)"
           desc="نمایش ترجمه‌ی کش‌شده زیر متن اصلی وقتی زیرنویس دوم نیست."
-          checked={settings.showInlineTranslation}
+          checked={showInlineTranslation}
           onChange={(v) => update({ showInlineTranslation: v })}
         />
       </PopoverContent>

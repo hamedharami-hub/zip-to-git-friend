@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useArticleLoad } from "@/hooks/useArticleLoad";
 import { useArticleTranslation } from "@/hooks/useArticleTranslation";
@@ -37,7 +38,7 @@ import { BidiText } from "@/components/BidiText";
 import { cn } from "@/lib/utils";
 import { LangCycleButton } from "@/components/news/LangCycleButton";
 import { ReadingModeControls } from "@/components/reader/ReadingModeControls";
-import { ImageLightbox } from "@/components/news/ImageLightbox";
+import { LazyImageLightbox } from "@/components/news/LazyImageLightbox";
 import { NewsShareMenu } from "@/components/news/NewsShareMenu";
 import { NewsTypographyMenu } from "@/components/news/NewsTypographyMenu";
 import { NewsTocMenu } from "@/components/news/NewsTocMenu";
@@ -85,12 +86,19 @@ const NewsArticleReader = () => {
   // Shared reading-mode state (theme, extra line-height) from ReadingModeControls.
   const { extraLineHeight } = useReadingMode();
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { newsBatchAnalysisModelRef, paragraphBatchModelRef, bookBatchAnalysisModelRef } =
+    useSettingsStore(
+      useShallow((s) => ({
+        newsBatchAnalysisModelRef: s.settings.newsBatchAnalysisModelRef,
+        paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
+        bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
+      })),
+    );
   // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
-    settings.newsBatchAnalysisModelRef ??
-      settings.paragraphBatchModelRef ??
-      settings.bookBatchAnalysisModelRef ??
+    newsBatchAnalysisModelRef ??
+      paragraphBatchModelRef ??
+      bookBatchAnalysisModelRef ??
       "google/gemini-3.1-flash-lite-preview",
   );
 
@@ -318,7 +326,7 @@ const NewsArticleReader = () => {
         </main>
       </div>
 
-      <ImageLightbox
+      <LazyImageLightbox
         images={lightboxImages}
         open={lightboxOpen}
         startIndex={lightboxIndex}

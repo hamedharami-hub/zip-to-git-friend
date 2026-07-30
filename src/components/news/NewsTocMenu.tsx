@@ -4,7 +4,7 @@
  * ebook. Headings get stable slug ids from `headingSlug()` in
  * InteractiveBookText, so the click handler can scroll directly to them.
  */
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -41,7 +41,7 @@ interface Props {
   html: string;
 }
 
-export function NewsTocMenu({ html }: Props) {
+export const NewsTocMenu = memo(function NewsTocMenu({ html }: Props) {
   const [open, setOpen] = useState(false);
   const items = useMemo(() => extractToc(html), [html]);
 
@@ -92,4 +92,4 @@ export function NewsTocMenu({ html }: Props) {
       </PopoverContent>
     </Popover>
   );
-}
+});

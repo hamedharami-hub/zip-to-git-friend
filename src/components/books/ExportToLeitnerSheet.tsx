@@ -10,7 +10,7 @@
  *    import — the leitner store already enforces this, but we surface the
  *    duplicate-state in the UI so users see what's already in their deck.
  */
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -47,7 +47,11 @@ async function loadAllAnalyses(bookId: string): Promise<BookParagraphAnalysis[]>
   return db.getAllFromIndex("bookParagraphAnalyses", "bookId", bookId);
 }
 
-export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
+export const ExportToLeitnerSheet = memo(function ExportToLeitnerSheet({
+  bookId,
+  bookTitle,
+  chapters,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -310,4 +314,4 @@ export function ExportToLeitnerSheet({ bookId, bookTitle, chapters }: Props) {
       </SheetContent>
     </Sheet>
   );
-}
+});

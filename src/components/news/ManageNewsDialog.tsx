@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { FolderPlus, Ban, Folder, Trash2, X, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,11 @@ export function ManageNewsDialog({
   onFoldersChanged: () => void | Promise<void>;
   onBlockedChanged: () => void | Promise<void>;
 }) {
-  const settings = useSettingsStore((s) => s.settings);
+  const { defaultRewriteVoice } = useSettingsStore(
+    useShallow((s) => ({
+      defaultRewriteVoice: s.settings.defaultRewriteVoice,
+    })),
+  );
   const update = useSettingsStore((s) => s.update);
   const [folderName, setFolderName] = useState("");
   const [folderColor, setFolderColor] = useState(FOLDER_COLORS[0]);
@@ -194,7 +199,7 @@ export function ManageNewsDialog({
             <div className="space-y-2">
               <Label className="text-xs">لحن بازنویسی پیش‌فرض</Label>
               <Select
-                value={settings.defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
+                value={defaultRewriteVoice ?? DEFAULT_REWRITE_VOICE}
                 onValueChange={(v) => void update({ defaultRewriteVoice: v as RewriteVoice })}
               >
                 <SelectTrigger className="h-9 text-xs">

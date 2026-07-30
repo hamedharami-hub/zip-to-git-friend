@@ -9,7 +9,7 @@
  *  - Debounced (180ms) to keep the keystroke-to-result loop responsive even
  *    on large books.
  */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -78,7 +78,11 @@ function searchBook(chapters: BookChapter[], rawQuery: string, limit = 80): Hit[
   return hits;
 }
 
-export function BookSearchSheet({ chapters, currentChapterIndex, onJump }: Props) {
+export const BookSearchSheet = memo(function BookSearchSheet({
+  chapters,
+  currentChapterIndex,
+  onJump,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
@@ -184,4 +188,4 @@ export function BookSearchSheet({ chapters, currentChapterIndex, onJump }: Props
       </SheetContent>
     </Sheet>
   );
-}
+});

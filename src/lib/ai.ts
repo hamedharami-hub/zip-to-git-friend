@@ -23,10 +23,12 @@ export function batchSizeFor(provider: "gemini" | "groq"): number {
  * Cues missing from the model response are simply absent — caller should retry
  * them individually with runAnalyze().
  */
+type ApiKeySettings = Pick<AppSettings, "geminiApiKey" | "groqApiKey">;
+
 export async function runAnalyzeBatch(
   cues: Array<{ id: string; text: string }>,
   choice: AIModelChoice,
-  settings: AppSettings,
+  settings: ApiKeySettings,
 ): Promise<Map<string, SegmentAnalysis>> {
   return aiLimiter.run(async () => {
     try {
@@ -57,14 +59,14 @@ function wrap(e: unknown, provider: "gemini" | "groq"): AIError {
   return new AIError(provider, "unknown", e instanceof Error ? e.message : "Unknown error");
 }
 
-export function getApiKeyFor(choice: AIModelChoice, settings: AppSettings): string {
+export function getApiKeyFor(choice: AIModelChoice, settings: ApiKeySettings): string {
   return choice.provider === "gemini" ? settings.geminiApiKey : settings.groqApiKey;
 }
 
 export async function runAnalyze(
   text: string,
   choice: AIModelChoice,
-  settings: AppSettings,
+  settings: ApiKeySettings,
 ): Promise<SegmentAnalysis> {
   return aiLimiter.run(async () => {
     try {
@@ -81,7 +83,7 @@ export async function runAnalyze(
 export async function runTranslate(
   text: string,
   choice: AIModelChoice,
-  settings: AppSettings,
+  settings: ApiKeySettings,
   context?: string,
 ): Promise<string> {
   return aiLimiter.run(async () => {

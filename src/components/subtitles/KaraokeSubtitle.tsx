@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Volume2, ExternalLink, Plus, Loader2, Check, GraduationCap, EyeOff } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -53,7 +54,13 @@ export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, v
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const [anchorRect, setAnchorRect] = useState<{ x: number; y: number } | null>(null);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { translateModel, geminiApiKey, groqApiKey } = useSettingsStore(
+    useShallow((s) => ({
+      translateModel: s.settings.translateModel,
+      geminiApiKey: s.settings.geminiApiKey,
+      groqApiKey: s.settings.groqApiKey,
+    })),
+  );
   const online = useOnline();
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
   const releasePlayback = useVideoStore((s) => s.releasePlayback);
@@ -72,7 +79,7 @@ export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, v
   const activeWord = activeIdx >= 0 ? (words[activeIdx]?.text ?? "") : "";
   const cleaned = clean(activeWord);
   const inLeitner = useLeitnerStore((s) => (cleaned ? !!s.findByFront(cleaned) : false));
-  const hasKey = !!getApiKeyFor(settings.translateModel, settings);
+  const hasKey = !!getApiKeyFor(translateModel, { geminiApiKey, groqApiKey });
 
   const cleanedWords = useMemo(
     () =>
@@ -109,7 +116,8 @@ export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, v
         setTranslation(cached);
         return;
       }
-      const choice = settings.translateModel;
+      const choice = translateModel;
+      const settings = { geminiApiKey, groqApiKey };
       if (!getApiKeyFor(choice, settings) || !online) return;
       setLoading(true);
       try {

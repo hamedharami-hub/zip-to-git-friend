@@ -9,6 +9,7 @@
  * export and highlights all work on the rewrite too.
  */
 import { useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Loader2, RefreshCw, Trash2 } from "lucide-react";
@@ -52,8 +53,13 @@ export function ChapterRewriteTabs({
   onHasRewriteChange,
 }: Props) {
   const online = useOnline();
-  const settings = useSettingsStore((s) => s.settings);
-  const modelRef = coerceBookModel(settings.bookRewriteModelRef ?? settings.bookRewriteModel);
+  const { bookRewriteModelRef, bookRewriteModel } = useSettingsStore(
+    useShallow((s) => ({
+      bookRewriteModelRef: s.settings.bookRewriteModelRef,
+      bookRewriteModel: s.settings.bookRewriteModel,
+    })),
+  );
+  const modelRef = coerceBookModel(bookRewriteModelRef ?? bookRewriteModel);
   const modelLabel =
     modelRef.provider === "gateway" ? modelRef.model : `${modelRef.provider}: ${modelRef.model}`;
 

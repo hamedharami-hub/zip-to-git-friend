@@ -9,6 +9,7 @@
  * paragraph in view can lazy-render its translation + idiom underlines.
  */
 import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   Sheet,
   SheetContent,
@@ -66,11 +67,16 @@ export function BatchAnalyzeChapterButton({ bookId, chapter, onResults }: Props)
   const [running, setRunning] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const online = useOnline();
-  const settings = useSettingsStore((s) => s.settings);
+  const { paragraphBatchModelRef, bookBatchAnalysisModelRef, bookBatchAnalysisModel } =
+    useSettingsStore(
+      useShallow((s) => ({
+        paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
+        bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
+        bookBatchAnalysisModel: s.settings.bookBatchAnalysisModel,
+      })),
+    );
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef ??
-      settings.bookBatchAnalysisModelRef ??
-      settings.bookBatchAnalysisModel,
+    paragraphBatchModelRef ?? bookBatchAnalysisModelRef ?? bookBatchAnalysisModel,
   );
 
   // Stop any in-flight run when the component unmounts.

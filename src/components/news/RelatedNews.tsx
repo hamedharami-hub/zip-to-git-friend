@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Newspaper, Sparkles, ExternalLink, Network, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,18 @@ export function RelatedNews({ article }: RelatedNewsProps) {
   const [comparing, setComparing] = useState(false);
   const [compare, setCompare] = useState<CompareResult | null>(null);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { paragraphBatchModelRef, bookBatchAnalysisModelRef, newsRewriteModelRef } =
+    useSettingsStore(
+      useShallow((s) => ({
+        paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
+        bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
+        newsRewriteModelRef: s.settings.newsRewriteModelRef,
+      })),
+    );
   const modelRef = coerceBookModel(
-    settings.paragraphBatchModelRef ??
-      settings.bookBatchAnalysisModelRef ??
-      settings.newsRewriteModelRef ??
+    paragraphBatchModelRef ??
+      bookBatchAnalysisModelRef ??
+      newsRewriteModelRef ??
       "google/gemini-3-flash-preview",
   );
 

@@ -20,7 +20,6 @@ function uuid() {
 }
 
 export function AutoTranscribe({ videoId }: Props) {
-  const settings = useSettingsStore((s) => s.settings);
   const setTrack = useSubtitleStore((s) => s.setTrack);
   const current = useVideoStore((s) => s.current);
   const online = useOnline();
@@ -29,6 +28,7 @@ export function AutoTranscribe({ videoId }: Props) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const runWithFile = async (file: File) => {
+    const { settings } = useSettingsStore.getState();
     if (!settings.groqApiKey) {
       toast.error("Add your Groq API key in Settings.");
       return;

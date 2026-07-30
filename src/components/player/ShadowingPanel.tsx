@@ -13,6 +13,7 @@
  */
 
 import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   Mic,
   Square,
@@ -83,7 +84,13 @@ export const ShadowingPanel = memo(function ShadowingPanel({ videoId, cue }: Pro
   const requestSeek = useVideoStore((s) => s.requestSeek);
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
   const releasePlayback = useVideoStore((s) => s.releasePlayback);
-  const settings = useSettingsStore((s) => s.settings);
+  const { autoPauseAtCueEnd, groqApiKey, transcribeModel } = useSettingsStore(
+    useShallow((s) => ({
+      autoPauseAtCueEnd: s.settings.autoPauseAtCueEnd,
+      groqApiKey: s.settings.groqApiKey,
+      transcribeModel: s.settings.transcribeModel,
+    })),
+  );
   const updateSettings = useSettingsStore((s) => s.update);
 
   const { isRecording, elapsedMs, error, takes, start, stop, cancel, refresh } = useShadowing({
@@ -109,8 +116,8 @@ export const ShadowingPanel = memo(function ShadowingPanel({ videoId, cue }: Pro
   // time the user opens the panel and remember the previous setting.
   const prevAutoPauseRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (open && !settings.autoPauseAtCueEnd) {
-      prevAutoPauseRef.current = settings.autoPauseAtCueEnd;
+    if (open && !autoPauseAtCueEnd) {
+      prevAutoPauseRef.current = autoPauseAtCueEnd;
       updateSettings({ autoPauseAtCueEnd: true });
     }
     return () => {
@@ -222,8 +229,8 @@ export const ShadowingPanel = memo(function ShadowingPanel({ videoId, cue }: Pro
                 <TakeRow
                   key={t.id}
                   take={t}
-                  groqApiKey={settings.groqApiKey}
-                  transcribeModel={settings.transcribeModel}
+                  groqApiKey={groqApiKey}
+                  transcribeModel={transcribeModel}
                   onChanged={refresh}
                 />
               ))}

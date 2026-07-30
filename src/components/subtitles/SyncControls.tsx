@@ -1,4 +1,5 @@
 import { Slider } from "@/components/ui/slider";
+import { useShallow } from "zustand/shallow";
 import { Label } from "@/components/ui/label";
 import { useSubtitleStore } from "@/store/subtitleStore";
 import { useSettingsStore } from "@/store/settingsStore";
@@ -66,7 +67,12 @@ function TrackSync({ track, label }: { track: SubtitleTrack; label: string }) {
 export function SyncControls() {
   const primary = useSubtitleStore((s) => s.primary);
   const secondary = useSubtitleStore((s) => s.secondary);
-  const settings = useSettingsStore((s) => s.settings);
+  const { displayMode, fontSize } = useSettingsStore(
+    useShallow((s) => ({
+      displayMode: s.settings.displayMode,
+      fontSize: s.settings.fontSize,
+    })),
+  );
   const update = useSettingsStore((s) => s.update);
 
   return (
@@ -75,7 +81,7 @@ export function SyncControls() {
         <div className="space-y-1">
           <Label className="text-xs">Display mode</Label>
           <Select
-            value={settings.displayMode}
+            value={displayMode}
             onValueChange={(v: "inside" | "outside" | "hybrid") => update({ displayMode: v })}
           >
             <SelectTrigger className="w-[140px] h-9">
@@ -91,7 +97,7 @@ export function SyncControls() {
         <div className="space-y-1">
           <Label className="text-xs">Font size</Label>
           <Select
-            value={settings.fontSize}
+            value={fontSize}
             onValueChange={(v: "sm" | "md" | "lg" | "xl") => update({ fontSize: v })}
           >
             <SelectTrigger className="w-[100px] h-9">

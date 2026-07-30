@@ -1,4 +1,5 @@
 import { memo } from "react";
+import { useShallow } from "zustand/shallow";
 import { useNavigate } from "react-router-dom";
 import {
   Newspaper,
@@ -111,7 +112,11 @@ export const NewsFeed = memo(function NewsFeed({
   user,
 }: Props) {
   const navigate = useNavigate();
-  const settings = useSettingsStore((s) => s.settings);
+  const { defaultRewriteVoice } = useSettingsStore(
+    useShallow((s) => ({
+      defaultRewriteVoice: s.settings.defaultRewriteVoice,
+    })),
+  );
   const update = useSettingsStore((s) => s.update);
 
   return (
@@ -230,7 +235,7 @@ export const NewsFeed = memo(function NewsFeed({
                   لحن بازنویسی:
                 </span>
                 <Select
-                  value={normalizeVoice(settings.defaultRewriteVoice)}
+                  value={normalizeVoice(defaultRewriteVoice)}
                   onValueChange={(v) =>
                     void update({ defaultRewriteVoice: normalizeVoice(v) as RewriteVoice })
                   }

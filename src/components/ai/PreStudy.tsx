@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   GraduationCap,
   X,
@@ -206,7 +207,13 @@ function speak(word: string) {
  */
 export function PreStudy({ videoId, limit = 25 }: Props) {
   const primary = useSubtitleStore((s) => s.primary);
-  const settings = useSettingsStore((s) => s.settings);
+  const { translateModel, geminiApiKey, groqApiKey } = useSettingsStore(
+    useShallow((s) => ({
+      translateModel: s.settings.translateModel,
+      geminiApiKey: s.settings.geminiApiKey,
+      groqApiKey: s.settings.groqApiKey,
+    })),
+  );
   const online = useOnline();
   const addCard = useLeitnerStore((s) => s.addCard);
   const statusMap = useAllWordStatus();
@@ -259,7 +266,8 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
         setTranslation(cached);
         return;
       }
-      const choice = settings.translateModel;
+      const choice = translateModel;
+      const settings = { geminiApiKey, groqApiKey };
       if (!getApiKeyFor(choice, settings) || !online) return;
       setLoadingT(true);
       try {
@@ -415,7 +423,7 @@ export function PreStudy({ videoId, limit = 25 }: Props) {
               <span className="text-primary font-medium">{translation}</span>
             ) : (
               <span className="text-muted-foreground text-xs">
-                {!getApiKeyFor(settings.translateModel, settings)
+                {!getApiKeyFor(translateModel, { geminiApiKey, groqApiKey })
                   ? "Add an AI API key in Settings to see translations."
                   : !online
                     ? "Offline — translations unavailable."

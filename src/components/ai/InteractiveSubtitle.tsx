@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   Volume2,
   ExternalLink,
@@ -87,7 +88,14 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
   const [activeWord, setActiveWord] = useState<string>("");
   const [anchorRect, setAnchorRect] = useState<{ x: number; y: number } | null>(null);
 
-  const settings = useSettingsStore((s) => s.settings);
+  const { wordMeaningModel, translateModel, geminiApiKey, groqApiKey } = useSettingsStore(
+    useShallow((s) => ({
+      wordMeaningModel: s.settings.wordMeaningModel,
+      translateModel: s.settings.translateModel,
+      geminiApiKey: s.settings.geminiApiKey,
+      groqApiKey: s.settings.groqApiKey,
+    })),
+  );
   const online = useOnline();
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
   const releasePlayback = useVideoStore((s) => s.releasePlayback);
@@ -120,7 +128,8 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
         return;
       }
       // Fetch from AI
-      const choice = settings.wordMeaningModel ?? settings.translateModel;
+      const choice = wordMeaningModel ?? translateModel;
+      const settings = { geminiApiKey, groqApiKey };
       if (!getApiKeyFor(choice, settings)) {
         return; // Silent — UI shows a hint to add key
       }
@@ -190,8 +199,8 @@ export const InteractiveSubtitle = memo(function InteractiveSubtitle({
   };
 
   const tokens = useMemo(() => tokenize(text), [text]);
-  const activeWordModel = settings.wordMeaningModel ?? settings.translateModel;
-  const hasKey = !!getApiKeyFor(activeWordModel, settings);
+  const activeWordModel = wordMeaningModel ?? translateModel;
+  const hasKey = !!getApiKeyFor(activeWordModel, { geminiApiKey, groqApiKey });
   const statusMap = useAllWordStatus();
   const leitnerKeys = useLeitnerKeys();
   const { status: activeStatus, cycle: cycleStatus, setStatus } = useWordStatus(cleaned);

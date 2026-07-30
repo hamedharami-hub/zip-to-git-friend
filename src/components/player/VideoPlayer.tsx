@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useVideoStore } from "@/store/videoStore";
 import { useSubtitleStore } from "@/store/subtitleStore";
@@ -13,8 +13,7 @@ import { BlindListenBar } from "./BlindListenBar";
 import { SubtitleRenderer } from "@/components/subtitles/SubtitleRenderer";
 import { KaraokeSubtitle } from "@/components/subtitles/KaraokeSubtitle";
 import { InteractiveSubtitle } from "@/components/ai/InteractiveSubtitle";
-import { AnalysisPanel } from "@/components/ai/AnalysisPanel";
-import { ShadowingPanel } from "@/components/player/ShadowingPanel";
+import { LazyAnalysisPanel } from "@/components/ai/LazyAnalysisPanel";
 import {
   Repeat,
   ChevronLeft,
@@ -27,6 +26,17 @@ import {
   Loader2,
 } from "lucide-react";
 import { useMediaSession, useScreenWakeLock } from "@/hooks/useMediaSession";
+
+const ShadowingPanel = lazy(() =>
+  import("@/components/player/ShadowingPanel").then((m) => ({ default: m.ShadowingPanel })),
+);
+
+const PanelFallback = () => (
+  <div className="flex items-center justify-center p-6 text-muted-foreground text-xs">
+    <div className="h-5 w-5 border-2 border-primary/20 border-t-primary rounded-full animate-spin mr-2" />
+    در حال بارگذاری…
+  </div>
+);
 
 interface VideoPlayerProps {
   videoId?: string;
@@ -310,7 +320,6 @@ export const VideoPlayer = memo(function VideoPlayer({
 
   // Hotkeys registration moved below toggleFullscreen/togglePiP declarations to avoid TDZ.
 
-
   // Sync fullscreen state with browser events (handles ESC, system gesture, swipe-down on Android).
   useEffect(() => {
     const onChange = () => {
@@ -437,7 +446,6 @@ export const VideoPlayer = memo(function VideoPlayer({
     toggleFullscreen,
     togglePiP,
   });
-
 
   const onLoaded = useCallback(
     (e: React.SyntheticEvent<HTMLVideoElement>) => {
@@ -809,7 +817,7 @@ export const VideoPlayer = memo(function VideoPlayer({
             {analysisOpen && visiblePrimary && !hideSubtitleText && (
               <div className="border-t border-white/10 max-h-[35vh] overflow-y-auto px-3 py-2">
                 <div className="rounded-md bg-white/5 border border-white/10 p-2.5">
-                  <AnalysisPanel
+                  <LazyAnalysisPanel
                     videoId={videoId}
                     cue={visiblePrimary}
                     autoRun={autoShowAnalysis}
@@ -864,7 +872,7 @@ export const VideoPlayer = memo(function VideoPlayer({
       {!immersive && videoId && (
         <div className="mx-3 sm:mx-0 rounded-lg border border-primary/20 bg-card/50 p-3 min-h-[120px]">
           {activePrimary ? (
-            <AnalysisPanel
+            <LazyAnalysisPanel
               videoId={videoId}
               cue={activePrimary}
               autoRun={autoShowAnalysis}
@@ -907,7 +915,9 @@ export const VideoPlayer = memo(function VideoPlayer({
       {/* Shadowing study panel — record yourself & compare. */}
       {!immersive && videoId && activePrimary && (
         <div className="mx-3 sm:mx-0">
-          <ShadowingPanel videoId={videoId} cue={activePrimary} />
+          <Suspense fallback={<PanelFallback />}>
+            <ShadowingPanel videoId={videoId} cue={activePrimary} />
+          </Suspense>
         </div>
       )}
     </div>

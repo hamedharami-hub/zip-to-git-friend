@@ -58,9 +58,6 @@ export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, v
   const holdPlayback = useVideoStore((s) => s.holdPlayback);
   const releasePlayback = useVideoStore((s) => s.releasePlayback);
   const addCard = useLeitnerStore((s) => s.addCard);
-  const findByFront = useLeitnerStore((s) => s.findByFront);
-  const cards = useLeitnerStore((s) => s.cards);
-  void cards;
 
   const [translation, setTranslation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -74,7 +71,7 @@ export const KaraokeSubtitle = memo(function KaraokeSubtitle({ cue, className, v
 
   const activeWord = activeIdx >= 0 ? (words[activeIdx]?.text ?? "") : "";
   const cleaned = clean(activeWord);
-  const inLeitner = !!findByFront(cleaned);
+  const inLeitner = useLeitnerStore((s) => (cleaned ? !!s.findByFront(cleaned) : false));
   const hasKey = !!getApiKeyFor(settings.translateModel, settings);
 
   const cleanedWords = useMemo(

@@ -8,7 +8,7 @@ import { useCachedTranslation } from "@/hooks/useCachedTranslation";
 import { Button } from "@/components/ui/button";
 import { Bookmark, BookmarkCheck } from "lucide-react";
 import { toast } from "sonner";
-import { memo, useMemo } from "react";
+import { memo } from "react";
 
 interface Props {
   primaryCue: SubtitleCue | null;
@@ -47,8 +47,15 @@ export const SubtitleRenderer = memo(function SubtitleRenderer({
   const showInlineTranslation = useSettingsStore((s) => s.settings.showInlineTranslation);
   const sizeClass = FONT_SIZE[fontSize];
 
-  const cards = useLeitnerStore((s) => s.cards);
   const addCard = useLeitnerStore((s) => s.addCard);
+  const isSaved = useLeitnerStore((s) => {
+    if (!primaryCue || !videoId) return false;
+    return s.cards.some(
+      (c) =>
+        c.sourceVideoId === videoId &&
+        (c.sourceCueId === primaryCue.id || c.sourceCueId?.startsWith(`${primaryCue.id}@`)),
+    );
+  });
 
   const overlayText =
     "inline-block px-3 py-1 rounded subtitle-overlay-bg whitespace-pre-wrap text-center";
@@ -61,19 +68,6 @@ export const SubtitleRenderer = memo(function SubtitleRenderer({
   const cachedTranslation = useCachedTranslation(videoId, primaryCue?.id);
   const inlineTranslation =
     showInlineTranslation && !secondaryCue && !hideText && cachedTranslation;
-
-  // Has this cue already been saved as a Leitner card?
-  const savedCard = useMemo(() => {
-    if (!primaryCue || !videoId) return null;
-    return (
-      cards.find(
-        (c) =>
-          c.sourceVideoId === videoId &&
-          (c.sourceCueId === primaryCue.id || c.sourceCueId?.startsWith(`${primaryCue.id}@`)),
-      ) ?? null
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
-  }, [cards, primaryCue?.id, videoId]);
 
   if (!primaryCue && !secondaryCue) {
     if (variant === "panel") {
@@ -168,14 +162,14 @@ export const SubtitleRenderer = memo(function SubtitleRenderer({
         <Button
           type="button"
           size="sm"
-          variant={savedCard ? "secondary" : "ghost"}
+          variant={isSaved ? "secondary" : "ghost"}
           className="h-7 text-xs gap-1.5"
           onClick={handleSaveSentence}
-          disabled={!!savedCard}
-          aria-label={savedCard ? "Sentence already saved" : "Save sentence as flashcard"}
-          title={savedCard ? "Saved to Leitner" : "Save sentence to Leitner"}
+          disabled={isSaved}
+          aria-label={isSaved ? "Sentence already saved" : "Save sentence as flashcard"}
+          title={isSaved ? "Saved to Leitner" : "Save sentence to Leitner"}
         >
-          {savedCard ? (
+          {isSaved ? (
             <>
               <BookmarkCheck className="h-3.5 w-3.5" /> Saved
             </>

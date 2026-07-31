@@ -51,19 +51,6 @@ const Player = () => {
   const [immersive, setImmersive] = useState(false);
   const [activeCueId, setActiveCueId] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
-  const cards = useLeitnerStore((s) => s.cards);
-  const removeCard = useLeitnerStore((s) => s.deleteCard);
-  const dueCount = useMemo(() => {
-    const now = Date.now();
-    return cards.filter((c) => c.nextReview <= now).length;
-  }, [cards]);
-  const videoCards = useMemo(
-    () =>
-      videoId
-        ? cards.filter((c) => c.sourceVideoId === videoId).sort((a, b) => b.createdAt - a.createdAt)
-        : [],
-    [cards, videoId],
-  );
   const reattachRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -348,15 +335,10 @@ const Player = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold mr-auto">Subtitles</h2>
                     <SubtitleSettingsMenu />
-                    <Button
-                      size="sm"
-                      variant={showReview ? "default" : "outline"}
-                      onClick={() => setShowReview((v) => !v)}
-                      title="Toggle review sidebar"
-                    >
-                      <Brain className="h-3.5 w-3.5 mr-1.5" />
-                      Review {dueCount > 0 && `(${dueCount})`}
-                    </Button>
+                    <ReviewButton
+                      showReview={showReview}
+                      onToggle={() => setShowReview((v) => !v)}
+                    />
                     <BatchAnalyze videoId={videoId} />
                     <PreStudy videoId={videoId} />
                     <AutoTranscribe videoId={videoId} />
@@ -380,65 +362,7 @@ const Player = () => {
                   )}
 
                   {/* All Leitner cards added from this video so far */}
-                  <details className="rounded-lg border border-border bg-card" open>
-                    <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium select-none">
-                      Words & phrases from this video ({videoCards.length})
-                    </summary>
-                    <div className="p-3">
-                      {videoCards.length === 0 ? (
-                        <p className="text-sm text-muted-foreground text-center py-4">
-                          No cards added yet. Click any word in a subtitle or use the Analyze panel
-                          to add vocabulary and idioms here.
-                        </p>
-                      ) : (
-                        <ul className="divide-y divide-border/60">
-                          {videoCards.map((c) => {
-                            const seekMs = parseSeekMsFromRef(c.sourceCueId);
-                            const isSentence = seekMs !== null;
-                            return (
-                              <li key={c.id} className="flex items-start gap-3 py-2 text-sm">
-                                <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
-                                  B{c.box}
-                                </span>
-                                <button
-                                  type="button"
-                                  className={`flex-1 min-w-0 text-left ${
-                                    isSentence
-                                      ? "hover:text-primary transition-colors"
-                                      : "cursor-default"
-                                  }`}
-                                  disabled={!isSentence}
-                                  onClick={() => {
-                                    if (seekMs !== null) {
-                                      requestSeek(seekMs / 1000, true);
-                                    }
-                                  }}
-                                  title={
-                                    isSentence ? "Jump to this moment in the video" : undefined
-                                  }
-                                >
-                                  <p className="font-medium truncate">{c.front}</p>
-                                  <p dir="auto" className="text-muted-foreground truncate">
-                                    {c.back}
-                                  </p>
-                                </button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  className="h-7 w-7 shrink-0"
-                                  onClick={() => removeCard(c.id)}
-                                  aria-label={`Remove ${c.front}`}
-                                  title="Remove from Leitner"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </Button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      )}
-                    </div>
-                  </details>
+                  {videoId && <VideoCardsPanel videoId={videoId} />}
                 </section>
               )}
             </div>
@@ -486,6 +410,95 @@ function parseSeekMsFromRef(ref: string | undefined | null): number | null {
   if (at < 0) return null;
   const n = Number(ref.slice(at + 1));
   return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+function ReviewButton({ showReview, onToggle }: { showReview: boolean; onToggle: () => void }) {
+  const dueCount = useLeitnerStore((s) => {
+    const now = Date.now();
+    return s.cards.filter((c) => c.nextReview <= now).length;
+  });
+
+  return (
+    <Button
+      size="sm"
+      variant={showReview ? "default" : "outline"}
+      onClick={onToggle}
+      title="Toggle review sidebar"
+    >
+      <Brain className="h-3.5 w-3.5 mr-1.5" />
+      Review {dueCount > 0 && `(${dueCount})`}
+    </Button>
+  );
+}
+
+function VideoCardsPanel({ videoId }: { videoId: string }) {
+  const cards = useLeitnerStore((s) => s.cards);
+  const removeCard = useLeitnerStore((s) => s.deleteCard);
+  const requestSeek = useVideoStore((s) => s.requestSeek);
+
+  const videoCards = useMemo(
+    () =>
+      cards.filter((c) => c.sourceVideoId === videoId).sort((a, b) => b.createdAt - a.createdAt),
+    [cards, videoId],
+  );
+
+  return (
+    <details className="rounded-lg border border-border bg-card" open>
+      <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium select-none">
+        Words & phrases from this video ({videoCards.length})
+      </summary>
+      <div className="p-3">
+        {videoCards.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            No cards added yet. Click any word in a subtitle or use the Analyze panel to add
+            vocabulary and idioms here.
+          </p>
+        ) : (
+          <ul className="divide-y divide-border/60">
+            {videoCards.map((c) => {
+              const seekMs = parseSeekMsFromRef(c.sourceCueId);
+              const isSentence = seekMs !== null;
+              return (
+                <li key={c.id} className="flex items-start gap-3 py-2 text-sm">
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/10 px-1.5 text-[10px] font-semibold text-primary">
+                    B{c.box}
+                  </span>
+                  <button
+                    type="button"
+                    className={`flex-1 min-w-0 text-left ${
+                      isSentence ? "hover:text-primary transition-colors" : "cursor-default"
+                    }`}
+                    disabled={!isSentence}
+                    onClick={() => {
+                      if (seekMs !== null) {
+                        requestSeek(seekMs / 1000, true);
+                      }
+                    }}
+                    title={isSentence ? "Jump to this moment in the video" : undefined}
+                  >
+                    <p className="font-medium truncate">{c.front}</p>
+                    <p dir="auto" className="text-muted-foreground truncate">
+                      {c.back}
+                    </p>
+                  </button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => removeCard(c.id)}
+                    aria-label={`Remove ${c.front}`}
+                    title="Remove from Leitner"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </details>
+  );
 }
 
 export default Player;

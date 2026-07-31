@@ -7,10 +7,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { useShallow } from "zustand/shallow";
 import { useSettingsStore } from "@/store/settingsStore";
 
 export function ReadingSettings() {
-  const { settings, update } = useSettingsStore();
+  const { paragraphGestures, paragraphTextAlign, update } = useSettingsStore(
+    useShallow((s) => ({
+      paragraphGestures: s.settings.paragraphGestures,
+      paragraphTextAlign: s.settings.paragraphTextAlign,
+      update: s.update,
+    })),
+  );
 
   return (
     <section className="space-y-3">
@@ -23,12 +30,12 @@ export function ReadingSettings() {
         <div className="flex items-center justify-between">
           <Label>فعال‌سازی حرکات لمسی</Label>
           <Switch
-            checked={!!settings.paragraphGestures}
+            checked={!!paragraphGestures}
             onCheckedChange={(v) => update({ paragraphGestures: v })}
           />
         </div>
 
-        {settings.paragraphGestures && (
+        {paragraphGestures && (
           <div className="rounded-md border border-primary/30 bg-primary/[0.04] p-3 space-y-2 text-sm">
             <div className="font-medium text-foreground">راهنمای حرکات</div>
             <ul className="space-y-1.5 text-muted-foreground leading-6">
@@ -59,7 +66,7 @@ export function ReadingSettings() {
         <div className="space-y-1.5">
           <Label>چینش متن</Label>
           <Select
-            value={settings.paragraphTextAlign ?? "start"}
+            value={paragraphTextAlign ?? "start"}
             onValueChange={(v) =>
               update({ paragraphTextAlign: v as "start" | "justify" | "center" })
             }

@@ -5,12 +5,14 @@ import { toast } from "sonner";
 import { pingGemini, GeminiError } from "@/lib/gemini";
 import { pingGroq, GroqError } from "@/lib/groq";
 import { refreshAllModels, refreshGeminiModels, refreshGroqModels } from "@/lib/refreshModels";
+import { useShallow } from "zustand/shallow";
 import { useSettingsStore } from "@/store/settingsStore";
 import { ApiKeyInput } from "./ApiKeyInput";
 import { ModelVisibilityDialog } from "./ModelVisibilityDialog";
 
 export function KeysSettings() {
-  const { settings, update } = useSettingsStore();
+  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const update = useSettingsStore((s) => s.update);
 
   const [gemini, setGemini] = useState(settings.geminiApiKey);
   const [groq, setGroq] = useState(settings.groqApiKey);

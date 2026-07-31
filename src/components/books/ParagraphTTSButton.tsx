@@ -5,7 +5,7 @@
  * state (per-paragraph), and exposes simple play/pause toggling. We do NOT
  * persist this to IndexedDB because paragraphs are small and cheap to re-gen.
  */
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { Play, Pause, Loader2, Volume2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -32,9 +32,12 @@ function getStoredVoice(): GeminiTtsVoice {
   }
 }
 
-export function ParagraphTTSButton({ text, className, lang = "en" }: Props) {
-  const { settings } = useSettingsStore();
-  const apiKey = settings.geminiTtsApiKey || settings.geminiApiKey;
+export const ParagraphTTSButton = memo(function ParagraphTTSButton({
+  text,
+  className,
+  lang = "en",
+}: Props) {
+  const apiKey = useSettingsStore((s) => s.settings.geminiTtsApiKey || s.settings.geminiApiKey);
 
   const [loading, setLoading] = useState(false);
   const [playing, setPlaying] = useState(false);
@@ -179,4 +182,4 @@ export function ParagraphTTSButton({ text, className, lang = "en" }: Props) {
       <Icon className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
     </Button>
   );
-}
+});

@@ -1,3 +1,4 @@
+import { memo, useCallback } from "react";
 import { Newspaper, Loader2, Clock, RefreshCw, Folder, Globe2 } from "lucide-react";
 import { CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,7 +10,7 @@ import type { FeedItem, NewsFolder, NewsSource } from "@/lib/news";
 
 export type EnrichedItem = FeedItem & { _sourceName?: string };
 
-export function FeedItemCard({
+export const FeedItemCard = memo(function FeedItemCard({
   item,
   onOpen,
   titleFa,
@@ -19,6 +20,10 @@ export function FeedItemCard({
   titleFa?: string;
 }) {
   const seen = isSeen(item.url);
+  const handleClick = useCallback(() => onOpen(item), [item, onOpen]);
+  const handleImageError = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.style.display = "none";
+  }, []);
   return (
     <li
       id={`news-item-${encodeURIComponent(item.url)}`}
@@ -26,7 +31,7 @@ export function FeedItemCard({
     >
       <button
         type="button"
-        onClick={() => onOpen(item)}
+        onClick={handleClick}
         className={
           "group block w-full text-start rounded-xl border border-border bg-card p-4 hover:border-primary/50 hover:shadow-sm transition-all " +
           (seen ? "opacity-60" : "")
@@ -39,9 +44,7 @@ export function FeedItemCard({
               alt=""
               loading="lazy"
               className="h-20 w-20 sm:h-24 sm:w-24 rounded-lg object-cover shrink-0 bg-muted"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
+              onError={handleImageError}
             />
           )}
           <div className="flex-1 min-w-0">
@@ -107,9 +110,9 @@ export function FeedItemCard({
       </button>
     </li>
   );
-}
+});
 
-export function FolderAggregatedView({
+export const FolderAggregatedView = memo(function FolderAggregatedView({
   folder,
   items,
   loading,
@@ -179,9 +182,9 @@ export function FolderAggregatedView({
       )}
     </>
   );
-}
+});
 
-export function AllAggregatedView({
+export const AllAggregatedView = memo(function AllAggregatedView({
   items,
   loading,
   onRefresh,
@@ -243,4 +246,4 @@ export function AllAggregatedView({
       )}
     </>
   );
-}
+});

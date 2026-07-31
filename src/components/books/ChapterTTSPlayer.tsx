@@ -16,6 +16,7 @@
  */
 
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import {
   Headphones,
   Play,
@@ -100,8 +101,30 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   textFa,
   coverUrl,
 }: Props) {
-  const { settings } = useSettingsStore();
-  const apiKey = settings.geminiTtsApiKey || settings.geminiApiKey;
+  const {
+    geminiTtsApiKey,
+    geminiApiKey,
+    elevenLabsApiKey,
+    azureTtsApiKey,
+    azureTtsRegion,
+    huggingFaceApiKey,
+    playHtUserId,
+    playHtApiKey,
+    openTtsUrl: openTtsUrlSetting,
+  } = useSettingsStore(
+    useShallow((s) => ({
+      geminiTtsApiKey: s.settings.geminiTtsApiKey,
+      geminiApiKey: s.settings.geminiApiKey,
+      elevenLabsApiKey: s.settings.elevenLabsApiKey,
+      azureTtsApiKey: s.settings.azureTtsApiKey,
+      azureTtsRegion: s.settings.azureTtsRegion,
+      huggingFaceApiKey: s.settings.huggingFaceApiKey,
+      playHtUserId: s.settings.playHtUserId,
+      playHtApiKey: s.settings.playHtApiKey,
+      openTtsUrl: s.settings.openTtsUrl,
+    })),
+  );
+  const apiKey = geminiTtsApiKey || geminiApiKey;
 
   // EN / FA podcast language. The Persian variant is gated on textFa being
   // available (set by callers like NewsArticle once translations are ready).
@@ -276,7 +299,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   useTtsKeepAlive(browserPlaying);
 
   // ───────── ElevenLabs state ─────────
-  const elevenKey = settings.elevenLabsApiKey?.trim() ?? "";
+  const elevenKey = elevenLabsApiKey?.trim() ?? "";
   const [elevenVoice, setElevenVoice] = useState<string>(() => {
     try {
       return localStorage.getItem(ELEVEN_VOICE_KEY) || ELEVENLABS_VOICES[0].id;
@@ -308,12 +331,12 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   const [elevenLoading, setElevenLoading] = useState(false);
 
   // ───────── Azure / HF / Play.ht / OpenTTS state ─────────
-  const azureKey = settings.azureTtsApiKey?.trim() ?? "";
-  const azureRegion = settings.azureTtsRegion?.trim() || "westeurope";
-  const hfKey = settings.huggingFaceApiKey?.trim() ?? "";
-  const playHtUser = settings.playHtUserId?.trim() ?? "";
-  const playHtKey = settings.playHtApiKey?.trim() ?? "";
-  const openTtsUrl = settings.openTtsUrl?.trim() ?? "";
+  const azureKey = azureTtsApiKey?.trim() ?? "";
+  const azureRegion = (azureTtsRegion ?? "").trim() || "westeurope";
+  const hfKey = huggingFaceApiKey?.trim() ?? "";
+  const playHtUser = playHtUserId?.trim() ?? "";
+  const playHtKey = playHtApiKey?.trim() ?? "";
+  const openTtsUrl = (openTtsUrlSetting ?? "").trim() ?? "";
   const {
     azureVoiceOpts,
     hfVoiceOpts,

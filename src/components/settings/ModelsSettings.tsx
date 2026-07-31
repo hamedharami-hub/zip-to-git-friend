@@ -15,13 +15,15 @@ import {
   getGeminiModels,
   getGroqWhisperModels,
 } from "@/lib/aiModels";
+import { useShallow } from "zustand/shallow";
 import { useSettingsStore } from "@/store/settingsStore";
 import { BookModelPicker } from "./BookModelPicker";
 import { ModelPicker } from "./ModelPicker";
 import { ModelVisibilityDialog } from "./ModelVisibilityDialog";
 
 export function ModelsSettings() {
-  const { settings, update } = useSettingsStore();
+  const settings = useSettingsStore(useShallow((s) => s.settings));
+  const update = useSettingsStore((s) => s.update);
 
   const geminiTestModelOptions = getGeminiModels(settings);
   const whisperOptions = getGroqWhisperModels(settings);

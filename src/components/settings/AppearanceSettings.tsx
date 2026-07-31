@@ -1,12 +1,20 @@
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { ServiceWorkerStatusCard } from "@/components/pwa/ServiceWorkerStatusCard";
+import { useShallow } from "zustand/shallow";
 import { useSettingsStore } from "@/store/settingsStore";
 import { Moon, Sun } from "lucide-react";
 
 export function AppearanceSettings() {
-  const { settings, update } = useSettingsStore();
-  const isDark = settings.theme === "dark";
+  const { theme, simplifyLevel, defaultSimplifyArticles, update } = useSettingsStore(
+    useShallow((s) => ({
+      theme: s.settings.theme,
+      simplifyLevel: s.settings.simplifyLevel,
+      defaultSimplifyArticles: s.settings.defaultSimplifyArticles,
+      update: s.update,
+    })),
+  );
+  const isDark = theme === "dark";
 
   return (
     <div className="space-y-10">
@@ -59,7 +67,7 @@ export function AppearanceSettings() {
                 onClick={() => update({ simplifyLevel: opt.v as "a2-b1" | "b1-b2" })}
                 className={
                   "flex-1 rounded-md border px-3 py-2 text-right transition-colors " +
-                  ((settings.simplifyLevel ?? "a2-b1") === opt.v
+                  ((simplifyLevel ?? "a2-b1") === opt.v
                     ? "border-primary bg-primary/10 text-foreground"
                     : "border-border bg-muted/30 text-muted-foreground hover:bg-muted/60")
                 }
@@ -78,7 +86,7 @@ export function AppearanceSettings() {
               </p>
             </div>
             <Switch
-              checked={settings.defaultSimplifyArticles ?? false}
+              checked={defaultSimplifyArticles ?? false}
               onCheckedChange={(v) => update({ defaultSimplifyArticles: !!v })}
             />
           </div>

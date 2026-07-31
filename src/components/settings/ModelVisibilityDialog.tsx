@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/shallow";
 import { Settings as SettingsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -38,7 +39,12 @@ interface ModelVisibilityDialogProps {
 }
 
 export function ModelVisibilityDialog({ initialTab, children }: ModelVisibilityDialogProps) {
-  const { settings, update } = useSettingsStore();
+  const { customModels, update } = useSettingsStore(
+    useShallow((s) => ({
+      customModels: s.settings.customModels,
+      update: s.update,
+    })),
+  );
   const [open, setOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Provider>(initialTab ?? "gateway");
 
@@ -53,32 +59,31 @@ export function ModelVisibilityDialog({ initialTab, children }: ModelVisibilityD
 
   const all = useMemo(
     () => ({
-      gemini: getAllGeminiModels(settings),
-      groqChat: getAllGroqChatModels(settings),
-      groqWhisper: getAllGroqWhisperModels(settings),
-      gateway: getAllGatewayModels(settings),
+      gemini: getAllGeminiModels({ customModels }),
+      groqChat: getAllGroqChatModels({ customModels }),
+      groqWhisper: getAllGroqWhisperModels({ customModels }),
+      gateway: getAllGatewayModels({ customModels }),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- stable store refs; dynamic deps handled internally
-    [settings.customModels],
+    [customModels],
   );
 
   // Local mirror of the hidden lists so toggles feel instant.
   const [hidden, setHidden] = useState<Record<Provider, Set<string>>>(() => ({
-    gemini: new Set(settings.customModels?.hidden?.gemini ?? []),
-    groqChat: new Set(settings.customModels?.hidden?.groqChat ?? []),
-    groqWhisper: new Set(settings.customModels?.hidden?.groqWhisper ?? []),
-    gateway: new Set(settings.customModels?.hidden?.gateway ?? []),
+    gemini: new Set(customModels?.hidden?.gemini ?? []),
+    groqChat: new Set(customModels?.hidden?.groqChat ?? []),
+    groqWhisper: new Set(customModels?.hidden?.groqWhisper ?? []),
+    gateway: new Set(customModels?.hidden?.gateway ?? []),
   }));
 
   // Sync local mirror when settings change while dialog is open.
   useEffect(() => {
     setHidden({
-      gemini: new Set(settings.customModels?.hidden?.gemini ?? []),
-      groqChat: new Set(settings.customModels?.hidden?.groqChat ?? []),
-      groqWhisper: new Set(settings.customModels?.hidden?.groqWhisper ?? []),
-      gateway: new Set(settings.customModels?.hidden?.gateway ?? []),
+      gemini: new Set(customModels?.hidden?.gemini ?? []),
+      groqChat: new Set(customModels?.hidden?.groqChat ?? []),
+      groqWhisper: new Set(customModels?.hidden?.groqWhisper ?? []),
+      gateway: new Set(customModels?.hidden?.gateway ?? []),
     });
-  }, [settings.customModels?.hidden]);
+  }, [customModels?.hidden]);
 
   const toggle = (p: Provider, value: string) => {
     setHidden((prev) => {
@@ -92,7 +97,7 @@ export function ModelVisibilityDialog({ initialTab, children }: ModelVisibilityD
   const save = async () => {
     await update({
       customModels: {
-        ...(settings.customModels ?? {}),
+        ...(customModels ?? {}),
         hidden: {
           gemini: Array.from(hidden.gemini),
           groqChat: Array.from(hidden.groqChat),

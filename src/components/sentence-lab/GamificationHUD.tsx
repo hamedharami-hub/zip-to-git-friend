@@ -2,7 +2,8 @@
  * Compact HUD: Level + XP bar, Streak, Hearts, Combo.
  * Sits in the Drill header so the player always sees the score state.
  */
-import { useEffect } from "react";
+import { memo, useEffect } from "react";
+import { useShallow } from "zustand/shallow";
 import { Heart, Flame, Zap, Trophy } from "lucide-react";
 import { useGamificationStore } from "@/store/gamificationStore";
 import { xpProgress } from "@/lib/gamification";
@@ -10,23 +11,45 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 
-export function GamificationHUD({ compact = false }: { compact?: boolean }) {
-  const { state, quests, combo, load, loadQuests, claim } = useGamificationStore();
+export const GamificationHUD = memo(function GamificationHUD({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
+  const {
+    xp,
+    level,
+    currentStreak,
+    longestStreak,
+    hearts,
+    comboBest,
+    combo,
+    quests,
+    load,
+    loadQuests,
+    claim,
+  } = useGamificationStore(
+    useShallow((s) => ({
+      xp: s.state?.xp ?? 0,
+      level: s.state?.level ?? 1,
+      currentStreak: s.state?.currentStreak ?? 0,
+      longestStreak: s.state?.longestStreak ?? 0,
+      hearts: s.state?.hearts ?? 0,
+      comboBest: s.state?.comboBest ?? 0,
+      combo: s.combo,
+      quests: s.quests,
+      load: s.load,
+      loadQuests: s.loadQuests,
+      claim: s.claim,
+    })),
+  );
 
   useEffect(() => {
     void load();
     void loadQuests();
   }, [load, loadQuests]);
 
-  if (!state) {
-    return (
-      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-        <Zap className="h-3.5 w-3.5" /> …
-      </div>
-    );
-  }
-
-  const p = xpProgress(state.xp);
+  const p = xpProgress(xp);
   const claimable = quests.filter((q) => q.completed && !q.claimed).length;
 
   return (
@@ -34,21 +57,19 @@ export function GamificationHUD({ compact = false }: { compact?: boolean }) {
       <PopoverTrigger asChild>
         <button className="flex items-center gap-2 rounded-full border bg-card px-2 py-1 text-xs hover:bg-muted/60 transition-colors">
           <span className="flex items-center gap-1 font-semibold tabular-nums">
-            <Trophy className="h-3.5 w-3.5 text-amber-500" />L{p.level}
+            <Trophy className="h-3.5 w-3.5 text-amber-500" />L{level}
           </span>
           {!compact && (
             <span className="hidden sm:flex items-center gap-1 text-muted-foreground">
-              <Flame
-                className={`h-3.5 w-3.5 ${state.currentStreak > 0 ? "text-orange-500" : ""}`}
-              />
-              <span className="tabular-nums">{state.currentStreak}</span>
+              <Flame className={`h-3.5 w-3.5 ${currentStreak > 0 ? "text-orange-500" : ""}`} />
+              <span className="tabular-nums">{currentStreak}</span>
             </span>
           )}
           <span className="flex items-center gap-1">
             <Heart
-              className={`h-3.5 w-3.5 ${state.hearts > 0 ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
+              className={`h-3.5 w-3.5 ${hearts > 0 ? "fill-rose-500 text-rose-500" : "text-muted-foreground"}`}
             />
-            <span className="tabular-nums">{state.hearts}</span>
+            <span className="tabular-nums">{hearts}</span>
           </span>
           {combo >= 3 && (
             <span
@@ -84,9 +105,9 @@ export function GamificationHUD({ compact = false }: { compact?: boolean }) {
 
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-2 mb-3">
-          <Stat icon={Flame} label="Streak" value={state.currentStreak} accent="text-orange-500" />
-          <Stat icon={Trophy} label="Best" value={state.longestStreak} accent="text-amber-500" />
-          <Stat icon={Zap} label="Combo" value={state.comboBest} accent="text-sky-500" />
+          <Stat icon={Flame} label="Streak" value={currentStreak} accent="text-orange-500" />
+          <Stat icon={Trophy} label="Best" value={longestStreak} accent="text-amber-500" />
+          <Stat icon={Zap} label="Combo" value={comboBest} accent="text-sky-500" />
         </div>
 
         {/* Quests */}
@@ -132,7 +153,7 @@ export function GamificationHUD({ compact = false }: { compact?: boolean }) {
       </PopoverContent>
     </Popover>
   );
-}
+});
 
 function Stat({
   icon: Icon,

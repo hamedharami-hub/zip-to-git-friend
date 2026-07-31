@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Play,
   Pause,
@@ -49,7 +49,7 @@ type Step = "idle" | "persian" | "silence" | "english_1" | "english_2" | "record
 
 const SPEEDS = [0.75, 1, 1.25, 1.5];
 
-export function PodcastMode() {
+export const PodcastMode = memo(function PodcastMode() {
   const queue = useSentenceStore((s) => s.queue);
   const currentIndex = useSentenceStore((s) => s.currentIndex);
   const next = useSentenceStore((s) => s.next);
@@ -742,4 +742,4 @@ export function PodcastMode() {
       </CardContent>
     </Card>
   );
-}
+});

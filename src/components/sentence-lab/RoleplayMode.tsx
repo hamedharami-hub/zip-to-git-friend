@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic,
   Square,
@@ -33,7 +33,7 @@ import type { Light, GrammarMarker, Turn } from "./roleplayTypes";
 const LATENCY_YELLOW_MS = 2500;
 const LATENCY_RED_MS = 5000;
 
-export function RoleplayMode({
+export const RoleplayMode = memo(function RoleplayMode({
   item,
   onHarvest,
 }: {
@@ -526,7 +526,7 @@ export function RoleplayMode({
       />
     </>
   );
-}
+});
 
 function TrafficLight({ light, busy }: { light: Light; busy: boolean }) {
   const dot = (color: string, active: boolean) => (

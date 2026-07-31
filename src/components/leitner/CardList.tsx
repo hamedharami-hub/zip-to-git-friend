@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { ImageIcon, Plus, Search, Volume2, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,13 +68,20 @@ export function CardList({ folderId, onEdit }: Props) {
     setAdding(false);
   };
 
-  const handleSpeak = (card: LeitnerCard) => {
+  const handleSpeak = useCallback((card: LeitnerCard) => {
     if (card.audioUrl) {
       playClip(card.audioUrl).catch(() => speak(card.front));
     } else {
       speak(card.exampleSentence || card.front);
     }
-  };
+  }, []);
+
+  const handleToggleStar = useCallback(
+    (id: string) => {
+      void toggleStar(id);
+    },
+    [toggleStar],
+  );
 
   return (
     <div className="space-y-4">
@@ -136,107 +143,123 @@ export function CardList({ folderId, onEdit }: Props) {
         </div>
       ) : (
         <ul className="grid gap-2">
-          {filtered.map((card) => {
-            const due = card.nextReview <= Date.now();
-            return (
-              <li
-                key={card.id}
-                className="group rounded-lg border border-border bg-card hover:bg-card/80 transition-colors"
-              >
-                <button
-                  onClick={() => onEdit(card)}
-                  className="w-full text-left p-3 flex items-start gap-3"
-                >
-                  {card.imageUrl ? (
-                    <img
-                      src={card.imageUrl}
-                      alt=""
-                      className="h-12 w-12 rounded-md object-cover shrink-0"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center shrink-0">
-                      <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium truncate">{card.front}</p>
-                      <span
-                        className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${
-                          due ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
-                        }`}
-                      >
-                        {BOX_LABEL[card.box]}
-                      </span>
-                    </div>
-                    {card.back && (
-                      <p dir="auto" className="text-sm text-muted-foreground truncate mt-0.5">
-                        {card.back}
-                      </p>
-                    )}
-                    {card.exampleSentence && (
-                      <p className="text-xs text-muted-foreground/80 truncate mt-0.5 italic">
-                        “{card.exampleSentence}”
-                      </p>
-                    )}
-                    {card.synonyms?.length || card.antonyms?.length ? (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {card.synonyms?.slice(0, 4).map((s, i) => (
-                          <span
-                            key={`syn-${i}`}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary/90"
-                          >
-                            ≈ {s}
-                          </span>
-                        ))}
-                        {card.antonyms?.slice(0, 3).map((a, i) => (
-                          <span
-                            key={`ant-${i}`}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive/90"
-                          >
-                            ≠ {a}
-                          </span>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className={
-                        card.starred
-                          ? "text-amber-500"
-                          : "opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                      }
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void toggleStar(card.id);
-                      }}
-                      aria-label={card.starred ? "Unstar" : "Star"}
-                    >
-                      <Star className={`h-4 w-4 ${card.starred ? "fill-amber-500" : ""}`} />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSpeak(card);
-                      }}
-                      aria-label="Pronounce"
-                    >
-                      <Volume2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </button>
-              </li>
-            );
-          })}
+          {filtered.map((card) => (
+            <CardListItem
+              key={card.id}
+              card={card}
+              onEdit={onEdit}
+              onSpeak={handleSpeak}
+              onToggleStar={handleToggleStar}
+            />
+          ))}
         </ul>
       )}
     </div>
   );
 }
+
+interface CardListItemProps {
+  card: LeitnerCard;
+  onEdit: (card: LeitnerCard) => void;
+  onSpeak: (card: LeitnerCard) => void;
+  onToggleStar: (id: string) => void;
+}
+
+const CardListItem = memo(function CardListItem({
+  card,
+  onEdit,
+  onSpeak,
+  onToggleStar,
+}: CardListItemProps) {
+  const due = card.nextReview <= Date.now();
+  return (
+    <li className="group rounded-lg border border-border bg-card hover:bg-card/80 transition-colors">
+      <button onClick={() => onEdit(card)} className="w-full text-left p-3 flex items-start gap-3">
+        {card.imageUrl ? (
+          <img
+            src={card.imageUrl}
+            alt=""
+            className="h-12 w-12 rounded-md object-cover shrink-0"
+            loading="lazy"
+          />
+        ) : (
+          <div className="h-12 w-12 rounded-md bg-muted flex items-center justify-center shrink-0">
+            <ImageIcon className="h-5 w-5 text-muted-foreground/60" />
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="font-medium truncate">{card.front}</p>
+            <span
+              className={`text-[10px] uppercase px-1.5 py-0.5 rounded ${
+                due ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {BOX_LABEL[card.box]}
+            </span>
+          </div>
+          {card.back && (
+            <p dir="auto" className="text-sm text-muted-foreground truncate mt-0.5">
+              {card.back}
+            </p>
+          )}
+          {card.exampleSentence && (
+            <p className="text-xs text-muted-foreground/80 truncate mt-0.5 italic">
+              “{card.exampleSentence}”
+            </p>
+          )}
+          {card.synonyms?.length || card.antonyms?.length ? (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {card.synonyms?.slice(0, 4).map((s, i) => (
+                <span
+                  key={`syn-${i}`}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary/90"
+                >
+                  ≈ {s}
+                </span>
+              ))}
+              {card.antonyms?.slice(0, 3).map((a, i) => (
+                <span
+                  key={`ant-${i}`}
+                  className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive/90"
+                >
+                  ≠ {a}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className={
+              card.starred
+                ? "text-amber-500"
+                : "opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+            }
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleStar(card.id);
+            }}
+            aria-label={card.starred ? "Unstar" : "Star"}
+          >
+            <Star className={`h-4 w-4 ${card.starred ? "fill-amber-500" : ""}`} />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSpeak(card);
+            }}
+            aria-label="Pronounce"
+          >
+            <Volume2 className="h-4 w-4" />
+          </Button>
+        </div>
+      </button>
+    </li>
+  );
+});

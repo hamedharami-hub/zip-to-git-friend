@@ -23,7 +23,7 @@ const BOX_LABEL: Record<number, string> = {
   5: "Box 5",
 };
 
-export function CardList({ folderId, onEdit }: Props) {
+export const CardList = memo(function CardList({ folderId, onEdit }: Props) {
   const cards = useLeitnerStore((s) => s.cards);
   const addCard = useLeitnerStore((s) => s.addCard);
   const toggleStar = useLeitnerStore((s) => s.toggleStar);
@@ -156,7 +156,7 @@ export function CardList({ folderId, onEdit }: Props) {
       )}
     </div>
   );
-}
+});
 
 interface CardListItemProps {
   card: LeitnerCard;

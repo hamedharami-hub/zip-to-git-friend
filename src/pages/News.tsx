@@ -115,6 +115,7 @@ const News = () => {
   const [sources, setSources] = useState<NewsSource[]>([]);
   const [folders, setFolders] = useState<NewsFolder[]>([]);
   const [blocked, setBlocked] = useState<BlockedDomain[]>([]);
+  const blockedDomains = useMemo(() => blocked.map((b) => b.domain), [blocked]);
   const [expandedFolders, setExpandedFolders] = useState<Record<string, boolean>>({});
   const [manageOpen, setManageOpen] = useState(false);
   const [digests, setDigests] = useState<NewsDigest[]>([]);
@@ -309,7 +310,7 @@ const News = () => {
     setFeedLoading(true);
     setFeedError(null);
     try {
-      const blockedList = blocked.map((b) => b.domain);
+      const blockedList = blockedDomains;
       let items: FeedItem[] = [];
       const searchModel = newsSearchModelRef?.model;
       if (activeSource.kind === "rss" && activeSource.url) {
@@ -371,7 +372,7 @@ const News = () => {
     } finally {
       setFeedLoading(false);
     }
-  }, [activeSource, windowHours, blocked, newsSearchModelRef]);
+  }, [activeSource, windowHours, blockedDomains, newsSearchModelRef]);
 
   // On source change: show cache only, do NOT auto-fetch.
   useEffect(() => {
@@ -406,7 +407,7 @@ const News = () => {
   const loadFolderFromCache = useCallback(
     (folderId: string) => {
       const sourcesInFolder = sources.filter((s) => s.folderId === folderId);
-      const blockedList = blocked.map((b) => b.domain);
+      const blockedList = blockedDomains;
       const all: Array<FeedItem & { _sourceName?: string }> = [];
       for (const s of sourcesInFolder) {
         const cached = loadCachedFeed(s.id).filter((it) => !isBlockedUrl(it.url, blockedList));
@@ -419,7 +420,7 @@ const News = () => {
       });
       setFolderFeed(all);
     },
-    [sources, blocked],
+    [sources, blockedDomains],
   );
 
   const refreshFolderFeed = useCallback(async () => {
@@ -430,7 +431,7 @@ const News = () => {
       return;
     }
     setFolderLoading(true);
-    const blockedList = blocked.map((b) => b.domain);
+    const blockedList = blockedDomains;
     try {
       let totalFetched = 0;
       let failed = 0;
@@ -509,7 +510,14 @@ const News = () => {
     } finally {
       setFolderLoading(false);
     }
-  }, [activeFolderId, sources, blocked, windowHours, loadFolderFromCache, newsSearchModelRef]);
+  }, [
+    activeFolderId,
+    sources,
+    blockedDomains,
+    windowHours,
+    loadFolderFromCache,
+    newsSearchModelRef,
+  ]);
 
   useEffect(() => {
     if (activeFolderId) loadFolderFromCache(activeFolderId);
@@ -517,7 +525,7 @@ const News = () => {
 
   // ───── All-news aggregated view (across every source / folder) ─────
   const loadAllFromCache = useCallback(() => {
-    const blockedList = blocked.map((b) => b.domain);
+    const blockedList = blockedDomains;
     const all: Array<FeedItem & { _sourceName?: string }> = [];
     const seenUrls = new Set<string>();
     for (const s of sources) {
@@ -534,7 +542,7 @@ const News = () => {
       return bT - aT;
     });
     setAllFeed(all);
-  }, [sources, blocked]);
+  }, [sources, blockedDomains]);
 
   const refreshAllFeed = useCallback(async () => {
     if (sources.length === 0) {
@@ -542,7 +550,7 @@ const News = () => {
       return;
     }
     setAllLoading(true);
-    const blockedList = blocked.map((b) => b.domain);
+    const blockedList = blockedDomains;
     try {
       let totalFetched = 0;
       let failed = 0;
@@ -596,7 +604,7 @@ const News = () => {
     } finally {
       setAllLoading(false);
     }
-  }, [sources, blocked, windowHours, loadAllFromCache, newsSearchModelRef]);
+  }, [sources, blockedDomains, windowHours, loadAllFromCache, newsSearchModelRef]);
 
   useEffect(() => {
     if (allMode) loadAllFromCache();
@@ -611,7 +619,7 @@ const News = () => {
         language: activeSource?.language ?? undefined,
         hours: Number(windowHours),
         limit: 15,
-        blockedDomains: blocked.map((b) => b.domain),
+        blockedDomains: blockedDomains,
       });
       if (items.length === 0) {
         toast.info("عنوان داغی پیدا نشد.");
@@ -624,7 +632,7 @@ const News = () => {
     } finally {
       setTrendingBusy(false);
     }
-  }, [activeSource, windowHours, blocked]);
+  }, [activeSource, windowHours, blockedDomains]);
 
   const handleOpenArticle = useCallback(
     async (item: FeedItem) => {

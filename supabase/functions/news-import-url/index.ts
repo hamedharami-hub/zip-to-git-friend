@@ -58,59 +58,6 @@ function youtubeChannelHandle(
   }
 }
 
-function mdToHtml(md: string): string {
-  let s = md.replace(/\r\n/g, "\n").trim();
-  const codeBlocks: string[] = [];
-  s = s.replace(/```([\s\S]*?)```/g, (_, code) => {
-    codeBlocks.push(code);
-    return `\u0000CODE${codeBlocks.length - 1}\u0000`;
-  });
-  s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  s = s.replace(/^######\s+(.+)$/gm, "<h6>$1</h6>");
-  s = s.replace(/^#####\s+(.+)$/gm, "<h5>$1</h5>");
-  s = s.replace(/^####\s+(.+)$/gm, "<h4>$1</h4>");
-  s = s.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
-  s = s.replace(/^##\s+(.+)$/gm, "<h2>$1</h2>");
-  s = s.replace(/^#\s+(.+)$/gm, "<h1>$1</h1>");
-  s = s.replace(/^>\s?(.+)$/gm, "<blockquote>$1</blockquote>");
-  s = s.replace(/(^(?:-|\*|\d+\.)\s+.+(?:\n(?:-|\*|\d+\.)\s+.+)*)/gm, (block) => {
-    const ordered = /^\d+\./.test(block);
-    const items = block
-      .split("\n")
-      .map((l) => l.replace(/^(?:-|\*|\d+\.)\s+/, "").trim())
-      .filter(Boolean)
-      .map((l) => `<li>${l}</li>`)
-      .join("");
-    return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
-  });
-  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-  s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-  s = s.replace(
-    /\[([^\]]+)\]\(([^)\s]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
-  );
-  const paragraphs = s.split(/\n{2,}/).map((p) => {
-    const t = p.trim();
-    if (!t) return "";
-    if (/^<(h\d|ul|ol|blockquote|pre|p|table)/i.test(t)) return t;
-    return `<p>${t.replace(/\n/g, "<br/>")}</p>`;
-  });
-  s = paragraphs.join("\n");
-  const codeMarker = String.fromCharCode(0);
-  const codeRe = new RegExp(`${codeMarker}CODE(\\d+)${codeMarker}`, "g");
-  s = s.replace(codeRe, (_, i) => {
-    return `<pre><code>${codeBlocks[Number(i)]
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")}</code></pre>`;
-  });
-  return s;
-}
-
-function countWords(text: string): number {
-  return text.trim().split(/\s+/).filter(Boolean).length;
-}
-
 // ─────────── YouTube transcript ───────────
 
 interface YtMeta {
@@ -243,98 +190,395 @@ async function fetchYoutubeTranscript(
 
 // ─────────── AI rewrites ───────────
 
-async function aiRewriteToArticle(
+interface BilingualPhrase {
+  phrase: string;
+  meaning: string;
+}
+
+interface BilingualParagraph {
+  en: string;
+  fa: string;
+  phrases: BilingualPhrase[];
+}
+
+interface BilingualSection {
+  heading: string;
+  headingFa: string;
+  paragraphs: BilingualParagraph[];
+  phrases: BilingualPhrase[];
+}
+
+interface BilingualArticle {
+  title: string;
+  titleFa: string;
+  tldr: string;
+  tldrFa: string;
+  sections: BilingualSection[];
+}
+
+function toBase64(s: string): string {
+  return btoa(encodeURIComponent(s)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function countWordsText(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+async function aiGatewayCall(
+  apiKey: string,
+  body: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(AI_GATEWAY, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    if (res.status === 429) throw new Error("Rate limit exceeded. Try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits exhausted. Top up in workspace settings.");
+    throw new Error(`AI gateway error (${res.status}): ${text.slice(0, 200)}`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+function extractToolArgs(data: Record<string, unknown>, toolName: string): unknown {
+  const calls = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.tool_calls;
+  if (Array.isArray(calls)) {
+    const call = calls.find(
+      (c: unknown) =>
+        (c as Record<string, unknown>).function?.name === toolName ||
+        (c as Record<string, unknown>).name === toolName,
+    );
+    const args =
+      (call as Record<string, unknown>)?.function?.arguments ??
+      (call as Record<string, unknown>)?.arguments;
+    if (args) {
+      try {
+        return typeof args === "string" ? JSON.parse(args) : args;
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+  const content = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.content;
+  if (typeof content === "string" && content.trim().startsWith("{")) {
+    try {
+      return JSON.parse(content);
+    } catch {
+      /* ignore */
+    }
+  }
+  throw new Error(`AI returned no ${toolName} output.`);
+}
+
+function modeContext(mode: "youtube" | "youtube_meta" | "article"): string {
+  if (mode === "youtube") {
+    return "INPUT TYPE: YouTube video transcript (auto-captions). Rewrite it as the speaker's own first-person article, preserving all examples, numbers, and quotes.";
+  }
+  if (mode === "youtube_meta") {
+    return "INPUT TYPE: YouTube video metadata only — no transcript was available. Write a first-person article AS THE CREATOR OF THIS VIDEO would have written it, based ONLY on the title, channel, and description. Do not invent specific facts beyond the description; instead expand naturally on the topic in the creator's own voice.";
+  }
+  return "INPUT TYPE: Web page content (markdown). Rewrite it as the original author's own article — clean, polished, comprehensive.";
+}
+
+async function aiOutline(
   apiKey: string,
   source: {
     title: string;
-    author?: string;
-    siteName?: string;
-    rawText: string;
     sourceUrl: string;
+    rawText: string;
     mode: "youtube" | "youtube_meta" | "article";
   },
-): Promise<{ title: string; markdown: string }> {
-  const system = `You are a ghostwriter. You take raw source material (a webpage, a transcript, a video description) and rewrite it as a comprehensive English feature article spoken in the FIRST-PERSON VOICE OF THE ORIGINAL AUTHOR / SPEAKER, as if they wrote the article themselves.
+): Promise<{ title: string; sections: { heading: string; scope: string }[] }> {
+  const system = `You are a careful editor planning a bilingual (English + Persian) feature article for an intermediate Iranian learner of English.
 
-Hard rules:
-1. FIRST-PERSON VOICE. Write as the author/speaker: "I", "we", "my", "in my view". NEVER use third-person framings like "the author says", "the host explains", "this person mentions", "in this article", "according to the speaker", "the channel argues", "this video covers", "the writer notes". Do NOT refer to the source as an external thing — BE the author.
-2. ENGLISH ONLY — translate naturally from any source language while keeping the author's intent and tone.
-3. Strip boilerplate: ads, sponsor reads, "like and subscribe", intros/outros, navigation, cookie banners, paywalls.
-4. COMPREHENSIVE — keep every distinct point, example, number, name, place, quote, and argument from the source. Do not summarise away substance. Aim for ~700–1500 words depending on source length.
-5. Fluent multi-sentence paragraphs (4–8 sentences). NO bullet lists, NO single-word lines. Smooth narrative flow with transitions.
-6. Structure: a single H1 title (a real title, not "My article"), an italic one-line TL;DR written in the author's first-person voice, then 3–6 H2 sections (## Heading), each 1–2 substantial paragraphs. Close with a "## Final Thoughts" or "## Where I Land" paragraph in first person.
-7. Never invent facts. If a detail is unclear, omit it. When the source quotes other people, you may quote them too — but YOUR narration stays first-person as the original author.
-8. Preserve concrete details: numbers, names, places, direct quotes (in quotation marks).
+Your job is to outline the source material into clear, thematic sub-sections so that NO important facts are dropped when the article is rewritten.
 
-Always respond by calling the provided tool. Never reply with prose.`;
+Rules:
+- Title: a sharp, curiosity-driven English headline (max ~12 words). Not a label like "Article" or "Report".
+- 3–8 sections, each with a concrete, thematic English heading. Never generic headings like "Background", "Details", or "Conclusion".
+- Each section must state its scope in 1–2 sentences: what concrete facts, numbers, names, quotes, or events it will cover.
+- Preserve the narrative order of the source where it helps the reader follow the story.
+- Do not write the body text, only the outline.
+- Output JSON only, using the provided tool.`;
 
   const user = [
-    source.mode === "youtube"
-      ? "INPUT TYPE: YouTube video transcript (auto-captions). Rewrite as the speaker's own first-person article."
-      : source.mode === "youtube_meta"
-        ? "INPUT TYPE: YouTube video metadata only — no transcript was available. Write a first-person article AS THE CREATOR OF THIS VIDEO would have written it, based ONLY on the title, channel, and description. Do not invent specific facts beyond the description; instead expand naturally on the topic in the creator's own voice ('In this piece I want to walk through …'). Never use phrases like 'in this video the channel explores' — speak as the creator."
-        : "INPUT TYPE: Web page content (markdown). Rewrite it as the original author's own first-person article — clean, polished, comprehensive.",
+    modeContext(source.mode),
     `Source URL: ${source.sourceUrl}`,
-    source.author ? `Author / Channel: ${source.author}` : "",
-    source.siteName ? `Site: ${source.siteName}` : "",
     `Original title: ${source.title}`,
     "",
     "RAW INPUT:",
     "```",
     source.rawText.slice(0, 60_000),
     "```",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].join("\n");
 
-  const aiRes = await fetch(AI_GATEWAY, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "emit_article",
-            description: "Return the polished article.",
-            parameters: {
-              type: "object",
-              properties: {
-                title: { type: "string", description: "Polished English title (≤ 14 words)." },
-                markdown: {
-                  type: "string",
-                  description: "Full article body in valid markdown, in English only.",
+  const data = await aiGatewayCall(apiKey, {
+    model: AI_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "emit_outline",
+          description: "Return the article outline.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    heading: { type: "string" },
+                    scope: { type: "string" },
+                  },
+                  required: ["heading", "scope"],
+                  additionalProperties: false,
                 },
               },
-              required: ["title", "markdown"],
-              additionalProperties: false,
             },
+            required: ["title", "sections"],
+            additionalProperties: false,
           },
         },
-      ],
-      tool_choice: { type: "function", function: { name: "emit_article" } },
-    }),
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "emit_outline" } },
   });
 
-  if (!aiRes.ok) {
-    const body = await aiRes.text();
-    if (aiRes.status === 429) throw new Error("Rate limit exceeded. Try again in a moment.");
-    if (aiRes.status === 402)
-      throw new Error("AI credits exhausted. Top up in workspace settings.");
-    throw new Error(`AI gateway error (${aiRes.status}): ${body.slice(0, 200)}`);
+  const args = extractToolArgs(data, "emit_outline") as {
+    title: string;
+    sections: { heading: string; scope: string }[];
+  };
+  if (!Array.isArray(args.sections) || args.sections.length === 0) {
+    throw new Error("AI returned an empty outline.");
   }
-  const data = await aiRes.json();
-  const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new Error("AI returned no article.");
-  return JSON.parse(args);
+  return args;
+}
+
+async function aiBilingualSections(
+  apiKey: string,
+  source: {
+    title: string;
+    sourceUrl: string;
+    rawText: string;
+    mode: "youtube" | "youtube_meta" | "article";
+  },
+  outline: { title: string; sections: { heading: string; scope: string }[] },
+): Promise<BilingualArticle> {
+  const modeNote = modeContext(source.mode);
+  const system = `You are a top-tier English-language feature writer creating a bilingual article for an intermediate Iranian learner of English.
+
+The source material has already been outlined. Expand every section into vivid, easy-to-read prose. The reader should NEVER feel that facts were skipped or summarised away.
+
+${modeNote}
+
+VOICE & STYLE:
+- Warm, modern, conversational — a smart friend explaining the story over coffee.
+- Short, active sentences. B1 vocabulary. Pick the everyday word: "use" not "utilise", "help" not "facilitate", "about" not "regarding".
+- Be concrete: numbers, names, places, and direct quotes must be preserved exactly. Never invent facts.
+- If a technical term is unavoidable, explain it in the same sentence in plain words.
+
+BILINGUAL STRUCTURE — follow this order for the whole article:
+- title: English headline (max ~12 words)
+- titleFa: the same headline translated into natural Persian
+- tldr: a one-line English summary of the whole story (≤ 25 words)
+- tldrFa: Persian translation of the tldr
+- sections: array of sections. For each section:
+  - heading: the English section heading from the outline
+  - headingFa: natural Persian translation of the heading
+  - paragraphs: an array of short paragraph objects. Each object has:
+      - en: one English paragraph (1–3 short sentences, ≤ 220 characters, plain text, no markdown)
+      - fa: the Persian translation of that same paragraph, natural and fluent
+      - phrases: an array of key PHRASES or IDIOMS in this English paragraph that an intermediate learner might not know. Each phrase object has:
+          - phrase: the exact English phrase as it appears in the paragraph (multi-word, not single words)
+          - meaning: a short Persian explanation/translation
+        Leave this array EMPTY unless the paragraph genuinely contains a useful phrase or idiom. Do NOT list single vocabulary words.
+  - phrases: aggregate all the phrase objects from the paragraphs in this section. Keep each phrase only once.
+
+HARD RULES:
+1. Each English paragraph MUST be ≤ 220 characters and plain text (no markdown, no bullets).
+2. The Persian translation must correspond sentence-for-sentence to the English paragraph.
+3. Do NOT list single vocabulary words in phrases. Only multi-word expressions, collocations, or idioms.
+4. Preserve EVERY concrete fact from the source: numbers, names, places, direct quotes.
+5. Never invent facts, statistics, names, or quotes. If the source is vague, stay vague.
+6. Output valid JSON only, using the provided tool. No preamble.`;
+
+  const user = [
+    `Source URL: ${source.sourceUrl}`,
+    `Original title: ${source.title}`,
+    "",
+    "OUTLINE:",
+    "```json",
+    JSON.stringify(outline),
+    "```",
+    "",
+    "RAW INPUT:",
+    "```",
+    source.rawText.slice(0, 60_000),
+    "```",
+  ].join("\n");
+
+  const data = await aiGatewayCall(apiKey, {
+    model: AI_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "emit_bilingual_article",
+          description: "Return the full bilingual article.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              titleFa: { type: "string" },
+              tldr: { type: "string" },
+              tldrFa: { type: "string" },
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    heading: { type: "string" },
+                    headingFa: { type: "string" },
+                    paragraphs: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          en: { type: "string" },
+                          fa: { type: "string" },
+                          phrases: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                phrase: { type: "string" },
+                                meaning: { type: "string" },
+                              },
+                              required: ["phrase", "meaning"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["en", "fa", "phrases"],
+                        additionalProperties: false,
+                      },
+                    },
+                    phrases: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          phrase: { type: "string" },
+                          meaning: { type: "string" },
+                        },
+                        required: ["phrase", "meaning"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["heading", "headingFa", "paragraphs", "phrases"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["title", "titleFa", "tldr", "tldrFa", "sections"],
+            additionalProperties: false,
+          },
+        },
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "emit_bilingual_article" } },
+  });
+
+  const args = extractToolArgs(data, "emit_bilingual_article") as BilingualArticle;
+  if (!Array.isArray(args.sections) || args.sections.length === 0) {
+    throw new Error("AI returned an empty bilingual article.");
+  }
+  return args;
+}
+
+function buildBilingualMdAndHtml(art: BilingualArticle): {
+  contentMd: string;
+  contentHtml: string;
+  wordCount: number;
+} {
+  let wordCount = countWordsText(`${art.title} ${art.tldr}`);
+
+  const mdParts: string[] = [`# ${art.title}`, "", `*${art.tldr}*`, ""];
+  const htmlParts: string[] = [
+    `<article>`,
+    `<h1>${escapeHtml(art.title)}</h1>`,
+    `<p><em>${escapeHtml(art.tldr)}</em></p>`,
+  ];
+
+  for (const section of art.sections) {
+    mdParts.push(`## ${section.heading}`, "");
+    htmlParts.push(`<section><h2>${escapeHtml(section.heading)}</h2>`);
+    for (const para of section.paragraphs) {
+      wordCount += countWordsText(para.en);
+      mdParts.push(para.en, "");
+      htmlParts.push(`<p>${escapeHtml(para.en)}</p>`);
+    }
+
+    const sectionPhrases = section.phrases?.length ? section.phrases : [];
+    if (sectionPhrases.length > 0) {
+      const phrasesJson = JSON.stringify(sectionPhrases);
+      htmlParts.push(`<h3>Key phrases</h3>`, `<ul data-phrases-b64="${toBase64(phrasesJson)}">`);
+      for (const ph of sectionPhrases) {
+        htmlParts.push(
+          `<li><strong>${escapeHtml(ph.phrase)}</strong> — ${escapeHtml(ph.meaning)}</li>`,
+        );
+      }
+      htmlParts.push(`</ul>`);
+    }
+    htmlParts.push(`</section>`);
+    mdParts.push("");
+  }
+
+  htmlParts.push(`</article>`);
+  const payload = toBase64(JSON.stringify(art));
+  htmlParts.push(`<script type="application/json" id="bilingual-data">${payload}</script>`);
+
+  return {
+    contentMd: mdParts.join("\n").trim(),
+    contentHtml: htmlParts.join("\n").trim(),
+    wordCount,
+  };
+}
+
+async function generateBilingualArticle(
+  apiKey: string,
+  source: {
+    title: string;
+    sourceUrl: string;
+    rawText: string;
+    mode: "youtube" | "youtube_meta" | "article";
+  },
+): Promise<{ contentMd: string; contentHtml: string; title: string; wordCount: number }> {
+  const outline = await aiOutline(apiKey, source);
+  const art = await aiBilingualSections(apiKey, source, outline);
+  const { contentMd, contentHtml, wordCount } = buildBilingualMdAndHtml(art);
+  return { contentMd, contentHtml, title: art.title, wordCount };
 }
 
 // ─────────── Handlers ───────────
@@ -405,31 +649,29 @@ async function handleYoutube(
     mode = "youtube_meta";
   }
 
-  const { title, markdown } = await aiRewriteToArticle(apiKey, {
+  const out = await generateBilingualArticle(apiKey, {
     title: meta?.title ?? "YouTube video",
-    author: meta?.author,
-    siteName: "YouTube",
     sourceUrl: url,
     rawText: raw,
     mode,
   });
 
-  const html = mdToHtml(markdown);
-  const text = markdown
+  const excerpt = out.contentMd
     .replace(/[#>*_`-]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .slice(0, 280);
   return {
-    title,
+    title: out.title,
     author: meta?.author ?? null,
-    contentMd: markdown,
-    contentHtml: html,
-    excerpt: text.slice(0, 280),
+    contentMd: out.contentMd,
+    contentHtml: out.contentHtml,
+    excerpt,
     imageUrl: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
     siteName: "YouTube",
     language: "en",
     publishedAt: meta?.publishedAt ?? null,
-    wordCount: countWords(text),
+    wordCount: out.wordCount,
   };
 }
 
@@ -464,31 +706,29 @@ async function handleArticle(
     }
   })();
 
-  const { title, markdown } = await aiRewriteToArticle(aiKey, {
+  const out = await generateBilingualArticle(aiKey, {
     title: String(meta.title ?? meta.ogTitle ?? "Untitled"),
-    author: meta.author ?? meta.byline ?? undefined,
-    siteName: siteName ?? undefined,
     sourceUrl: url,
     rawText: md,
     mode: "article",
   });
 
-  const html = mdToHtml(markdown);
-  const text = markdown
+  const excerpt = out.contentMd
     .replace(/[#>*_`-]+/g, " ")
     .replace(/\s+/g, " ")
-    .trim();
+    .trim()
+    .slice(0, 280);
   return {
-    title,
+    title: out.title,
     author: meta.author ?? meta.byline ?? null,
-    contentMd: markdown,
-    contentHtml: html,
-    excerpt: text.slice(0, 280),
+    contentMd: out.contentMd,
+    contentHtml: out.contentHtml,
+    excerpt,
     imageUrl: meta.ogImage ?? meta.image ?? null,
     siteName,
     language: "en",
     publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
-    wordCount: countWords(text),
+    wordCount: out.wordCount,
   };
 }
 

@@ -16,6 +16,12 @@ import {
   BookmarkCheck,
   MoreVertical,
 } from "lucide-react";
+import {
+  extractBilingualData,
+  buildBilingualAnalyses,
+  allBilingualPhrases,
+  seedBilingualAnalyses,
+} from "@/lib/bilingualArticle";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -85,6 +91,29 @@ const NewsArticleReader = () => {
 
   // Shared reading-mode state (theme, extra line-height) from ReadingModeControls.
   const { extraLineHeight } = useReadingMode();
+
+  const bookId = article ? `news-${article.id}` : "";
+  const bilingualData = useMemo(() => {
+    if (!article?.contentHtml) return null;
+    return extractBilingualData(article.contentHtml);
+  }, [article?.contentHtml]);
+
+  const initialAnalyses = useMemo(() => {
+    if (!bilingualData || !bookId) return undefined;
+    return buildBilingualAnalyses(bilingualData, bookId, 0);
+  }, [bilingualData, bookId]);
+
+  const targetPhrases = useMemo(() => {
+    if (!bilingualData) return undefined;
+    return allBilingualPhrases(bilingualData);
+  }, [bilingualData]);
+
+  // Seed server-generated translations into the local paragraph-analysis cache
+  // so the TTS/share path and any re-renders can reuse them offline.
+  useEffect(() => {
+    if (!bilingualData || !bookId) return;
+    void seedBilingualAnalyses(bilingualData, bookId, 0);
+  }, [bilingualData, bookId]);
 
   const { newsBatchAnalysisModelRef, paragraphBatchModelRef, bookBatchAnalysisModelRef } =
     useSettingsStore(
@@ -305,6 +334,8 @@ const NewsArticleReader = () => {
                 fontSizeClass={typo.sizeClass}
                 fontFamilyClass={typo.familyClass}
                 displayLang={origDisplayLang}
+                initialAnalyses={initialAnalyses}
+                targetWords={targetPhrases}
                 onTranslationCountChange={setOrigTranslationCount}
                 sourceKind="news"
                 sourceTitle={article.title}

@@ -264,102 +264,370 @@ async function resolveFinalUrl(url: string): Promise<string> {
   }
 }
 
-async function aiCleanAndTranslate(
+interface BilingualPhrase {
+  phrase: string;
+  meaning: string;
+}
+
+interface BilingualParagraph {
+  en: string;
+  fa: string;
+  phrases: BilingualPhrase[];
+}
+
+interface BilingualSection {
+  heading: string;
+  headingFa: string;
+  paragraphs: BilingualParagraph[];
+  phrases: BilingualPhrase[];
+}
+
+interface BilingualArticle {
+  title: string;
+  titleFa: string;
+  tldr: string;
+  tldrFa: string;
+  sections: BilingualSection[];
+}
+
+function toBase64(s: string): string {
+  return btoa(encodeURIComponent(s)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function countWordsText(text: string): number {
+  return text.trim().split(/\s+/).filter(Boolean).length;
+}
+
+async function aiGatewayCall(
   apiKey: string,
-  raw: { title: string; author?: string; siteName?: string; markdown: string; sourceUrl: string },
-): Promise<{ title: string; markdown: string }> {
-  const system = `You are a top-tier English-language feature writer (think Vox, The Atlantic, Wired explainer pieces) rewriting raw web articles for an INTERMEDIATE adult Iranian learner of English. Your job is NOT to copy the source — it is to RETELL the story so it is vivid, crystal-clear, and genuinely fun to read. The reader should NEVER feel tired.
+  body: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+  const res = await fetch(AI_GATEWAY, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    if (res.status === 429) throw new Error("Rate limit exceeded. Try again in a moment.");
+    if (res.status === 402) throw new Error("AI credits exhausted.");
+    throw new Error(`AI gateway error (${res.status}): ${text.slice(0, 200)}`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
 
-VOICE & STYLE — this is the most important part:
-- Warm, modern, conversational. A smart friend explaining the news over coffee — never a press release, never Wikipedia, never a stiff bulletin.
-- Open with a HOOK: a striking fact, a question, a tiny scene, or a surprising number. Never "In a recent development…" or "According to reports…".
-- SHORT sentences. Average ≤ 15 words. Many sentences should be 6–10 words. Mix lengths for rhythm — one short sentence after a long one lands hard.
-- SIMPLE words. Strict B1 vocabulary. Pick the everyday word over the fancy one: "use" not "utilise", "show" not "demonstrate", "help" not "facilitate", "start" not "commence", "about" not "regarding". If a technical term is unavoidable, explain it in the same sentence in plain words.
-- Be concrete. Use small images, mini-examples, light analogies ("imagine a city the size of Tehran losing power for three days"). Show, don't summarise.
-- Active voice. Strong verbs. Cut filler ("it is important to note that", "in order to", "due to the fact that", "needless to say").
-- Sound human. An occasional rhetorical question or short aside is welcome — never overdone.
+function extractToolArgs(data: Record<string, unknown>, toolName: string): unknown {
+  const calls = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.tool_calls;
+  if (Array.isArray(calls)) {
+    const call = calls.find(
+      (c: unknown) =>
+        (c as Record<string, unknown>).function?.name === toolName ||
+        (c as Record<string, unknown>).name === toolName,
+    );
+    const args =
+      (call as Record<string, unknown>)?.function?.arguments ??
+      (call as Record<string, unknown>)?.arguments;
+    if (args) {
+      try {
+        return typeof args === "string" ? JSON.parse(args) : args;
+      } catch {
+        /* fall through */
+      }
+    }
+  }
+  // Fallback: some providers return the tool arguments directly in the message content.
+  const content = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.content;
+  if (typeof content === "string" && content.trim().startsWith("{")) {
+    try {
+      return JSON.parse(content);
+    } catch {
+      /* ignore */
+    }
+  }
+  throw new Error(`AI returned no ${toolName} output.`);
+}
 
-VISUAL READABILITY — the page must look inviting AND scannable at a glance:
-- Use **bold** to highlight 2–4 key terms or numbers PER SECTION so the eye can scan (names, dates, key money figures, the core idea of a paragraph). Don't over-bold — only the things that matter most.
-- Use the occasional > blockquote (1–2 lines) to spotlight a striking quote or a punchy takeaway. Max one blockquote per section, only when it genuinely lands.
-- Keep paragraphs SHORT: 2–4 sentences each. Never a wall of text. White space is your friend.
+async function aiOutline(
+  apiKey: string,
+  raw: { title: string; sourceUrl: string; markdown: string },
+): Promise<{ title: string; sections: { heading: string; scope: string }[] }> {
+  const system = `You are a careful editor planning a bilingual (English + Persian) feature article for an intermediate Iranian learner of English.
 
-STRUCTURE (follow this order exactly):
-- Single # H1 title that is a real headline — punchy, curiosity-driven, max ~10 words. Never a label like "News Report" or "Article".
-- One italic *TL;DR* line right under the title (≤ 25 words) capturing the core "so what".
-- A "**Key points**" block right after the TL;DR: 3–5 short bullet lines (each ≤ 14 words, starting with a **bold noun phrase** followed by " — " and a plain-English micro-explanation). This is the ONLY place bullets are allowed and it is REQUIRED.
-- A short LEDE paragraph (2–4 sentences) that hooks and frames the stakes.
-- 3–6 ## H2 sections, each with a sharp thematic headline (e.g. "## How the Deal Actually Works", "## Why This Caught Everyone Off Guard") — never generic ("Background", "Details", "Conclusion"). Inside sections, use pure prose (no more bullets after the Key points block).
-- Where the story has 3+ named people, orgs, numbers, or dates, add ONE optional "## The Cast" (or "## The Numbers" / "## The Timeline") mini-section as a short **bold-label — plain-explanation** paragraph list (still prose, no dash bullets) to help the reader keep track.
-- Each H2 section is 2–4 SHORT paragraphs. Build ideas: context → mechanism → why it matters → concrete example.
-- End with a final "## The Takeaway" section (1–2 short paragraphs) — what the reader should walk away knowing, in plain language.
+Your job is to outline the source material into clear, thematic sub-sections so that NO important facts are dropped when the article is rewritten.
 
-HARD RULES:
-1. ENGLISH ONLY. Translate from any source language. Never leave foreign words in the body.
-2. Strip ALL boilerplate: cookie banners, navigation, "subscribe to our newsletter", related-article lists, ads, social prompts, comment sections, author bios, photo captions that aren't essential.
-3. Fix grammar and typos. Preserve EVERY concrete fact: numbers, names, places, direct quotes (keep quotes in quotation marks). Do NOT drop details to sound cleaner.
-4. NEVER invent facts, statistics, names, or quotes. If the source is vague, stay vague — don't fill gaps.
-5. NO numbered lists. Bullets ONLY inside the "Key points" block described above — nowhere else. No single-sentence paragraphs as filler. NO "In conclusion" / "To summarise" tics.
-6. Don't cite the source inline ("Reuters reported…"). Just tell the story.
-7. Output valid markdown only. Headings exactly as #, ##. **bold** and > blockquote allowed as described above. No front-matter, no preamble like "Here is the article".
-
-Always respond by calling the provided tool.`;
+Rules:
+- Title: a sharp, curiosity-driven English headline (max ~12 words). Not a label like "Article" or "Report".
+- 3–8 sections, each with a concrete, thematic English heading. Never generic headings like "Background", "Details", or "Conclusion".
+- Each section must state its scope in 1–2 sentences: what concrete facts, numbers, names, quotes, or events it will cover.
+- Preserve the narrative order of the source where it helps the reader follow the story.
+- Do not write the body text, only the outline.
+- Output JSON only, using the provided tool.`;
 
   const user = [
     `Source URL: ${raw.sourceUrl}`,
-    raw.author ? `Author: ${raw.author}` : "",
-    raw.siteName ? `Site: ${raw.siteName}` : "",
     `Original title: ${raw.title}`,
     "",
     "RAW MARKDOWN:",
     "```",
     raw.markdown.slice(0, 60_000),
     "```",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  ].join("\n");
 
-  const aiRes = await fetch(AI_GATEWAY, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: AI_MODEL,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: {
-            name: "emit_article",
-            description: "Return the polished article.",
-            parameters: {
-              type: "object",
-              properties: {
-                title: { type: "string" },
-                markdown: { type: "string" },
+  const data = await aiGatewayCall(apiKey, {
+    model: AI_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "emit_outline",
+          description: "Return the article outline.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    heading: { type: "string" },
+                    scope: { type: "string" },
+                  },
+                  required: ["heading", "scope"],
+                  additionalProperties: false,
+                },
               },
-              required: ["title", "markdown"],
-              additionalProperties: false,
             },
+            required: ["title", "sections"],
+            additionalProperties: false,
           },
         },
-      ],
-      tool_choice: { type: "function", function: { name: "emit_article" } },
-    }),
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "emit_outline" } },
   });
 
-  if (!aiRes.ok) {
-    const body = await aiRes.text();
-    if (aiRes.status === 429) throw new Error("Rate limit exceeded. Try again in a moment.");
-    if (aiRes.status === 402) throw new Error("AI credits exhausted.");
-    throw new Error(`AI gateway error (${aiRes.status}): ${body.slice(0, 200)}`);
+  const args = extractToolArgs(data, "emit_outline") as {
+    title: string;
+    sections: { heading: string; scope: string }[];
+  };
+  if (!Array.isArray(args.sections) || args.sections.length === 0) {
+    throw new Error("AI returned an empty outline.");
   }
-  const data = await aiRes.json();
-  const args = data?.choices?.[0]?.message?.tool_calls?.[0]?.function?.arguments;
-  if (!args) throw new Error("AI returned no article.");
-  return JSON.parse(args);
+  return args;
+}
+
+async function aiBilingualSections(
+  apiKey: string,
+  raw: { title: string; sourceUrl: string; markdown: string },
+  outline: { title: string; sections: { heading: string; scope: string }[] },
+): Promise<BilingualArticle> {
+  const system = `You are a top-tier English-language feature writer creating a bilingual article for an intermediate Iranian learner of English.
+
+The source material has already been outlined. Expand every section into vivid, easy-to-read prose. The reader should NEVER feel that facts were skipped or summarised away.
+
+VOICE & STYLE:
+- Warm, modern, conversational — a smart friend explaining the story over coffee.
+- Short, active sentences. B1 vocabulary. Pick the everyday word: "use" not "utilise", "help" not "facilitate", "about" not "regarding".
+- Be concrete: numbers, names, places, and direct quotes must be preserved exactly. Never invent facts.
+- If a technical term is unavoidable, explain it in the same sentence in plain words.
+
+BILINGUAL STRUCTURE — follow this order for the whole article:
+- title: English headline (max ~12 words)
+- titleFa: the same headline translated into natural Persian
+- tldr: a one-line English summary of the whole story (≤ 25 words)
+- tldrFa: Persian translation of the tldr
+- sections: array of sections. For each section:
+  - heading: the English section heading from the outline
+  - headingFa: natural Persian translation of the heading
+  - paragraphs: an array of short paragraph objects. Each object has:
+      - en: one English paragraph (1–3 short sentences, ≤ 220 characters, plain text, no markdown)
+      - fa: the Persian translation of that same paragraph, natural and fluent
+      - phrases: an array of key PHRASES or IDIOMS in this English paragraph that an intermediate learner might not know. Each phrase object has:
+          - phrase: the exact English phrase as it appears in the paragraph (multi-word, not single words)
+          - meaning: a short Persian explanation/translation
+        Leave this array EMPTY unless the paragraph genuinely contains a useful phrase or idiom. Do NOT list single vocabulary words.
+  - phrases: aggregate all the phrase objects from the paragraphs in this section. Keep each phrase only once.
+
+HARD RULES:
+1. Each English paragraph MUST be ≤ 220 characters and plain text (no markdown, no bullets).
+2. The Persian translation must correspond sentence-for-sentence to the English paragraph.
+3. Do NOT list single vocabulary words in phrases. Only multi-word expressions, collocations, or idioms.
+4. Preserve EVERY concrete fact from the source: numbers, names, places, direct quotes.
+5. Never invent facts, statistics, names, or quotes. If the source is vague, stay vague.
+6. Output valid JSON only, using the provided tool. No preamble.`;
+
+  const user = [
+    `Source URL: ${raw.sourceUrl}`,
+    `Original title: ${raw.title}`,
+    "",
+    "OUTLINE:",
+    "```json",
+    JSON.stringify(outline),
+    "```",
+    "",
+    "RAW MARKDOWN:",
+    "```",
+    raw.markdown.slice(0, 60_000),
+    "```",
+  ].join("\n");
+
+  const data = await aiGatewayCall(apiKey, {
+    model: AI_MODEL,
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+    tools: [
+      {
+        type: "function",
+        function: {
+          name: "emit_bilingual_article",
+          description: "Return the full bilingual article.",
+          parameters: {
+            type: "object",
+            properties: {
+              title: { type: "string" },
+              titleFa: { type: "string" },
+              tldr: { type: "string" },
+              tldrFa: { type: "string" },
+              sections: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    heading: { type: "string" },
+                    headingFa: { type: "string" },
+                    paragraphs: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          en: { type: "string" },
+                          fa: { type: "string" },
+                          phrases: {
+                            type: "array",
+                            items: {
+                              type: "object",
+                              properties: {
+                                phrase: { type: "string" },
+                                meaning: { type: "string" },
+                              },
+                              required: ["phrase", "meaning"],
+                              additionalProperties: false,
+                            },
+                          },
+                        },
+                        required: ["en", "fa", "phrases"],
+                        additionalProperties: false,
+                      },
+                    },
+                    phrases: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          phrase: { type: "string" },
+                          meaning: { type: "string" },
+                        },
+                        required: ["phrase", "meaning"],
+                        additionalProperties: false,
+                      },
+                    },
+                  },
+                  required: ["heading", "headingFa", "paragraphs", "phrases"],
+                  additionalProperties: false,
+                },
+              },
+            },
+            required: ["title", "titleFa", "tldr", "tldrFa", "sections"],
+            additionalProperties: false,
+          },
+        },
+      },
+    ],
+    tool_choice: { type: "function", function: { name: "emit_bilingual_article" } },
+  });
+
+  const args = extractToolArgs(data, "emit_bilingual_article") as BilingualArticle;
+  if (!Array.isArray(args.sections) || args.sections.length === 0) {
+    throw new Error("AI returned an empty bilingual article.");
+  }
+  return args;
+}
+
+function buildBilingualMdAndHtml(art: BilingualArticle): {
+  contentMd: string;
+  contentHtml: string;
+  wordCount: number;
+} {
+  let wordCount = countWordsText(`${art.title} ${art.tldr}`);
+
+  // Build English markdown for TTS / raw copy / Telegram fallback.
+  const mdParts: string[] = [`# ${art.title}`, "", `*${art.tldr}*`, ""];
+
+  // Build HTML with a hidden bilingual-data payload and per-section phrase lists.
+  const htmlParts: string[] = [
+    `<article>`,
+    `<h1>${escapeHtml(art.title)}</h1>`,
+    `<p><em>${escapeHtml(art.tldr)}</em></p>`,
+  ];
+
+  for (const section of art.sections) {
+    mdParts.push(`## ${section.heading}`, "");
+    htmlParts.push(`<section><h2>${escapeHtml(section.heading)}</h2>`);
+    for (const para of section.paragraphs) {
+      wordCount += countWordsText(para.en);
+      mdParts.push(para.en, "");
+      htmlParts.push(`<p>${escapeHtml(para.en)}</p>`);
+    }
+
+    const sectionPhrases = section.phrases?.length ? section.phrases : [];
+    if (sectionPhrases.length > 0) {
+      const phrasesJson = JSON.stringify(sectionPhrases);
+      htmlParts.push(`<h3>Key phrases</h3>`, `<ul data-phrases-b64="${toBase64(phrasesJson)}">`);
+      for (const ph of sectionPhrases) {
+        htmlParts.push(
+          `<li><strong>${escapeHtml(ph.phrase)}</strong> — ${escapeHtml(ph.meaning)}</li>`,
+        );
+      }
+      htmlParts.push(`</ul>`);
+    }
+    htmlParts.push(`</section>`);
+    mdParts.push("");
+  }
+
+  htmlParts.push(`</article>`);
+  const payload = toBase64(JSON.stringify(art));
+  htmlParts.push(`<script type="application/json" id="bilingual-data">${payload}</script>`);
+
+  return {
+    contentMd: mdParts.join("\n").trim(),
+    contentHtml: htmlParts.join("\n").trim(),
+    wordCount,
+  };
+}
+
+async function generateBilingualArticle(
+  apiKey: string,
+  raw: { title: string; sourceUrl: string; markdown: string },
+): Promise<{ contentMd: string; contentHtml: string; title: string; wordCount: number }> {
+  const outline = await aiOutline(apiKey, raw);
+  const art = await aiBilingualSections(apiKey, raw, outline);
+  const { contentMd, contentHtml, wordCount } = buildBilingualMdAndHtml(art);
+  return { contentMd, contentHtml, title: art.title, wordCount };
 }
 
 function buildFallback(opts: {
@@ -521,18 +789,41 @@ serve(async (req) => {
 
     if (rewrite && aiKey && md.trim().length > 100) {
       try {
-        const out = await aiCleanAndTranslate(aiKey, {
+        const out = await generateBilingualArticle(aiKey, {
           title: finalTitle,
-          author: meta.author ?? meta.byline ?? undefined,
-          siteName: siteName ?? undefined,
-          markdown: md,
           sourceUrl: finalUrl,
+          markdown: md,
         });
         finalTitle = out.title;
-        finalMd = out.markdown;
+        finalMd = out.contentMd;
         language = "en";
+
+        const result = {
+          blocked: false,
+          finalUrl,
+          title: finalTitle,
+          author: meta.author ?? meta.byline ?? null,
+          contentMd: out.contentMd,
+          contentHtml: out.contentHtml,
+          excerpt:
+            meta.description ??
+            out.contentMd
+              .replace(/[#>*_`-]+/g, " ")
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 280),
+          imageUrl: meta.ogImage ?? meta.image ?? fallbackImageUrl ?? null,
+          siteName,
+          language,
+          publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
+          wordCount: out.wordCount,
+        };
+        return new Response(JSON.stringify(result), {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       } catch (e) {
-        console.error("AI rewrite skipped:", e);
+        console.error("AI bilingual rewrite failed:", e);
       }
     }
 

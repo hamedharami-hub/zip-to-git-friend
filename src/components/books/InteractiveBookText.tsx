@@ -19,6 +19,11 @@ import { highlightColor, type HighlightColor } from "@/hooks/useBookAnnotations"
 
 export type { DisplayLang } from "./InteractiveBookParagraph";
 
+interface SectionPhrase {
+  phrase: string;
+  meaning: string;
+}
+
 interface Props {
   html: string;
   bookId: string;
@@ -31,6 +36,8 @@ interface Props {
   targetWords?: string[];
   /** Controlled by parent: which language(s) to render for each paragraph. */
   displayLang?: import("./InteractiveBookParagraph").DisplayLang;
+  /** Pre-seeded paragraph analyses (e.g. server-generated translations). */
+  initialAnalyses?: Record<string, BookParagraphAnalysis>;
   /** Called whenever the cached analysis count changes. */
   onTranslationCountChange?: (n: number) => void;
   /** Source kind for auto-foldering Leitner cards (defaults to 'book'). */
@@ -42,11 +49,27 @@ interface Props {
 }
 
 interface Block {
-  kind: "h1" | "h2" | "h3" | "p" | "blockquote" | "li" | "hr" | "img" | "raw";
+  kind: "h1" | "h2" | "h3" | "p" | "blockquote" | "li" | "hr" | "img" | "phrases" | "raw";
   text?: string;
   src?: string;
   alt?: string;
+  phrases?: SectionPhrase[];
   key: string;
+}
+
+function decodePhrasesB64(attr: string | null): SectionPhrase[] | undefined {
+  if (!attr) return undefined;
+  try {
+    const normalized = attr.replace(/-/g, "+").replace(/_/g, "/");
+    const pad = normalized.length % 4;
+    const padded = pad ? normalized + "=".repeat(4 - pad) : normalized;
+    const json = decodeURIComponent(atob(padded));
+    const parsed = JSON.parse(json) as unknown;
+    if (Array.isArray(parsed)) return parsed as SectionPhrase[];
+  } catch {
+    /* ignore */
+  }
+  return undefined;
 }
 
 function htmlToBlocks(html: string): Block[] {
@@ -60,6 +83,10 @@ function htmlToBlocks(html: string): Block[] {
     const text = (el.textContent ?? "").replace(/\s+/g, " ").trim();
 
     switch (tag) {
+      case "script":
+      case "style":
+      case "noscript":
+        return;
       case "h1":
       case "h2":
       case "h3":
@@ -77,12 +104,19 @@ function htmlToBlocks(html: string): Block[] {
         if (text) blocks.push({ kind: "blockquote", text, key: `b${n++}` });
         return;
       case "ul":
-      case "ol":
+      case "ol": {
+        const phrasesB64 = el.getAttribute("data-phrases-b64");
+        const phrases = decodePhrasesB64(phrasesB64);
+        if (phrases && phrases.length > 0) {
+          blocks.push({ kind: "phrases", phrases, key: `b${n++}` });
+          return;
+        }
         el.querySelectorAll(":scope > li").forEach((li) => {
           const t = (li.textContent ?? "").replace(/\s+/g, " ").trim();
           if (t) blocks.push({ kind: "li", text: t, key: `b${n++}` });
         });
         return;
+      }
       case "hr":
         blocks.push({ kind: "hr", key: `b${n++}` });
         return;
@@ -194,6 +228,7 @@ export function InteractiveBookText({
   highlights = [],
   targetWords = [],
   displayLang = "en",
+  initialAnalyses,
   onTranslationCountChange,
   sourceKind,
   sourceTitle,
@@ -230,15 +265,19 @@ export function InteractiveBookText({
     return map;
   }, [blocks, highlightTexts, targetTexts]);
 
-  const [analyses, setAnalyses] = useState<Record<string, BookParagraphAnalysis>>({});
+  const [analyses, setAnalyses] = useState<Record<string, BookParagraphAnalysis>>(
+    () => initialAnalyses ?? {},
+  );
 
   // Pre-warm: on mount/chapter-change, look up cached analyses for every
   // paragraph so idioms underline themselves without a click.
   useEffect(() => {
     let cancelled = false;
-    setAnalyses({});
+    setAnalyses((prev) => (initialAnalyses ? { ...initialAnalyses } : { ...prev }));
     (async () => {
-      const next: Record<string, BookParagraphAnalysis> = {};
+      const next: Record<string, BookParagraphAnalysis> = initialAnalyses
+        ? { ...initialAnalyses }
+        : {};
       for (const b of blocks) {
         if (!b.text) continue;
         if (!["p", "blockquote", "li", "h1", "h2", "h3"].includes(b.kind)) continue;
@@ -250,7 +289,7 @@ export function InteractiveBookText({
     return () => {
       cancelled = true;
     };
-  }, [blocks, bookId, chapterIndex]);
+  }, [blocks, bookId, chapterIndex, initialAnalyses]);
 
   // Live updates from the batch-chapter analyzer (running in a sibling sheet
   // or the Translate-whole-text popover).
@@ -454,6 +493,36 @@ export function InteractiveBookText({
                 }
               />
             );
+
+          case "phrases": {
+            const list = b.phrases ?? [];
+            if (list.length === 0) return null;
+            return (
+              <div
+                key={b.key}
+                className="my-4 rounded-lg border border-primary/20 bg-primary/[0.03] p-4 not-prose"
+              >
+                <h4 className="text-sm font-semibold text-primary mb-2">
+                  عبارات و ضرب‌المثل‌های مهم
+                </h4>
+                <ul className="space-y-1.5">
+                  {list.map((ph, i) => (
+                    <li key={i} className="text-sm">
+                      <span className="font-medium">{ph.phrase}</span>
+                      <span className="mx-1.5 text-muted-foreground">—</span>
+                      <span
+                        dir="auto"
+                        className="text-primary"
+                        style={{ fontFamily: '"Vazirmatn","IRANSans","Tahoma",sans-serif' }}
+                      >
+                        {ph.meaning}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          }
 
           default:
             return null;

@@ -139,9 +139,11 @@ function safeFilename(name: string): string {
 function plainSnippetFromHtml(html: string): string {
   try {
     const doc = new DOMParser().parseFromString(html, "text/html");
+    doc.querySelectorAll("script, style, noscript").forEach((el) => el.remove());
     return (doc.body?.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 2500);
   } catch {
     return html
+      .replace(/<(script|style|noscript)[^>]*>[\s\S]*?<\/\1>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
       .trim()

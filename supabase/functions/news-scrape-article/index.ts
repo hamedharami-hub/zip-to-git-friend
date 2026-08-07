@@ -306,10 +306,25 @@ function countWordsText(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-async function aiGatewayCall(
-  apiKey: string,
-  body: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
+interface AiToolCall {
+  name?: string;
+  arguments?: string;
+  function?: {
+    name?: string;
+    arguments?: string;
+  };
+}
+
+interface AiResponse {
+  choices?: {
+    message?: {
+      content?: string;
+      tool_calls?: AiToolCall[];
+    };
+  }[];
+}
+
+async function aiGatewayCall(apiKey: string, body: Record<string, unknown>): Promise<AiResponse> {
   const res = await fetch(AI_GATEWAY, {
     method: "POST",
     headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -321,20 +336,14 @@ async function aiGatewayCall(
     if (res.status === 402) throw new Error("AI credits exhausted.");
     throw new Error(`AI gateway error (${res.status}): ${text.slice(0, 200)}`);
   }
-  return (await res.json()) as Record<string, unknown>;
+  return (await res.json()) as AiResponse;
 }
 
-function extractToolArgs(data: Record<string, unknown>, toolName: string): unknown {
-  const calls = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.tool_calls;
+function extractToolArgs(data: AiResponse, toolName: string): unknown {
+  const calls = data.choices?.[0]?.message?.tool_calls;
   if (Array.isArray(calls)) {
-    const call = calls.find(
-      (c: unknown) =>
-        (c as Record<string, unknown>).function?.name === toolName ||
-        (c as Record<string, unknown>).name === toolName,
-    );
-    const args =
-      (call as Record<string, unknown>)?.function?.arguments ??
-      (call as Record<string, unknown>)?.arguments;
+    const call = calls.find((c) => c.function?.name === toolName || c.name === toolName);
+    const args = call?.function?.arguments ?? call?.arguments;
     if (args) {
       try {
         return typeof args === "string" ? JSON.parse(args) : args;
@@ -344,7 +353,7 @@ function extractToolArgs(data: Record<string, unknown>, toolName: string): unkno
     }
   }
   // Fallback: some providers return the tool arguments directly in the message content.
-  const content = ((data?.choices as unknown[])?.[0] as Record<string, unknown>)?.message?.content;
+  const content = data.choices?.[0]?.message?.content;
   if (typeof content === "string" && content.trim().startsWith("{")) {
     try {
       return JSON.parse(content);

@@ -232,6 +232,55 @@ function countWordsText(text: string): number {
   return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
+function mdToHtml(md: string): string {
+  let s = md.replace(/\r\n/g, "\n").trim();
+  const codeBlocks: string[] = [];
+  s = s.replace(/```([\s\S]*?)```/g, (_, code) => {
+    codeBlocks.push(code);
+    return `\u0000CODE${codeBlocks.length - 1}\u0000`;
+  });
+  s = s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  s = s.replace(/^######\s+(.+)$/gm, "<h6>$1</h6>");
+  s = s.replace(/^#####\s+(.+)$/gm, "<h5>$1</h5>");
+  s = s.replace(/^####\s+(.+)$/gm, "<h4>$1</h4>");
+  s = s.replace(/^###\s+(.+)$/gm, "<h3>$1</h3>");
+  s = s.replace(/^##\s+(.+)$/gm, "<h2>$1</h2>");
+  s = s.replace(/^#\s+(.+)$/gm, "<h1>$1</h1>");
+  s = s.replace(/^>\s?(.+)$/gm, "<blockquote>$1</blockquote>");
+  s = s.replace(/(^(?:-|\*|\d+\.)\s+.+(:?\n(?:-|\*|\d+\.)\s+.+)*)/gm, (block) => {
+    const ordered = /^\d+\./.test(block);
+    const items = block
+      .split("\n")
+      .map((l) => l.replace(/^(?:-|\*|\d+\.)\s+/, "").trim())
+      .filter(Boolean)
+      .map((l) => `<li>${l}</li>`)
+      .join("");
+    return ordered ? `<ol>${items}</ol>` : `<ul>${items}</ul>`;
+  });
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  s = s.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+  s = s.replace(
+    /\[([^\]]+)\]\(([^)\s]+)\)/g,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>',
+  );
+  const paragraphs = s.split(/\n{2,}/).map((p) => {
+    const t = p.trim();
+    if (!t) return "";
+    if (/^<(h\d|ul|ol|blockquote|pre|p|table)/i.test(t)) return t;
+    return `<p>${t.replace(/\n/g, "<br/>")}</p>`;
+  });
+  s = paragraphs.join("\n");
+  const codeMarker = String.fromCharCode(0);
+  const codeRe = new RegExp(`${codeMarker}CODE(\\d+)${codeMarker}`, "g");
+  s = s.replace(codeRe, (_, i) => {
+    return `<pre><code>${codeBlocks[Number(i)]
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")}</code></pre>`;
+  });
+  return s;
+}
+
 interface AiToolCall {
   name?: string;
   arguments?: string;
@@ -658,30 +707,51 @@ async function handleYoutube(
     mode = "youtube_meta";
   }
 
-  const out = await generateBilingualArticle(apiKey, {
-    title: meta?.title ?? "YouTube video",
-    sourceUrl: url,
-    rawText: raw,
-    mode,
-  });
+  try {
+    const out = await generateBilingualArticle(apiKey, {
+      title: meta?.title ?? "YouTube video",
+      sourceUrl: url,
+      rawText: raw,
+      mode,
+    });
 
-  const excerpt = out.contentMd
-    .replace(/[#>*_`-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 280);
-  return {
-    title: out.title,
-    author: meta?.author ?? null,
-    contentMd: out.contentMd,
-    contentHtml: out.contentHtml,
-    excerpt,
-    imageUrl: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-    siteName: "YouTube",
-    language: "en",
-    publishedAt: meta?.publishedAt ?? null,
-    wordCount: out.wordCount,
-  };
+    const excerpt = out.contentMd
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 280);
+    return {
+      title: out.title,
+      author: meta?.author ?? null,
+      contentMd: out.contentMd,
+      contentHtml: out.contentHtml,
+      excerpt,
+      imageUrl: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      siteName: "YouTube",
+      language: "en",
+      publishedAt: meta?.publishedAt ?? null,
+      wordCount: out.wordCount,
+    };
+  } catch (e) {
+    console.error("AI bilingual rewrite failed for YouTube, returning raw transcript:", e);
+    const fallbackMd = [`# ${meta?.title ?? "YouTube video"}`, "", raw].join("\n").trim();
+    const fallbackText = fallbackMd
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return {
+      title: meta?.title ?? "YouTube video",
+      author: meta?.author ?? null,
+      contentMd: fallbackMd,
+      contentHtml: mdToHtml(fallbackMd),
+      excerpt: fallbackText.slice(0, 280),
+      imageUrl: meta?.thumbnail ?? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      siteName: "YouTube",
+      language: transcript?.lang ?? "en",
+      publishedAt: meta?.publishedAt ?? null,
+      wordCount: countWordsText(fallbackText),
+    };
+  }
 }
 
 async function handleArticle(
@@ -715,30 +785,50 @@ async function handleArticle(
     }
   })();
 
-  const out = await generateBilingualArticle(aiKey, {
-    title: String(meta.title ?? meta.ogTitle ?? "Untitled"),
-    sourceUrl: url,
-    rawText: md,
-    mode: "article",
-  });
+  try {
+    const out = await generateBilingualArticle(aiKey, {
+      title: String(meta.title ?? meta.ogTitle ?? "Untitled"),
+      sourceUrl: url,
+      rawText: md,
+      mode: "article",
+    });
 
-  const excerpt = out.contentMd
-    .replace(/[#>*_`-]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 280);
-  return {
-    title: out.title,
-    author: meta.author ?? meta.byline ?? null,
-    contentMd: out.contentMd,
-    contentHtml: out.contentHtml,
-    excerpt,
-    imageUrl: meta.ogImage ?? meta.image ?? null,
-    siteName,
-    language: "en",
-    publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
-    wordCount: out.wordCount,
-  };
+    const excerpt = out.contentMd
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 280);
+    return {
+      title: out.title,
+      author: meta.author ?? meta.byline ?? null,
+      contentMd: out.contentMd,
+      contentHtml: out.contentHtml,
+      excerpt,
+      imageUrl: meta.ogImage ?? meta.image ?? null,
+      siteName,
+      language: "en",
+      publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
+      wordCount: out.wordCount,
+    };
+  } catch (e) {
+    console.error("AI bilingual rewrite failed for article, returning raw scrape:", e);
+    const text = md
+      .replace(/[#>*_`-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+    return {
+      title: String(meta.title ?? meta.ogTitle ?? "Untitled"),
+      author: meta.author ?? meta.byline ?? null,
+      contentMd: md,
+      contentHtml: mdToHtml(md),
+      excerpt: meta.description ?? text.slice(0, 280),
+      imageUrl: meta.ogImage ?? meta.image ?? null,
+      siteName,
+      language: "en",
+      publishedAt: meta.publishedTime ?? meta.publishedAt ?? null,
+      wordCount: countWordsText(text),
+    };
+  }
 }
 
 // ─────────── Server ───────────

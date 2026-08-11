@@ -475,6 +475,10 @@ serve(async (req) => {
     }
 
 
+    const sourceNote = needsMapStage
+      ? "NOTE: each article's `content` is a DENSE FACT SHEET already extracted from the FULL source text (complete article body or full video transcript). Treat it as the complete source. Use EVERY fact, name, number, date and quote it contains — the reader expects a detailed, complete piece, not a short summary."
+      : "NOTE: each article's `content` is the source text.";
+
     const normalizedVoice = normalizeVoice(voice);
     let systemContent: string;
     let instructions: string;
@@ -488,9 +492,12 @@ serve(async (req) => {
         "Topic / scope: " + (topic ?? "general") + ".",
         "Window: last " + windowHours + " hour(s).",
         "",
+        sourceNote,
+        "",
         "ARTICLES (JSON):",
         JSON.stringify(compact, null, 2),
       ].join(String.fromCharCode(10));
+
     } else {
       switch (normalizedVoice) {
         case "journalist":

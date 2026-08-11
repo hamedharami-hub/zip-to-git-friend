@@ -132,10 +132,14 @@ export function downloadBackup(cards: LeitnerCard[], folders: LeitnerFolder[]): 
   URL.revokeObjectURL(url);
 }
 
-function sanitizeCard(card: Omit<LeitnerCard, "box"> & { box: number }): LeitnerCard {
+function sanitizeCard(card: z.infer<typeof cardSchema>): LeitnerCard {
   return {
     ...card,
     box: Math.min(5, Math.max(1, Math.round(card.box))) as LeitnerCard["box"],
+    reviewLog: card.reviewLog?.map((r) => ({
+      ...r,
+      box: Math.min(5, Math.max(1, Math.round(r.box))) as LeitnerCard["box"],
+    })),
     nextReview: Number.isFinite(card.nextReview) ? card.nextReview : Date.now(),
     createdAt: Number.isFinite(card.createdAt) ? card.createdAt : Date.now(),
   };

@@ -21,13 +21,14 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { GeminiVoicePicker } from "./GeminiVoicePicker";
+import type { GeminiTtsVoice } from "@/lib/geminiTts";
 import { ParagraphChunkList, type ReadyChunk } from "./ParagraphChunkList";
 
 interface Props {
   apiKey: string | null;
   text: string;
-  voice: string;
-  setVoice: (v: string) => void;
+  voice: GeminiTtsVoice;
+  setVoice: (v: GeminiTtsVoice) => void;
   loading: boolean;
   chunkInfo: { done: number; total: number } | null;
   progress: number;

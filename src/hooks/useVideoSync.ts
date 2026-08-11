@@ -140,7 +140,7 @@ export function useVideoSync(
           const idx = cues.findIndex((c) => c.id === cue.id);
           const nextCue = cues[idx + 1];
           if (nextCue) {
-            pausedTimerRef.current = window.setTimeout(() => {
+            pausedTimerRef.current = setTimeout(() => {
               if (cancelledRef.current) return;
               try {
                 videoEl.currentTime = nextCue.startMs / 1000;
@@ -161,7 +161,7 @@ export function useVideoSync(
         return true;
       }
 
-      pausedTimerRef.current = window.setTimeout(() => {
+      pausedTimerRef.current = setTimeout(() => {
         if (cancelledRef.current) return;
         try {
           videoEl.currentTime = cue.startMs / 1000;

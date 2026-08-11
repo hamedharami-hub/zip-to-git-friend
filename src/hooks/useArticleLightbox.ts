@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { extractArticleImages, type LightboxImage } from "@/lib/extractArticleImages";
-import type { NewsArticle } from "@/types";
+import type { NewsArticle } from "@/lib/news";
 
 export interface UseArticleLightboxParams {
   article: NewsArticle | null;

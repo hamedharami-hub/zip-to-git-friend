@@ -68,10 +68,10 @@ async function tryNativeHaptic(pattern: HapticPattern) {
     if (pattern === "success" || pattern === "error" || pattern === "warning") {
       const type =
         pattern === "success"
-          ? NotificationType.SUCCESS
+          ? NotificationType.Success
           : pattern === "error"
-            ? NotificationType.ERROR
-            : NotificationType.WARNING;
+            ? NotificationType.Error
+            : NotificationType.Warning;
       await Haptics.notification({ type });
     } else {
       const style =

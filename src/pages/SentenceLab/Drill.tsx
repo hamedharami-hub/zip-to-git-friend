@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, RefreshCw, Headphones, Mic, BarChart3, Home } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  RefreshCw,
+  Headphones,
+  Mic,
+  BarChart3,
+  Home,
+  Sparkles,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

@@ -9,11 +9,10 @@ import { markSeen } from "@/lib/seenArticles";
 import type {
   BookAIModelRef,
   BookChapter,
-  NewsArticle,
-  NewsDigest,
   RewriteLength,
   RewriteVoice,
 } from "@/types";
+import type { NewsArticle, NewsDigest } from "@/lib/news";
 
 export interface UseArticleTranslationParams {
   article: NewsArticle | null;

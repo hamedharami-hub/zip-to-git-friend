@@ -319,11 +319,10 @@ serve(async (req) => {
     const model =
       requestedModel && ALLOWED_MODELS.has(requestedModel) ? requestedModel : DEFAULT_MODEL;
 
-    // Cap inputs so we stay within model context. For 'max'/'auto-max' allow more per article.
-    // Tightened defaults to cut token cost: we only need title + first 1–2 paragraphs
-    // for the digest to capture the gist; full body text isn't necessary.
+    // Stage 1 ("map") reads the FULL body of every source, so we no longer
+    // truncate articles down to a teaser. Caps here only guard the context window.
     const isHugeLength = length === "max" || length === "auto-max" || length === "simple";
-    const perArticleCap = isHugeLength ? 1800 : 600;
+    const perArticleCap = isHugeLength ? 60000 : 24000;
     const maxArticles = isHugeLength ? 30 : 25;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     const compact = articles.slice(0, maxArticles).map((a: any) => ({
@@ -333,6 +332,120 @@ serve(async (req) => {
       publishedAt: a.publishedAt ?? null,
       content: String(a.contentMd ?? a.excerpt ?? "").slice(0, perArticleCap),
     }));
+
+    // ───────── Stage 1: per-source fact extraction (map) ─────────
+    // Long bodies (or many sources) are compressed losslessly into dense fact
+    // sheets first, so the final writer never has to skim. This is what makes
+    // the digest detailed instead of a shallow headline summary.
+    const totalChars = compact.reduce((n, a) => n + a.content.length, 0);
+    const needsMapStage = totalChars > 4000 || compact.some((a) => a.content.length > 2500);
+
+    async function extractFacts(part: {
+      title: string;
+      url: string;
+      siteName: string | null;
+      publishedAt: string | null;
+      content: string;
+      partLabel?: string;
+    }): Promise<string | null> {
+      const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: EXTRACT_MODEL,
+          max_tokens: 4000,
+          messages: [
+            { role: "system", content: EXTRACT_SYSTEM_PROMPT },
+            {
+              role: "user",
+              content: [
+                `SOURCE: ${part.siteName ?? "unknown"} — ${part.title}${part.partLabel ? ` (${part.partLabel})` : ""}`,
+                part.publishedAt ? `PUBLISHED: ${part.publishedAt}` : "",
+                part.url ? `URL: ${part.url}` : "",
+                "",
+                "TEXT:",
+                part.content,
+              ]
+                .filter(Boolean)
+                .join(String.fromCharCode(10)),
+            },
+          ],
+        }),
+      });
+      if (!res.ok) {
+        console.warn("extractFacts failed", res.status, (await res.text()).slice(0, 200));
+        return null;
+      }
+      const j = await res.json();
+      const txt = j?.choices?.[0]?.message?.content;
+      return typeof txt === "string" && txt.trim() ? txt.trim() : null;
+    }
+
+    if (needsMapStage) {
+      // Split very long single sources (e.g. full YouTube transcripts) into
+      // chunks so no part of the text is skipped by the extractor.
+      const CHUNK = 12000;
+      type Part = {
+        idx: number;
+        title: string;
+        url: string;
+        siteName: string | null;
+        publishedAt: string | null;
+        content: string;
+        partLabel?: string;
+      };
+      const parts: Part[] = [];
+      compact.forEach((a, idx) => {
+        if (!a.content.trim()) return;
+        if (a.content.length <= CHUNK) {
+          parts.push({ idx, ...a });
+          return;
+        }
+        const n = Math.ceil(a.content.length / CHUNK);
+        for (let i = 0; i < n; i++) {
+          parts.push({
+            idx,
+            ...a,
+            content: a.content.slice(i * CHUNK, (i + 1) * CHUNK),
+            partLabel: `part ${i + 1}/${n}`,
+          });
+        }
+      });
+
+      const results: (string | null)[] = new Array(parts.length).fill(null);
+      const CONCURRENCY = 5;
+      let cursor = 0;
+      await Promise.all(
+        Array.from({ length: Math.min(CONCURRENCY, parts.length) }, async () => {
+          for (;;) {
+            const i = cursor++;
+            if (i >= parts.length) return;
+            try {
+              results[i] = await extractFacts(parts[i]);
+            } catch (e) {
+              console.warn("extract error", e);
+            }
+          }
+        }),
+      );
+
+      const byArticle = new Map<number, string[]>();
+      parts.forEach((p, i) => {
+        const out = results[i];
+        if (!out) return;
+        const arr = byArticle.get(p.idx) ?? [];
+        arr.push(out);
+        byArticle.set(p.idx, arr);
+      });
+      compact.forEach((a, idx) => {
+        const sheets = byArticle.get(idx);
+        if (sheets?.length) a.content = sheets.join(String.fromCharCode(10, 10));
+      });
+    }
+
 
     const normalizedVoice = normalizeVoice(voice);
     let systemContent: string;

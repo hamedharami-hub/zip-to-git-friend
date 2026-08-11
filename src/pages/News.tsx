@@ -849,7 +849,7 @@ const News = () => {
         toast.success(`${res.translated} عنوان ترجمه شد.`);
       }
     } catch (e: Error | unknown) {
-      toast.error(e?.message ?? "ترجمه با خطا مواجه شد.");
+      toast.error((e as Error)?.message ?? "ترجمه با خطا مواجه شد.");
     } finally {
       setTrBusy(false);
       setTimeout(() => setTrProgress(null), 1500);
@@ -906,7 +906,7 @@ const News = () => {
           toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
         }
       } catch (e: Error | unknown) {
-        toast.error(e?.message ?? "دانلود آفلاین با خطا مواجه شد.");
+        toast.error((e as Error)?.message ?? "دانلود آفلاین با خطا مواجه شد.");
       } finally {
         setDlBusy(false);
         dlAbortRef.current = null;

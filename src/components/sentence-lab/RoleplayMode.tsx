@@ -28,7 +28,7 @@ import { cn } from "@/lib/utils";
 import { BidiText } from "@/components/BidiText";
 import { RoleplayDissectionModal } from "./RoleplayDissectionModal";
 import { RoleplayMarkerPopover } from "./RoleplayMarkerPopover";
-import type { Light, GrammarMarker, Turn } from "./roleplayTypes";
+import type { Light, GrammarMarker, Turn, RoleplayResponse } from "./roleplayTypes";
 
 const LATENCY_YELLOW_MS = 2500;
 const LATENCY_RED_MS = 5000;
@@ -241,7 +241,7 @@ export const RoleplayMode = memo(function RoleplayMode({
       }
 
       const ai = data as RoleplayResponse;
-      const semanticLight = ai.intent_match;
+      const semanticLight = ai.intent_match as Exclude<Light, "idle">;
       const latencyLight: Exclude<Light, "idle"> =
         latencyMs > LATENCY_RED_MS ? "red" : latencyMs > LATENCY_YELLOW_MS ? "yellow" : "green";
       // Final light = worst of the two

@@ -818,7 +818,7 @@ export const VideoPlayer = memo(function VideoPlayer({
               <div className="border-t border-white/10 max-h-[35vh] overflow-y-auto px-3 py-2">
                 <div className="rounded-md bg-white/5 border border-white/10 p-2.5">
                   <LazyAnalysisPanel
-                    videoId={videoId}
+                    videoId={videoId ?? ""}
                     cue={visiblePrimary}
                     autoRun={autoShowAnalysis}
                     showTranslate={!visibleSecondary}

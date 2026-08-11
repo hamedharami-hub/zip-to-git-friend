@@ -2,17 +2,16 @@ import { useMemo, useState } from "react";
 import { Search, Plus, Loader2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CATALOG_CATEGORIES, SOURCE_CATALOG, type CatalogCategory } from "@/lib/newsPublicTopics";
+import {
+  CATALOG_CATEGORIES,
+  SOURCE_CATALOG,
+  type CatalogCategory,
+  type SourceCatalogItem,
+} from "@/lib/newsPublicTopics";
 import { cn } from "@/lib/utils";
 
 export interface SourceCatalogProps {
-  onAdd?: (source: {
-    name: string;
-    nameFa: string;
-    url: string;
-    language: string;
-    category: CatalogCategory;
-  }) => void | Promise<void>;
+  onAdd?: (source: SourceCatalogItem) => void | Promise<void>;
   onPick?: (source: { name: string; url: string; language: string }) => void;
   busyId?: string | null;
 }

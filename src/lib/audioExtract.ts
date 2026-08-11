@@ -129,7 +129,7 @@ export async function extractAudioChunks(file: File | Blob): Promise<AudioChunk[
     return extractAudioChunksMain(file);
   }
 
-  return new Promise((resolve, reject) => {
+  return new Promise<AudioChunk[]>((resolve, reject) => {
     const worker = new Worker(new URL("./audioExtract.worker.ts", import.meta.url), {
       type: "module",
     });

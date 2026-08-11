@@ -21,7 +21,10 @@ interface AudioChunkMessage {
   total: number;
 }
 
-const ctx = self as unknown as DedicatedWorkerGlobalScope;
+const ctx = self as unknown as {
+  postMessage: (message: unknown) => void;
+  addEventListener: (type: string, listener: (event: MessageEvent<{ file: Blob }>) => void) => void;
+};
 
 function readArrayBuffer(file: Blob): Promise<ArrayBuffer> {
   return new Promise((resolve, reject) => {

@@ -78,7 +78,7 @@ function smartMerge(local: AppSettings, cloud: Partial<AppSettings>): AppSetting
     if (!cloudEmpty) merged[k as string] = cv;
     else if (!localEmpty) merged[k as string] = lv;
   }
-  return merged as AppSettings;
+  return merged as unknown as AppSettings;
 }
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
@@ -93,7 +93,7 @@ function schedulePush(settings: AppSettings) {
       await supabase
         .from("user_settings")
         .upsert(
-          { user_id: user.id, settings: settings as Record<string, unknown> },
+          { user_id: user.id, settings: settings as unknown as Json },
           { onConflict: "user_id" },
         );
     } catch (e) {
@@ -156,7 +156,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       await supabase
         .from("user_settings")
         .upsert(
-          { user_id: user.id, settings: merged as Record<string, unknown> },
+          { user_id: user.id, settings: merged as unknown as Json },
           { onConflict: "user_id" },
         );
     } catch (e) {

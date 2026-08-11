@@ -12,7 +12,8 @@ import { coerceBookModel } from "@/lib/aiModels";
 import { useSettingsStore } from "@/store/settingsStore";
 import { useOnline } from "@/hooks/useOnline";
 import { toast } from "sonner";
-import type { BookParagraphAnalysis, HighlightColor } from "@/types";
+import type { BookParagraphAnalysis } from "@/types";
+import type { HighlightColor } from "@/hooks/useBookAnnotations";
 import { cn } from "@/lib/utils";
 import { HIGHLIGHT_CLASSES } from "@/hooks/useBookAnnotations";
 

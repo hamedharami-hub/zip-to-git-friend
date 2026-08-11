@@ -132,7 +132,7 @@ export function downloadBackup(cards: LeitnerCard[], folders: LeitnerFolder[]): 
   URL.revokeObjectURL(url);
 }
 
-function sanitizeCard(card: LeitnerCard): LeitnerCard {
+function sanitizeCard(card: Omit<LeitnerCard, "box"> & { box: number }): LeitnerCard {
   return {
     ...card,
     box: Math.min(5, Math.max(1, Math.round(card.box))) as LeitnerCard["box"],

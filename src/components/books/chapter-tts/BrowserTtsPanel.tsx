@@ -19,7 +19,7 @@ interface Props {
   browserVoices: BrowserTtsVoice[];
   rate: number;
   onRate: (r: number) => void;
-  browserCtrlRef: React.RefObject<BrowserTtsController | null>;
+  browserCtrlRef: React.MutableRefObject<BrowserTtsController | null>;
   resumeIndexRef: React.MutableRefObject<number>;
   startBrowser: () => void;
   stopBrowser: () => void;

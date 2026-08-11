@@ -21,6 +21,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Progress } from "@/components/ui/progress";
 import { GeminiVoicePicker } from "./GeminiVoicePicker";
+import type { GeminiTtsVoice } from "@/lib/geminiTts";
 import { ParagraphChunkList, type ReadyChunk } from "./ParagraphChunkList";
 
 interface Props {

@@ -529,6 +529,8 @@ serve(async (req) => {
         "Topic / scope: " + (topic ?? "general") + ".",
         "Window: last " + windowHours + " hour(s).",
         "",
+        sourceNote,
+        "",
         "ARTICLES (JSON):",
         JSON.stringify(compact, null, 2),
       ].join(String.fromCharCode(10));

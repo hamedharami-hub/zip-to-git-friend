@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { AppSettings } from "@/types";
 import { getSettings, saveSettings } from "@/lib/db";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { DEFAULT_REWRITE_VOICE } from "@/lib/news";
 
 interface SettingsState {

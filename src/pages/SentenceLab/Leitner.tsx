@@ -77,7 +77,7 @@ export default function SentenceLeitnerPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
           <div className="flex min-w-0 items-center gap-1.5">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-8 w-8">

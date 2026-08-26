@@ -42,7 +42,7 @@ const LanguageBooks = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
-      <header className="border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+      <header className="pt-safe border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
           <Link to="/">
             <Button variant="ghost" size="icon" aria-label="Back to home">

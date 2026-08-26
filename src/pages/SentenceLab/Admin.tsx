@@ -109,7 +109,7 @@ export default function SentenceAdminPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
+      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
         <div className="container mx-auto flex items-center gap-2 px-4 py-3">
           <Button variant="ghost" size="icon" onClick={() => navigate("/sentence-lab")}>
             <ArrowLeft className="h-4 w-4" />

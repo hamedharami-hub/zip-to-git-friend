@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { batchAnalyzeChapter, extractAnalysableParagraphs } from "@/lib/batchAnalyzeChapter";
 import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
 import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
@@ -6,13 +6,9 @@ import { injectArticleImages } from "@/lib/injectArticleImages";
 import { rewriteKey } from "@/lib/news";
 import { markArticleTranslationsCached } from "@/lib/newsOfflineCache";
 import { markSeen } from "@/lib/seenArticles";
-import type {
-  BookAIModelRef,
-  BookChapter,
-  RewriteLength,
-  RewriteVoice,
-} from "@/types";
+import type { BookAIModelRef, BookChapter, RewriteLength, RewriteVoice } from "@/types";
 import type { NewsArticle, NewsDigest } from "@/lib/news";
+import { toast } from "sonner";
 
 export interface UseArticleTranslationParams {
   article: NewsArticle | null;
@@ -21,6 +17,14 @@ export interface UseArticleTranslationParams {
   voice: RewriteVoice;
   rewrites: Record<string, NewsDigest | undefined>;
   newsModelRef: BookAIModelRef;
+  autoTranslate?: boolean;
+}
+
+export interface ArticleTranslationProgress {
+  done: number;
+  total: number;
+  failed: number;
+  running: boolean;
 }
 
 export interface UseArticleTranslationReturn {
@@ -30,6 +34,8 @@ export interface UseArticleTranslationReturn {
   rwChapter?: BookChapter;
   rewriteHtmlWithImages?: string;
   activeRewriteDoc?: NewsDigest;
+  runTranslate: (signal?: AbortSignal) => Promise<void>;
+  progress: ArticleTranslationProgress;
 }
 
 export function useArticleTranslation({
@@ -39,8 +45,15 @@ export function useArticleTranslation({
   voice,
   rewrites,
   newsModelRef,
+  autoTranslate = true,
 }: UseArticleTranslationParams): UseArticleTranslationReturn {
   const [faTtsText, setFaTtsText] = useState("");
+  const [progress, setProgress] = useState<ArticleTranslationProgress>({
+    done: 0,
+    total: 0,
+    failed: 0,
+    running: false,
+  });
 
   const articleId = article?.id;
   const articleContentHtml = article?.contentHtml;
@@ -88,62 +101,92 @@ export function useArticleTranslation({
     };
   }, [activeBookId, activeHtml, activeRewriteDoc?.title, articleTitle, articleId]);
 
-  useEffect(() => {
-    if (!articleId || !activeHtml || !chapter) return;
-    let cancelled = false;
-    const controller = new AbortController();
-
-    const buildFaText = async () => {
+  const buildFaText = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!chapter) return;
       const items = extractAnalysableParagraphs(chapter);
       const out: string[] = [];
       for (const it of items) {
+        if (signal?.aborted) return;
         const cached = await getCachedParagraphAnalysis(activeBookId, 0, it.text);
         const fa = cached?.translation?.trim();
         if (fa) out.push(fa);
       }
-      if (!cancelled) setFaTtsText(out.join("\n\n"));
-    };
+      if (!signal?.aborted) setFaTtsText(out.join("\n\n"));
+    },
+    [activeBookId, chapter],
+  );
 
-    void (async () => {
+  const runTranslate = useCallback(
+    async (signal?: AbortSignal) => {
+      if (!chapter) return;
+      const items = extractAnalysableParagraphs(chapter);
+      console.log("[useArticleTranslation] translate start", {
+        bookId: activeBookId,
+        paragraphs: items.length,
+        model: modelRef,
+      });
+      setProgress({ done: 0, total: items.length, failed: 0, running: items.length > 0 });
+
       try {
         const final = await batchAnalyzeChapter(activeBookId, chapter, {
           concurrency: 5,
-          signal: controller.signal,
+          signal,
           modelRef,
           onProgress: (snap) => {
             emitChapterAnalyses(activeBookId, 0, snap.results);
+            if (!signal?.aborted) {
+              setProgress({
+                done: snap.completed,
+                total: snap.total,
+                failed: snap.failed,
+                running: !snap.done,
+              });
+            }
           },
         });
-        if (cancelled) return;
+        if (signal?.aborted) return;
         emitChapterAnalyses(activeBookId, 0, final.results);
-        await buildFaText();
+        setProgress({
+          done: final.completed,
+          total: final.total,
+          failed: final.failed,
+          running: false,
+        });
+        if (final.failed > 0 && final.lastError) {
+          toast.error(`ترجمه برخی پاراگراف‌ها ناموفق بود: ${final.lastError}`);
+        }
+        await buildFaText(signal);
         if (articleId && activeBookId === `news-${articleId}` && final.failed === 0) {
           markArticleTranslationsCached(articleId);
         }
         if (articleUrl) markSeen(articleUrl);
-      } catch {
-        await buildFaText();
+        console.log("[useArticleTranslation] translate done", {
+          completed: final.completed,
+          failed: final.failed,
+          total: final.total,
+        });
+      } catch (e) {
+        if (signal?.aborted) return;
+        console.error("[useArticleTranslation] translate error", e);
+        toast.error(`ترجمه با خطا مواجه شد: ${e instanceof Error ? e.message : "unknown"}`);
+        setProgress((p) => ({ ...p, running: false }));
+        await buildFaText(signal);
       }
-    })();
+    },
+    [activeBookId, articleId, articleUrl, buildFaText, chapter, modelRef],
+  );
 
+  useEffect(() => {
+    if (!articleId || !activeHtml || !chapter) return;
+    const controller = new AbortController();
+    if (autoTranslate) void runTranslate(controller.signal);
+    else void buildFaText(controller.signal);
     return () => {
-      cancelled = true;
       controller.abort();
+      setProgress((p) => ({ ...p, running: false }));
     };
-  }, [
-    articleId,
-    activeHtml,
-    view,
-    activeRewrite,
-    voice,
-    rewrites,
-    model,
-    provider,
-    modelRef,
-    articleUrl,
-    activeBookId,
-    chapter,
-  ]);
+  }, [activeHtml, articleId, autoTranslate, buildFaText, chapter, runTranslate]);
 
   const origChapter: BookChapter | undefined = useMemo(() => {
     if (!articleId || !articleContentHtml) return undefined;

@@ -195,6 +195,8 @@ export interface AppSettings {
   /** When true, every news article is auto-rewritten in everyday simple English
    *  on first open (no need to press the "ساده روزمره" tab manually). */
   defaultSimplifyArticles?: boolean;
+  /** When true, news paragraphs are batch-translated automatically when opened. */
+  newsAutoTranslateParagraphs?: boolean;
   /** Default persona/voice for news rewrites. */
   defaultRewriteVoice?: RewriteVoice;
   geminiApiKey: string;

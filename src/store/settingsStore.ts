@@ -25,6 +25,7 @@ const DEFAULTS: AppSettings = {
   showInlineTranslation: true,
   simplifyLevel: "a2-b1",
   defaultSimplifyArticles: false,
+  newsAutoTranslateParagraphs: true,
   defaultRewriteVoice: DEFAULT_REWRITE_VOICE,
   geminiApiKey: "",
   groqApiKey: "",

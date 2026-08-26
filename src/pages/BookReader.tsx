@@ -458,7 +458,7 @@ const BookReader = () => {
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
       {/* ─────────── Header ─────────── */}
-      <header className="sticky top-0 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 z-20">
+      <header className="pt-safe sticky top-0 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 z-20">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-3 flex items-center gap-1 sm:gap-2">
           <Link to={isLanguageBook(currentBook) ? "/language-books" : "/books"}>
             <Button variant="ghost" size="icon" aria-label="Back to books">

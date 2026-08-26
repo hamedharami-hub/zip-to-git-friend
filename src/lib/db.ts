@@ -268,6 +268,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   blindListen: false,
   autoPauseAtCueEnd: false,
   showInlineTranslation: true,
+  newsAutoTranslateParagraphs: true,
   geminiApiKey: "",
   groqApiKey: "",
   geminiTtsApiKey: "",

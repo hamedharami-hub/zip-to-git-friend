@@ -15,6 +15,7 @@ import {
   Bookmark,
   BookmarkCheck,
   MoreVertical,
+  Sparkles,
 } from "lucide-react";
 import {
   extractBilingualData,
@@ -115,14 +116,19 @@ const NewsArticleReader = () => {
     void seedBilingualAnalyses(bilingualData, bookId, 0);
   }, [bilingualData, bookId]);
 
-  const { newsBatchAnalysisModelRef, paragraphBatchModelRef, bookBatchAnalysisModelRef } =
-    useSettingsStore(
-      useShallow((s) => ({
-        newsBatchAnalysisModelRef: s.settings.newsBatchAnalysisModelRef,
-        paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
-        bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
-      })),
-    );
+  const {
+    newsBatchAnalysisModelRef,
+    paragraphBatchModelRef,
+    bookBatchAnalysisModelRef,
+    newsAutoTranslateParagraphs,
+  } = useSettingsStore(
+    useShallow((s) => ({
+      newsBatchAnalysisModelRef: s.settings.newsBatchAnalysisModelRef,
+      paragraphBatchModelRef: s.settings.paragraphBatchModelRef,
+      bookBatchAnalysisModelRef: s.settings.bookBatchAnalysisModelRef,
+      newsAutoTranslateParagraphs: s.settings.newsAutoTranslateParagraphs,
+    })),
+  );
   // Per-paragraph batch analysis model (the ✨ button on a paragraph).
   const newsModelRef = coerceBookModel(
     newsBatchAnalysisModelRef ??
@@ -132,13 +138,20 @@ const NewsArticleReader = () => {
   );
 
   const emptyRewrites = useMemo(() => ({}), []);
-  const { faTtsText, ttsText, origChapter } = useArticleTranslation({
+  const {
+    faTtsText,
+    ttsText,
+    origChapter,
+    runTranslate,
+    progress: trProgress,
+  } = useArticleTranslation({
     article,
     view: "original",
     activeRewrite: "long",
     voice: DEFAULT_REWRITE_VOICE,
     rewrites: emptyRewrites,
     newsModelRef,
+    autoTranslate: newsAutoTranslateParagraphs ?? true,
   });
 
   const {
@@ -236,6 +249,14 @@ const NewsArticleReader = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem onClick={() => void runTranslate()} disabled={trProgress.running}>
+                <Sparkles className="h-4 w-4 me-2" />
+                {trProgress.running
+                  ? `ترجمه ${trProgress.done}/${trProgress.total}…`
+                  : trProgress.total > 0
+                    ? "ترجمه دوباره پاراگراف‌ها"
+                    : "ترجمه پاراگراف‌ها"}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={toggleSave}>
                 {article.isSaved ? (
                   <>
@@ -263,6 +284,14 @@ const NewsArticleReader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {trProgress.running && trProgress.total > 0 && (
+          <div className="px-3 pb-1 text-[11px] text-muted-foreground flex items-center gap-2">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            <span>
+              در حال ترجمه پاراگراف‌ها… {trProgress.done}/{trProgress.total}
+            </span>
+          </div>
+        )}
       </header>
 
       {ttsText && (

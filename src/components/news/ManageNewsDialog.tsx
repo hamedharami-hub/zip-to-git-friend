@@ -3,6 +3,7 @@ import { useShallow } from "zustand/shallow";
 import { FolderPlus, Ban, Folder, Trash2, X, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -51,9 +52,10 @@ export function ManageNewsDialog({
   onFoldersChanged: () => void | Promise<void>;
   onBlockedChanged: () => void | Promise<void>;
 }) {
-  const { defaultRewriteVoice } = useSettingsStore(
+  const { defaultRewriteVoice, newsAutoTranslateParagraphs } = useSettingsStore(
     useShallow((s) => ({
       defaultRewriteVoice: s.settings.defaultRewriteVoice,
+      newsAutoTranslateParagraphs: s.settings.newsAutoTranslateParagraphs,
     })),
   );
   const update = useSettingsStore((s) => s.update);
@@ -196,6 +198,19 @@ export function ManageNewsDialog({
           </TabsContent>
 
           <TabsContent value="preferences" className="space-y-4 mt-4">
+            <div className="flex items-center justify-between rounded-md border border-border/70 bg-muted/20 p-3">
+              <div className="pr-3">
+                <p className="text-sm font-medium">ترجمه خودکار پاراگراف‌ها</p>
+                <p className="text-xs text-muted-foreground">
+                  وقتی خاموش باشد، بعد از استخراج متن انگلیسی خبر هیچ ترجمهٔ پکیجی اجرا نمی‌شود؛ هر
+                  پاراگراف را دستی ترجمه کن یا از منوی خبر «ترجمه پاراگراف‌ها» را بزن.
+                </p>
+              </div>
+              <Switch
+                checked={newsAutoTranslateParagraphs ?? true}
+                onCheckedChange={(v) => void update({ newsAutoTranslateParagraphs: !!v })}
+              />
+            </div>
             <div className="space-y-2">
               <Label className="text-xs">لحن بازنویسی پیش‌فرض</Label>
               <Select

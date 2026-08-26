@@ -69,12 +69,14 @@ const NewsDigestReader = () => {
     saveNewsDisplayLang(displayLang);
   }, [displayLang]);
 
-  const { newsRewriteModelRef, bookRewriteModelRef } = useSettingsStore(
-    useShallow((s) => ({
-      newsRewriteModelRef: s.settings.newsRewriteModelRef,
-      bookRewriteModelRef: s.settings.bookRewriteModelRef,
-    })),
-  );
+  const { newsRewriteModelRef, bookRewriteModelRef, newsAutoTranslateParagraphs } =
+    useSettingsStore(
+      useShallow((s) => ({
+        newsRewriteModelRef: s.settings.newsRewriteModelRef,
+        bookRewriteModelRef: s.settings.bookRewriteModelRef,
+        newsAutoTranslateParagraphs: s.settings.newsAutoTranslateParagraphs,
+      })),
+    );
   const newsModelRef = coerceBookModel(
     newsRewriteModelRef ?? bookRewriteModelRef ?? "google/gemini-3-flash-preview",
   );
@@ -175,11 +177,11 @@ const NewsDigestReader = () => {
   );
 
   useEffect(() => {
-    if (!digest?.contentHtml) return;
+    if (!digest?.contentHtml || !(newsAutoTranslateParagraphs ?? true)) return;
     const controller = new AbortController();
     void runTranslate(controller.signal);
     return () => controller.abort();
-  }, [digest?.id, digest?.contentHtml, runTranslate]);
+  }, [digest?.id, digest?.contentHtml, newsAutoTranslateParagraphs, runTranslate]);
 
   const handleDelete = async () => {
     if (!digest) return;

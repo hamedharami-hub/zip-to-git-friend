@@ -1,7 +1,7 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useEffect, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, LogIn, Mail } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2, LogIn, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const Auth = () => {
   usePageMeta({
@@ -142,20 +143,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-md mx-auto px-6 py-3 flex items-center justify-between">
-          <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Home
-            </Button>
-          </Link>
-          <h1 className="text-base font-medium flex items-center gap-2">
-            <LogIn className="h-4 w-4 text-primary" /> Account
-          </h1>
-          <div className="w-16" />
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader icon={LogIn} title="Account" subtitle="حساب کاربری" backTo="/" width="narrow" />
 
       <main className="max-w-md mx-auto px-6 py-10 space-y-6">
         <div className="space-y-1.5 text-center">

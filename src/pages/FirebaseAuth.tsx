@@ -1,15 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Cloud,
-  CloudDownload,
-  CloudUpload,
-  Loader2,
-  LogIn,
-  LogOut,
-  UserPlus,
-} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { Cloud, CloudDownload, CloudUpload, Loader2, LogIn, LogOut, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 export default function FirebaseAuthPage() {
   const { user, loading, ready, signIn, signUp, signOut, syncSettingsUp, syncSettingsDown } =
@@ -53,21 +45,14 @@ export default function FirebaseAuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground" dir="rtl">
-      <header className="border-b border-border">
-        <div className="max-w-md mx-auto px-6 py-3 flex items-center justify-between">
-          <Link to="/">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 ml-2" />
-              خانه
-            </Button>
-          </Link>
-          <h1 className="text-base font-medium flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-primary" /> حساب فایربیس
-          </h1>
-          <div className="w-16" />
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground" dir="rtl">
+      <AppHeader
+        icon={Cloud}
+        title="Firebase Account"
+        subtitle="حساب فایربیس"
+        backTo="/"
+        width="narrow"
+      />
 
       <main className="max-w-md mx-auto px-6 py-8 space-y-6">
         {!ready && (

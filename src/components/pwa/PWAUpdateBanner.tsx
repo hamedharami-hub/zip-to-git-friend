@@ -41,7 +41,7 @@ export function PWAUpdateBanner() {
     return (
       <div
         role="status"
-        className="sticky top-0 z-50 w-full border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-amber-900 dark:text-amber-100 backdrop-blur"
+        className="sticky top-0 z-40 w-full border-b border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-amber-900 dark:text-amber-100 backdrop-blur"
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-sm font-medium">
@@ -85,7 +85,7 @@ export function PWAUpdateBanner() {
     return (
       <div
         role="status"
-        className="sticky top-0 z-50 w-full border-b border-border bg-slate-900/80 px-4 py-2 text-xs text-slate-200 backdrop-blur"
+        className="sticky top-0 z-40 w-full border-b border-border bg-slate-900/80 px-4 py-2 text-xs text-slate-200 backdrop-blur"
       >
         <div className="mx-auto flex max-w-7xl items-center justify-center gap-2">
           <WifiOff className="h-3.5 w-3.5" />

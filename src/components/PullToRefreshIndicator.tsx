@@ -9,7 +9,7 @@ export function PullToRefreshIndicator({ progress, refreshing }: Props) {
   const opacity = refreshing ? 1 : Math.min(1, progress);
   return (
     <div
-      className="fixed top-0 left-1/2 -translate-x-1/2 z-50 mt-2 select-none pointer-events-none"
+      className="fixed top-0 left-1/2 -translate-x-1/2 z-40 mt-2 select-none pointer-events-none"
       style={{ opacity }}
       aria-hidden="true"
     >

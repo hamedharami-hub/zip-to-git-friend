@@ -230,5 +230,14 @@ export function useArticleTranslation({
       .trim();
   }, [view, activeRewriteDoc, articleContentMd, articleExcerpt]);
 
-  return { faTtsText, ttsText, origChapter, rwChapter, rewriteHtmlWithImages, activeRewriteDoc };
+  return {
+    faTtsText,
+    ttsText,
+    origChapter,
+    rwChapter,
+    rewriteHtmlWithImages,
+    activeRewriteDoc,
+    runTranslate,
+    progress,
+  };
 }

@@ -10,3 +10,6 @@ routeTree.gen.ts
 src/routes/\[.mcp\]
 src/routes/\[.well-known\]
 src/routes/mcp.ts
+# Generated files
+src/integrations/supabase/types.ts
+supabase/functions/news-digest/index.ts

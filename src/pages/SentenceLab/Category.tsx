@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  ArrowLeft,
   Loader2,
   Plus,
   Folder,
@@ -33,6 +32,7 @@ import {
 } from "@/lib/sentenceCategories";
 import { CreateCategoryDialog } from "@/components/sentence-lab/CreateCategoryDialog";
 import { ImportSentencesDialog } from "@/components/sentence-lab/ImportSentencesDialog";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Folder,
@@ -85,39 +85,25 @@ export default function SentenceCategoryPage() {
   }, [categorySlug]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/sentence-lab")}
-              aria-label="Back to categories"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Sentence Lab
-              </p>
-              <h1 className="truncate text-base font-semibold leading-none">
-                {cat?.name ?? categorySlug}
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-1">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={cat?.name ?? categorySlug}
+        subtitle="دسته"
+        onBack={() => navigate("/sentence-lab")}
+        width="default"
+        actions={
+          <>
             <Button size="sm" variant="outline" onClick={() => setShowImport(true)}>
               <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Import</span>
             </Button>
             <Button size="sm" onClick={() => setShowCreate(true)}>
               <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Sub-topic</span>
             </Button>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="max-w-5xl mx-auto w-full px-4 py-6">
         {/* All-of-category quick action */}
         {cat && (
           <Link

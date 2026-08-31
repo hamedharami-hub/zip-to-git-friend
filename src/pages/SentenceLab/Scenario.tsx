@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Check, Lightbulb, History } from "lucide-react";
+import { Loader2, Check, Lightbulb, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useSettingsStore } from "@/store/settingsStore";
 import { ScenarioPicker } from "@/components/sentence-lab/ScenarioPicker";
 import { ScenarioChatPane } from "@/components/sentence-lab/ScenarioChatPane";
+import { AppHeader } from "@/components/layout/AppHeader";
 import {
   fetchCategoryBySlug,
   fetchSubcategories,
@@ -455,32 +456,14 @@ export default function SentenceScenarioPage() {
   const progressPct = totalCount ? Math.round((usedCount / totalCount) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() =>
-                navigate(`/sentence-lab/${categorySlug}${subSlug ? `/${subSlug}` : ""}`)
-              }
-              aria-label="Back"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Scenario · {category?.name ?? ""}
-                {selectedSubSlugs.length > 0 && ` · ${selectedSubSlugs.length} sub`}
-              </p>
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
-                {chosen ? chosen.title_en : "🎭 Roleplay"}
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={chosen ? chosen.title_en : "🎭 Roleplay"}
+        subtitle="نقش‌آفرینی"
+        onBack={() => navigate(`/sentence-lab/${categorySlug}${subSlug ? `/${subSlug}` : ""}`)}
+        width="default"
+        actions={
+          <>
             <Button
               variant="ghost"
               size="icon"
@@ -495,12 +478,12 @@ export default function SentenceScenarioPage() {
                 {usedCount}/{totalCount}
               </Badge>
             )}
-          </div>
-        </div>
-        {chosen && <Progress value={progressPct} className="h-0.5 rounded-none" />}
-      </header>
+          </>
+        }
+        below={chosen && <Progress value={progressPct} className="h-0.5 rounded-none" />}
+      />
 
-      <main className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
+      <main className="max-w-5xl mx-auto w-full px-3 py-4 sm:px-4 sm:py-6">
         {!chosen ? (
           <ScenarioPicker
             scenarios={scenarios}

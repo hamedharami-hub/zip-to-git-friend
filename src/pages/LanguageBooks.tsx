@@ -1,14 +1,14 @@
 import { usePageMeta } from "@/hooks/usePageMeta";
 import { useEffect, useMemo, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Sparkles } from "lucide-react";
 import { useBookStore } from "@/store/bookStore";
 import { EmptyState } from "@/components/EmptyState";
 import { BookCard } from "@/components/books/BookCard";
 import { CreateLanguageBookDialog } from "@/components/books/CreateLanguageBookDialog";
 import { isLanguageBook } from "@/lib/languageBook";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const LanguageBooks = () => {
   usePageMeta({
@@ -41,23 +41,17 @@ const LanguageBooks = () => {
   }, [books]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
-      <header className="pt-safe border-b border-border/60 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2">
-          <Link to="/">
-            <Button variant="ghost" size="icon" aria-label="Back to home">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-          </Link>
-          <h1 className="text-base sm:text-lg font-semibold flex items-center gap-2 min-w-0">
-            <Sparkles className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-            <span className="truncate">Language Books</span>
-          </h1>
-          <CreateLanguageBookDialog />
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
+      <AppHeader
+        icon={Sparkles}
+        title="Language Books"
+        subtitle="کتاب‌های زبان"
+        backTo="/"
+        width="default"
+        actions={<CreateLanguageBookDialog />}
+      />
 
-      <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-8 sm:py-12">
         {sorted.length === 0 ? (
           <EmptyState
             icon={<Sparkles className="h-10 w-10 text-muted-foreground" />}

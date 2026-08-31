@@ -1,15 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  ArrowLeft,
-  Sparkles,
-  Loader2,
-  Play,
-  Trash2,
-  Wand2,
-  Check,
-  ChevronRight,
-} from "lucide-react";
+import { Sparkles, Loader2, Play, Trash2, Wand2, Check, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +20,7 @@ import {
   type ScenarioStep,
 } from "@/lib/scenarioOfflineCache";
 import { speak } from "@/lib/leitnerTts";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 export default function SentencePlanner() {
   const navigate = useNavigate();
@@ -120,24 +112,16 @@ export default function SentencePlanner() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/sentence-lab")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="flex items-center gap-2 text-base font-semibold leading-none">
-              <Wand2 className="h-4 w-4 text-primary" /> AI Planner
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              سناریوی ترکیبی از فولدرهای انتخاب‌شده
-            </p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={Wand2}
+        title="AI Planner"
+        subtitle="سناریوی ترکیبی از فولدرهای انتخاب‌شده"
+        onBack={() => navigate("/sentence-lab")}
+        width="default"
+      />
 
-      <main className="container mx-auto space-y-6 px-4 py-6">
+      <main className="max-w-5xl mx-auto w-full space-y-6 px-4 py-6">
         <Card>
           <CardContent className="space-y-4 pt-6">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -263,25 +247,20 @@ function ScenarioPlayer({ scenario, onClose }: { scenario: CachedScenario; onClo
   if (!step) return null;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold">{scenario.title}</div>
-            <div className="text-xs text-muted-foreground">
-              Step {idx + 1} / {total} · {progress}%
-            </div>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={scenario.title}
+        subtitle={`Step ${idx + 1} / ${total} · ${progress}%`}
+        onBack={onClose}
+        width="default"
+        below={
+          <div className="h-1 bg-muted">
+            <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
           </div>
-        </div>
-        <div className="h-1 bg-muted">
-          <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
-        </div>
-      </header>
+        }
+      />
 
-      <main className="container mx-auto max-w-2xl space-y-4 px-4 py-6">
+      <main className="max-w-5xl mx-auto w-full space-y-4 px-4 py-6">
         {scenario.scenario && idx === 0 && (
           <Card>
             <CardContent className="py-4 text-sm text-muted-foreground">

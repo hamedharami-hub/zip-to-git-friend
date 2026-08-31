@@ -2,7 +2,6 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
-  ArrowLeft,
   Flame,
   Clock,
   BookOpen,
@@ -17,6 +16,8 @@ import { useLeitnerStore } from "@/store/leitnerStore";
 import { getAllListeningSessions, getAllWordStatus } from "@/lib/db";
 import { getAllReadingSessions, getAllBooks } from "@/lib/bookDb";
 import type { ListeningSession, ReadingSession, WordStatusValue, Book } from "@/types";
+import { AppHeader } from "@/components/layout/AppHeader";
+import { PageShell } from "@/components/layout/PageShell";
 
 const Stats = () => {
   usePageMeta({
@@ -156,212 +157,203 @@ const Stats = () => {
   }, [cards]);
 
   return (
-    <div className="min-h-screen bg-[hsl(var(--surface))] text-foreground">
-      <header className="m3-top-app-bar sticky top-0 z-30 border-b border-outline-variant/40">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2">
-          <Link to="/">
-            <Button variant="ghost" size="sm" className="rounded-full gap-1.5">
-              <ArrowLeft className="h-4 w-4" /> Home
+    <PageShell
+      width="default"
+      surface="surface"
+      mainClassName="space-y-8"
+      header={
+        <AppHeader
+          icon={TrendingUp}
+          tone="tertiary"
+          title="Progress"
+          subtitle="پیشرفت"
+          backTo="/"
+          width="default"
+        />
+      }
+    >
+      <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--tertiary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8">
+        <div
+          aria-hidden
+          className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl"
+        />
+        <div className="relative">
+          <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
+            Your Journey
+          </p>
+          <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-tertiary-container))] leading-tight">
+            پیشرفت شما
+          </h2>
+          <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
+            {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : "امروز شروع کن"}
+          </p>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <KpiCard
+          icon={<Flame className="h-5 w-5" />}
+          label="Day streak"
+          value={streak.toString()}
+          sub={streak === 1 ? "day in a row" : "days in a row"}
+          highlight={streak > 0}
+        />
+        <KpiCard
+          icon={<Clock className="h-5 w-5" />}
+          label="Today"
+          value={formatDuration(totals.today)}
+          sub="of input"
+        />
+        <KpiCard
+          icon={<Clock className="h-5 w-5" />}
+          label="Last 7 days"
+          value={formatDuration(totals.last7)}
+        />
+        <KpiCard
+          icon={<Clock className="h-5 w-5" />}
+          label="All-time"
+          value={formatDuration(totals.allSeconds)}
+        />
+      </section>
+
+      {/* Activity chart (stacked: listen + read) */}
+      <section className="rounded-2xl border border-border bg-card p-5 space-y-3">
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Clock className="h-4 w-4 text-primary" />
+            Last 30 days
+          </h2>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-primary/70" />
+              Listen
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-accent-foreground/60" />
+              Read
+            </span>
+            <span className="font-medium text-foreground">{formatDuration(totals.last30)}</span>
+          </div>
+        </div>
+        <div className="flex items-end gap-[3px] h-32 overflow-hidden">
+          {chartData.map((d) => {
+            const isToday = d.date === formatDate(new Date());
+            const listenH = (d.listen / maxBar) * 100;
+            const readH = (d.read / maxBar) * 100;
+            return (
+              <div
+                key={d.date}
+                className="flex-1 min-w-0 flex flex-col items-center justify-end gap-0"
+                title={
+                  `${d.label} — ${formatDuration(d.total)}` +
+                  (d.listen ? ` · 🎧 ${formatDuration(d.listen)}` : "") +
+                  (d.read ? ` · 📖 ${formatDuration(d.read)}` : "")
+                }
+              >
+                {d.read > 0 && (
+                  <div
+                    className="w-full bg-accent-foreground/60 rounded-t-sm"
+                    style={{ height: `${Math.max(readH, 2)}%` }}
+                  />
+                )}
+                {d.listen > 0 && (
+                  <div
+                    className={`w-full ${
+                      isToday ? "bg-primary" : "bg-primary/70"
+                    } ${d.read === 0 ? "rounded-t-sm" : ""}`}
+                    style={{ height: `${Math.max(listenH, 2)}%` }}
+                  />
+                )}
+                {d.total === 0 && (
+                  <div className="w-full bg-muted rounded-sm" style={{ height: "2%" }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex justify-between text-[10px] text-muted-foreground">
+          <span>{chartData[0]?.label}</span>
+          <span>{chartData[Math.floor(chartData.length / 2)]?.label}</span>
+          <span>Today</span>
+        </div>
+      </section>
+
+      {/* Per-activity breakdown */}
+      <section className="grid gap-4 sm:grid-cols-2">
+        <ActivityCard
+          icon={<Headphones className="h-4 w-4 text-primary" />}
+          title="Listening"
+          today={listenTotals.today}
+          last7={listenTotals.last7}
+          allTime={listenTotals.allSeconds}
+        />
+        <ActivityCard
+          icon={<BookOpen className="h-4 w-4 text-primary" />}
+          title="Reading"
+          today={readTotals.today}
+          last7={readTotals.last7}
+          allTime={readTotals.allSeconds}
+          extra={
+            books.length > 0
+              ? `${books.length} ${books.length === 1 ? "book" : "books"} in library`
+              : undefined
+          }
+        />
+      </section>
+
+      {/* Vocabulary breakdown */}
+      <section className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+          <h2 className="font-semibold flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-primary" />
+            Vocabulary knowledge
+          </h2>
+          <div className="space-y-2">
+            <StatRow label="Known" value={wordStatusCounts.known} color="bg-green-500/70" />
+            <StatRow label="Learning" value={wordStatusCounts.learning} color="bg-yellow-500/70" />
+            <StatRow
+              label="Ignored"
+              value={wordStatusCounts.ignored}
+              color="bg-muted-foreground/40"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
+            Total marked:{" "}
+            <span className="font-medium text-foreground">
+              {wordStatusCounts.known + wordStatusCounts.learning + wordStatusCounts.ignored}
+            </span>{" "}
+            words
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
+          <h2 className="font-semibold flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" />
+            Leitner cards
+          </h2>
+          <p className="text-3xl font-bold">{cardStats.total}</p>
+          <p className="text-xs text-muted-foreground">{cardStats.due} due now</p>
+          <div className="grid grid-cols-5 gap-1.5 pt-2">
+            {cardStats.boxes.map((n, i) => (
+              <div
+                key={i}
+                className="rounded-md bg-primary/10 text-primary text-center py-1.5"
+                title={`Box ${i + 1}: ${n} cards`}
+              >
+                <p className="text-[10px] uppercase tracking-wider opacity-70">B{i + 1}</p>
+                <p className="font-semibold">{n}</p>
+              </div>
+            ))}
+          </div>
+          <Link to="/leitner" className="block">
+            <Button variant="outline" className="w-full" size="sm">
+              <GraduationCap className="h-4 w-4 mr-1.5" />
+              Open review
             </Button>
           </Link>
-          <h1 className="text-[15px] font-semibold flex items-center gap-2">
-            <span className="h-9 w-9 rounded-2xl bg-[hsl(var(--tertiary-container))] text-[hsl(var(--on-tertiary-container))] flex items-center justify-center">
-              <TrendingUp className="h-4 w-4" />
-            </span>
-            Progress
-          </h1>
-          <div className="w-16" />
         </div>
-      </header>
-
-      <main className="max-w-[1200px] mx-auto px-4 sm:px-6 py-8 space-y-8">
-        <section className="relative overflow-hidden rounded-[28px] bg-gradient-to-br from-[hsl(var(--tertiary-container))] via-[hsl(var(--surface-container))] to-[hsl(var(--primary-container))] p-6 sm:p-8">
-          <div
-            aria-hidden
-            className="absolute -top-12 -left-12 h-48 w-48 rounded-full bg-[hsl(var(--tertiary)/0.18)] blur-3xl"
-          />
-          <div className="relative">
-            <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
-              Your Journey
-            </p>
-            <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-tertiary-container))] leading-tight">
-              پیشرفت شما
-            </h2>
-            <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
-              {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : "امروز شروع کن"}
-            </p>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <KpiCard
-            icon={<Flame className="h-5 w-5" />}
-            label="Day streak"
-            value={streak.toString()}
-            sub={streak === 1 ? "day in a row" : "days in a row"}
-            highlight={streak > 0}
-          />
-          <KpiCard
-            icon={<Clock className="h-5 w-5" />}
-            label="Today"
-            value={formatDuration(totals.today)}
-            sub="of input"
-          />
-          <KpiCard
-            icon={<Clock className="h-5 w-5" />}
-            label="Last 7 days"
-            value={formatDuration(totals.last7)}
-          />
-          <KpiCard
-            icon={<Clock className="h-5 w-5" />}
-            label="All-time"
-            value={formatDuration(totals.allSeconds)}
-          />
-        </section>
-
-        {/* Activity chart (stacked: listen + read) */}
-        <section className="rounded-2xl border border-border bg-card p-5 space-y-3">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Clock className="h-4 w-4 text-primary" />
-              Last 30 days
-            </h2>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-primary/70" />
-                Listen
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-sm bg-accent-foreground/60" />
-                Read
-              </span>
-              <span className="font-medium text-foreground">{formatDuration(totals.last30)}</span>
-            </div>
-          </div>
-          <div className="flex items-end gap-[3px] h-32 overflow-hidden">
-            {chartData.map((d) => {
-              const isToday = d.date === formatDate(new Date());
-              const listenH = (d.listen / maxBar) * 100;
-              const readH = (d.read / maxBar) * 100;
-              return (
-                <div
-                  key={d.date}
-                  className="flex-1 min-w-0 flex flex-col items-center justify-end gap-0"
-                  title={
-                    `${d.label} — ${formatDuration(d.total)}` +
-                    (d.listen ? ` · 🎧 ${formatDuration(d.listen)}` : "") +
-                    (d.read ? ` · 📖 ${formatDuration(d.read)}` : "")
-                  }
-                >
-                  {d.read > 0 && (
-                    <div
-                      className="w-full bg-accent-foreground/60 rounded-t-sm"
-                      style={{ height: `${Math.max(readH, 2)}%` }}
-                    />
-                  )}
-                  {d.listen > 0 && (
-                    <div
-                      className={`w-full ${
-                        isToday ? "bg-primary" : "bg-primary/70"
-                      } ${d.read === 0 ? "rounded-t-sm" : ""}`}
-                      style={{ height: `${Math.max(listenH, 2)}%` }}
-                    />
-                  )}
-                  {d.total === 0 && (
-                    <div className="w-full bg-muted rounded-sm" style={{ height: "2%" }} />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{chartData[0]?.label}</span>
-            <span>{chartData[Math.floor(chartData.length / 2)]?.label}</span>
-            <span>Today</span>
-          </div>
-        </section>
-
-        {/* Per-activity breakdown */}
-        <section className="grid gap-4 sm:grid-cols-2">
-          <ActivityCard
-            icon={<Headphones className="h-4 w-4 text-primary" />}
-            title="Listening"
-            today={listenTotals.today}
-            last7={listenTotals.last7}
-            allTime={listenTotals.allSeconds}
-          />
-          <ActivityCard
-            icon={<BookOpen className="h-4 w-4 text-primary" />}
-            title="Reading"
-            today={readTotals.today}
-            last7={readTotals.last7}
-            allTime={readTotals.allSeconds}
-            extra={
-              books.length > 0
-                ? `${books.length} ${books.length === 1 ? "book" : "books"} in library`
-                : undefined
-            }
-          />
-        </section>
-
-        {/* Vocabulary breakdown */}
-        <section className="grid gap-4 sm:grid-cols-2">
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-            <h2 className="font-semibold flex items-center gap-2">
-              <BookOpen className="h-4 w-4 text-primary" />
-              Vocabulary knowledge
-            </h2>
-            <div className="space-y-2">
-              <StatRow label="Known" value={wordStatusCounts.known} color="bg-green-500/70" />
-              <StatRow
-                label="Learning"
-                value={wordStatusCounts.learning}
-                color="bg-yellow-500/70"
-              />
-              <StatRow
-                label="Ignored"
-                value={wordStatusCounts.ignored}
-                color="bg-muted-foreground/40"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground pt-2 border-t border-border/50">
-              Total marked:{" "}
-              <span className="font-medium text-foreground">
-                {wordStatusCounts.known + wordStatusCounts.learning + wordStatusCounts.ignored}
-              </span>{" "}
-              words
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-border bg-card p-5 space-y-3">
-            <h2 className="font-semibold flex items-center gap-2">
-              <Brain className="h-4 w-4 text-primary" />
-              Leitner cards
-            </h2>
-            <p className="text-3xl font-bold">{cardStats.total}</p>
-            <p className="text-xs text-muted-foreground">{cardStats.due} due now</p>
-            <div className="grid grid-cols-5 gap-1.5 pt-2">
-              {cardStats.boxes.map((n, i) => (
-                <div
-                  key={i}
-                  className="rounded-md bg-primary/10 text-primary text-center py-1.5"
-                  title={`Box ${i + 1}: ${n} cards`}
-                >
-                  <p className="text-[10px] uppercase tracking-wider opacity-70">B{i + 1}</p>
-                  <p className="font-semibold">{n}</p>
-                </div>
-              ))}
-            </div>
-            <Link to="/leitner" className="block">
-              <Button variant="outline" className="w-full" size="sm">
-                <GraduationCap className="h-4 w-4 mr-1.5" />
-                Open review
-              </Button>
-            </Link>
-          </div>
-        </section>
-      </main>
-    </div>
+      </section>
+    </PageShell>
   );
 };
 

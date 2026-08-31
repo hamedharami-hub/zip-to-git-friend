@@ -74,10 +74,15 @@ export function AppHeader({
           "mx-auto w-full px-3 sm:px-6 h-14 flex items-center gap-2",
         )}
       >
-        {onBack ? onBack && backButton : backTo ? <Link to={backTo}>{backButton}</Link> : null}
+        {onBack ? backButton : backTo ? <Link to={backTo}>{backButton}</Link> : null}
         <div className="flex items-center gap-2 min-w-0">
           {Icon && (
-            <span className={cn("h-9 w-9 rounded-2xl flex items-center justify-center shrink-0", TONE[tone])}>
+            <span
+              className={cn(
+                "h-9 w-9 rounded-2xl flex items-center justify-center shrink-0",
+                TONE[tone],
+              )}
+            >
               <Icon className="h-4 w-4" aria-hidden="true" />
             </span>
           )}

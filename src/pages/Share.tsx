@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Loader2, Share2, AlertCircle, ArrowLeft, Upload } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { Loader2, Share2, AlertCircle, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { saveVideo, saveVideoBlob, setAppState } from "@/lib/db";
 import type { Video } from "@/types";
 import { importLLP } from "@/lib/llpPack";
 import { toast } from "sonner";
 import { usePageMeta } from "@/hooks/usePageMeta";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -197,16 +198,14 @@ const SharePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
-      <header className="border-b border-border">
-        <div className="max-w-4xl mx-auto px-6 py-4 flex items-center gap-3">
-          <Link to="/" className="text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-5 w-5" aria-label="Back to library" />
-          </Link>
-          <Share2 className="h-5 w-5 text-primary" aria-hidden="true" />
-          <h1 className="text-lg font-semibold">Incoming share</h1>
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
+      <AppHeader
+        icon={Share2}
+        title="Incoming share"
+        subtitle="اشتراک ورودی"
+        backTo="/"
+        width="narrow"
+      />
 
       <main className="flex-1 flex items-center justify-center px-6 py-10">
         <div className="w-full max-w-md rounded-xl border border-border bg-card p-6 text-center space-y-4">

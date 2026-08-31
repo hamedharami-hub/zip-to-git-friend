@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Folder, Pill, Stethoscope } from "lucide-react";
+import { Loader2, Folder, Pill, Stethoscope } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import type { CategoryWithStats } from "@/lib/sentenceCategories";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
 const DOMAIN_META: Record<string, { name: string; icon: any; description: string }> = {
@@ -79,30 +80,16 @@ export default function SentenceDomainPage() {
   const DomainIcon = meta?.icon ?? Folder;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/sentence-lab")}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <DomainIcon className="h-5 w-5 text-primary" />
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Sentence Lab
-              </p>
-              <h1 className="text-base font-semibold leading-none">{meta?.name ?? domain}</h1>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={DomainIcon}
+        title={meta?.name ?? domain}
+        subtitle="حوزه"
+        onBack={() => navigate("/sentence-lab")}
+        width="default"
+      />
 
-      <main className="container mx-auto px-4 py-5">
+      <main className="max-w-5xl mx-auto w-full px-4 py-5">
         {meta?.description && (
           <p className="mb-4 text-xs text-muted-foreground" dir="rtl">
             {meta.description}

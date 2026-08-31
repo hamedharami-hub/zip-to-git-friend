@@ -31,6 +31,7 @@ import { CueListWithAnalysis } from "@/components/subtitles/CueListWithAnalysis"
 import { SubtitleSettingsMenu } from "@/components/player/SubtitleSettingsMenu";
 import { AccountButton } from "@/components/auth/AccountButton";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const Player = () => {
   usePageMeta({
@@ -246,18 +247,13 @@ const Player = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-3 flex items-center justify-between gap-3">
-          <Link to="/videos">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" /> Videos
-            </Button>
-          </Link>
-          <h1 className="text-base font-medium truncate flex-1 text-center">
-            {meta?.title ?? "..."}
-          </h1>
-          <div className="flex items-center gap-1">
+    <div className="h-[100dvh] flex flex-col bg-background text-foreground">
+      <AppHeader
+        title={meta?.title ?? "..."}
+        backTo="/videos"
+        width="wide"
+        actions={
+          <>
             {videoId && (
               <Button
                 variant="ghost"
@@ -292,11 +288,11 @@ const Player = () => {
                 <SettingsIcon className="h-5 w-5" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
-      <main className="max-w-[1400px] mx-auto sm:px-6 sm:py-6 px-0 py-0 sm:space-y-6">
+      <main className="max-w-[1400px] mx-auto w-full flex-1 sm:px-6 sm:py-6 px-0 py-0 sm:space-y-6">
         {needReattach ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center space-y-3">
             <h2 className="text-lg font-medium">Re-attach video file</h2>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Play, Sparkles } from "lucide-react";
+import { Loader2, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { fetchPath, type SentencePath } from "@/lib/sentencePaths";
 import { useSentenceStore } from "@/store/sentenceStore";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 export default function SentencePathDetailPage() {
   const { pathId = "" } = useParams<{ pathId: string }>();
@@ -31,27 +32,15 @@ export default function SentencePathDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate("/sentence-lab/general")}
-            aria-label="Back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div className="min-w-0">
-            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              Sentence Path
-            </p>
-            <h1 className="truncate text-base font-semibold leading-none">{path?.name ?? "..."}</h1>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={path?.name ?? "..."}
+        subtitle="جزئیات مسیر"
+        onBack={() => navigate("/sentence-lab/general")}
+        width="default"
+      />
 
-      <main className="container mx-auto max-w-2xl px-4 py-5">
+      <main className="max-w-5xl mx-auto w-full px-4 py-5">
         {loading ? (
           <div className="flex min-h-[40vh] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

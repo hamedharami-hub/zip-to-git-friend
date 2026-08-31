@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Loader2, Layers, Lock, CheckCircle2, Play, Home, Sparkles } from "lucide-react";
+import { Loader2, Layers, Lock, CheckCircle2, Play, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { fetchCategoryBySlug, type SentenceCategory } from "@/lib/sentenceCategories";
 import { fetchPathSteps, summarizeSteps, type PathStep } from "@/lib/pathProgress";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const LEVEL_BLURB: Record<string, string> = {
   A1: "پایه — اولین قدم‌ها",
@@ -59,46 +60,28 @@ export default function SentencePathPage() {
   const crumb = sub ? (cat?.name ?? "Sentence Lab") : "Sentence Lab";
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              aria-label="Home"
-              className="h-8 w-8 shrink-0"
-            >
-              <Home className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(`/sentence-lab/${categorySlug}`)}
-              aria-label="Back"
-              className="h-8 w-8 shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{crumb}</p>
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">{title}</h1>
-            </div>
-          </div>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={title}
+        subtitle="مسیر"
+        onBack={() => navigate(`/sentence-lab/${categorySlug}`)}
+        width="default"
+        actions={
           <Badge variant="secondary" className="text-[10px]">
             {summary.mastered}/{summary.total} mastered
           </Badge>
-        </div>
-        <div className="h-0.5 w-full bg-muted">
-          <div
-            className="h-0.5 bg-primary transition-all"
-            style={{ width: `${Math.round(summary.progress * 100)}%` }}
-          />
-        </div>
-      </header>
+        }
+        below={
+          <div className="h-0.5 w-full bg-muted">
+            <div
+              className="h-0.5 bg-primary transition-all"
+              style={{ width: `${Math.round(summary.progress * 100)}%` }}
+            />
+          </div>
+        }
+      />
 
-      <main className="container mx-auto max-w-2xl px-3 py-5 sm:px-4 sm:py-7">
+      <main className="max-w-5xl mx-auto w-full px-3 py-5 sm:px-4 sm:py-7">
         {loading ? (
           <div className="flex min-h-[40vh] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

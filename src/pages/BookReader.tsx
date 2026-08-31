@@ -26,6 +26,7 @@ import { TranslateChapterButton } from "@/components/books/TranslateChapterButto
 import type { DisplayLang } from "@/components/books/InteractiveBookText";
 import { ChapterTTSPlayer } from "@/components/books/ChapterTTSPlayer";
 import { ReaderTTSQuickSettings } from "@/components/books/ReaderTTSQuickSettings";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { LazyChapterRewriteTabs } from "@/components/books/LazyChapterRewriteTabs";
 import { BookNotesSheet } from "@/components/books/BookNotesSheet";
 import { ReaderSelectionToolbar } from "@/components/books/ReaderSelectionToolbar";
@@ -373,17 +374,8 @@ const BookReader = () => {
   if (!bookId) return null;
   if (!currentBook) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Link to="/books">
-              <Button variant="ghost" size="icon" aria-label="Back to books">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-semibold">Loading…</h1>
-          </div>
-        </header>
+      <div className="min-h-[100dvh] bg-background text-foreground">
+        <AppHeader title="Loading…" backTo="/books" width="wide" />
         <main className="max-w-3xl mx-auto px-6 py-10">
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
@@ -399,17 +391,12 @@ const BookReader = () => {
     const isLang = isLanguageBook(currentBook);
     const isManual = !isLang && (!currentBook.fileName || /\.manual$/i.test(currentBook.fileName));
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Link to={isLang ? "/language-books" : "/books"}>
-              <Button variant="ghost" size="icon" aria-label="Back">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-semibold truncate">{currentBook.title}</h1>
-          </div>
-        </header>
+      <div className="min-h-[100dvh] bg-background text-foreground">
+        <AppHeader
+          title={currentBook.title}
+          backTo={isLang ? "/language-books" : "/books"}
+          width="wide"
+        />
         <main className="max-w-3xl mx-auto px-6 py-10">
           <EmptyState
             icon={<BookOpen className="h-10 w-10 text-muted-foreground" />}
@@ -458,7 +445,7 @@ const BookReader = () => {
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
       {/* ─────────── Header ─────────── */}
-      <header className="pt-safe sticky top-0 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70 z-20">
+      <header className="m3-top-app-bar sticky top-0 z-30">
         <div className="max-w-[1400px] mx-auto px-3 sm:px-6 py-3 flex items-center gap-1 sm:gap-2">
           <Link to={isLanguageBook(currentBook) ? "/language-books" : "/books"}>
             <Button variant="ghost" size="icon" aria-label="Back to books">

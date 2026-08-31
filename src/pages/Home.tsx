@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { InstallButton } from "@/components/pwa/InstallButton";
 import { PWAInstallBanner } from "@/components/pwa/PWAInstallBanner";
 import { AccountButton } from "@/components/auth/AccountButton";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 interface Tile {
   to: string;
@@ -159,12 +160,15 @@ const Home = () => {
 
   return (
     <div className="min-h-[100dvh] bg-[hsl(var(--background))] text-foreground flex flex-col">
-      <header className={`m3-top-app-bar sticky top-0 z-30 ${scrolled ? "scrolled" : ""}`}>
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between gap-2">
+      <AppHeader
+        title={
           <Link to="/" className="font-serif italic text-base tracking-tight">
             Lingua<span className="text-[hsl(var(--primary))]">.</span>
           </Link>
-          <div className="flex items-center gap-1">
+        }
+        scrolled={scrolled}
+        actions={
+          <>
             <InstallButton />
             <AccountButton />
             <Link to="/settings">
@@ -177,9 +181,9 @@ const Home = () => {
                 <SettingsIcon className="h-[18px] w-[18px]" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex flex-col">
         <PWAInstallBanner />

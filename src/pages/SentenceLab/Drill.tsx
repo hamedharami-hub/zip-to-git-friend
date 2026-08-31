@@ -1,16 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/shallow";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  ArrowLeft,
-  Loader2,
-  RefreshCw,
-  Headphones,
-  Mic,
-  BarChart3,
-  Home,
-  Sparkles,
-} from "lucide-react";
+import { Loader2, RefreshCw, Headphones, Mic, BarChart3, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -19,6 +10,7 @@ import { PodcastMode } from "@/components/sentence-lab/PodcastMode";
 import { RoleplayMode } from "@/components/sentence-lab/RoleplayMode";
 import { GamificationHUD } from "@/components/sentence-lab/GamificationHUD";
 import { DrillCard } from "@/components/sentence-lab/DrillCard";
+import { AppHeader } from "@/components/layout/AppHeader";
 import {
   SessionPanel,
   FsrsPanel,
@@ -124,46 +116,26 @@ export default function SentenceDrillPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/")}
-              aria-label="Back to home"
-              className="h-8 w-8 shrink-0"
-            >
-              <Home className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => {
-                if (pathId) navigate(`/sentence-lab/path/${pathId}`);
-                else if (level) navigate(`/sentence-lab/${categorySlug}/${subSlug}`);
-                else if (sub) navigate(`/sentence-lab/${categorySlug}`);
-                else navigate("/sentence-lab");
-              }}
-              aria-label="Back"
-              className="h-8 w-8 shrink-0"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{crumb}</p>
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
-                {title}
-                {level && level !== "all" && (
-                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                    · {level}
-                  </span>
-                )}
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title={
+          <>
+            {title}
+            {level && level !== "all" && (
+              <span className="ml-1.5 text-xs font-normal text-muted-foreground">· {level}</span>
+            )}
+          </>
+        }
+        subtitle="تمرین"
+        onBack={() => {
+          if (pathId) navigate(`/sentence-lab/path/${pathId}`);
+          else if (level) navigate(`/sentence-lab/${categorySlug}/${subSlug}`);
+          else if (sub) navigate(`/sentence-lab/${categorySlug}`);
+          else navigate("/sentence-lab");
+        }}
+        width="default"
+        actions={
+          <>
             <GamificationHUD compact />
             <span className="text-xs tabular-nums text-muted-foreground">
               {queue.length ? `${currentIndex + 1}/${queue.length}` : "—"}
@@ -188,14 +160,16 @@ export default function SentenceDrillPage() {
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             </Button>
+          </>
+        }
+        below={
+          <div className="h-0.5 w-full bg-muted">
+            <div className="h-0.5 bg-primary transition-all" style={{ width: `${progressPct}%` }} />
           </div>
-        </div>
-        <div className="h-0.5 w-full bg-muted">
-          <div className="h-0.5 bg-primary transition-all" style={{ width: `${progressPct}%` }} />
-        </div>
-      </header>
+        }
+      />
 
-      <main className="container mx-auto px-3 py-4 sm:px-4 sm:py-6">
+      <main className="max-w-5xl mx-auto w-full px-3 py-4 sm:px-4 sm:py-6">
         {loading && queue.length === 0 ? (
           <div className="flex min-h-[50vh] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

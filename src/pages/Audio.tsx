@@ -8,7 +8,6 @@ import {
   Trash2,
   WifiOff,
   Play,
-  ArrowLeft,
   Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import { importLLP } from "@/lib/llpPack";
 import { validateMediaFile } from "@/lib/fileValidation";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -152,17 +152,14 @@ const Audio = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-2">
-          <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0">
-            <Link to="/" className="text-muted-foreground hover:text-foreground">
-              <ArrowLeft className="h-5 w-5" aria-label="Back to library" />
-            </Link>
-            <Headphones className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-            <span className="truncate">Audio & Podcasts</span>
-          </h1>
-          <div className="flex items-center gap-2">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={Headphones}
+        title="Audio & Podcasts"
+        subtitle="صدا و پادکست"
+        backTo="/"
+        actions={
+          <>
             {!online && (
               <span className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <WifiOff className="h-3.5 w-3.5" /> offline
@@ -175,13 +172,13 @@ const Audio = () => {
                 <SettingsIcon className="h-5 w-5" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <PullToRefreshIndicator progress={ptr.progress} refreshing={ptr.refreshing} />
 
-      <main className="max-w-[1400px] mx-auto px-6 py-8 space-y-6">
+      <main className="max-w-[1400px] mx-auto w-full px-6 py-8 space-y-6">
         <PWAInstallBanner />
         <PodcastHeroDecor />
         <section className="flex items-center justify-between gap-4 flex-wrap">

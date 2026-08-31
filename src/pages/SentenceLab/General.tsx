@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-  ArrowLeft,
   Loader2,
   Plus,
   Sparkles,
@@ -19,6 +18,7 @@ import { fetchTopCategories, type CategoryWithStats } from "@/lib/sentenceCatego
 import { fetchPaths, deletePath, type SentencePath } from "@/lib/sentencePaths";
 import { CustomPathDialog } from "@/components/sentence-lab/CustomPathDialog";
 import { toast } from "@/hooks/use-toast";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 const ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   Sparkles,
@@ -82,33 +82,21 @@ export default function SentenceGeneralPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/sentence-lab")}
-              aria-label="Back"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Sentence Lab
-              </p>
-              <h1 className="text-base font-semibold leading-none">General English</h1>
-            </div>
-          </div>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        title="General English"
+        subtitle="انگلیسی عمومی"
+        onBack={() => navigate("/sentence-lab")}
+        width="default"
+        actions={
           <Button size="sm" onClick={() => setShowCustom(true)}>
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Custom Path</span>
           </Button>
-        </div>
-      </header>
+        }
+      />
 
-      <main className="container mx-auto px-4 py-5">
+      <main className="max-w-5xl mx-auto w-full px-4 py-5">
         {loading ? (
           <div className="flex min-h-[40vh] items-center justify-center">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />

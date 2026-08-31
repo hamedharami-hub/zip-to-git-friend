@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Flag, Volume2, Trash2, Filter, Headphones, Home } from "lucide-react";
+import { Loader2, Flag, Volume2, Trash2, Filter, Headphones } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -15,6 +15,7 @@ import {
 import { FlagButton } from "@/components/sentence-lab/FlagButton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 interface Row {
   flag: ReturnType<typeof useSentenceFlagStore.getState>["flags"][string];
@@ -76,38 +77,21 @@ export default function SentenceLeitnerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between gap-2 px-3 py-2.5 sm:px-4">
-          <div className="flex min-w-0 items-center gap-1.5">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="h-8 w-8">
-              <Home className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate("/sentence-lab")}
-              className="h-8 w-8"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div className="min-w-0">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                Sentence Lab
-              </p>
-              <h1 className="truncate text-sm font-semibold leading-tight sm:text-base">
-                <Flag className="mr-1 inline h-4 w-4 text-primary" />
-                جمله‌های پرچم‌دار
-              </h1>
-            </div>
-          </div>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={Flag}
+        title="Flagged Sentences"
+        subtitle="جمله‌های پرچم‌دار"
+        backTo="/sentence-lab"
+        width="default"
+        actions={
           <Badge variant="secondary" className="text-[10px]">
             {filtered.length}/{rows.length}
           </Badge>
-        </div>
-      </header>
+        }
+      />
 
-      <main className="container mx-auto max-w-2xl px-3 py-5 sm:px-4">
+      <main className="max-w-5xl mx-auto w-full px-3 py-5 sm:px-4">
         <div className="mb-4 rounded-xl border bg-card p-3">
           <div className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <Filter className="h-3 w-3" /> فیلتر بر اساس رنگ

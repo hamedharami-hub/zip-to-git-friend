@@ -22,6 +22,7 @@ import { batchAnalyzeChapter, extractAnalysableParagraphs } from "@/lib/batchAna
 import { getCachedParagraphAnalysis } from "@/lib/bookAnalysis";
 import { emitChapterAnalyses } from "@/lib/chapterAnalysisBus";
 import { useSettingsStore } from "@/store/settingsStore";
+import { AppHeader } from "@/components/layout/AppHeader";
 import { coerceBookModel } from "@/lib/aiModels";
 import { usePinchFontStep } from "@/hooks/usePinchZoom";
 import type { BookChapter } from "@/types";
@@ -206,17 +207,14 @@ const NewsDigestReader = () => {
 
   if (!digest) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
-        <header className="border-b border-border">
-          <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center gap-2">
-            <Link to="/news">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-lg font-semibold">Digest</h1>
-          </div>
-        </header>
+      <div className="min-h-[100dvh] bg-background text-foreground">
+        <AppHeader
+          icon={Newspaper}
+          title="Digest"
+          subtitle="خلاصه خبر"
+          backTo="/news"
+          width="wide"
+        />
         <main className="max-w-3xl mx-auto px-6 py-10">
           <EmptyState icon={<Newspaper className="h-7 w-7" />} title="خلاصه پیدا نشد" />
         </main>
@@ -250,10 +248,7 @@ const NewsDigestReader = () => {
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
-      <header
-        className="sticky top-0 z-20 border-b border-border/60 bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
-        style={{ paddingTop: "env(safe-area-inset-top)" }}
-      >
+      <header className="m3-top-app-bar sticky top-0 z-30">
         <div className="flex items-center gap-0.5 px-2 py-1 overflow-x-auto">
           <button
             type="button"

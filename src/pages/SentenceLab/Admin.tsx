@@ -5,7 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, Wand2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Wand2, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 interface MissingStat {
   total: number;
@@ -108,20 +109,16 @@ export default function SentenceAdminPage() {
     stat && stat.total > 0 ? Math.round(((stat.total - totalMissing) / stat.total) * 100) : 0;
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="pt-safe sticky top-0 z-10 border-b bg-background/80 backdrop-blur">
-        <div className="container mx-auto flex items-center gap-2 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/sentence-lab")}>
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <div>
-            <h1 className="text-base font-semibold leading-none">Sentence Admin</h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">تکمیل خودکار جمله‌های ناقص با AI</p>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={Wand2}
+        title="Sentence Admin"
+        subtitle="تکمیل خودکار جمله‌های ناقص با AI"
+        onBack={() => navigate("/sentence-lab")}
+        width="default"
+      />
 
-      <main className="container mx-auto max-w-2xl px-4 py-5 space-y-4">
+      <main className="max-w-5xl mx-auto w-full px-4 py-5 space-y-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">پوشش محتوا</CardTitle>

@@ -10,7 +10,6 @@ import {
   WifiOff,
   Play,
   Package,
-  ArrowLeft,
   Search,
   ArrowUpDown,
 } from "lucide-react";
@@ -46,6 +45,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { PullToRefreshIndicator } from "@/components/PullToRefreshIndicator";
 import { captureVideoThumbnail } from "@/lib/videoThumbnail";
 import { formatDuration } from "@/lib/utils";
+import { AppHeader } from "@/components/layout/AppHeader";
 
 function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -234,21 +234,14 @@ const Videos = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border">
-        <div className="max-w-[1400px] mx-auto px-6 py-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <Link to="/" aria-label="Back to home">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0">
-              <Film className="h-5 w-5 text-primary shrink-0" aria-hidden="true" />
-              <span className="truncate">Videos</span>
-            </h1>
-          </div>
-          <div className="flex items-center gap-2">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      <AppHeader
+        icon={Film}
+        title="Videos"
+        subtitle="ویدیوها"
+        backTo="/"
+        actions={
+          <>
             {!online && (
               <span
                 className="hidden sm:inline-flex items-center gap-1 text-xs text-muted-foreground"
@@ -264,9 +257,9 @@ const Videos = () => {
                 <SettingsIcon className="h-5 w-5" />
               </Button>
             </Link>
-          </div>
-        </div>
-      </header>
+          </>
+        }
+      />
 
       <PullToRefreshIndicator progress={ptr.progress} refreshing={ptr.refreshing} />
 

@@ -111,7 +111,7 @@
   --foreground: 24 10% 18%;
   --section-leitner: 18 86% 40%;
   --section-sentences: 340 45% 45%;
-  --section-stories: 38 70% 42%;
+  --section-stories: 34 75% 35%;
   --section-news: 172 45% 30%;
   --section-books: 145 35% 32%;
   --section-videos: 212 45% 38%;
@@ -413,7 +413,7 @@
     border: 1px solid hsl(var(--section) / 0.25);
     background-image:
       radial-gradient(circle at 85% 15%, hsl(0 0% 100% / 0.22), transparent 55%),
-      linear-gradient(140deg, hsl(var(--section) / 0.95), hsl(var(--section) / 0.72));
+      linear-gradient(140deg, hsl(var(--section)), hsl(var(--section) / 0.86));
     box-shadow: 0 16px 36px -20px hsl(var(--section) / 0.55);
     transition:
       transform 200ms ease,

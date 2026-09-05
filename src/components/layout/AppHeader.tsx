@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { sectionClass, type SectionKey } from "@/lib/sections";
 
 export type ShellWidth = "wide" | "default" | "narrow";
 
@@ -21,6 +22,7 @@ export interface AppHeaderProps {
   subtitle?: ReactNode;
   icon?: LucideIcon;
   tone?: AppHeaderTone; // default "primary"
+  accent?: SectionKey;
   /** Route for the back button; omit both backTo and onBack for no back button. */
   backTo?: string;
   /** Takes precedence over backTo. */
@@ -46,6 +48,7 @@ export function AppHeader({
   subtitle,
   icon: Icon,
   tone = "primary",
+  accent,
   backTo,
   onBack,
   actions,
@@ -80,7 +83,12 @@ export function AppHeader({
             <span
               className={cn(
                 "h-9 w-9 rounded-2xl flex items-center justify-center shrink-0",
-                TONE[tone],
+                accent
+                  ? cn(
+                      sectionClass(accent),
+                      "bg-[hsl(var(--section)/0.16)] text-[hsl(var(--section))]",
+                    )
+                  : TONE[tone],
               )}
             >
               <Icon className="h-4 w-4" aria-hidden="true" />

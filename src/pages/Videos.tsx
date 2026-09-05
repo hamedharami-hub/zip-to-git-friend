@@ -237,6 +237,7 @@ const Videos = () => {
     <div className="min-h-[100dvh] bg-background text-foreground">
       <AppHeader
         icon={Film}
+        accent="videos"
         title="Videos"
         subtitle="ویدیوها"
         backTo="/"

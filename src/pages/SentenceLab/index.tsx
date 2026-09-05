@@ -100,6 +100,7 @@ export default function SentenceLabPage() {
       header={
         <AppHeader
           icon={MessageCircle}
+          accent="sentences"
           title="Sentence Lab"
           subtitle="یک حوزه را انتخاب کن"
           backTo="/"

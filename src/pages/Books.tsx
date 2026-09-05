@@ -60,6 +60,7 @@ const Books = () => {
       header={
         <AppHeader
           icon={BookOpen}
+          accent="books"
           tone="secondary"
           title="Library"
           subtitle="کتابخانه"

@@ -127,6 +127,7 @@ const Leitner = () => {
       header={
         <AppHeader
           icon={Brain}
+          accent="leitner"
           title="Leitner"
           subtitle="لایتنر"
           backTo="/"

@@ -36,6 +36,7 @@ export const NewsHeader = memo(function NewsHeader({
   return (
     <AppHeader
       icon={Newspaper}
+      accent="news"
       title="News"
       subtitle="اخبار"
       backTo="/"

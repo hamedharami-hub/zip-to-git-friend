@@ -155,6 +155,7 @@ const Audio = () => {
     <div className="min-h-[100dvh] bg-background text-foreground">
       <AppHeader
         icon={Headphones}
+        accent="audio"
         title="Audio & Podcasts"
         subtitle="صدا و پادکست"
         backTo="/"

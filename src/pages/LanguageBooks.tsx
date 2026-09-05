@@ -44,6 +44,7 @@ const LanguageBooks = () => {
     <div className="min-h-[100dvh] bg-gradient-to-b from-background to-muted/20 text-foreground pb-32">
       <AppHeader
         icon={Sparkles}
+        accent="stories"
         title="Language Books"
         subtitle="کتاب‌های زبان"
         backTo="/"

@@ -128,7 +128,7 @@ export function BookUploader({ variant = "button", triggerRef }: Props) {
 
       {busy && (
         <div
-          className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur p-4"
+          className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-background/95 backdrop-blur p-4 pb-[max(env(safe-area-inset-bottom),0.25rem)]"
           role="status"
           aria-live="polite"
         >

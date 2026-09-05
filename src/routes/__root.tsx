@@ -13,8 +13,8 @@ export const Route = createRootRoute({
       { name: "mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "SyncLearn" },
-      { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#F7FBFB" },
-      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#0F1719" },
+      { name: "theme-color", media: "(prefers-color-scheme: light)", content: "#FAF8F5" },
+      { name: "theme-color", media: "(prefers-color-scheme: dark)", content: "#000000" },
       { property: "og:site_name", content: "Lingua" },
       { property: "og:title", content: "Lingua — Language Learning Player" },
       { name: "twitter:title", content: "Lingua — Language Learning Player" },
@@ -68,6 +68,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try {
+  const theme = localStorage.getItem("llvp-theme");
+  if (theme === "light") document.documentElement.classList.remove("dark");
+  else document.documentElement.classList.add("dark");
+} catch {
+  document.documentElement.classList.add("dark");
+}`,
+          }}
+        />
         <HeadContent />
       </head>
       <body>
@@ -98,12 +109,12 @@ function RootComponent() {
     return (
       <div
         style={{
-          minHeight: "100vh",
+          minHeight: "100dvh",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "hsl(36 30% 97%)",
-          color: "hsl(24 10% 18%)",
+          background: "hsl(var(--background))",
+          color: "hsl(var(--foreground))",
           fontFamily: "'Inter Tight', system-ui, sans-serif",
         }}
       >

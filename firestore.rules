@@ -1,0 +1,68 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Public test doc for connection health check
+    match /test/{testId} {
+      allow get: if true;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId);
+      allow update: if isOwner(userId) && isValidId(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Leitner Folders
+    match /leitner_folders/{folderId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(folderId);
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid && isValidId(folderId);
+    }
+
+    // Leitner Cards
+    match /leitner_cards/{cardId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(cardId);
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid && isValidId(cardId);
+    }
+
+    // Books
+    match /books/{bookId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(bookId);
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid && isValidId(bookId);
+    }
+
+    // Sentence Learning Progress
+    match /sentence_progress/{progressId} {
+      allow get, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && isValidId(progressId);
+      allow update: if isSignedIn() && request.resource.data.userId == request.auth.uid && resource.data.userId == request.auth.uid && isValidId(progressId);
+    }
+  }
+}

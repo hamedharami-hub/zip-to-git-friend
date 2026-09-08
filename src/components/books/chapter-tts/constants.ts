@@ -13,13 +13,7 @@ export const TTS_LANG_KEY = "llvp-tts-lang";
 export const RATE_KEY = "llvp-tts-rate";
 
 export type Engine =
-  | "browser"
-  | "gemini"
-  | "elevenlabs"
-  | "azure"
-  | "huggingface"
-  | "playht"
-  | "opentts";
+  "browser" | "gemini" | "elevenlabs" | "azure" | "huggingface" | "playht" | "opentts";
 
 export const ENGINES: readonly Engine[] = [
   "browser",

@@ -158,10 +158,7 @@ export type GeminiModel = "gemini-3-flash-preview" | "gemini-3.1-flash-lite-prev
 
 /** Available Groq chat models (latest line). */
 export type GroqChatModel =
-  | "llama-3.3-70b-versatile"
-  | "llama-3.1-8b-instant"
-  | "openai/gpt-oss-20b"
-  | "openai/gpt-oss-120b";
+  "llama-3.3-70b-versatile" | "llama-3.1-8b-instant" | "openai/gpt-oss-20b" | "openai/gpt-oss-120b";
 
 /** Available Groq transcription (Whisper) models. */
 export type GroqWhisperModel = "whisper-large-v3-turbo" | "whisper-large-v3";

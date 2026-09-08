@@ -1,0 +1,6 @@
+{
+  "name": "Lingua — Language Learning Player",
+  "description": "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر — همه در یک اپ.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

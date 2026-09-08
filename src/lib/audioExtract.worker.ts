@@ -36,8 +36,7 @@ function readArrayBuffer(file: Blob): Promise<ArrayBuffer> {
 }
 
 function getAudioContextConstructor():
-  | (new (options?: AudioContextOptions) => AudioContext)
-  | undefined {
+  (new (options?: AudioContextOptions) => AudioContext) | undefined {
   return (
     (self as unknown as { AudioContext?: typeof AudioContext }).AudioContext ||
     (self as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext

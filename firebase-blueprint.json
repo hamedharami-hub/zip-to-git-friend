@@ -1,0 +1,100 @@
+{
+  "entities": {
+    "userProfile": {
+      "title": "User Profile",
+      "description": "User profile and settings",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "leitnerFolder": {
+      "title": "Leitner Folder",
+      "description": "Folder organizing Leitner flashcard boxes",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "color": { "type": "string" },
+        "icon": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "createdAt"]
+    },
+    "leitnerCard": {
+      "title": "Leitner Card",
+      "description": "Flashcard in a Leitner box system",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "folderId": { "type": "string" },
+        "front": { "type": "string" },
+        "back": { "type": "string" },
+        "box": { "type": "number" },
+        "nextReview": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "front", "back", "box", "createdAt"]
+    },
+    "book": {
+      "title": "Book",
+      "description": "Language learning book or reader resource",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "author": { "type": "string" },
+        "language": { "type": "string" },
+        "lastChapterIndex": { "type": "number" },
+        "totalReadSeconds": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "title", "createdAt"]
+    },
+    "sentenceProgress": {
+      "title": "Sentence Progress",
+      "description": "User learning progress for sentences and shadowing",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "sentenceId": { "type": "string" },
+        "status": { "type": "string" },
+        "repetitions": { "type": "number" },
+        "lastPracticed": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "sentenceId", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/userProfile" },
+      "description": "User profile collection"
+    },
+    "/leitner_folders/{folderId}": {
+      "schema": { "$ref": "#/entities/leitnerFolder" },
+      "description": "Leitner flashcard folders"
+    },
+    "/leitner_cards/{cardId}": {
+      "schema": { "$ref": "#/entities/leitnerCard" },
+      "description": "Leitner flashcards"
+    },
+    "/books/{bookId}": {
+      "schema": { "$ref": "#/entities/book" },
+      "description": "Books and reader content"
+    },
+    "/sentence_progress/{progressId}": {
+      "schema": { "$ref": "#/entities/sentenceProgress" },
+      "description": "User learning progress on sentences"
+    }
+  }
+}

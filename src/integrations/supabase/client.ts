@@ -10,13 +10,16 @@ function createSupabaseClient() {
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_PUBLISHABLE_KEY;
 
   if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    const missing = [
-      ...(!SUPABASE_URL ? ["SUPABASE_URL"] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
-    ];
-    const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Connect Supabase in Lovable Cloud.`;
-    console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+    console.warn(
+      "[Supabase] Missing Supabase environment variables; app is operating with Firebase on Google Cloud.",
+    );
+    return createClient<Database>("https://placeholder.supabase.co", "anon-key-placeholder", {
+      auth: {
+        storage: typeof window !== "undefined" ? localStorage : undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

@@ -23,7 +23,7 @@ export default defineConfig({
       },
     },
     plugins: [
-      mcpPlugin(),
+      ...(process.env.LOVABLE_ENABLED ? [mcpPlugin()] : []),
       VitePWA({
         registerType: "prompt",
         injectRegister: null, // we register manually in src/lib/pwa.ts

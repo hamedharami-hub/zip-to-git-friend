@@ -1,10 +1,17 @@
 import { QueryClient } from "@tanstack/react-query";
-import { createRouter, useRouter } from "@tanstack/react-router";
+import { createRouter, useRouter, type ErrorComponentProps } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
 
 // eslint-disable-next-line react-refresh/only-export-components -- non-component exports (variants/hooks/contexts)
-function DefaultError({ error, reset }: { error: Error; reset: () => void }) {
+function DefaultError({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : "خطای ناشناخته";
+
   return (
     <div
       dir="rtl"
@@ -13,7 +20,7 @@ function DefaultError({ error, reset }: { error: Error; reset: () => void }) {
       <div className="text-4xl">⚠️</div>
       <h1 className="text-xl font-semibold">مشکلی پیش آمد</h1>
       <p className="text-sm text-muted-foreground max-w-md break-words">
-        {error?.message || "خطای ناشناخته"}
+        {errorMessage}
       </p>
       <div className="flex gap-2">
         <button

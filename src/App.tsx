@@ -163,8 +163,8 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <AuthProvider>
-        <FirebaseAuthProvider>
+      <FirebaseAuthProvider>
+        <AuthProvider>
           <SettingsBootstrap>
             <SyncBridge />
             <PWAUpdateBanner />
@@ -244,8 +244,8 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </SettingsBootstrap>
-        </FirebaseAuthProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </FirebaseAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -6,9 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
-import { useAuth } from "@/contexts/AuthContext";
+import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -16,7 +14,7 @@ const Auth = () => {
     title: "Sign in — Language Learning Player",
     description: "ورود / ثبت‌نام — دسترسی به پروفایل و همگام‌سازی ابری.",
   });
-  const { user, loading } = useAuth();
+  const { user, loading, signIn, signUp, signInWithGoogle } = useFirebaseAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next") ?? "";
@@ -30,33 +28,6 @@ const Auth = () => {
     if (!loading && user) navigate(nextPath, { replace: true });
   }, [user, loading, navigate, nextPath]);
 
-  const rememberPostAuthPath = () => {
-    try {
-      window.localStorage.setItem("llp-post-auth-path", nextPath);
-    } catch {
-      // Ignore storage failures; the callback will fall back to home.
-    }
-  };
-
-  const authCallbackUrl = () => `${window.location.origin}/auth/callback`;
-
-  const isInIframe = () => {
-    try {
-      return window.self !== window.top;
-    } catch {
-      return true;
-    }
-  };
-
-  const randomState = () => {
-    if (window.crypto?.getRandomValues) {
-      return Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
-        .map((b) => b.toString(16).padStart(2, "0"))
-        .join("");
-    }
-    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-  };
-
   const handleEmail = async (mode: "signin" | "signup") => {
     if (!email || !password) {
       toast.error("Email and password are required.");
@@ -65,18 +36,13 @@ const Auth = () => {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: `${window.location.origin}${nextPath}` },
-        });
-        if (error) throw error;
-        toast.success("Account created. Check your email to confirm (if required).");
+        await signUp(email, password);
+        toast.success("Account created and signed in.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signIn(email, password);
         toast.success("Signed in.");
       }
+      navigate(nextPath, { replace: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Authentication failed.";
       toast.error(msg);
@@ -88,55 +54,16 @@ const Auth = () => {
   const handleGoogle = async () => {
     setSubmitting(true);
     try {
-      // On mobile browsers, the popup flow often gets blocked or auto-closed,
-      // producing "Sign in was cancelled". Force a top-level redirect there.
-      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-      rememberPostAuthPath();
-
-      if (isMobile && isInIframe()) {
-        const params = new URLSearchParams({
-          provider: "google",
-          redirect_uri: authCallbackUrl(),
-          state: randomState(),
-          prompt: "select_account",
-          display: "page",
-        });
-        const redirectTo = `${window.location.origin}/~oauth/initiate?${params.toString()}`;
-        try {
-          window.top?.location.assign(redirectTo);
-        } catch {
-          window.location.assign(redirectTo);
-        }
+      await signInWithGoogle();
+      toast.success("Signed in with Google.");
+      navigate(nextPath, { replace: true });
+    } catch (e: any) {
+      if (e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request") {
+        setSubmitting(false);
         return;
       }
-
-      const extraParams: Record<string, string> = { prompt: "select_account" };
-      if (isMobile) extraParams.display = "page";
-
-      const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: authCallbackUrl(),
-        extraParams,
-      });
-      if (result.error) {
-        const msg =
-          (result.error instanceof Error ? result.error.message : String(result.error)) || "";
-        // Silently ignore popup-close cancellations — user just closed it.
-        if (/cancel|closed|popup/i.test(msg)) {
-          setSubmitting(false);
-          return;
-        }
-        throw result.error;
-      }
-      if (result.redirected) return; // browser will redirect
-      try {
-        window.localStorage.removeItem("llp-post-auth-path");
-      } catch {
-        // Ignore storage failures.
-      }
-      navigate(nextPath, { replace: true });
-    } catch (e) {
       const msg = e instanceof Error ? e.message : "Google sign-in failed.";
-      if (!/cancel|closed|popup/i.test(msg)) toast.error(msg);
+      toast.error(msg);
       setSubmitting(false);
     }
   };

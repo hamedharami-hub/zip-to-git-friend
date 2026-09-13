@@ -7,8 +7,12 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { User } from "firebase/auth";
 import {
   createUserWithEmailAndPassword,
+  getRedirectResult,
+  GoogleAuthProvider,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signInWithPopup,
+  signInWithRedirect,
   signOut as fbSignOut,
   updateProfile,
 } from "firebase/auth";
@@ -22,6 +26,7 @@ interface FirebaseAuthState {
   ready: boolean;
   signUp: (email: string, password: string, displayName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   syncSettingsUp: () => Promise<void>;
   syncSettingsDown: () => Promise<void>;
@@ -33,6 +38,7 @@ const Ctx = createContext<FirebaseAuthState>({
   ready: false,
   signUp: async () => {},
   signIn: async () => {},
+  signInWithGoogle: async () => {},
   signOut: async () => {},
   syncSettingsUp: async () => {},
   syncSettingsDown: async () => {},
@@ -70,8 +76,28 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let unsub = () => {};
     getFirebase()
-      .then(({ auth }) => {
+      .then(({ auth, db }) => {
         setReady(true);
+        // Handle redirect result if user returned from redirect OAuth
+        getRedirectResult(auth)
+          .then(async (result) => {
+            if (result?.user) {
+              await setDoc(
+                doc(db, "users", result.user.uid),
+                {
+                  uid: result.user.uid,
+                  email: result.user.email,
+                  displayName: result.user.displayName ?? null,
+                  photoURL: result.user.photoURL ?? null,
+                  lastLoginAt: serverTimestamp(),
+                },
+                { merge: true },
+              );
+              await writeSettings(result.user.uid);
+            }
+          })
+          .catch((e) => console.warn("[firebase] redirect result check:", e));
+
         unsub = onAuthStateChanged(auth, (u) => {
           setUser(u);
           setLoading(false);
@@ -132,6 +158,40 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
     signIn: async (email, password) => {
       const { auth } = await getFirebase();
       await signInWithEmailAndPassword(auth, email, password);
+    },
+    signInWithGoogle: async () => {
+      const { auth, db } = await getFirebase();
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: "select_account" });
+      const isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+
+      try {
+        const cred = await signInWithPopup(auth, provider);
+        if (cred.user) {
+          await setDoc(
+            doc(db, "users", cred.user.uid),
+            {
+              uid: cred.user.uid,
+              email: cred.user.email,
+              displayName: cred.user.displayName ?? null,
+              photoURL: cred.user.photoURL ?? null,
+              lastLoginAt: serverTimestamp(),
+            },
+            { merge: true },
+          );
+          await writeSettings(cred.user.uid);
+        }
+      } catch (err: any) {
+        if (
+          err?.code === "auth/popup-blocked" ||
+          err?.code === "auth/popup-closed-by-user" ||
+          isMobile
+        ) {
+          await signInWithRedirect(auth, provider);
+          return;
+        }
+        throw err;
+      }
     },
     signOut: async () => {
       const { auth } = await getFirebase();

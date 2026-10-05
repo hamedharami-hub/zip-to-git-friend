@@ -108,7 +108,7 @@ export function getGroqWhisperModels(
     settings?.customModels?.hidden?.groqWhisper,
   );
   const noKey = !settings?.groqApiKey?.trim();
-  return withDisabled(list, noKey, "ابتدا کلید Groq را وارد کنید");
+  return withDisabled(list, noKey, "Add your Groq key first");
 }
 
 /** Gateway (Lovable AI) models — built-ins merged with refreshed list, minus hidden. */
@@ -128,16 +128,14 @@ export function chatModelOptions(
   const geminiDisabled = !settings?.geminiApiKey?.trim();
   const groqDisabled = !settings?.groqApiKey?.trim();
   return [
-    ...withDisabled(
-      getGeminiModels(settings),
-      geminiDisabled,
-      "ابتدا کلید Gemini را وارد کنید",
-    ).map((m) => ({
-      ...m,
-      value: `gemini:${m.value}`,
-      label: `Gemini · ${m.label}`,
-    })),
-    ...withDisabled(getGroqChatModels(settings), groqDisabled, "ابتدا کلید Groq را وارد کنید").map(
+    ...withDisabled(getGeminiModels(settings), geminiDisabled, "Add your Gemini key first").map(
+      (m) => ({
+        ...m,
+        value: `gemini:${m.value}`,
+        label: `Gemini · ${m.label}`,
+      }),
+    ),
+    ...withDisabled(getGroqChatModels(settings), groqDisabled, "Add your Groq key first").map(
       (m) => ({
         ...m,
         value: `groq:${m.value}`,
@@ -236,7 +234,7 @@ export function getAvailableBookModels(
         hint: m.hint,
         group: "Gemini (your key)",
         disabled: !geminiKey,
-        disabledReason: geminiKey ? undefined : "ابتدا کلید Gemini را وارد کنید",
+        disabledReason: geminiKey ? undefined : "Add your Gemini key first",
       });
     }
   }
@@ -253,7 +251,7 @@ export function getAvailableBookModels(
         hint: m.hint,
         group: "Groq (your key)",
         disabled: !groqKey,
-        disabledReason: groqKey ? undefined : "ابتدا کلید Groq را وارد کنید",
+        disabledReason: groqKey ? undefined : "Add your Groq key first",
       });
     }
   }

@@ -212,7 +212,7 @@ export function ModelsSettings() {
           />
           <BookModelPicker
             label="Smart HTML filename"
-            hint="پیشنهاد نام فارسی کوتاه برای فایل HTML خروجی خبر/متن."
+            hint="پیشنهاد نام فارسی کوتاه برای فایل HTML Sign outی خبر/متن."
             value={coerceBookModel(
               settings.htmlFilenameModelRef ?? "google/gemini-3.1-flash-lite-preview",
             )}

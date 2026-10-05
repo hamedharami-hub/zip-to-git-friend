@@ -7,8 +7,8 @@ import { usePageMeta } from "@/hooks/usePageMeta";
 const NotFound = () => {
   const location = useLocation();
   usePageMeta({
-    title: "صفحه پیدا نشد — ۴۰۴ | Lingua",
-    description: "این صفحه وجود ندارد یا جابه‌جا شده است.",
+    title: "Page not found — 404 | Lingua",
+    description: "This page does not exist or has moved.",
   });
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const NotFound = () => {
         <h1 className="mb-2 bg-gradient-to-br from-foreground to-foreground/60 bg-clip-text text-6xl font-black tracking-tight text-transparent">
           404
         </h1>
-        <p className="mb-2 text-lg font-semibold">صفحه پیدا نشد</p>
+        <p className="mb-2 text-lg font-semibold">Page not found</p>
         <p className="mb-6 text-sm text-muted-foreground break-all">
           <code className="rounded bg-muted px-2 py-0.5 text-xs">{location.pathname}</code>
         </p>
@@ -38,12 +38,12 @@ const NotFound = () => {
           <Button asChild>
             <Link to="/">
               <Home className="mr-2 h-4 w-4" />
-              خانه
+              Home
             </Link>
           </Button>
           <Button variant="outline" onClick={() => window.history.back()}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            بازگشت
+            Go back
           </Button>
         </div>
       </div>

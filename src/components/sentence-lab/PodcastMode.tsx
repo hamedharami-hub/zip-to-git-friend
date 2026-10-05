@@ -170,7 +170,7 @@ export const PodcastMode = memo(function PodcastMode() {
     (maxSeconds: number) =>
       new Promise<string>((resolve) => {
         if (!speechSupported) {
-          toast.error("این مرورگر از تشخیص گفتار پشتیبانی نمی‌کند");
+          toast.error("This browser does not support speech recognition");
           resolve("");
           return;
         }
@@ -317,7 +317,7 @@ export const PodcastMode = memo(function PodcastMode() {
         }
         setPlaying(false);
         setStep("idle");
-        toast.success("🎉 پایان صف امروز");
+        toast.success("🎉 That's today's queue done");
       } catch (e) {
         console.error("[PodcastMode] playback error", e);
         setLoading(false);
@@ -405,7 +405,7 @@ export const PodcastMode = memo(function PodcastMode() {
       setCacheInfo(info);
       toast.success(`دانلود کامل · ${items.length} فایل آفلاین شد`);
     } catch (e) {
-      toast.error("دانلود ناموفق: " + (e as Error).message);
+      toast.error("Download failed: " + (e as Error).message);
     } finally {
       setPrefetching(false);
     }

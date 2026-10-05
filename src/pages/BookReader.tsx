@@ -78,10 +78,10 @@ const BookReader = () => {
   const closeBook = useBookStore((s) => s.closeBook);
   const upsert = useBookStore((s) => s.upsert);
   usePageMeta({
-    title: currentBook?.title ? `${currentBook.title} — کتاب` : "خواندن کتاب — Lingua",
+    title: currentBook?.title ? `${currentBook.title} — Book` : "Read a book — Lingua",
     description: currentBook?.title
-      ? `مطالعه‌ی «${currentBook.title}» با ترجمه، تحلیل و خواندن صوتی هوش مصنوعی.`
-      : "خواندن تعاملی کتاب با ترجمه و TTS.",
+      ? `Read "${currentBook.title}" with translation, analysis, and AI text-to-speech.`
+      : "Interactive reading with translation and TTS.",
     ogType: "book",
     image: currentBook?.coverDataUrl || undefined,
   });
@@ -588,7 +588,7 @@ const BookReader = () => {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  متن اصلی
+                  Original
                 </button>
                 <button
                   type="button"
@@ -609,7 +609,7 @@ const BookReader = () => {
                       : "text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  بازنویسی AI
+                  AI rewrite
                 </button>
               </div>
             </div>

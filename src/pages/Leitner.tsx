@@ -52,7 +52,8 @@ const BOX_META: Array<{ box: 1 | 2 | 3 | 4 | 5; label: string; interval: string 
 const Leitner = () => {
   usePageMeta({
     title: "Leitner — Language Learning Player",
-    description: "مرور واژگان با روش لایتنر — تمرین هوشمند برای حفظ ماندگار.",
+    description:
+      "Vocabulary review using the Leitner method — smart practice for lasting retention.",
   });
   const cards = useLeitnerStore((s) => s.cards);
   const loadCards = useLeitnerStore((s) => s.load);
@@ -150,13 +151,13 @@ const Leitner = () => {
                 Spaced repetition
               </p>
               <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-primary-container))] leading-tight">
-                مرور هوشمند
+                Smart review
               </h2>
               <p className="text-sm text-[hsl(var(--on-surface-variant))] inline-flex items-center gap-2 flex-wrap">
                 <span>
-                  {stats.total} کارت ·{" "}
+                  {stats.total} cards ·{" "}
                   <span className="text-[hsl(var(--primary))] font-semibold">
-                    {stats.due} آماده الان
+                    {stats.due} ready now
                   </span>
                 </span>
                 <SyncBadge />
@@ -169,7 +170,7 @@ const Leitner = () => {
               className="rounded-full h-12 px-6 gap-2 bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))] hover:bg-[hsl(var(--primary))]/90 m3-elevation-2"
             >
               <Layers className="h-4 w-4" />
-              مرور {stats.due} کارت
+              Review {stats.due} cards
             </Button>
           </div>
         </section>
@@ -283,9 +284,9 @@ const Leitner = () => {
             <section className="rounded-[20px] border border-border bg-card p-5 space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold">پشتیبان‌گیری</h3>
+                  <h3 className="text-sm font-semibold">Backup</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    خروجی یا ورودی JSON تمام کارت‌ها و فولدرها
+                    Export or import all cards and folders as JSON
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -296,7 +297,7 @@ const Leitner = () => {
                     disabled={cards.length === 0 && folders.length === 0}
                   >
                     <Download className="h-4 w-4 mr-1.5" />
-                    خروجی
+                    Export
                   </Button>
                   <Button
                     variant="outline"
@@ -304,7 +305,7 @@ const Leitner = () => {
                     onClick={() => importInputRef.current?.click()}
                   >
                     <Upload className="h-4 w-4 mr-1.5" />
-                    ورودی
+                    Import
                   </Button>
                 </div>
               </div>

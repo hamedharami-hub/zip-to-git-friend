@@ -29,10 +29,10 @@ const cleanupStoredNextPath = () => {
 export default function AuthCallback() {
   usePageMeta({
     title: "Completing sign in — Language Learning Player",
-    description: "در حال تکمیل ورود امن به حساب کاربری.",
+    description: "Completing secure sign-in to your account.",
   });
   const navigate = useNavigate();
-  const [message, setMessage] = useState("در حال تکمیل ورود با گوگل…");
+  const [message, setMessage] = useState("Completing Google sign-in…");
 
   useEffect(() => {
     let cancelled = false;
@@ -49,7 +49,7 @@ export default function AuthCallback() {
     const fail = (error: unknown) => {
       if (cancelled) return;
       const msg = error instanceof Error ? error.message : "Google sign-in failed.";
-      setMessage("ورود کامل نشد. دوباره تلاش کن.");
+      setMessage("Sign-in did not complete. Please try again.");
       toast.error(msg);
       timeoutId = setTimeout(() => navigate("/auth", { replace: true }), 1600);
     };
@@ -86,7 +86,7 @@ export default function AuthCallback() {
           return;
         }
 
-        setMessage("منتظر ثبت نشست ورود…");
+        setMessage("Waiting to record the sign-in session…");
         timeoutId = setTimeout(async () => {
           const { data: retry } = await supabase.auth.getSession();
           if (retry.session) finish();
@@ -120,7 +120,7 @@ export default function AuthCallback() {
           <LogIn className="h-5 w-5 text-primary" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-xl font-semibold">تکمیل ورود</h1>
+          <h1 className="text-xl font-semibold">Completing sign-in</h1>
           <p className="text-sm text-muted-foreground">{message}</p>
         </div>
         <Loader2 className="h-5 w-5 animate-spin mx-auto text-primary" />

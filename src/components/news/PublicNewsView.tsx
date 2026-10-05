@@ -43,7 +43,7 @@ export function PublicNewsView({ topic, onBack, onSignIn, onTopicChange }: Publi
 
   const handleOpen = (item: EnrichedItem) => {
     // For public users, opening an article requires auth.
-    toast.info("برای خواندن کامل خبر وارد شوید");
+    toast.info("Sign in to read the full article");
     onSignIn();
   };
 
@@ -52,7 +52,7 @@ export function PublicNewsView({ topic, onBack, onSignIn, onTopicChange }: Publi
       <div className="rounded-xl border border-border bg-card p-4 space-y-3">
         <div className="flex items-center gap-3 flex-wrap">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1">
-            <ArrowLeft className="h-4 w-4" /> بازگشت
+            <ArrowLeft className="h-4 w-4" /> Go back
           </Button>
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <Globe2 className="h-4 w-4 text-primary shrink-0" />
@@ -86,7 +86,7 @@ export function PublicNewsView({ topic, onBack, onSignIn, onTopicChange }: Publi
             </button>
           ))}
           <Button variant="outline" size="sm" onClick={onSignIn} className="gap-1 ms-auto">
-            <LogIn className="h-3.5 w-3.5" /> ورود
+            <LogIn className="h-3.5 w-3.5" /> Sign in
           </Button>
         </div>
       </div>

@@ -12,7 +12,7 @@ import { toast } from "sonner";
 const Auth = () => {
   usePageMeta({
     title: "Sign in — Language Learning Player",
-    description: "ورود / ثبت‌نام — دسترسی به پروفایل و همگام‌سازی ابری.",
+    description: "Sign in / sign up — access your profile and cloud sync.",
   });
   const { user, loading, signIn, signUp, signInWithGoogle } = useFirebaseAuth();
   const navigate = useNavigate();

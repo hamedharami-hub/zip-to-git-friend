@@ -499,7 +499,7 @@ export const SOURCE_CATALOG: SourceCatalogItem[] = [
   {
     id: "axios",
     name: "Axios",
-    nameFa: "اکسیوس",
+    nameFa: "اکSaveس",
     category: "world",
     url: "https://www.axios.com/feeds/feed.rss",
     language: "en",

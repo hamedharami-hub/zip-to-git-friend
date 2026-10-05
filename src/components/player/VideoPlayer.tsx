@@ -931,11 +931,11 @@ function safePlay(v: HTMLVideoElement) {
     p.catch((err: unknown) => {
       const name = (err as { name?: string } | null)?.name;
       if (name === "NotAllowedError") {
-        toast.error("برای پخش، یک‌بار روی صفحه ضربه بزنید (autoplay مسدود است).");
+        toast.error("Tap the page once to play (autoplay is blocked).");
       } else if (name === "AbortError") {
         // Benign — happens when we pause/seek right after play.
       } else {
-        toast.error("پخش ویدیو با خطا متوقف شد.");
+        toast.error("Video playback stopped with an error.");
       }
     });
   }

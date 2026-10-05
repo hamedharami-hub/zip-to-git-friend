@@ -63,8 +63,9 @@ const NewsArticleReader = () => {
   const { article, setArticle, loading, scraping, runScrape } = useArticleLoad(articleId);
 
   usePageMeta({
-    title: article?.title ? `${article.title} — خبر` : "خبر — Lingua",
-    description: article?.excerpt || article?.title || "خواندن خبر با ترجمه و بازنویسی هوش مصنوعی.",
+    title: article?.title ? `${article.title} — News` : "News — Lingua",
+    description:
+      article?.excerpt || article?.title || "Read news with translation and AI rewriting.",
     ogType: "article",
     image: article?.imageUrl || undefined,
   });
@@ -172,7 +173,7 @@ const NewsArticleReader = () => {
       const next2 = { ...article, isSaved: next };
       setArticle(next2);
       cacheArticle(next2);
-      toast.success(next ? "خبر سیو شد." : "از سیوها حذف شد.");
+      toast.success(next ? "Article saved." : "Removed from saved.");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Save failed.");
     }
@@ -198,7 +199,7 @@ const NewsArticleReader = () => {
           </div>
         </header>
         <main className="max-w-3xl mx-auto px-6 py-10">
-          <EmptyState icon={<Newspaper className="h-7 w-7" />} title="مقاله پیدا نشد" />
+          <EmptyState icon={<Newspaper className="h-7 w-7" />} title="Article not found" />
         </main>
       </div>
     );
@@ -244,7 +245,7 @@ const NewsArticleReader = () => {
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="منو">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Menu">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -252,19 +253,19 @@ const NewsArticleReader = () => {
               <DropdownMenuItem onClick={() => void runTranslate()} disabled={trProgress.running}>
                 <Sparkles className="h-4 w-4 me-2" />
                 {trProgress.running
-                  ? `ترجمه ${trProgress.done}/${trProgress.total}…`
+                  ? `Translating ${trProgress.done}/${trProgress.total}…`
                   : trProgress.total > 0
-                    ? "ترجمه دوباره پاراگراف‌ها"
-                    : "ترجمه پاراگراف‌ها"}
+                    ? "Retranslate paragraphs"
+                    : "Translate paragraphs"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={toggleSave}>
                 {article.isSaved ? (
                   <>
-                    <BookmarkCheck className="h-4 w-4 me-2 text-primary" /> حذف از سیو
+                    <BookmarkCheck className="h-4 w-4 me-2 text-primary" /> Remove from saved
                   </>
                 ) : (
                   <>
-                    <Bookmark className="h-4 w-4 me-2" /> سیو
+                    <Bookmark className="h-4 w-4 me-2" /> Save
                   </>
                 )}
               </DropdownMenuItem>
@@ -274,11 +275,11 @@ const NewsArticleReader = () => {
                 ) : (
                   <RefreshCw className="h-4 w-4 me-2" />
                 )}
-                بازخوانی
+                Rewrite
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <a href={article.url} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="h-4 w-4 me-2" /> اصل خبر
+                  <ExternalLink className="h-4 w-4 me-2" /> Original article
                 </a>
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -288,7 +289,7 @@ const NewsArticleReader = () => {
           <div className="px-3 pb-1 text-[11px] text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>
-              در حال ترجمه پاراگراف‌ها… {trProgress.done}/{trProgress.total}
+              Translating paragraphs… {trProgress.done}/{trProgress.total}
             </span>
           </div>
         )}
@@ -319,7 +320,7 @@ const NewsArticleReader = () => {
           {scraping && !article.contentHtml ? (
             <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
-              <p className="text-sm">در حال استخراج متن کامل…</p>
+              <p className="text-sm">Extracting full text…</p>
             </div>
           ) : article.contentHtml ? (
             <>
@@ -331,7 +332,7 @@ const NewsArticleReader = () => {
                     loading="lazy"
                     role="button"
                     tabIndex={0}
-                    aria-label="بزرگنمایی تصویر"
+                    aria-label="Zoom image"
                     className="w-full max-h-[360px] object-cover rounded-xl mb-5 bg-muted cursor-pointer transition hover:ring-2 hover:ring-primary/50"
                     onClick={() => openLightbox(article.imageUrl!)}
                     onKeyDown={(e) => {
@@ -374,11 +375,11 @@ const NewsArticleReader = () => {
           ) : (
             <EmptyState
               icon={<Newspaper className="h-7 w-7" />}
-              title="متن کامل در دسترس نیست"
-              description="می‌توانی روی دکمه بازخوانی بزنی یا اصل خبر را در سایت منبع باز کنی."
+              title="Full text unavailable"
+              description="Try the Rewrite button, or open the original article on the source site."
               action={
                 <Button onClick={() => runScrape(article)} className="gap-1.5">
-                  <RefreshCw className="h-4 w-4" /> دوباره تلاش کن
+                  <RefreshCw className="h-4 w-4" /> Try again
                 </Button>
               }
             />

@@ -44,7 +44,7 @@ const Audio = () => {
   usePageMeta({
     title: "Audio Library — Language Learning Player",
     description:
-      "کتابخانه‌ی صوتی — پخش پادکست، آهنگ و فایل‌های صوتی برای شادویینگ و تمرین شنیداری.",
+      "Audio library — play podcasts, music, and audio files for shadowing and listening practice.",
   });
   const [items, setItems] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);

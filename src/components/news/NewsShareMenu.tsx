@@ -277,7 +277,7 @@ function buildBilingualHtml(
     <button data-mode="fa" type="button">فا</button>
     <button data-mode="en" type="button">EN</button>
   </div>
-  <button class="gear" id="gearBtn" type="button" aria-label="تنظیمات">⚙</button>
+  <button class="gear" id="gearBtn" type="button" aria-label="Settings">⚙</button>
 </nav>
 <div class="panel" id="settingsPanel" dir="rtl">
   <div class="row"><strong>تم</strong>
@@ -465,7 +465,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
         url,
       });
       setFilename(safeFilename(name));
-      toast.success("نام فارسی پیشنهاد شد.");
+      toast.success("Persian name suggested.");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "پیشنهاد نام فایل شکست خورد.");
@@ -482,7 +482,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
       });
       const textCount = pairs.filter((p) => p.kind !== "img").length;
       if (textCount === 0) {
-        toast.error("متنی برای خروجی پیدا نشد.");
+        toast.error("No text found to share.");
         return;
       }
       const html = buildBilingualHtml(title, siteName ?? undefined, url, pairs);
@@ -524,13 +524,13 @@ export const NewsShareMenu = memo(function NewsShareMenu({
         .replace(/\n{3,}/g, "\n\n")
         .trim();
       if (!body) {
-        toast.error("متنی برای کپی پیدا نشد.");
+        toast.error("No text found to copy.");
         return;
       }
       const out =
         `${title}\n${siteName ? siteName + (url ? " · " + url : "") : (url ?? "")}\n\n${body}`.trim();
       await navigator.clipboard.writeText(out);
-      toast.success("متن خام کپی شد.");
+      toast.success("Raw text copied.");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "کپی شکست خورد.");
@@ -558,7 +558,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
         }
       }
       if (withFa === 0) {
-        toast.error("هنوز ترجمه‌ای کش نشده — اول دکمه ترجمه را بزن.");
+        toast.error("No translation cached yet — tap Translate first.");
         return;
       }
       await navigator.clipboard.writeText(
@@ -594,7 +594,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
         model: aiModel,
       });
       await copyRich(res.html, res.plain);
-      toast.success("متن آماده تلگرام کپی شد ✨");
+      toast.success("Telegram-ready text copied ✨");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
       toast.error(e?.message ?? "بازنویسی شکست خورد.");
@@ -630,7 +630,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
             <div className="flex flex-col">
               <span>متن خام + تیتر</span>
               <span className="text-[10px] text-muted-foreground">
-                همان متن اصلی به‌علاوهٔ عنوان و منبع
+                همان Original به‌علاوهٔ عنوان و منبع
               </span>
             </div>
           </DropdownMenuItem>
@@ -657,7 +657,7 @@ export const NewsShareMenu = memo(function NewsShareMenu({
         <DialogContent className="max-w-md" dir="rtl">
           <DialogHeader>
             <DialogTitle>ذخیره HTML دوزبانه</DialogTitle>
-            <DialogDescription>تنظیمات زیر برای دفعه‌های بعد ذخیره می‌شود.</DialogDescription>
+            <DialogDescription>Settings زیر برای دفعه‌های بعد ذخیره می‌شود.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">

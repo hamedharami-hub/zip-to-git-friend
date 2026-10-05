@@ -14,12 +14,12 @@ export function useOnline(): boolean {
     const handleOnline = () => {
       if (!mounted) return;
       setOnline(true);
-      toast.success("اتصال اینترنت برگشت — امکانات AI فعال شد.");
+      toast.success("Back online — AI features are enabled again.");
     };
     const handleOffline = () => {
       if (!mounted) return;
       setOnline(false);
-      toast.warning("شما آفلاین هستید. ویدیوهای ذخیره‌شده و Leitner همچنان کار می‌کنند.");
+      toast.warning("You are offline. Downloaded videos and Leitner still work.");
     };
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);

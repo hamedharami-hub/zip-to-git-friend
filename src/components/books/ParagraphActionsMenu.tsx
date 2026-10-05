@@ -29,7 +29,7 @@ interface Props {
 function speakOnce(text: string, lang: "en" | "fa"): void {
   try {
     if (!("speechSynthesis" in window)) {
-      toast.error("مرورگر شما TTS داخلی ندارد.");
+      toast.error("Your browser has no built-in TTS.");
       return;
     }
     window.speechSynthesis.cancel();
@@ -97,9 +97,9 @@ export function ParagraphActionsMenu({
     try {
       const out = faText ? `${text}\n\n${faText}` : text;
       await navigator.clipboard.writeText(out);
-      toast.success("متن کپی شد");
+      toast.success("Text copied");
     } catch {
-      toast.error("کپی نشد");
+      toast.error("Copy failed");
     }
     onClose();
   };

@@ -40,7 +40,7 @@ export function EnrichFolderButton({ folderId, folderName }: Props) {
 
   const run = async () => {
     if (!online) {
-      toast.error("برای پردازش به اینترنت نیاز دارید.");
+      toast.error("Processing requires an internet connection.");
       return;
     }
     if (folderCards.length === 0) {
@@ -90,7 +90,7 @@ export function EnrichFolderButton({ folderId, folderName }: Props) {
       }
       toast.success(`${applied} کارت غنی‌سازی شد.`, { id: tid });
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "خطای ناشناخته";
+      const msg = e instanceof Error ? e.message : "Unknown error";
       toast.error(`پردازش ناموفق بود: ${msg}`, { id: tid });
     } finally {
       setBusy(false);

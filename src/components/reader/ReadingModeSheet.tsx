@@ -155,7 +155,7 @@ export function ReadingModeSheet() {
           {/* COMFORT */}
           <TabsContent value="comfort" className="space-y-4 pt-4">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              تنظیمات چشم‌نواز برای کاهش خستگی.
+              Settings چشم‌نواز برای کاهش خستگی.
             </p>
 
             <div className="grid grid-cols-2 gap-2">

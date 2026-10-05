@@ -70,7 +70,12 @@ export function ReaderTTSQuickSettings({ faAvailable = true }: Props) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="تنظیمات پخش صوتی" title="تنظیمات پخش صوتی">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Settings پخش صوتی"
+          title="Settings پخش صوتی"
+        >
           <Settings2 className="h-5 w-5" />
         </Button>
       </PopoverTrigger>
@@ -119,7 +124,7 @@ export function ReaderTTSQuickSettings({ faAvailable = true }: Props) {
         </div>
 
         <p className="text-[10px] text-muted-foreground leading-relaxed">
-          این تنظیمات روی دکمه‌ی پخش این صفحه (و سایر صفحات) اعمال می‌شود.
+          این Settings روی دکمه‌ی پخش این صفحه (و سایر صفحات) اعمال می‌شود.
         </p>
       </PopoverContent>
     </Popover>

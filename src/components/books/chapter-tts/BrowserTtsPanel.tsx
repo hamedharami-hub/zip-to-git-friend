@@ -47,7 +47,7 @@ export const BrowserTtsPanel = memo(function BrowserTtsPanel({
   if (!browserSupported) {
     return (
       <div className="text-xs text-muted-foreground">
-        مرورگر شما TTS داخلی ندارد. Gemini را امتحان کن.
+        Your browser has no built-in TTS. Gemini را امتحان کن.
       </div>
     );
   }

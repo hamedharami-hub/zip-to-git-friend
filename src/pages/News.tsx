@@ -206,12 +206,12 @@ const News = () => {
   usePageMeta({
     title: "News reader — Language learning",
     description:
-      "خواندن، ترجمه و خلاصه‌سازی خبر با هوش مصنوعی — فیدهای RSS، جستجو موضوعی و حالت آفلاین.",
+      "Read, translate, and summarize news with AI — RSS feeds, topic search, and offline mode.",
   });
 
   useEffect(() => {
     if (sharedUrl) {
-      toast.success("لینک از اپ دیگه دریافت شد — در حال آماده‌سازی…");
+      toast.success("Link received from another app — preparing…");
     }
   }, [sharedUrl]);
 
@@ -363,7 +363,7 @@ const News = () => {
       );
       setFeedItems(merged);
       if (items.length === 0 && merged.length === 0) {
-        toast.info("خبر تازه‌ای پیدا نشد. بازه زمانی را تغییر بده.");
+        toast.info("No fresh articles found. Try a wider time range.");
       }
     } catch (e: Error | unknown) {
       setFeedError((e as Error).message ?? "Failed to load feed.");
@@ -487,7 +487,7 @@ const News = () => {
             mergeIntoCache(src.id, items);
           } catch (err: Error | unknown) {
             failed += 1;
-            failures.push(`${src.name}: ${(err as Error)?.message ?? "خطا"}`);
+            failures.push(`${src.name}: ${(err as Error)?.message ?? "Error"}`);
             console.error("[folder refresh] source failed", src.name, err);
           }
         }),
@@ -495,18 +495,18 @@ const News = () => {
       loadFolderFromCache(activeFolderId);
       if (failed === sourcesInFolder.length && sourcesInFolder.length > 0) {
         toast.error(
-          `به‌روزرسانی همه‌ی ${failed} منبع شکست خورد. بازه زمانی را بیشتر کن یا منابع را بررسی کن.`,
+          `All ${failed} sources failed to update. Widen the time range or check your sources.`,
         );
         console.error("[folder refresh] all sources failed:", failures);
       } else if (totalFetched === 0) {
-        toast.info("هیچ خبر جدیدی در این بازه زمانی پیدا نشد. بازه را بیشتر کن.");
+        toast.info("No new articles in this time range. Try a wider range.");
       } else {
         toast.success(
-          `فید پوشه به‌روز شد. ${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ""}.`,
+          `Folder feed updated. Fetched ${totalFetched} articles${failed ? ` (${failed} sources failed)` : ""}.`,
         );
       }
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "به‌روزرسانی پوشه شکست خورد.");
+      toast.error((e as Error).message ?? "Folder update failed.");
     } finally {
       setFolderLoading(false);
     }
@@ -591,16 +591,16 @@ const News = () => {
       );
       loadAllFromCache();
       if (failed === sources.length) {
-        toast.error(`به‌روزرسانی همه‌ی ${failed} منبع شکست خورد.`);
+        toast.error(`All ${failed} sources failed to update.`);
       } else if (totalFetched === 0) {
-        toast.info("خبر جدیدی پیدا نشد.");
+        toast.info("No new articles found.");
       } else {
         toast.success(
-          `${totalFetched} خبر دریافت شد${failed ? ` (${failed} منبع شکست خورد)` : ""}.`,
+          `Fetched ${totalFetched} articles${failed ? ` (${failed} sources failed)` : ""}.`,
         );
       }
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "به‌روزرسانی شکست خورد.");
+      toast.error((e as Error).message ?? "Update failed.");
     } finally {
       setAllLoading(false);
     }
@@ -622,7 +622,7 @@ const News = () => {
         blockedDomains: blockedDomains,
       });
       if (items.length === 0) {
-        toast.info("عنوان داغی پیدا نشد.");
+        toast.info("No trending headlines found.");
       } else {
         setFeedItems(items);
         if (activeSource) mergeIntoCache(activeSource.id, items);
@@ -721,7 +721,7 @@ const News = () => {
         voice: normalizeVoice(defaultRewriteVoice),
       });
       setDigests((prev) => [digest, ...prev]);
-      toast.success("خلاصه آماده شد.");
+      toast.success("Digest ready.");
       navigate(`/news/digest/${digest.id}`);
     } catch (e: Error | unknown) {
       toast.error((e as Error).message ?? "Digest generation failed.");
@@ -744,10 +744,10 @@ const News = () => {
       try {
         const r = await fetchRss(feedUrl, 20);
         if (!r.items.length) {
-          toast.error("خبری در این فید پیدا نشد.");
+          toast.error("No articles found in this feed.");
           return;
         }
-        toast.info("در حال ساخت خلاصه از خبرهای زنده…");
+        toast.info("Building digest from live articles…");
         const digest = await generateDigest({
           articles: r.items.slice(0, 15).map((it) => ({
             title: it.title,
@@ -765,11 +765,11 @@ const News = () => {
         });
         setDigests((prev) => [digest, ...prev]);
         toast.success(
-          `خلاصه «${topicText}» از ${label === "bing" ? "Bing News" : "Google News"} آماده شد.`,
+          `Your ${label === "bing" ? "Bing News" : "Google News"} digest for "${topicText}" is ready.`,
         );
         navigate(`/news/digest/${digest.id}`);
       } catch (e: Error | unknown) {
-        toast.error((e as Error).message ?? "ساخت خلاصه شکست خورد.");
+        toast.error((e as Error).message ?? "Failed to build the digest.");
       }
     },
     [navigate, newsModelRef.model, defaultRewriteVoice],
@@ -808,9 +808,9 @@ const News = () => {
       if (created.length > 0) {
         setActiveSourceId(created[0].id);
       }
-      toast.success(`${created.length} منبع نمونه اضافه شد.`);
+      toast.success(`Added ${created.length} sample sources.`);
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "اضافه کردن منابع نمونه شکست خورد.");
+      toast.error((e as Error).message ?? "Failed to add sample sources.");
     }
   }, []);
 
@@ -831,7 +831,7 @@ const News = () => {
       excerpt: it.excerpt,
     }));
     if (items.length === 0) {
-      toast.info("خبری برای ترجمه نیست. اول فید را بارگذاری کن.");
+      toast.info("No articles to translate. Load a feed first.");
       return;
     }
     setTrBusy(true);
@@ -842,14 +842,14 @@ const News = () => {
         onProgress: (snap) => setTrProgress({ done: snap.done, total: snap.total }),
       });
       if (res.translated === 0 && res.failed === 0) {
-        toast.info("همه‌ی عنوان‌ها از قبل ترجمه شده‌اند یا فارسی هستند.");
+        toast.info("All headlines are already translated or are Persian.");
       } else if (res.failed > 0) {
-        toast.error(`${res.translated} عنوان ترجمه شد · ${res.failed} ناموفق`);
+        toast.error(`${res.translated} headlines translated · ${res.failed} failed`);
       } else {
-        toast.success(`${res.translated} عنوان ترجمه شد.`);
+        toast.success(`${res.translated} headlines translated.`);
       }
     } catch (e: Error | unknown) {
-      toast.error((e as Error)?.message ?? "ترجمه با خطا مواجه شد.");
+      toast.error((e as Error)?.message ?? "Translation failed.");
     } finally {
       setTrBusy(false);
       setTimeout(() => setTrProgress(null), 1500);
@@ -864,7 +864,7 @@ const News = () => {
       let pool: Array<FeedItem & { _sourceName?: string }> = activeList;
       if (mode === "selected") {
         if (selectedUrls.size === 0) {
-          toast.info("هیچ خبری انتخاب نشده. اول چند خبر را تیک بزن.");
+          toast.info("No articles selected. Tick a few first.");
           return;
         }
         pool = activeList.filter((it) => selectedUrls.has(it.url));
@@ -873,13 +873,13 @@ const News = () => {
       else if (mode === "last100") pool = activeList.slice(0, 100);
 
       if (pool.length === 0) {
-        toast.info("خبری برای دانلود نیست. اول فید را بارگذاری کن.");
+        toast.info("No articles to download. Load a feed first.");
         return;
       }
       // Skip items already cached so re-runs are cheap.
       const todo = pool.filter((it) => !isUrlCached(it.url));
       if (todo.length === 0) {
-        toast.success(`همه‌ی ${pool.length} خبر از قبل دانلود شده‌اند.`);
+        toast.success(`All ${pool.length} articles are already downloaded.`);
         return;
       }
 
@@ -901,12 +901,12 @@ const News = () => {
         });
         bumpOffline();
         if (res.failed > 0) {
-          toast.error(`${res.done - res.failed} خبر دانلود شد · ${res.failed} ناموفق`);
+          toast.error(`${res.done - res.failed} articles downloaded · ${res.failed} failed`);
         } else {
-          toast.success(`${res.done} خبر برای حالت آفلاین ذخیره شد.`);
+          toast.success(`${res.done} articles saved for offline use.`);
         }
       } catch (e: Error | unknown) {
-        toast.error((e as Error)?.message ?? "دانلود آفلاین با خطا مواجه شد.");
+        toast.error((e as Error)?.message ?? "Offline download failed.");
       } finally {
         setDlBusy(false);
         dlAbortRef.current = null;

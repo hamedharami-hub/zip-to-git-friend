@@ -40,7 +40,7 @@ export function NewsOnboarding({
           </div>
           <div className="space-y-1">
             <h3 className="font-semibold text-lg">
-              {isLoggedIn ? "خبرخوانی شخصی‌سازی‌شده" : "اخبار را بدون ثبت‌نام بخوانید"}
+              {isLoggedIn ? "خبرخوانی شخصی‌سازی‌شده" : "اخبار را بدون Sign up بخوانید"}
             </h3>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               {isLoggedIn
@@ -86,7 +86,7 @@ export function NewsOnboarding({
             ) : (
               <>
                 <Button onClick={onSignIn} className="gap-2">
-                  <LogIn className="h-4 w-4" /> ورود / ثبت‌نام
+                  <LogIn className="h-4 w-4" /> Sign in / Sign up
                 </Button>
                 <Button variant="outline" onClick={onAddSource} className="gap-2">
                   <Rss className="h-4 w-4" /> افزودن RSS

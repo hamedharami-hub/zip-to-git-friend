@@ -21,17 +21,17 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر — همه در یک اپ.",
+          "A language-learning player with news, books, video, shadowing, smart translation, and Leitner cards — all in one app.",
       },
       {
         property: "og:description",
         content:
-          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر.",
+          "A language-learning player with news, books, video, shadowing, smart translation, and Leitner cards.",
       },
       {
         name: "twitter:description",
         content:
-          "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، ویدیو، شادویینگ، ترجمه هوشمند و کارت‌های لایتنر.",
+          "A language-learning player with news, books, video, shadowing, smart translation, and Leitner cards.",
       },
       {
         property: "og:image",

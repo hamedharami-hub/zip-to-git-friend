@@ -154,7 +154,7 @@ export function useArticleTranslation({
           running: false,
         });
         if (final.failed > 0 && final.lastError) {
-          toast.error(`ترجمه برخی پاراگراف‌ها ناموفق بود: ${final.lastError}`);
+          toast.error(`Some paragraphs failed to translate: ${final.lastError}`);
         }
         await buildFaText(signal);
         if (articleId && activeBookId === `news-${articleId}` && final.failed === 0) {
@@ -169,7 +169,7 @@ export function useArticleTranslation({
       } catch (e) {
         if (signal?.aborted) return;
         console.error("[useArticleTranslation] translate error", e);
-        toast.error(`ترجمه با خطا مواجه شد: ${e instanceof Error ? e.message : "unknown"}`);
+        toast.error(`Translation failed: ${e instanceof Error ? e.message : "unknown"}`);
         setProgress((p) => ({ ...p, running: false }));
         await buildFaText(signal);
       }

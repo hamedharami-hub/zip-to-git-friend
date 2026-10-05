@@ -58,7 +58,7 @@ export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChan
   const handleImport = async () => {
     const u = url.trim();
     if (!u) {
-      toast.error("یک لینک وارد کن.");
+      toast.error("Enter a link.");
       return;
     }
     setBusy(true);
@@ -84,7 +84,7 @@ export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChan
           language: null,
         });
         onChannelAdded?.(created);
-        toast.success("کانال یوتیوب اضافه شد.");
+        toast.success("YouTube channel added.");
         handleOpenChange(false);
         return;
       }
@@ -103,7 +103,7 @@ export function ImportUrlDialog({ trigger, initialUrl, autoOpen, onClose, onChan
         publishedAt: a.publishedAt,
         wordCount: a.wordCount,
       });
-      toast.success("مقاله آماده شد.");
+      toast.success("Article ready.");
       handleOpenChange(false);
       navigate(`/news/article/${saved.id}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape

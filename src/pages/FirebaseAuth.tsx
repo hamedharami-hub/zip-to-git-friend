@@ -27,8 +27,8 @@ export default function FirebaseAuthPage() {
   const [displayName, setDisplayName] = useState("");
   const [busy, setBusy] = useState(false);
   usePageMeta({
-    title: "حساب فایربیس — Lingua",
-    description: "ورود/ثبت‌نام و همگام‌سازی ابری تنظیمات با Firebase.",
+    title: "Firebase account — Lingua",
+    description: "Sign in / sign up and cloud-sync settings with Firebase.",
   });
 
   const guard = async (fn: () => Promise<void>, okMsg: string) => {
@@ -37,19 +37,19 @@ export default function FirebaseAuthPage() {
       await fn();
       toast.success(okMsg);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "خطای ناشناخته");
+      toast.error(e instanceof Error ? e.message : "Unknown error");
     } finally {
       setBusy(false);
     }
   };
 
   const handleSignUp = () => {
-    if (!email || !password) return toast.error("ایمیل و رمز عبور لازمه");
-    return guard(() => signUp(email, password, displayName || undefined), "حساب ساخته شد");
+    if (!email || !password) return toast.error("Email and password are required");
+    return guard(() => signUp(email, password, displayName || undefined), "Account created");
   };
   const handleSignIn = () => {
-    if (!email || !password) return toast.error("ایمیل و رمز عبور لازمه");
-    return guard(() => signIn(email, password), "وارد شدی");
+    if (!email || !password) return toast.error("Email and password are required");
+    return guard(() => signIn(email, password), "Signed in");
   };
 
   return (
@@ -59,11 +59,11 @@ export default function FirebaseAuthPage() {
           <Link to="/">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="h-4 w-4 ml-2" />
-              خانه
+              Home
             </Button>
           </Link>
           <h1 className="text-base font-medium flex items-center gap-2">
-            <Cloud className="h-4 w-4 text-primary" /> حساب فایربیس
+            <Cloud className="h-4 w-4 text-primary" /> Firebase account
           </h1>
           <div className="w-16" />
         </div>
@@ -72,31 +72,31 @@ export default function FirebaseAuthPage() {
       <main className="max-w-md mx-auto px-6 py-8 space-y-6">
         {!ready && (
           <div className="text-sm text-muted-foreground text-center">
-            <Loader2 className="inline h-4 w-4 animate-spin ml-2" /> در حال آماده‌سازی فایربیس…
+            <Loader2 className="inline h-4 w-4 animate-spin ml-2" /> Preparing Firebase…
           </div>
         )}
 
         {ready && !loading && user && (
           <section className="space-y-4 rounded-lg border border-border p-5">
             <div>
-              <p className="text-sm text-muted-foreground">وارد شدی به عنوان</p>
+              <p className="text-sm text-muted-foreground">Signed in as</p>
               <p className="font-medium">{user.displayName || user.email}</p>
               <p className="text-xs text-muted-foreground mt-1">UID: {user.uid}</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
-                onClick={() => guard(syncSettingsUp, "تنظیمات به ابر ارسال شد")}
+                onClick={() => guard(syncSettingsUp, "Settings uploaded")}
                 disabled={busy}
               >
-                <CloudUpload className="h-4 w-4 ml-2" /> ارسال تنظیمات
+                <CloudUpload className="h-4 w-4 ml-2" /> Upload settings
               </Button>
               <Button
                 variant="outline"
-                onClick={() => guard(syncSettingsDown, "تنظیمات از ابر دریافت شد")}
+                onClick={() => guard(syncSettingsDown, "Settings downloaded")}
                 disabled={busy}
               >
-                <CloudDownload className="h-4 w-4 ml-2" /> دریافت تنظیمات
+                <CloudDownload className="h-4 w-4 ml-2" /> Download settings
               </Button>
             </div>
             <Button
@@ -106,14 +106,14 @@ export default function FirebaseAuthPage() {
                 guard(async () => {
                   await signOut();
                   navigate("/firebase-auth", { replace: true });
-                }, "خارج شدی")
+                }, "Signed out")
               }
               disabled={busy}
             >
-              <LogOut className="h-4 w-4 ml-2" /> خروج
+              <LogOut className="h-4 w-4 ml-2" /> Sign out
             </Button>
             <p className="text-xs text-muted-foreground">
-              تنظیمات به‌طور خودکار در ابر ذخیره می‌شوند وقتی وارد باشی.
+              Settings are saved to the cloud automatically while you are signed in.
             </p>
           </section>
         )}
@@ -121,13 +121,13 @@ export default function FirebaseAuthPage() {
         {ready && !loading && !user && (
           <Tabs defaultValue="signin" className="w-full">
             <TabsList className="grid grid-cols-2 w-full">
-              <TabsTrigger value="signin">ورود</TabsTrigger>
-              <TabsTrigger value="signup">ثبت‌نام</TabsTrigger>
+              <TabsTrigger value="signin">Sign in</TabsTrigger>
+              <TabsTrigger value="signup">Sign up</TabsTrigger>
             </TabsList>
 
             <TabsContent value="signin" className="space-y-3 mt-4">
               <div className="space-y-1.5">
-                <Label htmlFor="si-email">ایمیل</Label>
+                <Label htmlFor="si-email">Email</Label>
                 <Input
                   id="si-email"
                   type="email"
@@ -137,7 +137,7 @@ export default function FirebaseAuthPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="si-pass">رمز عبور</Label>
+                <Label htmlFor="si-pass">Password</Label>
                 <Input
                   id="si-pass"
                   type="password"
@@ -152,13 +152,13 @@ export default function FirebaseAuthPage() {
                 ) : (
                   <LogIn className="h-4 w-4 ml-2" />
                 )}{" "}
-                ورود
+                Sign in
               </Button>
             </TabsContent>
 
             <TabsContent value="signup" className="space-y-3 mt-4">
               <div className="space-y-1.5">
-                <Label htmlFor="su-name">نام نمایشی</Label>
+                <Label htmlFor="su-name">Display name</Label>
                 <Input
                   id="su-name"
                   value={displayName}
@@ -166,7 +166,7 @@ export default function FirebaseAuthPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="su-email">ایمیل</Label>
+                <Label htmlFor="su-email">Email</Label>
                 <Input
                   id="su-email"
                   type="email"
@@ -176,7 +176,7 @@ export default function FirebaseAuthPage() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="su-pass">رمز عبور (حداقل ۶ کاراکتر)</Label>
+                <Label htmlFor="su-pass">Password (at least 6 characters)</Label>
                 <Input
                   id="su-pass"
                   type="password"
@@ -191,7 +191,7 @@ export default function FirebaseAuthPage() {
                 ) : (
                   <UserPlus className="h-4 w-4 ml-2" />
                 )}{" "}
-                ثبت‌نام
+                Sign up
               </Button>
             </TabsContent>
           </Tabs>

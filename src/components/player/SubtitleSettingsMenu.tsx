@@ -75,13 +75,13 @@ export function SubtitleSettingsMenu() {
         />
         <Row
           title="Auto-fullscreen on landscape"
-          desc="چرخاندن گوشی به landscape باعث ورود خودکار به immersive می‌شود."
+          desc="چرخاندن گوشی به landscape باعث Sign in خودکار به immersive می‌شود."
           checked={autoImmersiveOnLandscape ?? false}
           onChange={(v) => update({ autoImmersiveOnLandscape: v })}
         />
         <Row
           title="Show inline translation (dual subtitles)"
-          desc="نمایش ترجمه‌ی کش‌شده زیر متن اصلی وقتی زیرنویس دوم نیست."
+          desc="نمایش ترجمه‌ی کش‌شده زیر Original وقتی زیرنویس دوم نیست."
           checked={showInlineTranslation}
           onChange={(v) => update({ showInlineTranslation: v })}
         />

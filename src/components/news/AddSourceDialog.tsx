@@ -66,7 +66,7 @@ function RssDiscovery({
       const fresh = await discoverRss({ topic: t, forceRefresh });
       setResult(fresh);
       if (fresh.sites.length === 0)
-        toast.info("سایت اختصاصی پیدا نشد — از Google News یا Bing News استفاده کن.");
+        toast.info("No dedicated site found — use Google News or Bing News instead.");
     } catch (e: Error | unknown) {
       toast.error((e as Error).message ?? "جستجو شکست خورد.");
     } finally {
@@ -334,7 +334,7 @@ export function AddSourceDialog({
     try {
       const created = await addSource(payload);
       onAdded(created);
-      toast.success("منبع اضافه شد.");
+      toast.success("Source added.");
       setOpen(false);
       reset();
     } catch (e: Error | unknown) {
@@ -450,7 +450,7 @@ export function AddSourceDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="rss-name">نام نمایشی (اختیاری)</Label>
+              <Label htmlFor="rss-name">Display name (اختیاری)</Label>
               <Input
                 id="rss-name"
                 placeholder="BBC News"
@@ -488,7 +488,7 @@ export function AddSourceDialog({
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="topic-name">نام نمایشی (اختیاری)</Label>
+              <Label htmlFor="topic-name">Display name (اختیاری)</Label>
               <Input
                 id="topic-name"
                 placeholder="هوش مصنوعی"
@@ -520,7 +520,7 @@ export function AddSourceDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="site-name">نام نمایشی (اختیاری)</Label>
+              <Label htmlFor="site-name">Display name (اختیاری)</Label>
               <Input
                 id="site-name"
                 placeholder="TechCrunch — Startups"

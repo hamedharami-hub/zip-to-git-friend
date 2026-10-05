@@ -137,7 +137,7 @@ export function KeysSettings() {
     setTestingEleven(true);
     try {
       if (!elevenLabs.trim()) {
-        toast.error("ابتدا کلید ElevenLabs را وارد کنید.");
+        toast.error("Add your ElevenLabs key first.");
         return;
       }
       const res = await fetch("https://api.elevenlabs.io/v1/user", {
@@ -159,7 +159,7 @@ export function KeysSettings() {
           { duration: 9000 },
         );
       } else if (res.status === 429) {
-        toast.error("ElevenLabs: سقف اعتبار/درخواست پر شده (۴۲۹).");
+        toast.error("ElevenLabs: quota or rate limit reached (429).");
       } else {
         toast.error(`ElevenLabs ${res.status}: ${detail || "خطا"}`);
       }
@@ -297,7 +297,7 @@ export function KeysSettings() {
   return (
     <section className="space-y-6">
       <div className="space-y-1">
-        <h2 className="text-lg font-semibold">کلیدهای API</h2>
+        <h2 className="text-lg font-semibold">API keys</h2>
         <p className="text-sm text-muted-foreground">
           کلیدها را وارد کن تا بخش‌های مختلف برنامه از مدل‌های مستقیم Gemini / Groq استفاده کنند.
           Lovable AI Gateway بدون کلید هم کار می‌کند.

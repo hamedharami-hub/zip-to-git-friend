@@ -137,7 +137,7 @@ export const NewsSidebar = memo(function NewsSidebar({
     async (id: string, name: string) => {
       await updateSource(id, { name });
       setSources((prev) => prev.map((s) => (s.id === id ? { ...s, name } : s)));
-      toast.success("نام منبع به‌روز شد.");
+      toast.success("Source name updated.");
     },
     [setSources],
   );
@@ -146,7 +146,7 @@ export const NewsSidebar = memo(function NewsSidebar({
     async (id: string, name: string) => {
       await updateFolder(id, { name });
       setFolders((prev) => prev.map((f) => (f.id === id ? { ...f, name } : f)));
-      toast.success("نام پوشه به‌روز شد.");
+      toast.success("Folder name updated.");
     },
     [setFolders],
   );
@@ -210,7 +210,7 @@ export const NewsSidebar = memo(function NewsSidebar({
                 <DropdownMenuItem onClick={onSelectModeToggle}>
                   {selectMode ? (
                     <>
-                      <Square className="h-3.5 w-3.5 me-2" /> خروج از حالت انتخاب
+                      <Square className="h-3.5 w-3.5 me-2" /> Sign out از حالت انتخاب
                     </>
                   ) : (
                     <>
@@ -321,7 +321,7 @@ export const NewsSidebar = memo(function NewsSidebar({
         </div>
         {showSaved &&
           (savedArticles.length === 0 ? (
-            <p className="text-xs text-muted-foreground px-1">هنوز خبری سیو نکرده‌ای.</p>
+            <p className="text-xs text-muted-foreground px-1">هنوز خبری Save نکرده‌ای.</p>
           ) : (
             <ul className="space-y-1 max-h-64 overflow-y-auto">
               {savedArticles.map((a) => (

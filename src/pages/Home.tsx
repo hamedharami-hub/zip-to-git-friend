@@ -75,7 +75,7 @@ const TILES: Tile[] = [
     to: "/books",
     icon: BookOpen,
     title: "Books",
-    fa: "کتاب",
+    fa: "books",
     gradient: "bg-gradient-to-br from-[#065f46] via-[#10b981] to-[#34d399]",
     text: "text-white",
     glow: "shadow-[0_14px_32px_-16px_rgba(16,185,129,0.6)]",
@@ -143,7 +143,7 @@ const Home = () => {
   usePageMeta({
     title: "Lingua — Language Learning Player",
     description:
-      "پخش‌کننده‌ی یادگیری زبان با اخبار، کتاب، فیلم، شادویینگ و کارت‌های لایتنر — همه در یک اپ.",
+      "A language-learning player with news, books, video, shadowing, and Leitner cards — all in one app.",
   });
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -186,7 +186,7 @@ const Home = () => {
 
         <div className="flex items-center justify-between px-1 mb-3">
           <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">{today}</p>
-          <p className="font-serif italic text-xs text-muted-foreground">امروز</p>
+          <p className="font-serif italic text-xs text-muted-foreground">Today</p>
         </div>
 
         <section

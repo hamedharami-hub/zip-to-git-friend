@@ -91,7 +91,7 @@ const Paragraph = memo(function Paragraph({
   const ensureAnalysis = useCallback(async (): Promise<boolean> => {
     if (analysis) return true;
     if (!online) {
-      toast.error("برای ترجمه نیاز به اینترنت است.");
+      toast.error("Translation requires an internet connection.");
       return false;
     }
     setLocalLoading(true);
@@ -100,7 +100,7 @@ const Paragraph = memo(function Paragraph({
       handleAnalysisUpdate(result);
       return true;
     } catch {
-      toast.error("ترجمه با خطا مواجه شد.");
+      toast.error("Translation failed.");
       return false;
     } finally {
       setLocalLoading(false);

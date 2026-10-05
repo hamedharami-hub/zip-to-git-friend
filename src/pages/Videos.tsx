@@ -55,7 +55,7 @@ function uuid() {
 const Videos = () => {
   usePageMeta({
     title: "Videos — Language Learning Player",
-    description: "کتابخانه‌ی ویدیو — مدیریت فیلم‌ها و اپیزودهای شما.",
+    description: "Video library — مدیریت فیلم‌ها و اپیزودهای شما.",
   });
   const [videos, setVideos] = useState<Video[]>([]);
   const [loading, setLoading] = useState(true);

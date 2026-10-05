@@ -73,7 +73,7 @@ export const TranslateChapterButton = memo(function TranslateChapterButton({
   const handleStart = async () => {
     if (!chapter) return;
     if (!online) {
-      toast.error("ترجمه نیاز به اینترنت دارد.");
+      toast.error("Translation requires an internet connection.");
       return;
     }
     if (running) return;

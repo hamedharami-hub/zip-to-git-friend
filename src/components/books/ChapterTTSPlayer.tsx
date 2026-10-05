@@ -355,11 +355,11 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   /** Synthesize via the currently-selected non-Gemini/non-ElevenLabs provider. */
   const loadOther = async (force = false) => {
     if (ttsLang === "fa" && !textFa?.trim()) {
-      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
+      toast.error("To read in Persian, translate the paragraphs to Persian first.");
       return;
     }
     if (!text.trim()) {
-      toast.error("متنی برای روایت پیدا نشد.");
+      toast.error("No text found to narrate.");
       return;
     }
     setOtherLoading(true);
@@ -385,7 +385,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success("روایت آماده شد.");
+      toast.success("Narration ready.");
     } catch (e) {
       toast.error(otherEngineErrorMessage(e));
     } finally {
@@ -583,7 +583,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   // ───────── Gemini path ─────────
   const loadOrSynthesize = async (force = false) => {
     if (ttsLang === "fa" && !textFa?.trim()) {
-      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
+      toast.error("To read in Persian, translate the paragraphs to Persian first.");
       return;
     }
     if (!apiKey) {
@@ -735,15 +735,15 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
   // ───────── ElevenLabs path ─────────
   const loadElevenLabs = async () => {
     if (ttsLang === "fa" && !textFa?.trim()) {
-      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
+      toast.error("To read in Persian, translate the paragraphs to Persian first.");
       return;
     }
     if (!elevenKey) {
-      toast.error("کلید ElevenLabs را در تنظیمات وارد کنید.");
+      toast.error("Add your ElevenLabs key in Settings.");
       return;
     }
     if (!text.trim()) {
-      toast.error("متنی برای روایت پیدا نشد.");
+      toast.error("No text found to narrate.");
       return;
     }
     setElevenLoading(true);
@@ -759,7 +759,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
       const url = URL.createObjectURL(blob);
       lastUrlRef.current = url;
       setAudioUrl(url);
-      toast.success("روایت ElevenLabs آماده شد.");
+      toast.success("ElevenLabs narration ready.");
     } catch (e) {
       toast.error(elevenLabsErrorMessage(e));
     } finally {
@@ -769,7 +769,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
 
   const downloadElevenLabs = async () => {
     if (!audioUrl) {
-      toast.error("ابتدا روی Listen بزن.");
+      toast.error("Tap Listen first.");
       return;
     }
     const a = document.createElement("a");
@@ -792,7 +792,7 @@ export const ChapterTTSPlayer = memo(function ChapterTTSPlayer({
       return;
     }
     if (ttsLang === "fa" && !textFa?.trim()) {
-      toast.error("برای خواندن فارسی، اول ترجمهٔ فارسی پاراگراف‌ها را بساز.");
+      toast.error("To read in Persian, translate the paragraphs to Persian first.");
       return;
     }
     if (!text.trim()) {

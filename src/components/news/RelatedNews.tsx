@@ -76,7 +76,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
         .slice(0, 10);
       setItems(filtered);
       if (filtered.length === 0) {
-        toast.info("چیزی پیدا نشد. شاید موضوع خیلی تازه یا خاص است.");
+        toast.info("Nothing found. The topic may be too recent or too specific.");
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
@@ -91,7 +91,7 @@ export function RelatedNews({ article }: RelatedNewsProps) {
     try {
       const result = await importUrl(it.url);
       if (result.kind !== "article" && result.kind !== "youtube") {
-        toast.error("این لینک به صورت مقاله قابل باز کردن نیست.");
+        toast.error("This link cannot be opened as an article.");
         return;
       }
       const a = result.article;

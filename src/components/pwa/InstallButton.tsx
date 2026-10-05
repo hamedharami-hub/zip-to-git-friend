@@ -33,7 +33,7 @@ export function InstallButton() {
     if (canInstall) {
       const outcome = await promptInstall();
       if (outcome === "accepted") {
-        toast.success("برنامه نصب شد");
+        toast.success("App installed");
         return;
       }
       if (outcome === "unavailable") {
@@ -63,7 +63,7 @@ export function InstallButton() {
             <DialogTitle>نصب برنامه روی دستگاه</DialogTitle>
             <DialogDescription>
               {isIOS
-                ? "در iOS فقط مرورگر Safari می‌تواند برنامه را به صفحهٔ خانه اضافه کند."
+                ? "در iOS فقط مرورگر Safari می‌تواند برنامه را به صفحهٔ Home اضافه کند."
                 : isAndroid
                   ? "برای نصب روی اندروید، از منوی مرورگر گزینهٔ «Install app» را انتخاب کن."
                   : "برای نصب، از منوی مرورگر گزینهٔ نصب برنامه را انتخاب کن."}

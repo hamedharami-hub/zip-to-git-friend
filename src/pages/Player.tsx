@@ -35,7 +35,7 @@ import { toast } from "sonner";
 const Player = () => {
   usePageMeta({
     title: "Player — Language Learning Player",
-    description: "پخش‌کننده‌ی ویدیو — شادویینگ، ترجمه، زیرنویس و تمرین گفتاری.",
+    description: "Video player — shadowing, translation, subtitles, and speaking practice.",
   });
   const { videoId } = useParams<{ videoId: string }>();
   const navigate = useNavigate();

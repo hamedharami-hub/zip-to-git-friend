@@ -21,7 +21,7 @@ import type { ListeningSession, ReadingSession, WordStatusValue, Book } from "@/
 const Stats = () => {
   usePageMeta({
     title: "Stats — Language Learning Player",
-    description: "آمار یادگیری — پیشرفت روزانه، واژگان و زمان مطالعه.",
+    description: "Learning stats — daily progress, vocabulary, and study time.",
   });
   useEffect(() => {}, []);
 
@@ -185,10 +185,10 @@ const Stats = () => {
               Your Journey
             </p>
             <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-tertiary-container))] leading-tight">
-              پیشرفت شما
+              Your progress
             </h2>
             <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
-              {streak > 0 ? `🔥 ${streak} روز پشت سر هم` : "امروز شروع کن"}
+              {streak > 0 ? `🔥 ${streak} day streak` : "Start today"}
             </p>
           </div>
         </section>

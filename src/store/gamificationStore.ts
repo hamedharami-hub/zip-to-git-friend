@@ -67,7 +67,7 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
         toast.success(`🎉 Level ${res.state?.level}!`, { duration: 2500 });
       }
       if (res.lostHeart) {
-        toast.error("💔 یک قلب از دست دادی", { duration: 1600 });
+        toast.error("💔 You lost a heart", { duration: 1600 });
       }
       // Refresh quests so HUD shows progress
       void get().loadQuests();
@@ -81,7 +81,7 @@ export const useGamificationStore = create<GamificationStore>((set, get) => ({
       const s = await claimQuest(questId);
       if (s) set({ state: s });
       await get().loadQuests();
-      toast.success("🎁 جایزه دریافت شد!");
+      toast.success("🎁 Reward claimed!");
     } catch (e) {
       console.warn("[gamification] claim failed", e);
     }

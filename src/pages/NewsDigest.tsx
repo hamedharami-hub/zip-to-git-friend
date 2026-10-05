@@ -39,8 +39,8 @@ const NewsDigestReader = () => {
   const [digest, setDigest] = useState<NewsDigest | null>(null);
   const [loading, setLoading] = useState(true);
   usePageMeta({
-    title: digest?.title ? `${digest.title} — خلاصه` : "خلاصه‌ی هوش مصنوعی — Lingua",
-    description: digest?.title || "خلاصه‌ی خبری چندمنبعی با ترجمه و خواندن صوتی.",
+    title: digest?.title ? `${digest.title} — Digest` : "AI digest — Lingua",
+    description: digest?.title || "A multi-source news digest with translation and text-to-speech.",
     ogType: "article",
   });
   const [displayLang, setDisplayLang] = useState<DisplayLang>(() => loadNewsDisplayLang());
@@ -157,7 +157,7 @@ const NewsDigestReader = () => {
           running: false,
         });
         if (final.failed > 0 && final.lastError) {
-          toast.error(`ترجمه برخی پاراگراف‌ها ناموفق بود: ${final.lastError}`);
+          toast.error(`Some paragraphs failed to translate: ${final.lastError}`);
         }
         await buildFaText();
         console.log("[NewsDigest] translate done", {
@@ -168,7 +168,7 @@ const NewsDigestReader = () => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
       } catch (e: any) {
         console.error("[NewsDigest] translate error", e);
-        toast.error(`ترجمه با خطا مواجه شد: ${e?.message ?? "unknown"}`);
+        toast.error(`Translation failed: ${e?.message ?? "unknown"}`);
         setTrProgress((p) => ({ ...p, running: false }));
         await buildFaText();
       }
@@ -185,10 +185,10 @@ const NewsDigestReader = () => {
 
   const handleDelete = async () => {
     if (!digest) return;
-    if (!confirm("این خلاصه حذف بشه؟")) return;
+    if (!confirm("Delete this digest?")) return;
     try {
       await deleteDigest(digest.id);
-      toast.success("حذف شد.");
+      toast.success("Deleted.");
       navigate("/news");
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- external/dynamic data shape
     } catch (e: any) {
@@ -218,7 +218,7 @@ const NewsDigestReader = () => {
           </div>
         </header>
         <main className="max-w-3xl mx-auto px-6 py-10">
-          <EmptyState icon={<Newspaper className="h-7 w-7" />} title="خلاصه پیدا نشد" />
+          <EmptyState icon={<Newspaper className="h-7 w-7" />} title="Digest not found" />
         </main>
       </div>
     );
@@ -239,14 +239,14 @@ const NewsDigestReader = () => {
   const bookId = `digest-${digest.id}`;
   const lengthLabel =
     digest.length === "max"
-      ? "خلاصه حداکثری"
+      ? "Maximum digest"
       : digest.length === "long"
-        ? "خلاصه بلند"
+        ? "Long digest"
         : digest.length === "auto-max"
-          ? "نسخه کامل ساده"
+          ? "Complete simplified version"
           : digest.length === "simple"
-            ? "ساده روزمره"
-            : "خلاصه کوتاه";
+            ? "Everyday simple"
+            : "Brief digest";
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background text-foreground">
@@ -284,7 +284,7 @@ const NewsDigestReader = () => {
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="منو">
+              <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" aria-label="Menu">
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -292,13 +292,13 @@ const NewsDigestReader = () => {
               <DropdownMenuItem onClick={() => void runTranslate()} disabled={trProgress.running}>
                 <Sparkles className="h-4 w-4 me-2" />
                 {trProgress.running
-                  ? `ترجمه ${trProgress.done}/${trProgress.total}…`
+                  ? `Translating ${trProgress.done}/${trProgress.total}…`
                   : trProgress.total > 0
-                    ? "ترجمه دوباره پاراگراف‌ها"
-                    : "ترجمه پاراگراف‌ها"}
+                    ? "Retranslate paragraphs"
+                    : "Translate paragraphs"}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={handleDelete} className="text-destructive">
-                <Trash2 className="h-4 w-4 me-2" /> حذف خلاصه
+                <Trash2 className="h-4 w-4 me-2" /> Delete digest
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -307,7 +307,7 @@ const NewsDigestReader = () => {
           <div className="px-3 pb-1 text-[11px] text-muted-foreground flex items-center gap-2">
             <Loader2 className="h-3 w-3 animate-spin" />
             <span>
-              در حال ترجمه پاراگراف‌ها… {trProgress.done}/{trProgress.total}
+              Translating paragraphs… {trProgress.done}/{trProgress.total}
             </span>
           </div>
         )}
@@ -358,7 +358,7 @@ const NewsDigestReader = () => {
           {digest.sourceArticles.length > 0 && (
             <footer className="mt-12 pt-6 border-t border-border/50 text-center">
               <p className="text-xs text-muted-foreground">
-                این خلاصه از {digest.sourceArticles.length.toLocaleString()} خبر تهیه شده است.
+                This digest was built from {digest.sourceArticles.length.toLocaleString()} articles.
               </p>
             </footer>
           )}

@@ -16,7 +16,7 @@ const Books = () => {
 
   usePageMeta({
     title: "Library — Language Learning Player",
-    description: "کتابخانه‌ی شخصی شما — افزودن، مطالعه، ترجمه و تحلیل کتاب‌ها با هوش مصنوعی.",
+    description: "Your personal library — add, read, translate, and analyze books with AI.",
   });
   const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
@@ -103,10 +103,10 @@ const Books = () => {
                   Your Library
                 </p>
                 <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-[hsl(var(--on-secondary-container))] leading-tight">
-                  {sorted.length} {sorted.length === 1 ? "کتاب" : "کتاب"}
+                  {sorted.length} {sorted.length === 1 ? "books" : "books"}
                 </h2>
                 <p className="mt-2 text-sm text-[hsl(var(--on-surface-variant))]">
-                  روی جلد ضربه بزن تا شروع به خواندن کنی
+                  Tap a cover to start reading
                 </p>
               </div>
             </section>

@@ -183,7 +183,7 @@ export function registerPWA() {
         onRegisterError(err) {
           console.error("PWA registration failed", err);
           set({ registered: false });
-          toast.error("ثبت service worker ناموفق بود. برنامه ممکن است به‌روز نشود.");
+          toast.error("Service worker registration failed. The app may not update.");
         },
         onRegisteredSW(_url, reg) {
           set({
@@ -207,7 +207,7 @@ export function registerPWA() {
         },
         onOfflineReady() {
           set({ offlineReady: true });
-          toast.success("برنامه آماده‌ی استفاده‌ی آفلاینه");
+          toast.success("The app is ready for offline use");
         },
       });
       updateSWFn = updateSW;

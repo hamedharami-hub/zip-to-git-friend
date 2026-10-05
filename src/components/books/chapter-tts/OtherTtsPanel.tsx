@@ -81,7 +81,7 @@ export const OtherTtsPanel = memo(function OtherTtsPanel({
         <div className="text-sm text-muted-foreground">
           Azure نیاز به key + region دارد.{" "}
           <Link to="/settings" className="text-primary underline">
-            تنظیمات → AI
+            Settings → AI
           </Link>
         </div>
       )}
@@ -89,7 +89,7 @@ export const OtherTtsPanel = memo(function OtherTtsPanel({
         <div className="text-sm text-muted-foreground">
           Hugging Face نیاز به token دارد.{" "}
           <Link to="/settings" className="text-primary underline">
-            تنظیمات → AI
+            Settings → AI
           </Link>
         </div>
       )}
@@ -97,15 +97,15 @@ export const OtherTtsPanel = memo(function OtherTtsPanel({
         <div className="text-sm text-muted-foreground">
           Play.ht نیاز به user id + key دارد.{" "}
           <Link to="/settings" className="text-primary underline">
-            تنظیمات → AI
+            Settings → AI
           </Link>
         </div>
       )}
       {engine === "opentts" && !openTtsUrl && (
         <div className="text-sm text-muted-foreground">
-          آدرس سرور OpenTTS را در تنظیمات بگذار.{" "}
+          آدرس سرور OpenTTS را در Settings بگذار.{" "}
           <Link to="/settings" className="text-primary underline">
-            تنظیمات → AI
+            Settings → AI
           </Link>
         </div>
       )}

@@ -6,7 +6,7 @@ import { routeTree } from "./routeTree.gen";
 function DefaultError({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   const errorMessage =
-    error instanceof Error ? error.message : typeof error === "string" ? error : "خطای ناشناخته";
+    error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error";
 
   return (
     <div
@@ -47,7 +47,7 @@ function DefaultNotFound() {
       className="min-h-[60dvh] flex flex-col items-center justify-center gap-3 p-6 text-center"
     >
       <div className="text-5xl">🧭</div>
-      <h1 className="text-xl font-semibold">صفحه پیدا نشد</h1>
+      <h1 className="text-xl font-semibold">Page not found</h1>
       <p className="text-sm text-muted-foreground">آدرس درست نیست یا صفحه حذف شده.</p>
       <a
         href="/"

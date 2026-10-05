@@ -80,7 +80,7 @@ export function useArticleLoad(articleId: string | undefined): UseArticleLoadRet
       setArticle(updated);
       cacheArticle(updated);
       if (scraped.blocked && manual) {
-        toast.info("این منبع متن کامل را قفل کرده — خلاصه‌ی فید نمایش داده می‌شود.");
+        toast.info("This source has full text locked — showing the feed summary instead.");
       }
     } catch (e) {
       if (manual) toast.error(e instanceof Error ? e.message : "Scrape failed.");

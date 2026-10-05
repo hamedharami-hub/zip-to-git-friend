@@ -129,7 +129,7 @@ export const ParagraphTTSButton = memo(function ParagraphTTSButton({
       if (speakWithBrowser("fa-IR")) return;
       if (!apiKey) {
         toast.error(
-          "برای صدای فارسی، یک صدای فارسی در سیستم نصب کن یا کلید Gemini در تنظیمات بگذار.",
+          "برای صدای فارسی، یک صدای فارسی در سیستم نصب کن یا کلید Gemini در Settings بگذار.",
         );
         return;
       }

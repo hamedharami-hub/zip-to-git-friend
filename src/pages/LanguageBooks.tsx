@@ -13,7 +13,7 @@ import { toast } from "sonner";
 const LanguageBooks = () => {
   usePageMeta({
     title: "Language Books — Language Learning Player",
-    description: "کتاب‌های زبان — مرور و مطالعه‌ی دوره‌های زبانی.",
+    description: "Language books — review and study language courses.",
   });
   const books = useBookStore((s) => s.books);
   const load = useBookStore((s) => s.load);

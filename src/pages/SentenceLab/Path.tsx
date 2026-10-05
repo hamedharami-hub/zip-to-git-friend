@@ -127,7 +127,7 @@ export default function SentencePathPage() {
                 <div className="min-w-0">
                   <p className="text-sm font-semibold">صف ترکیبی همه سطوح</p>
                   <p className="text-xs text-muted-foreground">
-                    AI و FSRS مرور هوشمند از تمام پله‌ها
+                    AI و FSRS Smart review از تمام پله‌ها
                   </p>
                 </div>
               </div>

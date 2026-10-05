@@ -190,7 +190,7 @@ export interface AppSettings {
   /** Difficulty level for the "everyday simple" rewrite (news & book chapters). */
   simplifyLevel?: SimplifyLevel;
   /** When true, every news article is auto-rewritten in everyday simple English
-   *  on first open (no need to press the "ساده روزمره" tab manually). */
+   *  on first open (no need to press the "Everyday simple" tab manually). */
   defaultSimplifyArticles?: boolean;
   /** When true, news paragraphs are batch-translated automatically when opened. */
   newsAutoTranslateParagraphs?: boolean;

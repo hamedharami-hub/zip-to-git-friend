@@ -53,7 +53,7 @@ export const ElevenLabsPanel = memo(function ElevenLabsPanel(p: Props) {
       <div className="text-sm text-muted-foreground">
         ElevenLabs نیاز به API key دارد.{" "}
         <Link to="/settings" className="text-primary underline underline-offset-2">
-          در تنظیمات → AI اضافه کن
+          در Settings → AI اضافه کن
         </Link>
         .
       </div>

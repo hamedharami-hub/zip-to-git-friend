@@ -12,7 +12,7 @@ import { ReadingSettings } from "@/components/settings/ReadingSettings";
 const Settings = () => {
   usePageMeta({
     title: "Settings — Language Learning Player",
-    description: "تنظیمات برنامه — کلیدهای API، مدل‌های AI، ظاهر و خواندن.",
+    description: "App settings — API keys, AI models, appearance, and reading.",
   });
 
   return (
@@ -34,22 +34,22 @@ const Settings = () => {
           <p className="text-[11px] uppercase tracking-[0.14em] font-medium text-[hsl(var(--on-surface-variant))]">
             Preferences
           </p>
-          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">تنظیمات</h2>
+          <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Settings</h2>
         </div>
 
         <Tabs defaultValue="appearance" dir="rtl" className="space-y-6">
           <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full h-auto gap-1 bg-[hsl(var(--surface-container-low))] p-1 rounded-2xl">
             <TabsTrigger value="appearance" className="rounded-xl">
-              ظاهر و برنامه
+              Appearance & app
             </TabsTrigger>
             <TabsTrigger value="keys" className="rounded-xl">
-              کلیدهای API
+              API keys
             </TabsTrigger>
             <TabsTrigger value="models" className="rounded-xl">
-              مدل‌های AI
+              AI models
             </TabsTrigger>
             <TabsTrigger value="reading" className="rounded-xl">
-              خواندن
+              Reading
             </TabsTrigger>
           </TabsList>
 

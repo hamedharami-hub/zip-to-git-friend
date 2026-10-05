@@ -222,7 +222,7 @@ export const ReviewMode = memo(function ReviewMode({
     if (!card) return;
     setQueue((q) => [card, ...q]);
     setRevealed(true);
-    toast.success("بازگردانده شد");
+    toast.success("Restored");
   };
 
   // Auto-grade based on a typed/MCQ outcome
@@ -345,7 +345,7 @@ export const ReviewMode = memo(function ReviewMode({
             </p>
             <Link to="/" className="inline-block">
               <Button size="sm" variant="outline">
-                رفتن به کتابخانه
+                رفتن به کتابHome
               </Button>
             </Link>
           </>

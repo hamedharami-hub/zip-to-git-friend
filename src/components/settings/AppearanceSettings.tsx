@@ -82,7 +82,7 @@ export function AppearanceSettings() {
               <p className="text-sm font-medium">ساده‌سازی خودکار خبرها از ابتدا</p>
               <p className="text-xs text-muted-foreground">
                 وقتی روشن باشد، هر خبر (سایت یا یوتیوب) از همان لحظه‌ی باز شدن به‌صورت ساده‌ی روزمره
-                ساخته می‌شود — بدون اینکه چیزی از متن اصلی حذف شود.
+                ساخته می‌شود — بدون اینکه چیزی از Original حذف شود.
               </p>
             </div>
             <Switch

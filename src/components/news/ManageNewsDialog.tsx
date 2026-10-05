@@ -72,9 +72,9 @@ export function ManageNewsDialog({
       await createFolder({ name, color: folderColor });
       setFolderName("");
       await onFoldersChanged();
-      toast.success("پوشه ساخته شد.");
+      toast.success("Folder created.");
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "خطا");
+      toast.error((e as Error).message ?? "Error");
     } finally {
       setBusy(false);
     }
@@ -86,7 +86,7 @@ export function ManageNewsDialog({
       await deleteFolder(id);
       await onFoldersChanged();
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "خطا");
+      toast.error((e as Error).message ?? "Error");
     }
   };
 
@@ -98,9 +98,9 @@ export function ManageNewsDialog({
       await blockDomain(d);
       setBlockInput("");
       await onBlockedChanged();
-      toast.success("دامنه بلاک شد.");
+      toast.success("Domain blocked.");
     } catch (e: Error | unknown) {
-      toast.error((e as Error).message ?? "خطا");
+      toast.error((e as Error).message ?? "Error");
     } finally {
       setBusy(false);
     }
@@ -123,7 +123,7 @@ export function ManageNewsDialog({
               <Ban className="h-3.5 w-3.5" /> بلاک‌شده
             </TabsTrigger>
             <TabsTrigger value="preferences" className="gap-1 text-xs">
-              <SlidersHorizontal className="h-3.5 w-3.5" /> تنظیمات
+              <SlidersHorizontal className="h-3.5 w-3.5" /> Settings
             </TabsTrigger>
           </TabsList>
 

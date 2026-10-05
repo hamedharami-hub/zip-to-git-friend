@@ -106,7 +106,7 @@ export function ModelVisibilityDialog({ initialTab, children }: ModelVisibilityD
         },
       },
     });
-    toast.success("فهرست مدل‌ها به‌روز شد.");
+    toast.success("Model list updated.");
     setOpen(false);
   };
 

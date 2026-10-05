@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useFirebaseAuth } from "@/contexts/FirebaseAuthContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Auth = () => {
@@ -14,7 +15,7 @@ const Auth = () => {
     title: "Sign in — Language Learning Player",
     description: "Sign in / sign up — access your profile and cloud sync.",
   });
-  const { user, loading, signIn, signUp, signInWithGoogle } = useFirebaseAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const rawNext = searchParams.get("next") ?? "";
@@ -36,10 +37,19 @@ const Auth = () => {
     setSubmitting(true);
     try {
       if (mode === "signup") {
-        await signUp(email, password);
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        // Supabase returns no error when email confirmation is enabled and the
+        // user already exists, so surface that case explicitly.
+        if (error) throw error;
+        if (data.user && !data.session) {
+          toast.success("Account created. Check your email to confirm it.");
+          setSubmitting(false);
+          return;
+        }
         toast.success("Account created and signed in.");
       } else {
-        await signIn(email, password);
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
         toast.success("Signed in.");
       }
       navigate(nextPath, { replace: true });
@@ -54,15 +64,14 @@ const Auth = () => {
   const handleGoogle = async () => {
     setSubmitting(true);
     try {
-      await signInWithGoogle();
-      toast.success("Signed in with Google.");
-      navigate(nextPath, { replace: true });
-    } catch (e: unknown) {
-      const code = (e as { code?: string } | null)?.code;
-      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
-        setSubmitting(false);
-        return;
-      }
+      // Supabase redirects the browser away, so do not reset `submitting` here —
+      // the page unloads. On failure the promise rejects and we recover.
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/auth/callback` },
+      });
+      if (error) throw error;
+    } catch (e) {
       const msg = e instanceof Error ? e.message : "Google sign-in failed.";
       toast.error(msg);
       setSubmitting(false);

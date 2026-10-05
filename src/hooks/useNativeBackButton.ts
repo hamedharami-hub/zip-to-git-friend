@@ -38,7 +38,7 @@ export function useNativeBackButton() {
       if (path.startsWith("/sentence-lab/")) return "/sentence-lab";
       if (path.startsWith("/leitner")) return "/";
       if (path.startsWith("/share")) return "/news";
-      if (path.startsWith("/firebase-auth") || path.startsWith("/auth")) return "/";
+      if (path.startsWith("/auth")) return "/";
       if (path.startsWith("/player/") || path.startsWith("/videos/")) return "/videos";
       if (path.startsWith("/audio/")) return "/audio";
       if (

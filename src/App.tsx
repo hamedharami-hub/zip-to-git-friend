@@ -11,7 +11,6 @@ import { useLeitnerStore } from "./store/leitnerStore";
 import { useLeitnerFolderStore } from "./store/leitnerFolderStore";
 import { useOnline } from "./hooks/useOnline";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { FirebaseAuthProvider } from "./contexts/FirebaseAuthContext";
 import { startSync, stopSync } from "./lib/leitnerSync";
 import { getPWAStatus, subscribePWA } from "./lib/pwa";
 import { useBookStore } from "./store/bookStore";
@@ -50,7 +49,6 @@ const SentenceAdmin = lazy(() => import("./pages/SentenceLab/Admin"));
 const NewsArticle = lazy(() => import("./pages/NewsArticle"));
 const NewsDigest = lazy(() => import("./pages/NewsDigest"));
 const NotFound = lazy(() => import("./pages/NotFound.tsx"));
-const FirebaseAuthPage = lazy(() => import("./pages/FirebaseAuth"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -163,89 +161,86 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <FirebaseAuthProvider>
-        <AuthProvider>
-          <SettingsBootstrap>
-            <SyncBridge />
-            <PWAUpdateBanner />
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <Haptic />
-              <NativeGestures />
-              <Routes>
-                <Route path="/" element={wrap("Home", <Home />)} />
-                <Route path="/videos" element={wrap("Videos", <Videos />)} />
-                <Route path="/auth" element={wrap("Auth", <Auth />)} />
-                <Route path="/auth/callback" element={wrap("AuthCallback", <AuthCallback />)} />
-                <Route path="/firebase-auth" element={wrap("FirebaseAuth", <FirebaseAuthPage />)} />
-                <Route
-                  path="/player/:videoId"
-                  element={wrap("Player", <Player />, <PlayerSkeleton />)}
-                />
-                <Route path="/leitner" element={wrap("Leitner", <Leitner />)} />
-                <Route path="/stats" element={wrap("Stats", <Stats />)} />
-                <Route path="/audio" element={wrap("Audio", <Audio />)} />
-                <Route path="/books" element={wrap("Books", <Books />)} />
-                <Route path="/language-books" element={wrap("LanguageBooks", <LanguageBooks />)} />
-                <Route path="/books/:bookId" element={wrap("BookReader", <BookReader />)} />
-                <Route path="/news" element={wrap("News", <News />)} />
-                <Route path="/sentence-lab" element={wrap("SentenceLab", <SentenceLab />)} />
-                <Route
-                  path="/sentence-lab/general"
-                  element={wrap("SentenceGeneral", <SentenceGeneral />)}
-                />
-                <Route
-                  path="/sentence-lab/domain/:domain"
-                  element={wrap("SentenceDomain", <SentenceDomain />)}
-                />
-                <Route
-                  path="/sentence-lab/path/:pathId"
-                  element={wrap("SentencePathDetail", <SentencePathDetail />)}
-                />
-                <Route
-                  path="/sentence-lab/path/:pathId/drill"
-                  element={wrap("SentenceDrill", <SentenceDrill />)}
-                />
-                <Route
-                  path="/sentence-lab/planner"
-                  element={wrap("SentencePlanner", <SentencePlanner />)}
-                />
-                <Route
-                  path="/sentence-lab/leitner"
-                  element={wrap("SentenceLeitner", <SentenceLeitner />)}
-                />
-                <Route
-                  path="/sentence-lab/admin"
-                  element={wrap("SentenceAdmin", <SentenceAdmin />)}
-                />
-                <Route
-                  path="/sentence-lab/:categorySlug"
-                  element={wrap("SentenceCategory", <SentenceCategory />)}
-                />
-                <Route
-                  path="/sentence-lab/:categorySlug/:subSlug"
-                  element={wrap("SentencePath", <SentencePath />)}
-                />
-                <Route
-                  path="/sentence-lab/:categorySlug/:subSlug/scenario"
-                  element={wrap("SentenceScenario", <SentenceScenario />)}
-                />
-                <Route
-                  path="/sentence-lab/:categorySlug/:subSlug/:level"
-                  element={wrap("SentenceDrill", <SentenceDrill />)}
-                />
-                <Route
-                  path="/news/article/:articleId"
-                  element={wrap("NewsArticle", <NewsArticle />)}
-                />
-                <Route path="/news/digest/:digestId" element={wrap("NewsDigest", <NewsDigest />)} />
-                <Route path="/share" element={wrap("Share", <SharePage />)} />
-                <Route path="/settings" element={wrap("Settings", <Settings />)} />
-                <Route path="*" element={wrap("NotFound", <NotFound />)} />
-              </Routes>
-            </BrowserRouter>
-          </SettingsBootstrap>
-        </AuthProvider>
-      </FirebaseAuthProvider>
+      <AuthProvider>
+        <SettingsBootstrap>
+          <SyncBridge />
+          <PWAUpdateBanner />
+          <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+            <Haptic />
+            <NativeGestures />
+            <Routes>
+              <Route path="/" element={wrap("Home", <Home />)} />
+              <Route path="/videos" element={wrap("Videos", <Videos />)} />
+              <Route path="/auth" element={wrap("Auth", <Auth />)} />
+              <Route path="/auth/callback" element={wrap("AuthCallback", <AuthCallback />)} />
+              <Route
+                path="/player/:videoId"
+                element={wrap("Player", <Player />, <PlayerSkeleton />)}
+              />
+              <Route path="/leitner" element={wrap("Leitner", <Leitner />)} />
+              <Route path="/stats" element={wrap("Stats", <Stats />)} />
+              <Route path="/audio" element={wrap("Audio", <Audio />)} />
+              <Route path="/books" element={wrap("Books", <Books />)} />
+              <Route path="/language-books" element={wrap("LanguageBooks", <LanguageBooks />)} />
+              <Route path="/books/:bookId" element={wrap("BookReader", <BookReader />)} />
+              <Route path="/news" element={wrap("News", <News />)} />
+              <Route path="/sentence-lab" element={wrap("SentenceLab", <SentenceLab />)} />
+              <Route
+                path="/sentence-lab/general"
+                element={wrap("SentenceGeneral", <SentenceGeneral />)}
+              />
+              <Route
+                path="/sentence-lab/domain/:domain"
+                element={wrap("SentenceDomain", <SentenceDomain />)}
+              />
+              <Route
+                path="/sentence-lab/path/:pathId"
+                element={wrap("SentencePathDetail", <SentencePathDetail />)}
+              />
+              <Route
+                path="/sentence-lab/path/:pathId/drill"
+                element={wrap("SentenceDrill", <SentenceDrill />)}
+              />
+              <Route
+                path="/sentence-lab/planner"
+                element={wrap("SentencePlanner", <SentencePlanner />)}
+              />
+              <Route
+                path="/sentence-lab/leitner"
+                element={wrap("SentenceLeitner", <SentenceLeitner />)}
+              />
+              <Route
+                path="/sentence-lab/admin"
+                element={wrap("SentenceAdmin", <SentenceAdmin />)}
+              />
+              <Route
+                path="/sentence-lab/:categorySlug"
+                element={wrap("SentenceCategory", <SentenceCategory />)}
+              />
+              <Route
+                path="/sentence-lab/:categorySlug/:subSlug"
+                element={wrap("SentencePath", <SentencePath />)}
+              />
+              <Route
+                path="/sentence-lab/:categorySlug/:subSlug/scenario"
+                element={wrap("SentenceScenario", <SentenceScenario />)}
+              />
+              <Route
+                path="/sentence-lab/:categorySlug/:subSlug/:level"
+                element={wrap("SentenceDrill", <SentenceDrill />)}
+              />
+              <Route
+                path="/news/article/:articleId"
+                element={wrap("NewsArticle", <NewsArticle />)}
+              />
+              <Route path="/news/digest/:digestId" element={wrap("NewsDigest", <NewsDigest />)} />
+              <Route path="/share" element={wrap("Share", <SharePage />)} />
+              <Route path="/settings" element={wrap("Settings", <Settings />)} />
+              <Route path="*" element={wrap("NotFound", <NotFound />)} />
+            </Routes>
+          </BrowserRouter>
+        </SettingsBootstrap>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

@@ -3,7 +3,6 @@ import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useBookStore } from "@/store/bookStore";
 import { useSettingsStore } from "@/store/settingsStore";
-import { useFirebaseAuth } from "./FirebaseAuthContext";
 
 interface AuthState {
   user: User | null;
@@ -20,7 +19,6 @@ const AuthCtx = createContext<AuthState>({
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const { user: fbUser, loading: fbLoading, signOut: fbSignOut } = useFirebaseAuth();
   const [session, setSession] = useState<Session | null>(null);
   const [sbUser, setSbUser] = useState<User | null>(null);
   const [sbLoading, setSbLoading] = useState(true);
@@ -54,29 +52,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // Map Firebase user into a compatible User shape if Supabase user is absent
-  const effectiveUser: User | null =
-    sbUser ??
-    (fbUser
-      ? ({
-          id: fbUser.uid,
-          app_metadata: { provider: "firebase" },
-          user_metadata: {
-            full_name: fbUser.displayName,
-            name: fbUser.displayName,
-            avatar_url: fbUser.photoURL,
-          },
-          aud: "authenticated",
-          created_at: fbUser.metadata.creationTime ?? new Date().toISOString(),
-          email: fbUser.email,
-          phone: fbUser.phoneNumber,
-          role: "authenticated",
-          updated_at: fbUser.metadata.lastSignInTime ?? new Date().toISOString(),
-        } as unknown as User)
-      : null);
+  // Supabase is the only auth backend. `sbUser` is derived from the session so
+  // the two can never disagree.
+  const user = sbUser;
 
   const signOut = async () => {
-    await fbSignOut();
     try {
       await supabase.auth.signOut();
     } catch {
@@ -84,12 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const loading = fbLoading && sbLoading;
+  const loading = sbLoading;
 
   return (
-    <AuthCtx.Provider value={{ user: effectiveUser, session, loading, signOut }}>
-      {children}
-    </AuthCtx.Provider>
+    <AuthCtx.Provider value={{ user, session, loading, signOut }}>{children}</AuthCtx.Provider>
   );
 };
 

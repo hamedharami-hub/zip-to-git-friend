@@ -46,7 +46,7 @@
    ```bash
    npm run dev
    ```
-   برنامه در `http://localhost:8080` بالا می‌آید.
+   برنامه در `http://localhost:3000` بالا می‌آید (بر اساس `package.json`).
 
 ## اسکریپت‌ها
 

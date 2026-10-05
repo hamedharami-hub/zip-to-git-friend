@@ -181,12 +181,9 @@ export function FirebaseAuthProvider({ children }: { children: ReactNode }) {
           );
           await writeSettings(cred.user.uid);
         }
-      } catch (err: any) {
-        if (
-          err?.code === "auth/popup-blocked" ||
-          err?.code === "auth/popup-closed-by-user" ||
-          isMobile
-        ) {
+      } catch (err: unknown) {
+        const code = (err as { code?: string } | null)?.code;
+        if (isMobile && (code === "auth/popup-blocked" || code === "auth/network-request-failed")) {
           await signInWithRedirect(auth, provider);
           return;
         }

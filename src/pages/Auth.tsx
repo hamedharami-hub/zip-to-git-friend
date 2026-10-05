@@ -57,8 +57,9 @@ const Auth = () => {
       await signInWithGoogle();
       toast.success("Signed in with Google.");
       navigate(nextPath, { replace: true });
-    } catch (e: any) {
-      if (e?.code === "auth/popup-closed-by-user" || e?.code === "auth/cancelled-popup-request") {
+    } catch (e: unknown) {
+      const code = (e as { code?: string } | null)?.code;
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") {
         setSubmitting(false);
         return;
       }

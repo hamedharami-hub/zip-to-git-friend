@@ -6,11 +6,7 @@ import { routeTree } from "./routeTree.gen";
 function DefaultError({ error, reset }: ErrorComponentProps) {
   const router = useRouter();
   const errorMessage =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "خطای ناشناخته";
+    error instanceof Error ? error.message : typeof error === "string" ? error : "خطای ناشناخته";
 
   return (
     <div
@@ -19,9 +15,7 @@ function DefaultError({ error, reset }: ErrorComponentProps) {
     >
       <div className="text-4xl">⚠️</div>
       <h1 className="text-xl font-semibold">مشکلی پیش آمد</h1>
-      <p className="text-sm text-muted-foreground max-w-md break-words">
-        {errorMessage}
-      </p>
+      <p className="text-sm text-muted-foreground max-w-md break-words">{errorMessage}</p>
       <div className="flex gap-2">
         <button
           onClick={() => {
